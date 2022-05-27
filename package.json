@@ -1,0 +1,11 @@
+{
+  "name": "axelar-utils-solidity",
+  "version": "1.0.0",
+  "description": "Solidity libraries and utilities provided by Axelar.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}

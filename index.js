@@ -9,7 +9,7 @@ const {
 } = require('ethers');
 const ganache = require('ganache');
 
-const ConstAddressDeployer = require('./build/ConstAddressDeployer.json');
+const ConstAddressDeployer = require('./dist/ConstAddressDeployer.json');
 
 const { it } = require('mocha');
 

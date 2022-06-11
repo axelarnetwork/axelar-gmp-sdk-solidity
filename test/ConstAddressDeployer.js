@@ -10,7 +10,7 @@ const { deployContract, MockProvider, solidity } = require('ethereum-waffle');
 chai.use(solidity);
 const { expect } = chai;
 
-const ConstAddressDeployer = require('../build/ConstAddressDeployer.json');
+const ConstAddressDeployer = require('../dist/ConstAddressDeployer.json');
 const BurnableMintableCappedERC20 = require('../build/BurnableMintableCappedERC20.json');
 const BurnableMintableCappedERC20Init = require('../build/BurnableMintableCappedERC20Init.json');
 

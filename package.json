@@ -6,11 +6,10 @@
   "scripts": {
     "test": "mocha",
     "test-evm-versions": "bash test/test-evm-versions.bash",
-    "build": "rm -rf build && waffle waffle.json",
+    "build": "rm -rf build && waffle waffle.json && cp build/ConstAddressDeployer.json dist",
     "lint": "solhint 'src/**/*.sol' && eslint 'test/**/*.js'",
     "prettier": "prettier --write 'test/**/*.js' && prettier --write 'src/**/*.sol'",
-    "flatten": "rm -rf build/flattened && waffle flatten waffle.json",
-    "prepare": "waffle waffle.json"
+    "flatten": "rm -rf build/flattened && waffle flatten waffle.json"
   },
   "author": "",
   "license": "ISC",

@@ -9,75 +9,18 @@ const {
 const { deployContract, MockProvider, solidity } = require('ethereum-waffle');
 chai.use(solidity);
 const { expect } = chai;
-
+const {
+  estimateGasForDeploy,
+  estimateGasForDeployAndInit,
+  deployContractConstant,
+  deployAndInitContractConstant,
+  predictContractConstant,
+} = require('../index.js');
 const ConstAddressDeployer = require('../dist/ConstAddressDeployer.json');
 const BurnableMintableCappedERC20 = require('../build/BurnableMintableCappedERC20.json');
 const BurnableMintableCappedERC20Init = require('../build/BurnableMintableCappedERC20Init.json');
 
 const { it } = require('mocha');
-
-const getSaltFromKey = (key) => {
-  return keccak256(defaultAbiCoder.encode(['string'], [key]));
-};
-
-const deployContractConstant = async (
-  deployer,
-  wallet,
-  contract,
-  key,
-  args = [],
-) => {
-  const salt = getSaltFromKey(key);
-  const factory = new ContractFactory(contract.abi, contract.bytecode);
-  const bytecode = factory.getDeployTransaction(...args).data;
-  const tx = await deployer.connect(wallet).deploy(bytecode, salt);
-  await tx.wait();
-  const address = await deployer.deployedAddress(
-    bytecode,
-    wallet.address,
-    salt,
-  );
-  return new Contract(address, contract.abi, wallet);
-};
-
-const deployAndInitContractConstant = async (
-  deployer,
-  wallet,
-  contractJson,
-  key,
-  args = [],
-  initArgs = [],
-) => {
-  const salt = getSaltFromKey(key);
-  const factory = new ContractFactory(contractJson.abi, contractJson.bytecode);
-  const bytecode = factory.getDeployTransaction(...args).data;
-  const address = await deployer.deployedAddress(
-    bytecode,
-    wallet.address,
-    salt,
-  );
-  const contract = new Contract(address, contractJson.abi, wallet);
-  const initData = (await contract.populateTransaction.init(...initArgs)).data;
-  const tx = await deployer
-    .connect(wallet)
-    .deployAndInit(bytecode, salt, initData);
-  await tx.wait();
-  return contract;
-};
-
-const predictContractConstant = async (
-  deployer,
-  wallet,
-  contractJson,
-  key,
-  args = [],
-) => {
-  const salt = getSaltFromKey(key);
-
-  const factory = new ContractFactory(contractJson.abi, contractJson.bytecode);
-  const bytecode = factory.getDeployTransaction(...args).data;
-  return await deployer.deployedAddress(bytecode, wallet.address, salt);
-};
 
 describe('ConstAddressDeployer', () => {
   const [deployerWallet, userWallet] = new MockProvider().getWallets();

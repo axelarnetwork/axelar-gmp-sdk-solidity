@@ -8,7 +8,6 @@ const {
   Wallet,
 } = require('ethers');
 const ganache = require('ganache');
-const { deployContract } = require('ethereum-waffle');
 
 const ConstAddressDeployer = require('./dist/ConstAddressDeployer.json');
 
@@ -27,7 +26,15 @@ const estimateGasForDeploy = async (contractJson, args = []) => {
     const wallet = new Wallet(key, provider);
     //console.log(await provider.getBalance(wallet.address));
 
-    const deployer = await deployContract(wallet, ConstAddressDeployer);
+    const deployerFactory = new ContractFactory(
+        ConstAddressDeployer.abi,
+        ConstAddressDeployer.bytecode,
+        wallet
+    );
+
+    const deployer =  await deployerFactory.deploy();
+    await deployer.deployed();
+
     const salt = getSaltFromKey('');
     const factory = new ContractFactory(contractJson.abi, contractJson.bytecode);
     const bytecode = factory.getDeployTransaction(...args).data;
@@ -42,8 +49,15 @@ const estimateGasForDeployAndInit = async (contractJson, args = [], initArgs = [
     const provider = new Web3Provider(ganacheProvider);
     const wallet = new Wallet(key, provider);
     //console.log(await provider.getBalance(wallet.address));
+    const deployerFactory = new ContractFactory(
+        ConstAddressDeployer.abi,
+        ConstAddressDeployer.bytecode,
+        wallet
+    );
 
-    const deployer = await deployContract(wallet, ConstAddressDeployer);
+    const deployer =  await deployerFactory.deploy();
+    await deployer.deployed();
+    
     const salt = getSaltFromKey('');
     const factory = new ContractFactory(contractJson.abi, contractJson.bytecode);
     const bytecode = factory.getDeployTransaction(...args).data;

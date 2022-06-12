@@ -31,7 +31,8 @@ describe('ConstAddressDeployer', () => {
   const capacity = 0;
 
   beforeEach(async () => {
-    deployer = await deployContract(deployerWallet, ConstAddressDeployer);
+    deployer = (await deployContract(deployerWallet, ConstAddressDeployer))
+      .address;
   });
 
   describe('deploy', () => {

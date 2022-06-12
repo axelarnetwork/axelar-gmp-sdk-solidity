@@ -57,7 +57,7 @@ const estimateGasForDeployAndInit = async (contractJson, args = [], initArgs = [
 
     const deployer =  await deployerFactory.deploy();
     await deployer.deployed();
-    
+
     const salt = getSaltFromKey('');
     const factory = new ContractFactory(contractJson.abi, contractJson.bytecode);
     const bytecode = factory.getDeployTransaction(...args).data;
@@ -73,12 +73,13 @@ const estimateGasForDeployAndInit = async (contractJson, args = [], initArgs = [
 }
 
 const deployContractConstant = async (
-  deployer,
+  deployerAddress,
   wallet,
   contractJson,
   key,
   args = [],
 ) => {
+    const deployer = new Contract(deployerAddress, ConstAddressDeployer.abi, wallet);
   const salt = getSaltFromKey(key);
   const factory = new ContractFactory(contractJson.abi, contractJson.bytecode);
   const bytecode = factory.getDeployTransaction(...args).data;
@@ -94,13 +95,14 @@ const deployContractConstant = async (
 };
 
 const deployAndInitContractConstant = async (
-  deployer,
+  deployerAddress,
   wallet,
   contractJson,
   key,
   args = [],
   initArgs = [],
 ) => {
+    const deployer = new Contract(deployerAddress, ConstAddressDeployer.abi, wallet);
   const salt = getSaltFromKey(key);
   const factory = new ContractFactory(contractJson.abi, contractJson.bytecode);
   const bytecode = factory.getDeployTransaction(...args).data;
@@ -120,12 +122,13 @@ const deployAndInitContractConstant = async (
 };
 
 const predictContractConstant = async (
-  deployer,
+  deployerAddress,
   wallet,
   contractJson,
   key,
   args = [],
 ) => {
+    const deployer = new Contract(deployerAddress, ConstAddressDeployer.abi, wallet);
   const salt = getSaltFromKey(key);
 
   const factory = new ContractFactory(contractJson.abi, contractJson.bytecode);

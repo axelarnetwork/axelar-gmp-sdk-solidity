@@ -12,7 +12,6 @@ const { deployContract } = require('ethereum-waffle');
 
 const ConstAddressDeployer = require('./dist/ConstAddressDeployer.json');
 
-const { it } = require('mocha');
 
 const getSaltFromKey = (key) => {
   return keccak256(defaultAbiCoder.encode(['string'], [key]));

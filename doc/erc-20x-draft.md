@@ -13,56 +13,56 @@ With these items in mind, the new interface might look something like:
 ```solidity
 interface IERC20XChain is IERC20 {
     function transferXChain(
-        bytes recipient,
+        string recipient,
         uint256 amount,
-        bytes recipientChain, // new
-        bytes auxiliaryData   // new
+        string recipientChain, // new
+        bytes auxiliaryData    // new
     ) external returns (bool);
 
     function approveXChain(
-        bytes spender,
+        string spender,
         uint256 amount,
-        bytes spenderChain, // new
+        string spenderChain, // new
     ) external returns (bool);
 
     function allowanceXChain(
         address owner,
-        bytes spender,
-        bytes spenderChain, // new
+        string spender,
+        string spenderChain, // new
     ) external view returns (uint256);
 
     function transferFromXChain(
-        bytes sender,
-        bytes recipient,
+        string sender,
+        string recipient,
         uint256 amount,
-        bytes recipientChain, // new
-        bytes senderChain,    // new
-        bytes auxiliaryData,  // new
+        string recipientChain, // new
+        string senderChain,    // new
+        bytes auxiliaryData,   // new
     ) external returns (bool);
 
     event TransferXChain(
-        bytes indexed from,
-        bytes indexed to,
+        string indexed from,
+        string indexed to,
         uint256 value,
-        bytes toChain,       // new
-        bytes fromChain,     // new
-        bytes auxiliaryData  // new
+        string toChain,       // new
+        string fromChain,     // new
+        bytes auxiliaryData   // new
     );
 
     event ApprovalXChain(
         address indexed owner,
-        bytes indexed spender,
+        string indexed spender,
         uint256 value,
-        bytes spenderChain, // new
+        string spenderChain, // new
     );
 }
 ```
 
 ## Notes
 
-- The implementer has complete flexibility in how to interpret the bytes of `recipientChain` and how to execute the remote transfer. For example, the implementer could use a cross-chain platform such as Axelar.
-- The `recipientChain` is `bytes` to afford maximum flexibility. EVM-compatible chains already have a unique `uint256` chain ID but non-EMV-compatible chains are not guaranteed to have such a convenient chain ID. We recommend a separate standard on a universal convention for which `bytes` sequences correspond to which chains.
-- The `recipient` is now `bytes` to afford maximum flexibility for the address format in the destination chain. (For most chains an address fits into a `bytes32` but we do not wish to preclude chains with longer addresses.)
+- The implementer has complete flexibility in how to interpret `recipientChain` and how to execute the remote transfer. For example, the implementer could use a cross-chain platform such as Axelar.
+- The `recipientChain` is `string` to afford maximum flexibility. EVM-compatible chains already have a unique `uint256` chain ID but non-EMV-compatible chains are not guaranteed to have such a convenient chain ID. We recommend a separate standard on a universal convention for which `string` sequences correspond to which chains.
+- The `recipient` is now `string` to afford maximum flexibility for the address format in the destination chain. (For most chains an address fits into a `bytes32` but we do not wish to preclude chains with longer addresses.)
 - `recipientChain` need not be different from the current chain. Presumably, implementers would optimize their implementation for this special case so as not to spam cross-chain infrastructure.
 - `approveXChain` and `allowanceXChain` have a new `spenderChain` argument so that the spender's address can reside on a different chain.
   - Example: Alice holds token T on chain A, approves Bob on chain B. Bob can post a tx to chain B that sends Alice's tokens from chain A to Charlie on another chain C. Alice's approval of Bob on chain B should be restricted only to chain B---Bob should not be able to use this approval to send tokens on Alice's behalf from any chain other than B.
@@ -70,4 +70,4 @@ interface IERC20XChain is IERC20 {
 - Possible uses of `auxiliaryData`:
   - Define the unlocking condition for a token returning to its native chain.
   - Execute functions elsewhere outside of this token transfer.
-  - Point to a specific on-chain mapping `chain bytes -> chain name`.
+  - Point to a specific on-chain mapping `chain string -> chain data`.

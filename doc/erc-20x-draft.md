@@ -11,7 +11,7 @@ The idea is to add a `transferXChain` method that behaves like a conventional `t
 With these items in mind, the new interface might look something like:
 
 ```solidity
-interface IERC20Remote is IERC20 {
+interface IERC20XChain is IERC20 {
     function transferXChain(
         bytes recipient,
         uint256 amount,

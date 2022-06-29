@@ -6,7 +6,6 @@ import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
 import { IAxelarExecutable } from '../interfaces/IAxelarExecutable.sol';
 
 abstract contract AxelarExecutable is IAxelarExecutable {
-
     //keccak256('gateway');
     uint256 public constant GATEWAY_SLOT = 0x00d936aa803619b075b0b1eaff89e1cf989dd683d61dc611f667f876bd8e3bc5;
 
@@ -29,7 +28,8 @@ abstract contract AxelarExecutable is IAxelarExecutable {
         bytes calldata payload
     ) external override {
         bytes32 payloadHash = keccak256(payload);
-        if (!gateway().validateContractCall(commandId, sourceChain, sourceAddress, payloadHash)) revert NotApprovedByGateway();
+        if (!gateway().validateContractCall(commandId, sourceChain, sourceAddress, payloadHash))
+            revert NotApprovedByGateway();
         _execute(sourceChain, sourceAddress, payload);
     }
 
@@ -42,8 +42,16 @@ abstract contract AxelarExecutable is IAxelarExecutable {
         uint256 amount
     ) external override {
         bytes32 payloadHash = keccak256(payload);
-        if (!gateway().validateContractCallAndMint(commandId, sourceChain, sourceAddress, payloadHash, tokenSymbol, amount))
-            revert NotApprovedByGateway();
+        if (
+            !gateway().validateContractCallAndMint(
+                commandId,
+                sourceChain,
+                sourceAddress,
+                payloadHash,
+                tokenSymbol,
+                amount
+            )
+        ) revert NotApprovedByGateway();
 
         _executeWithToken(sourceChain, sourceAddress, payload, tokenSymbol, amount);
     }

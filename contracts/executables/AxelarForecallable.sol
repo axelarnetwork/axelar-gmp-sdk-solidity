@@ -6,7 +6,7 @@ import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
 import { IERC20 } from '../interfaces/IERC20.sol';
 import { IAxelarExecutable } from '../interfaces/IAxelarExecutable.sol';
 
-abstract contract AxelarForecallable is IAxelarExecutable{
+abstract contract AxelarForecallable is IAxelarExecutable {
     error AlreadyForecalled();
     error TransferFailed();
 
@@ -28,10 +28,10 @@ abstract contract AxelarForecallable is IAxelarExecutable{
             sstore(GATEWAY_SLOT, gateway_)
         }
     }
-    
+
     function getForecaller(
-        string calldata sourceChain, 
-        string calldata sourceAddress, 
+        string calldata sourceChain,
+        string calldata sourceAddress,
         bytes calldata payload
     ) public view returns (address forecaller) {
         bytes32 pos = keccak256(abi.encode(sourceChain, sourceAddress, payload, FORECALLERS_SALT));
@@ -42,9 +42,9 @@ abstract contract AxelarForecallable is IAxelarExecutable{
     }
 
     function _setForecaller(
-        string calldata sourceChain, 
-        string calldata sourceAddress, 
-        bytes calldata payload, 
+        string calldata sourceChain,
+        string calldata sourceAddress,
+        bytes calldata payload,
         address forecaller
     ) internal {
         bytes32 pos = keccak256(abi.encode(sourceChain, sourceAddress, payload, FORECALLERS_SALT));
@@ -73,7 +73,8 @@ abstract contract AxelarForecallable is IAxelarExecutable{
         bytes calldata payload
     ) external override {
         bytes32 payloadHash = keccak256(payload);
-        if (!gateway().validateContractCall(commandId, sourceChain, sourceAddress, payloadHash)) revert NotApprovedByGateway();
+        if (!gateway().validateContractCall(commandId, sourceChain, sourceAddress, payloadHash))
+            revert NotApprovedByGateway();
         address forecaller = getForecaller(sourceChain, sourceAddress, payload);
         if (forecaller != address(0)) {
             _setForecaller(sourceChain, sourceAddress, payload, address(0));
@@ -83,8 +84,8 @@ abstract contract AxelarForecallable is IAxelarExecutable{
     }
 
     function getForecallerWithToken(
-        string calldata sourceChain, 
-        string calldata sourceAddress, 
+        string calldata sourceChain,
+        string calldata sourceAddress,
         bytes calldata payload,
         string calldata symbol,
         uint256 amount
@@ -97,8 +98,8 @@ abstract contract AxelarForecallable is IAxelarExecutable{
     }
 
     function _setForecallerWithToken(
-        string calldata sourceChain, 
-        string calldata sourceAddress, 
+        string calldata sourceChain,
+        string calldata sourceAddress,
         bytes calldata payload,
         string calldata symbol,
         uint256 amount,
@@ -138,8 +139,16 @@ abstract contract AxelarForecallable is IAxelarExecutable{
         uint256 amount
     ) external override {
         bytes32 payloadHash = keccak256(payload);
-        if (!gateway().validateContractCallAndMint(commandId, sourceChain, sourceAddress, payloadHash, tokenSymbol, amount))
-            revert NotApprovedByGateway();
+        if (
+            !gateway().validateContractCallAndMint(
+                commandId,
+                sourceChain,
+                sourceAddress,
+                payloadHash,
+                tokenSymbol,
+                amount
+            )
+        ) revert NotApprovedByGateway();
         address forecaller = getForecallerWithToken(sourceChain, sourceAddress, payload, tokenSymbol, amount);
         if (forecaller != address(0)) {
             _setForecallerWithToken(sourceChain, sourceAddress, payload, tokenSymbol, amount, address(0));
@@ -195,7 +204,9 @@ abstract contract AxelarForecallable is IAxelarExecutable{
         address receiver,
         uint256 amount
     ) internal {
-        (bool success, bytes memory returnData) = tokenAddress.call(abi.encodeWithSelector(IERC20.transfer.selector, receiver, amount));
+        (bool success, bytes memory returnData) = tokenAddress.call(
+            abi.encodeWithSelector(IERC20.transfer.selector, receiver, amount)
+        );
         bool transferred = success && (returnData.length == uint256(0) || abi.decode(returnData, (bool)));
 
         if (!transferred || tokenAddress.code.length == 0) revert TransferFailed();

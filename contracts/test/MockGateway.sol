@@ -21,7 +21,8 @@ contract MockGateway is IAxelarGateway {
     // bytes32 internal constant PREFIX_TOKEN_FROZEN = keccak256('token-frozen');
 
     /// @dev Storage slot with the address of the current factory. `keccak256('eip1967.proxy.implementation') - 1`.
-    bytes32 internal constant KEY_IMPLEMENTATION = bytes32(0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc);
+    bytes32 internal constant KEY_IMPLEMENTATION =
+        bytes32(0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc);
 
     // AUDIT: slot names should be prefixed with some standard string
     bytes32 internal constant PREFIX_COMMAND_EXECUTED = keccak256('command-executed');
@@ -38,12 +39,12 @@ contract MockGateway is IAxelarGateway {
     bytes32 internal constant SELECTOR_APPROVE_CONTRACT_CALL = keccak256('approveContractCall');
     bytes32 internal constant SELECTOR_APPROVE_CONTRACT_CALL_WITH_MINT = keccak256('approveContractCallWithMint');
     bytes32 internal constant SELECTOR_TRANSFER_OPERATORSHIP = keccak256('transferOperatorship');
- 
-    mapping (bytes32 => bool) public bools;
-    mapping (bytes32 => address) public addresses;
-    mapping (bytes32 => uint256) public uints;
-    mapping (bytes32 => string) public strings;
-    mapping (bytes32 => bytes32) public bytes32s;
+
+    mapping(bytes32 => bool) public bools;
+    mapping(bytes32 => address) public addresses;
+    mapping(bytes32 => uint256) public uints;
+    mapping(bytes32 => string) public strings;
+    mapping(bytes32 => bytes32) public bytes32s;
 
     /******************\
     |* Public Methods *|
@@ -75,7 +76,15 @@ contract MockGateway is IAxelarGateway {
         uint256 amount
     ) external {
         _burnTokenFrom(msg.sender, symbol, amount);
-        emit ContractCallWithToken(msg.sender, destinationChain, destinationContractAddress, keccak256(payload), payload, symbol, amount);
+        emit ContractCallWithToken(
+            msg.sender,
+            destinationChain,
+            destinationContractAddress,
+            keccak256(payload),
+            payload,
+            symbol,
+            amount
+        );
     }
 
     function isContractCallApproved(
@@ -85,7 +94,8 @@ contract MockGateway is IAxelarGateway {
         address contractAddress,
         bytes32 payloadHash
     ) external view override returns (bool) {
-        return bools[_getIsContractCallApprovedKey(commandId, sourceChain, sourceAddress, contractAddress, payloadHash)];
+        return
+            bools[_getIsContractCallApprovedKey(commandId, sourceChain, sourceAddress, contractAddress, payloadHash)];
     }
 
     function isContractCallAndMintApproved(
@@ -99,7 +109,15 @@ contract MockGateway is IAxelarGateway {
     ) external view override returns (bool) {
         return
             bools[
-                _getIsContractCallApprovedWithMintKey(commandId, sourceChain, sourceAddress, contractAddress, payloadHash, symbol, amount)
+                _getIsContractCallApprovedWithMintKey(
+                    commandId,
+                    sourceChain,
+                    sourceAddress,
+                    contractAddress,
+                    payloadHash,
+                    symbol,
+                    amount
+                )
             ];
     }
 
@@ -122,7 +140,15 @@ contract MockGateway is IAxelarGateway {
         string calldata symbol,
         uint256 amount
     ) external override returns (bool valid) {
-        bytes32 key = _getIsContractCallApprovedWithMintKey(commandId, sourceChain, sourceAddress, msg.sender, payloadHash, symbol, amount);
+        bytes32 key = _getIsContractCallApprovedWithMintKey(
+            commandId,
+            sourceChain,
+            sourceAddress,
+            msg.sender,
+            payloadHash,
+            symbol,
+            amount
+        );
         valid = bools[key];
         if (valid) {
             // Prevent re-entrancy
@@ -168,10 +194,14 @@ contract MockGateway is IAxelarGateway {
     \******************/
 
     function deployToken(bytes calldata params, bytes32) external {
-        (string memory name, string memory symbol, uint8 decimals, uint256 cap, address tokenAddress, uint256 dailyMintLimit) = abi.decode(
-            params,
-            (string, string, uint8, uint256, address, uint256)
-        );
+        (
+            string memory name,
+            string memory symbol,
+            uint8 decimals,
+            uint256 cap,
+            address tokenAddress,
+            uint256 dailyMintLimit
+        ) = abi.decode(params, (string, string, uint8, uint256, address, uint256));
 
         // Ensure that this symbol has not been taken.
         if (tokenAddresses(symbol) != address(0)) revert TokenAlreadyExists(symbol);
@@ -215,10 +245,15 @@ contract MockGateway is IAxelarGateway {
 
             (bool success, bytes memory returnData) = depositHandler.execute(
                 tokenAddress,
-                abi.encodeWithSelector(IERC20.transfer.selector, address(this), IERC20(tokenAddress).balanceOf(address(depositHandler)))
+                abi.encodeWithSelector(
+                    IERC20.transfer.selector,
+                    address(this),
+                    IERC20(tokenAddress).balanceOf(address(depositHandler))
+                )
             );
 
-            if (!success || (returnData.length != uint256(0) && !abi.decode(returnData, (bool)))) revert BurnFailed(symbol);
+            if (!success || (returnData.length != uint256(0) && !abi.decode(returnData, (bool))))
+                revert BurnFailed(symbol);
 
             // NOTE: `depositHandler` must always be destroyed in the same runtime context that it is deployed.
             depositHandler.destroy(address(this));
@@ -238,7 +273,15 @@ contract MockGateway is IAxelarGateway {
         ) = abi.decode(params, (string, string, address, bytes32, bytes32, uint256));
 
         _setContractCallApproved(commandId, sourceChain, sourceAddress, contractAddress, payloadHash);
-        emit ContractCallApproved(commandId, sourceChain, sourceAddress, contractAddress, payloadHash, sourceTxHash, sourceEventIndex);
+        emit ContractCallApproved(
+            commandId,
+            sourceChain,
+            sourceAddress,
+            contractAddress,
+            payloadHash,
+            sourceTxHash,
+            sourceEventIndex
+        );
     }
 
     function approveContractCallWithMint(bytes calldata params, bytes32 commandId) external {
@@ -253,7 +296,15 @@ contract MockGateway is IAxelarGateway {
             uint256 sourceEventIndex
         ) = abi.decode(params, (string, string, address, bytes32, string, uint256, bytes32, uint256));
 
-        _setContractCallApprovedWithMint(commandId, sourceChain, sourceAddress, contractAddress, payloadHash, symbol, amount);
+        _setContractCallApprovedWithMint(
+            commandId,
+            sourceChain,
+            sourceAddress,
+            contractAddress,
+            payloadHash,
+            symbol,
+            amount
+        );
         emit ContractCallApprovedWithMint(
             commandId,
             sourceChain,
@@ -281,7 +332,10 @@ contract MockGateway is IAxelarGateway {
             bytes[] memory params
         )
     {
-        (chainId, , commandIds, commands, params) = abi.decode(executeData, (uint256, uint256, bytes32[], string[], bytes[]));
+        (chainId, , commandIds, commands, params) = abi.decode(
+            executeData,
+            (uint256, uint256, bytes32[], string[], bytes[])
+        );
     }
 
     function _callERC20Token(address tokenAddress, bytes memory callData) internal returns (bool) {
@@ -311,7 +365,10 @@ contract MockGateway is IAxelarGateway {
         _setTokenDailyMintAmount(symbol, tokenDailyMintAmount(symbol) + amount);
 
         if (_getTokenType(symbol) == TokenType.External) {
-            bool success = _callERC20Token(tokenAddress, abi.encodeWithSelector(IERC20.transfer.selector, account, amount));
+            bool success = _callERC20Token(
+                tokenAddress,
+                abi.encodeWithSelector(IERC20.transfer.selector, account, amount)
+            );
 
             if (!success) revert MintFailed(symbol);
         } else {
@@ -400,7 +457,17 @@ contract MockGateway is IAxelarGateway {
         address contractAddress,
         bytes32 payloadHash
     ) internal pure returns (bytes32) {
-        return keccak256(abi.encode(PREFIX_CONTRACT_CALL_APPROVED, commandId, sourceChain, sourceAddress, contractAddress, payloadHash));
+        return
+            keccak256(
+                abi.encode(
+                    PREFIX_CONTRACT_CALL_APPROVED,
+                    commandId,
+                    sourceChain,
+                    sourceAddress,
+                    contractAddress,
+                    payloadHash
+                )
+            );
     }
 
     function _getIsContractCallApprovedWithMintKey(
@@ -471,7 +538,9 @@ contract MockGateway is IAxelarGateway {
         address contractAddress,
         bytes32 payloadHash
     ) internal {
-        bools[_getIsContractCallApprovedKey(commandId, sourceChain, sourceAddress, contractAddress, payloadHash)] = true;
+        bools[
+            _getIsContractCallApprovedKey(commandId, sourceChain, sourceAddress, contractAddress, payloadHash)
+        ] = true;
     }
 
     function _setContractCallApprovedWithMint(
@@ -484,10 +553,17 @@ contract MockGateway is IAxelarGateway {
         uint256 amount
     ) internal {
         bools[
-            _getIsContractCallApprovedWithMintKey(commandId, sourceChain, sourceAddress, contractAddress, payloadHash, symbol, amount)
+            _getIsContractCallApprovedWithMintKey(
+                commandId,
+                sourceChain,
+                sourceAddress,
+                contractAddress,
+                payloadHash,
+                symbol,
+                amount
+            )
         ] = true;
     }
-
 
     /*****************\
     |* Unimplemented *|
@@ -509,7 +585,7 @@ contract MockGateway is IAxelarGateway {
 
     function setTokenDailyMintLimits(string[] calldata symbols, uint256[] calldata limits) external override {}
 
-    function setup(bytes calldata params) external override{}
+    function setup(bytes calldata params) external override {}
 
     function upgrade(
         address newImplementation,

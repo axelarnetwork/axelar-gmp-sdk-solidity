@@ -4,9 +4,9 @@ pragma solidity 0.8.9;
 
 import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
 import { IERC20 } from '../interfaces/IERC20.sol';
-import { IAxelarExecutable } from '../interfaces/IAxelarExecutable.sol';
+import { IAxelarForecallable } from '../interfaces/IAxelarForecallable.sol';
 
-abstract contract AxelarForecallable is IAxelarExecutable {
+abstract contract AxelarForecallable is IAxelarForecallable {
     error AlreadyForecalled();
     error TransferFailed();
 
@@ -33,7 +33,7 @@ abstract contract AxelarForecallable is IAxelarExecutable {
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
-    ) public view returns (address forecaller) {
+    ) public view override returns (address forecaller) {
         bytes32 pos = keccak256(abi.encode(sourceChain, sourceAddress, payload, FORECALLERS_SALT));
         // solhint-disable-next-line no-inline-assembly
         assembly {
@@ -89,7 +89,7 @@ abstract contract AxelarForecallable is IAxelarExecutable {
         bytes calldata payload,
         string calldata symbol,
         uint256 amount
-    ) public view returns (address forecaller) {
+    ) public view override returns (address forecaller) {
         bytes32 pos = keccak256(abi.encode(sourceChain, sourceAddress, payload, symbol, amount, FORECALLERS_SALT));
         // solhint-disable-next-line no-inline-assembly
         assembly {
@@ -119,7 +119,7 @@ abstract contract AxelarForecallable is IAxelarExecutable {
         string calldata tokenSymbol,
         uint256 amount,
         address forecaller
-    ) external {
+    ) external override {
         address token = gateway().tokenAddresses(tokenSymbol);
         uint256 amountPost = amountPostFee(amount, payload);
         _safeTransferFrom(token, msg.sender, amountPost);
@@ -177,7 +177,7 @@ abstract contract AxelarForecallable is IAxelarExecutable {
     function amountPostFee(
         uint256 amount,
         bytes calldata /*payload*/
-    ) public virtual returns (uint256) {
+    ) public virtual override returns (uint256) {
         return amount;
     }
 

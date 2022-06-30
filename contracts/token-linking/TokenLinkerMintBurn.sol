@@ -3,16 +3,22 @@
 pragma solidity 0.8.9;
 
 import { IERC20MintableBurnable } from '../interfaces/IERC20MintableBurnable.sol';
+import { TokenLinker } from './TokenLinker.sol';
 
-contract TokenMintBurn {
+contract TokenLinkerMintBurn is TokenLinker {
     error MintFailed();
     error BurnFailed();
 
-    function _safeMint(
-        address tokenAddress,
+    address immutable public tokenAddress;
+
+    constructor(address gatewayAddress_, address tokenAddress_) TokenLinker(gatewayAddress_) {
+        tokenAddress = tokenAddress_;
+    }
+
+    function _giveToken(
         address to,
         uint256 amount
-    ) internal {
+    ) internal override {
         (bool success, bytes memory returnData) = tokenAddress.call(
             abi.encodeWithSelector(IERC20MintableBurnable.mint.selector, to, amount)
         );
@@ -21,11 +27,10 @@ contract TokenMintBurn {
         if (!transferred || tokenAddress.code.length == 0) revert MintFailed();
     }
 
-    function _safeBurn(
-        address tokenAddress,
+    function _takeToken(
         address from,
         uint256 amount
-    ) internal {
+    ) internal override {
         (bool success, bytes memory returnData) = tokenAddress.call(
             abi.encodeWithSelector(IERC20MintableBurnable.burn.selector, from, address(this), amount)
         );

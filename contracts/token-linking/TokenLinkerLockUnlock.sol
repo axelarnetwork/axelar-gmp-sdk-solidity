@@ -3,29 +3,34 @@
 pragma solidity 0.8.9;
 
 import { IERC20 } from '../interfaces/IERC20.sol';
+import { TokenLinker } from './TokenLinker.sol';
 
-contract TokenLockUnlock {
+contract TokenLinkerLockUnlock is TokenLinker {
     error TransferFailed();
     error TransferFromFailed();
 
-    function _safeTransfer(
-        address tokenAddress,
-        address receiver,
+    address immutable public tokenAddress;
+
+    constructor(address gatewayAddress_, address tokenAddress_) TokenLinker(gatewayAddress_) {
+        tokenAddress = tokenAddress_;
+    }
+
+    function _giveToken(
+        address to,
         uint256 amount
-    ) internal {
+    ) internal override {
         (bool success, bytes memory returnData) = tokenAddress.call(
-            abi.encodeWithSelector(IERC20.transfer.selector, receiver, amount)
+            abi.encodeWithSelector(IERC20.transfer.selector, to, amount)
         );
         bool transferred = success && (returnData.length == uint256(0) || abi.decode(returnData, (bool)));
 
         if (!transferred || tokenAddress.code.length == 0) revert TransferFailed();
     }
 
-    function _safeTransferFrom(
-        address tokenAddress,
+    function _takeToken(
         address from,
         uint256 amount
-    ) internal {
+    ) internal override {
         (bool success, bytes memory returnData) = tokenAddress.call(
             abi.encodeWithSelector(IERC20.transferFrom.selector, from, address(this), amount)
         );

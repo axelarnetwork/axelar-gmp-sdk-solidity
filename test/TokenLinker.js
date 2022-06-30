@@ -6,21 +6,21 @@ const {
   utils: { defaultAbiCoder, keccak256, id },
 } = require('ethers');
 const { deployContract, MockProvider, solidity } = require('ethereum-waffle');
-const { deployAndInitContractConstant } = require('../index.js');
+const { deployUpgradable } = require('../index.js');
 chai.use(solidity);
 const { expect } = chai;
 
 const AxelarGateway = require('../build/MockGateway.json');
 const BurnableMintableCappedERC20 = require('../build/BurnableMintableCappedERC20.json');
 const ConstAddressDeployer = require('../build/ConstAddressDeployer.json');
+const TokenLinkerProxy = require('../build/TokenLinkerProxy.json');
+const TokenLinkerLockUnlock = require('../build/TokenLinkerLockUnlockExample.json');
+const TokenLinkerMintBurn = require('../build/TokenLinkerMintBurnExample.json');
+const TokenLinkerNative = require('../build/TokenLinkerNativeExample.json');
 
 const getRandomID = () => id(Math.floor(Math.random() * 1e10).toString());
 
-const LOCK_UNLOCK = 0;
-const MINT_BURN = 1;
-const NATIVE = 2;
-
-describe('GeneralMessagePassing', () => {
+describe('TokenLinker', () => {
   const [
     ownerWallet,
     operatorWallet,
@@ -40,22 +40,12 @@ describe('GeneralMessagePassing', () => {
     adminWallet5,
     adminWallet6,
   ];
-  const threshold = 3;
 
   let gateway;
   let tokenLinker;
   let token;
+  let constAddressDeployer
 
-  const deployTokenLinker = async (tokenType) => {
-    tokenLinker = await deployAndInitContractConstant(
-      constAddressDeployer.address,
-      ownerWallet,
-      TokenLinkerImplementation,
-      'token-linker',
-      [],
-      [gateway.address, tokenType, token.address],
-    );
-  };
   const sourceChain = 'chainA';
   const destinationChain = 'chainB';
   const tokenName = 'testToken';
@@ -65,7 +55,7 @@ describe('GeneralMessagePassing', () => {
 
   beforeEach(async () => {
     gateway = await deployContract(ownerWallet, AxelarGateway);
-    const constAddressDeployer = await deployContract(
+    constAddressDeployer = await deployContract(
       ownerWallet,
       ConstAddressDeployer,
     );
@@ -76,18 +66,39 @@ describe('GeneralMessagePassing', () => {
       decimals,
       capacity,
     ]);
+  });
 
-    describe('lock unlock', () => {
-      beforeEach(async () => {
-        await deployTokenLinker(LOCK_UNLOCK);
-      });
-      it('should lock token', async () => {
-        const amount = 1e6;
-        await token.connect(userWallet).mint(amount);
-        await token.connect(userWallet).approve(tokenLinker.address, amount);
-        expect(tokenLinker.connect(userWallet).sendToken('destination', userWallet.address, amount))
-            .to.emmit(token, 'Transfer')
-      });
+  describe('Lock-Unlock', () => {
+    beforeEach(async () => {
+      tokenLinker = await deployUpgradable(
+        constAddressDeployer.address, 
+        ownerWallet, 
+        TokenLinkerLockUnlock, 
+        TokenLinkerProxy,
+        [gateway.address, token.address],
+      );
+    });
+    it('should lock token', async () => {
+      const amount = 1e6;
+      await token.connect(userWallet).mint(amount);
+      await token.connect(userWallet).approve(tokenLinker.address, amount);
+      const payload = defaultAbiCoder.encode(['address', 'uint256'], [userWallet.address, amount]);
+      expect(tokenLinker.connect(userWallet).sendToken(destinationChain, userWallet.address, amount))
+          .to.emmit(token, 'Transfer')
+          .withArgs(
+            userWallet.address,
+            tokenLinker.address,
+            amount,
+          )
+          .and.to.emmit(gateway, 'CallContract')
+          .withArgs(
+            tokenLinker.address,
+            destinationChain,
+            tokenLinker.address,
+            payloadHash,
+            payload,
+          )
     });
   });
+
 });

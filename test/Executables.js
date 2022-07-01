@@ -14,7 +14,7 @@ const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000';
 const ROLE_OWNER = 1;
 
 const AxelarGateway = require('../build/MockGateway.json');
-const MintableCappedERC20 = require('../build/MintableCappedERC20.json');
+const MintableCappedERC20 = require('../build/ERC20MintableBurnable.json');
 const SourceChainSwapCaller = require('../build/SourceChainSwapCaller.json');
 const DestinationChainSwapExecutable = require('../build/DestinationChainSwapExecutable.json');
 const DestinationChainSwapForecallable = require('../build/DestinationChainSwapForecallable.json');

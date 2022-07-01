@@ -11,7 +11,7 @@ import { TokenLinkerNative } from '../../token-linking/TokenLinkerNative.sol';
 abstract contract TokenLinkerSender is TokenLinker {
     using AddressToString for address;
     
-    function sendToken(string memory destinationChain, address to, uint256 amount) external {
+    function sendToken(string memory destinationChain, address to, uint256 amount) external payable {
         _takeToken(msg.sender, amount);
         bytes memory payload = abi.encode(to, amount);
         gateway().callContract(

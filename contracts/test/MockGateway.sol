@@ -3,11 +3,10 @@
 pragma solidity 0.8.9;
 
 import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
-import { IERC20 } from './interfaces/IERC20.sol';
-import { IBurnableMintableCappedERC20 } from './interfaces/IBurnableMintableCappedERC20.sol';
+import { IERC20 } from '../interfaces/IERC20.sol';
+import { IERC20MintableBurnable } from '../interfaces/IERC20MintableBurnable.sol';
 
-import { DepositHandler } from './DepositHandler.sol';
-import { BurnableMintableCappedERC20 } from './BurnableMintableCappedERC20.sol';
+import { ERC20MintableBurnable } from './ERC20MintableBurnable.sol';
 
 contract MockGateway is IAxelarGateway {
     enum TokenType {
@@ -234,31 +233,16 @@ contract MockGateway is IAxelarGateway {
     }
 
     function burnToken(bytes calldata params, bytes32) external {
-        (string memory symbol, bytes32 salt) = abi.decode(params, (string, bytes32));
+        (string memory symbol, address account, uint256 amount) = abi.decode(params, (string, address, uint256));
 
         address tokenAddress = tokenAddresses(symbol);
 
         if (tokenAddress == address(0)) revert TokenDoesNotExist(symbol);
 
         if (_getTokenType(symbol) == TokenType.External) {
-            DepositHandler depositHandler = new DepositHandler{ salt: salt }();
-
-            (bool success, bytes memory returnData) = depositHandler.execute(
-                tokenAddress,
-                abi.encodeWithSelector(
-                    IERC20.transfer.selector,
-                    address(this),
-                    IERC20(tokenAddress).balanceOf(address(depositHandler))
-                )
-            );
-
-            if (!success || (returnData.length != uint256(0) && !abi.decode(returnData, (bool))))
-                revert BurnFailed(symbol);
-
-            // NOTE: `depositHandler` must always be destroyed in the same runtime context that it is deployed.
-            depositHandler.destroy(address(this));
+            IERC20(tokenAddress).transferFrom(account, address(this), amount);
         } else {
-            IBurnableMintableCappedERC20(tokenAddress).burn(salt);
+            IERC20MintableBurnable(tokenAddress).burn(account, amount);
         }
     }
 
@@ -347,10 +331,10 @@ contract MockGateway is IAxelarGateway {
         string memory name,
         string memory symbol,
         uint8 decimals,
-        uint256 cap,
+        uint256 /*cap*/,
         bytes32 salt
     ) internal returns (address tokenAddress) {
-        tokenAddress = address(new BurnableMintableCappedERC20{ salt: salt }(name, symbol, decimals, cap));
+        tokenAddress = address(new ERC20MintableBurnable{ salt: salt }(name, symbol, decimals));
     }
 
     function _mintToken(
@@ -372,7 +356,7 @@ contract MockGateway is IAxelarGateway {
 
             if (!success) revert MintFailed(symbol);
         } else {
-            IBurnableMintableCappedERC20(tokenAddress).mint(account, amount);
+            IERC20MintableBurnable(tokenAddress).mint(account, amount);
         }
     }
 
@@ -403,27 +387,13 @@ contract MockGateway is IAxelarGateway {
         if (tokenType == TokenType.InternalBurnableFrom) {
             burnSuccess = _callERC20Token(
                 tokenAddress,
-                abi.encodeWithSelector(IBurnableMintableCappedERC20.burnFrom.selector, sender, amount)
+                abi.encodeWithSelector(IERC20MintableBurnable.burn.selector, sender, amount)
             );
 
             if (!burnSuccess) revert BurnFailed(symbol);
 
             return;
         }
-
-        burnSuccess = _callERC20Token(
-            tokenAddress,
-            abi.encodeWithSelector(
-                IERC20.transferFrom.selector,
-                sender,
-                IBurnableMintableCappedERC20(tokenAddress).depositAddress(bytes32(0)),
-                amount
-            )
-        );
-
-        if (!burnSuccess) revert BurnFailed(symbol);
-
-        IBurnableMintableCappedERC20(tokenAddress).burn(bytes32(0));
     }
 
     /********************\

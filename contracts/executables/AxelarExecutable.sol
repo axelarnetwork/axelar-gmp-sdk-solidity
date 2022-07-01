@@ -14,7 +14,7 @@ abstract contract AxelarExecutable is IAxelarExecutable {
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
-    ) external override {
+    ) external override {if(bytes(sourceAddress).length != 42) revert('start');
         bytes32 payloadHash = keccak256(payload);
         if (!gateway().validateContractCall(commandId, sourceChain, sourceAddress, payloadHash))
             revert NotApprovedByGateway();
@@ -45,16 +45,16 @@ abstract contract AxelarExecutable is IAxelarExecutable {
     }
 
     function _execute(
-        string memory sourceChain,
-        string memory sourceAddress,
+        string calldata sourceChain,
+        string calldata sourceAddress,
         bytes calldata payload
     ) internal virtual {}
 
     function _executeWithToken(
-        string memory sourceChain,
-        string memory sourceAddress,
+        string calldata sourceChain,
+        string calldata sourceAddress,
         bytes calldata payload,
-        string memory tokenSymbol,
+        string calldata tokenSymbol,
         uint256 amount
     ) internal virtual {}
 }

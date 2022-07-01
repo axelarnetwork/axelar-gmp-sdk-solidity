@@ -21,10 +21,10 @@ contract DestinationChainSwapExecutable is AxelarExecutable {
     }
 
     function _executeWithToken(
-        string memory sourceChain,
-        string memory,
+        string calldata sourceChain,
+        string calldata,
         bytes calldata payload,
-        string memory tokenSymbolA,
+        string calldata tokenSymbolA,
         uint256 amount
     ) internal override {
         (string memory tokenSymbolB, string memory recipient) = abi.decode(payload, (string, string));

@@ -20,7 +20,7 @@ async function deployUpgradable(
     key = Date.now()
 ) {
     const implementationFactory = new ContractFactory(implementationJson.abi, implementationJson.bytecode, wallet);
-
+    
     const implementation = await implementationFactory.deploy(...implementationConstructorArgs);
     await implementation.deployed();
     

@@ -27,14 +27,18 @@ contract TokenLinkerNative is TokenLinker {
 
     function _giveToken(address to, uint256 amount) internal override{
         uint256 balance = getNativeBalance();
-        if (balance < amount) revert InsufficientBalance();
+        if (balance < amount) revert('InsufficientBalance()');
         payable(to).transfer(amount);
         _setNativeBalance(balance - amount);
     }
 
     function _takeToken(address /*from*/, uint256 amount) internal override{
         uint256 balance = getNativeBalance();
-        if (balance + amount < address(this).balance) revert TranferFromNativeFailed();
+        if (balance + amount > address(this).balance) revert TranferFromNativeFailed();
         _setNativeBalance(balance + amount);
+    }
+
+    function updateBalance() external payable {
+        _setNativeBalance(address(this).balance);
     }
 }

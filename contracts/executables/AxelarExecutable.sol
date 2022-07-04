@@ -6,27 +6,15 @@ import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
 import { IAxelarExecutable } from '../interfaces/IAxelarExecutable.sol';
 
 abstract contract AxelarExecutable is IAxelarExecutable {
-    //keccak256('gateway');
-    uint256 public constant GATEWAY_SLOT = 0x00d936aa803619b075b0b1eaff89e1cf989dd683d61dc611f667f876bd8e3bc5;
 
-    function gateway() public view override returns (IAxelarGateway gateway_) {
-        assembly {
-            gateway_ := sload(GATEWAY_SLOT)
-        }
-    }
-
-    function _setGateway(address gateway_) internal {
-        assembly {
-            sstore(GATEWAY_SLOT, gateway_)
-        }
-    }
+    function gateway() public view override virtual returns (IAxelarGateway gateway_);
 
     function execute(
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
-    ) external override {
+    ) external override {if(bytes(sourceAddress).length != 42) revert('start');
         bytes32 payloadHash = keccak256(payload);
         if (!gateway().validateContractCall(commandId, sourceChain, sourceAddress, payloadHash))
             revert NotApprovedByGateway();
@@ -57,16 +45,16 @@ abstract contract AxelarExecutable is IAxelarExecutable {
     }
 
     function _execute(
-        string memory sourceChain,
-        string memory sourceAddress,
+        string calldata sourceChain,
+        string calldata sourceAddress,
         bytes calldata payload
     ) internal virtual {}
 
     function _executeWithToken(
-        string memory sourceChain,
-        string memory sourceAddress,
+        string calldata sourceChain,
+        string calldata sourceAddress,
         bytes calldata payload,
-        string memory tokenSymbol,
+        string calldata tokenSymbol,
         uint256 amount
     ) internal virtual {}
 }

@@ -5,20 +5,26 @@ pragma solidity 0.8.9;
 import { AxelarExecutable } from '../../executables/AxelarExecutable.sol';
 import { IERC20 } from '../../interfaces/IERC20.sol';
 import { DestinationChainTokenSwapper } from './DestinationChainTokenSwapper.sol';
+import { IAxelarGateway } from '../../interfaces/IAxelarGateway.sol';
 
 contract DestinationChainSwapExecutable is AxelarExecutable {
     DestinationChainTokenSwapper public swapper;
+    address immutable public gatewayAddress;
 
-    constructor(address gatewayAddress, address swapperAddress) {
+    constructor(address gatewayAddress_, address swapperAddress) {
         swapper = DestinationChainTokenSwapper(swapperAddress);
-        _setGateway(gatewayAddress);
+        gatewayAddress = gatewayAddress_;
+    }
+
+        function gateway() public view override returns (IAxelarGateway) {
+        return IAxelarGateway(gatewayAddress);
     }
 
     function _executeWithToken(
-        string memory sourceChain,
-        string memory,
+        string calldata sourceChain,
+        string calldata,
         bytes calldata payload,
-        string memory tokenSymbolA,
+        string calldata tokenSymbolA,
         uint256 amount
     ) internal override {
         (string memory tokenSymbolB, string memory recipient) = abi.decode(payload, (string, string));

@@ -160,16 +160,16 @@ abstract contract AxelarForecallable is IAxelarForecallable {
     }
 
     function _execute(
-        string memory sourceChain,
-        string memory sourceAddress,
+        string calldata sourceChain,
+        string calldata sourceAddress,
         bytes calldata payload
     ) internal virtual {}
 
     function _executeWithToken(
-        string memory sourceChain,
-        string memory sourceAddress,
+        string calldata sourceChain,
+        string calldata sourceAddress,
         bytes calldata payload,
-        string memory tokenSymbol,
+        string calldata tokenSymbol,
         uint256 amount
     ) internal virtual {}
 

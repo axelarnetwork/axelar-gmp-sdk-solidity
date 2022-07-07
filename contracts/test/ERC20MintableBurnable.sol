@@ -7,11 +7,12 @@ import { IERC20MintableBurnable } from '../interfaces/IERC20MintableBurnable.sol
 import { ERC20 } from './ERC20.sol';
 
 contract ERC20MintableBurnable is ERC20, IERC20MintableBurnable {
+
     constructor(
-        string memory name,
-        string memory symbol,
-        uint8 decimals
-    ) ERC20(name, symbol, decimals) {}
+        string memory name_,
+        string memory symbol_,
+        uint8 decimals_
+    ) ERC20(name_, symbol_, decimals_) {}
 
     function burn(address account, uint256 amount) external {
         _approve(account, msg.sender, allowance[account][msg.sender] - amount);

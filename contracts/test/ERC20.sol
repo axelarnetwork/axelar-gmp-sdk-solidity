@@ -206,7 +206,7 @@ contract ERC20 is IERC20 {
      */
     function _burn(address account, uint256 amount) internal virtual {
         if (account == address(0)) revert InvalidAccount();
-        
+
         _beforeTokenTransfer(account, address(0), amount);
 
         balanceOf[account] -= amount;

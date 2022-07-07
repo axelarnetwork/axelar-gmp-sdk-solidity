@@ -17,8 +17,8 @@ const {
   predictContractConstant,
 } = require('../index.js');
 const ConstAddressDeployer = require('../dist/ConstAddressDeployer.json');
-const BurnableMintableCappedERC20 = require('../build/BurnableMintableCappedERC20.json');
-const BurnableMintableCappedERC20Init = require('../build/BurnableMintableCappedERC20Init.json');
+const BurnableMintableCappedERC20 = require('../build/ERC20MintableBurnable.json');
+const BurnableMintableCappedERC20Init = require('../build/ERC20MintableBurnableInit.json');
 
 const { it } = require('mocha');
 
@@ -28,7 +28,6 @@ describe('ConstAddressDeployer', () => {
   const name = 'test';
   const symbol = 'test';
   const decimals = 16;
-  const capacity = 0;
 
   beforeEach(async () => {
     deployer = (await deployContract(deployerWallet, ConstAddressDeployer))
@@ -43,20 +42,19 @@ describe('ConstAddressDeployer', () => {
         userWallet,
         BurnableMintableCappedERC20,
         key,
-        [name, symbol, decimals, capacity],
+        [name, symbol, decimals],
       );
       const contract = await deployContractConstant(
         deployer,
         userWallet,
         BurnableMintableCappedERC20,
         key,
-        [name, symbol, decimals, capacity],
+        [name, symbol, decimals],
       );
       expect(contract.address).to.equal(address);
       expect(await contract.name()).to.equal(name);
       expect(await contract.symbol()).to.equal(symbol);
       expect(await contract.decimals()).to.equal(decimals);
-      expect(await contract.cap()).to.equal(capacity);
     });
 
     it('should deploy to the predicted address even with a different nonce', async () => {
@@ -66,14 +64,14 @@ describe('ConstAddressDeployer', () => {
         userWallet,
         BurnableMintableCappedERC20,
         key,
-        [name, symbol, decimals, capacity],
+        [name, symbol, decimals],
       );
       const contract = await deployContractConstant(
         deployer,
         userWallet,
         BurnableMintableCappedERC20,
         key,
-        [name, symbol, decimals, capacity],
+        [name, symbol, decimals],
       );
       // Send an empty transaction to increase nonce.
       await userWallet.sendTransaction({
@@ -84,7 +82,6 @@ describe('ConstAddressDeployer', () => {
       expect(await contract.name()).to.equal(name);
       expect(await contract.symbol()).to.equal(symbol);
       expect(await contract.decimals()).to.equal(decimals);
-      expect(await contract.cap()).to.equal(capacity);
     });
 
     it('should deploy the same contract twice to different addresses with different salts', async () => {
@@ -97,7 +94,7 @@ describe('ConstAddressDeployer', () => {
           userWallet,
           BurnableMintableCappedERC20,
           key,
-          [name, symbol, decimals, capacity],
+          [name, symbol, decimals],
         );
         addresses.push(address);
         const contract = await deployContractConstant(
@@ -105,13 +102,12 @@ describe('ConstAddressDeployer', () => {
           userWallet,
           BurnableMintableCappedERC20,
           key,
-          [name, symbol, decimals, capacity],
+          [name, symbol, decimals],
         );
         expect(await contract.address).to.equal(address);
         expect(await contract.name()).to.equal(name);
         expect(await contract.symbol()).to.equal(symbol);
         expect(await contract.decimals()).to.equal(decimals);
-        expect(await contract.cap()).to.equal(capacity);
       }
 
       expect(addresses[0]).to.not.equal(addresses[1]);
@@ -126,21 +122,20 @@ describe('ConstAddressDeployer', () => {
         userWallet,
         BurnableMintableCappedERC20Init,
         key,
-        [decimals, capacity],
+        [decimals],
       );
       const contract = await deployAndInitContractConstant(
         deployer,
         userWallet,
         BurnableMintableCappedERC20Init,
         key,
-        [decimals, capacity],
+        [decimals],
         [name, symbol],
       );
       expect(await contract.address).to.equal(address);
       expect(await contract.name()).to.equal(name);
       expect(await contract.symbol()).to.equal(symbol);
       expect(await contract.decimals()).to.equal(decimals);
-      expect(await contract.cap()).to.equal(capacity);
     });
   });
 });

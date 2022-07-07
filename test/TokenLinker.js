@@ -196,8 +196,6 @@ describe('TokenLinker', () => {
       const commandId = getRandomID();
       const txHash = getRandomID();
       const txIndex = 0;
-
-      await (await token.connect(userWallet).mint(tokenLinker.address, amount)).wait();
       
       await expect(approve(payloadHash, commandId, txHash, txIndex))
         .to.emit(gateway, 'ContractCallApproved')

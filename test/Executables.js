@@ -76,14 +76,12 @@ describe('GeneralMessagePassing', () => {
       nameA,
       symbolA,
       decimals,
-      capacity,
     ]);
 
     tokenB = await deployContract(ownerWallet, MintableCappedERC20, [
       nameB,
       symbolB,
       decimals,
-      capacity,
     ]);
     await sourceChainGateway.deployToken(
       defaultAbiCoder.encode(

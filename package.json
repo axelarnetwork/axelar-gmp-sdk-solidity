@@ -1,5 +1,5 @@
 {
-  "name": "axelar-utils-solidity",
+  "name": "@axelar-network/axelar-utils-solidity",
   "version": "1.0.0",
   "description": "Solidity libraries and utilities provided by Axelar.",
   "main": "index.js",

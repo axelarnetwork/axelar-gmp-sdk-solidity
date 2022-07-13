@@ -6,7 +6,7 @@
   "scripts": {
     "test": "mocha",
     "test-evm-versions": "bash test/test-evm-versions.bash",
-    "build": "rm -rf build && waffle waffle.json && cp build/ConstAddressDeployer.json dist",
+    "build": "rm -rf build && waffle waffle.json && cp build/ConstAddressDeployer.json dist && cp build/IUpgradable.json dist",
     "lint": "solhint 'contracts/**/*.sol' && eslint 'test/**/*.js'",
     "prettier": "prettier --write 'test/**/*.js' && prettier --write 'contracts/**/*.sol'",
     "flatten": "rm -rf build/flattened && waffle flatten waffle.json"

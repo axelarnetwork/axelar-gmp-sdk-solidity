@@ -7,7 +7,7 @@ const {
 } = require('ethers');
 const { deployAndInitContractConstant } = require('./constAddressDeployer');
 
-const IUpgradable = require('../build/IUpgradable.json');
+const IUpgradable = require('../dist/IUpgradable.json');
 
 async function deployUpgradable(
     constAddressDeployerAddress, 

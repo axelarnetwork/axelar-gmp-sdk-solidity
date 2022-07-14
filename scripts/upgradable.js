@@ -37,12 +37,18 @@ async function deployUpgradable(
     return new Contract(proxy.address, implementationJson.abi, wallet);
 }
 
-async function upgradeUpgradable(proxyAddress, contractJson, setupParams, wallet) {
+async function upgradeUpgradable(
+    proxyAddress, 
+    wallet,
+    contractJson, 
+    implementationConstructorArgs = [], 
+    setupParams = '0x', 
+) {
     const proxy = new Contract(proxyAddress, IUpgradable.abi, wallet);
 
     const implementationFactory = new ContractFactory(contractJson.abi, contractJson.bytecode, wallet);
 
-    const implementation = await implementationFactory.deploy();
+    const implementation = await implementationFactory.deploy(...implementationConstructorArgs);
     await implementation.deployed();
 
     const implementationCode = await wallet.provider.getCode(implementation.address);

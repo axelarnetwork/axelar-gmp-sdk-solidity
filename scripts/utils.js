@@ -1,5 +1,5 @@
-import { ContractFactory } from 'ethers';
-import http from 'http';
+const { ContractFactory } = require('ethers');
+const http = require('http');
 const { outputJsonSync } = require('fs-extra');
 
 const deployContract = async (wallet, contractJson, args = [], options = {}) => {

@@ -13,14 +13,16 @@
   },
   "author": "",
   "license": "ISC",
+  "dependencies": {
+    "ganache": "^7.3.2",
+    "ethers": "^5.5.2"
+  },
   "devDependencies": {
     "@openzeppelin/contracts": "^4.7.0",
     "chai": "^4.3.4",
     "eslint": "^8.4.1",
     "eslint-config-richardpringle": "^2.0.0",
     "ethereum-waffle": "^3.4.4",
-    "ethers": "^5.5.2",
-    "ganache": "^7.3.2",
     "hardhat": "^2.9.9",
     "hardhat-gas-reporter": "^1.0.8",
     "lodash": "^4.17.21",

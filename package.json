@@ -15,7 +15,8 @@
   "license": "ISC",
   "dependencies": {
     "ganache": "^7.3.2",
-    "ethers": "^5.5.2"
+    "ethers": "^5.5.2",
+    "fs-extra": "^10.1.0"
   },
   "devDependencies": {
     "@openzeppelin/contracts": "^4.7.0",

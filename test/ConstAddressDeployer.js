@@ -1,26 +1,17 @@
 'use strict';
 
 const chai = require('chai');
-const {
-  Contract,
-  ContractFactory,
-  utils: { keccak256, defaultAbiCoder },
-} = require('ethers');
 const { deployContract, MockProvider, solidity } = require('ethereum-waffle');
 chai.use(solidity);
 const { expect } = chai;
 const {
-  estimateGasForDeploy,
-  estimateGasForDeployAndInit,
   deployContractConstant,
   deployAndInitContractConstant,
   predictContractConstant,
 } = require('../index.js');
 const ConstAddressDeployer = require('../dist/ConstAddressDeployer.json');
-const BurnableMintableCappedERC20 = require('../build/ERC20MintableBurnable.json');
-const BurnableMintableCappedERC20Init = require('../build/ERC20MintableBurnableInit.json');
-
-const { it } = require('mocha');
+const BurnableMintableCappedERC20 = require('../artifacts/contracts/test/ERC20MintableBurnable.sol/ERC20MintableBurnable.json');
+const BurnableMintableCappedERC20Init = require('../artifacts/contracts/test/ERC20MintableBurnableInit.sol/ERC20MintableBurnableInit.json');
 
 describe('ConstAddressDeployer', () => {
   const [deployerWallet, userWallet] = new MockProvider().getWallets();

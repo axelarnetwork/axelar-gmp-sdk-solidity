@@ -9,16 +9,13 @@ contract NftLinkerLockUnlock is NftLinker {
     error TransferFailed();
     error TransferFromFailed();
 
-    address immutable public operatorAddress;
+    address public immutable operatorAddress;
 
     constructor(address gatewayAddress_, address operatorAddress_) NftLinker(gatewayAddress_) {
         operatorAddress = operatorAddress_;
     }
 
-    function _giveNft(
-        address to,
-        uint256 tokenId
-    ) internal override {
+    function _giveNft(address to, uint256 tokenId) internal override {
         (bool success, bytes memory returnData) = operatorAddress.call(
             abi.encodeWithSelector(IERC721.transferFrom.selector, address(this), to, tokenId)
         );
@@ -27,10 +24,7 @@ contract NftLinkerLockUnlock is NftLinker {
         if (!transferred || operatorAddress.code.length == 0) revert TransferFailed();
     }
 
-    function _takeNft(
-        address from,
-        uint256 tokenId
-    ) internal override {
+    function _takeNft(address from, uint256 tokenId) internal override {
         (bool success, bytes memory returnData) = operatorAddress.call(
             abi.encodeWithSelector(IERC721.transferFrom.selector, from, address(this), tokenId)
         );

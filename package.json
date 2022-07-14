@@ -4,9 +4,9 @@
   "description": "Solidity libraries and utilities provided by Axelar.",
   "main": "index.js",
   "scripts": {
-    "test": "mocha",
-    "test-evm-versions": "bash test/test-evm-versions.bash",
-    "build": "rm -rf build && waffle waffle.json && cp build/ConstAddressDeployer.json dist && cp build/IUpgradable.json dist",
+    "test": "npx hardhat test",
+    "copyartifacts": "rm -rf dist/** && cp artifacts/contracts/ConstAddressDeployer.sol/ConstAddressDeployer.json dist/ && cp artifacts/contracts/interfaces/IUpgradable.sol/IUpgradable.json dist/",
+    "build": "rm -rf artifacts && hardhat compile && npm run copyartifacts",
     "lint": "solhint 'contracts/**/*.sol' && eslint 'test/**/*.js'",
     "prettier": "prettier --write 'test/**/*.js' && prettier --write 'contracts/**/*.sol'",
     "flatten": "rm -rf build/flattened && waffle flatten waffle.json"
@@ -14,22 +14,23 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@openzeppelin/contracts": "^4.7.0",
     "chai": "^4.3.4",
     "eslint": "^8.4.1",
     "eslint-config-richardpringle": "^2.0.0",
-    "ethereum-waffle": "^3.4.0",
+    "ethereum-waffle": "^3.4.4",
+    "ethers": "^5.5.2",
+    "ganache": "^7.3.2",
+    "hardhat": "^2.9.9",
+    "hardhat-gas-reporter": "^1.0.8",
     "lodash": "^4.17.21",
     "mocha": "^9.1.3",
     "prettier": "^2.5.1",
     "prettier-plugin-solidity": "^1.0.0-beta.19",
-    "solhint": "^3.3.6"
+    "solhint": "^3.3.6",
+    "solidity-coverage": "^0.7.21"
   },
   "engines": {
     "node": ">=14"
-  },
-  "dependencies": {
-    "@openzeppelin/contracts": "^4.7.0",
-    "ethers": "^5.5.2",
-    "ganache": "^7.3.0"
   }
 }

@@ -331,7 +331,7 @@ contract MockGateway is IAxelarGateway {
         string memory name,
         string memory symbol,
         uint8 decimals,
-        uint256 /*cap*/,
+        uint256, /*cap*/
         bytes32 salt
     ) internal returns (address tokenAddress) {
         tokenAddress = address(new ERC20MintableBurnable{ salt: salt }(name, symbol, decimals));

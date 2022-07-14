@@ -10,36 +10,21 @@ const { deployUpgradable } = require('../index.js');
 chai.use(solidity);
 const { expect } = chai;
 
-const AxelarGateway = require('../build/MockGateway.json');
-const ERC20MintableBurnable = require('../build/ERC20MintableBurnable.json');
-const ConstAddressDeployer = require('../build/ConstAddressDeployer.json');
-const TokenLinkerProxy = require('../build/TokenLinkerProxy.json');
-const TokenLinkerLockUnlock = require('../build/TokenLinkerLockUnlockExample.json');
-const TokenLinkerMintBurn = require('../build/TokenLinkerMintBurnExample.json');
-const TokenLinkerNative = require('../build/TokenLinkerNativeExample.json');
+const AxelarGateway = require('../artifacts/contracts/test/MockGateway.sol/MockGateway.json');
+const ERC20MintableBurnable = require('../artifacts/contracts/test/ERC20MintableBurnable.sol/ERC20MintableBurnable.json');
+const ConstAddressDeployer = require('../dist/ConstAddressDeployer.json');
+const TokenLinkerProxy = require('../artifacts/contracts/token-linking/TokenLinkerProxy.sol/TokenLinkerProxy.json');
+const TokenLinkerLockUnlock = require('../artifacts/contracts/test/token-linker/TokenLinkerExamples.sol/TokenLinkerLockUnlockExample.json');
+const TokenLinkerMintBurn = require('../artifacts/contracts/test/token-linker/TokenLinkerExamples.sol/TokenLinkerMintBurnExample.json');
+const TokenLinkerNative = require('../artifacts/contracts/test/token-linker/TokenLinkerExamples.sol/TokenLinkerNativeExample.json');
 
 const getRandomID = () => id(Math.floor(Math.random() * 1e10).toString());
 
 describe('TokenLinker', () => {
   const [
     ownerWallet,
-    operatorWallet,
     userWallet,
-    adminWallet1,
-    adminWallet2,
-    adminWallet3,
-    adminWallet4,
-    adminWallet5,
-    adminWallet6,
   ] = new MockProvider().getWallets();
-  const adminWallets = [
-    adminWallet1,
-    adminWallet2,
-    adminWallet3,
-    adminWallet4,
-    adminWallet5,
-    adminWallet6,
-  ];
 
   let gateway;
   let tokenLinker;
@@ -51,18 +36,10 @@ describe('TokenLinker', () => {
   const tokenName = 'testToken';
   const tokenSymbol = 'TEST';
   const decimals = 16;
-  const capacity = 0;
 
   const approve = (payloadHash, commandId, txHash, txIndex) => {
     const approveData = defaultAbiCoder.encode(
-      [
-        'string',
-        'string',
-        'address',
-        'bytes32',
-        'bytes32',
-        'uint256',
-      ],
+      ['string', 'string', 'address', 'bytes32', 'bytes32', 'uint256'],
       [
         sourceChain,
         tokenLinker.address,
@@ -73,11 +50,8 @@ describe('TokenLinker', () => {
       ],
     );
 
-    return gateway.approveContractCall(
-        approveData,
-        commandId,
-      );
-  }
+    return gateway.approveContractCall(approveData, commandId);
+  };
 
   beforeEach(async () => {
     gateway = await deployContract(ownerWallet, AxelarGateway);
@@ -96,8 +70,8 @@ describe('TokenLinker', () => {
   describe('Lock-Unlock', () => {
     beforeEach(async () => {
       tokenLinker = await deployUpgradable(
-        constAddressDeployer.address, 
-        ownerWallet, 
+        constAddressDeployer.address,
+        ownerWallet,
         TokenLinkerLockUnlock,
         TokenLinkerProxy,
         [gateway.address, token.address],
@@ -107,34 +81,42 @@ describe('TokenLinker', () => {
       const amount = 1e6;
       await token.connect(userWallet).mint(userWallet.address, amount);
       await token.connect(userWallet).approve(tokenLinker.address, amount);
-      const payload = defaultAbiCoder.encode(['address', 'uint256'], [userWallet.address, amount]);
+      const payload = defaultAbiCoder.encode(
+        ['address', 'uint256'],
+        [userWallet.address, amount],
+      );
       const payloadHash = keccak256(payload);
-      await expect(tokenLinker.connect(userWallet).sendToken(destinationChain, userWallet.address, amount))
-          .to.emit(token, 'Transfer')
-          .withArgs(
-            userWallet.address,
-            tokenLinker.address,
-            amount,
-          )
-          .and.to.emit(gateway, 'ContractCall')
-          .withArgs(
-            tokenLinker.address,
-            destinationChain,
-            tokenLinker.address.toLowerCase(),
-            payloadHash,
-            payload,
-          )
+      await expect(
+        tokenLinker
+          .connect(userWallet)
+          .sendToken(destinationChain, userWallet.address, amount),
+      )
+        .to.emit(token, 'Transfer')
+        .withArgs(userWallet.address, tokenLinker.address, amount)
+        .and.to.emit(gateway, 'ContractCall')
+        .withArgs(
+          tokenLinker.address,
+          destinationChain,
+          tokenLinker.address.toLowerCase(),
+          payloadHash,
+          payload,
+        );
     });
     it('should unlock token', async () => {
       const amount = 1e6;
-      const payload = defaultAbiCoder.encode(['address', 'uint256'], [userWallet.address, amount]);
+      const payload = defaultAbiCoder.encode(
+        ['address', 'uint256'],
+        [userWallet.address, amount],
+      );
       const payloadHash = keccak256(payload);
       const commandId = getRandomID();
       const txHash = getRandomID();
       const txIndex = 0;
 
-      await (await token.connect(userWallet).mint(tokenLinker.address, amount)).wait();
-      
+      await (
+        await token.connect(userWallet).mint(tokenLinker.address, amount)
+      ).wait();
+
       await expect(approve(payloadHash, commandId, txHash, txIndex))
         .to.emit(gateway, 'ContractCallApproved')
         .withArgs(
@@ -146,22 +128,22 @@ describe('TokenLinker', () => {
           txHash,
           txIndex,
         );
-        
-      await expect(tokenLinker.connect(userWallet).execute(commandId, sourceChain, tokenLinker.address, payload))
-          .to.emit(token, 'Transfer')
-          .withArgs(
-            tokenLinker.address,
-            userWallet.address,
-            amount,
-          )
+
+      await expect(
+        tokenLinker
+          .connect(userWallet)
+          .execute(commandId, sourceChain, tokenLinker.address, payload),
+      )
+        .to.emit(token, 'Transfer')
+        .withArgs(tokenLinker.address, userWallet.address, amount);
     });
   });
 
   describe('Mint-Burn', () => {
     beforeEach(async () => {
       tokenLinker = await deployUpgradable(
-        constAddressDeployer.address, 
-        ownerWallet, 
+        constAddressDeployer.address,
+        ownerWallet,
         TokenLinkerMintBurn,
         TokenLinkerProxy,
         [gateway.address, token.address],
@@ -171,32 +153,38 @@ describe('TokenLinker', () => {
       const amount = 1e6;
       await token.connect(userWallet).mint(userWallet.address, amount);
       await token.connect(userWallet).approve(tokenLinker.address, amount);
-      const payload = defaultAbiCoder.encode(['address', 'uint256'], [userWallet.address, amount]);
+      const payload = defaultAbiCoder.encode(
+        ['address', 'uint256'],
+        [userWallet.address, amount],
+      );
       const payloadHash = keccak256(payload);
-      await expect(tokenLinker.connect(userWallet).sendToken(destinationChain, userWallet.address, amount))
-          .to.emit(token, 'Transfer')
-          .withArgs(
-            userWallet.address,
-            AddressZero,
-            amount,
-          )
-          .and.to.emit(gateway, 'ContractCall')
-          .withArgs(
-            tokenLinker.address,
-            destinationChain,
-            tokenLinker.address.toLowerCase(),
-            payloadHash,
-            payload,
-          )
+      await expect(
+        tokenLinker
+          .connect(userWallet)
+          .sendToken(destinationChain, userWallet.address, amount),
+      )
+        .to.emit(token, 'Transfer')
+        .withArgs(userWallet.address, AddressZero, amount)
+        .and.to.emit(gateway, 'ContractCall')
+        .withArgs(
+          tokenLinker.address,
+          destinationChain,
+          tokenLinker.address.toLowerCase(),
+          payloadHash,
+          payload,
+        );
     });
     it('should mint token', async () => {
       const amount = 1e6;
-      const payload = defaultAbiCoder.encode(['address', 'uint256'], [userWallet.address, amount]);
+      const payload = defaultAbiCoder.encode(
+        ['address', 'uint256'],
+        [userWallet.address, amount],
+      );
       const payloadHash = keccak256(payload);
       const commandId = getRandomID();
       const txHash = getRandomID();
       const txIndex = 0;
-      
+
       await expect(approve(payloadHash, commandId, txHash, txIndex))
         .to.emit(gateway, 'ContractCallApproved')
         .withArgs(
@@ -208,22 +196,22 @@ describe('TokenLinker', () => {
           txHash,
           txIndex,
         );
-        
-      await expect(tokenLinker.connect(userWallet).execute(commandId, sourceChain, tokenLinker.address, payload))
-          .to.emit(token, 'Transfer')
-          .withArgs(
-            AddressZero,
-            userWallet.address,
-            amount,
-          )
+
+      await expect(
+        tokenLinker
+          .connect(userWallet)
+          .execute(commandId, sourceChain, tokenLinker.address, payload),
+      )
+        .to.emit(token, 'Transfer')
+        .withArgs(AddressZero, userWallet.address, amount);
     });
   });
 
   describe('Native', () => {
     beforeEach(async () => {
       tokenLinker = await deployUpgradable(
-        constAddressDeployer.address, 
-        ownerWallet, 
+        constAddressDeployer.address,
+        ownerWallet,
         TokenLinkerNative,
         TokenLinkerProxy,
         [gateway.address],
@@ -231,33 +219,48 @@ describe('TokenLinker', () => {
     });
     it('should lock native token', async () => {
       const amount = 1e6;
-      const payload = defaultAbiCoder.encode(['address', 'uint256'], [userWallet.address, amount]);
+      const payload = defaultAbiCoder.encode(
+        ['address', 'uint256'],
+        [userWallet.address, amount],
+      );
       const payloadHash = keccak256(payload);
-      const linkerBalanceBefore = await tokenLinker.provider.getBalance(tokenLinker.address);
+      const linkerBalanceBefore = await tokenLinker.provider.getBalance(
+        tokenLinker.address,
+      );
       await expect(
-        tokenLinker.connect(userWallet).sendToken(destinationChain, userWallet.address, amount, {value: amount})
-      ).to.emit(gateway, 'ContractCall')
-          .withArgs(
-            tokenLinker.address,
-            destinationChain,
-            tokenLinker.address.toLowerCase(),
-            payloadHash,
-            payload,
-          );
+        tokenLinker
+          .connect(userWallet)
+          .sendToken(destinationChain, userWallet.address, amount, {
+            value: amount,
+          }),
+      )
+        .to.emit(gateway, 'ContractCall')
+        .withArgs(
+          tokenLinker.address,
+          destinationChain,
+          tokenLinker.address.toLowerCase(),
+          payloadHash,
+          payload,
+        );
 
-      const linkerBalanceAfter = await tokenLinker.provider.getBalance(tokenLinker.address);
+      const linkerBalanceAfter = await tokenLinker.provider.getBalance(
+        tokenLinker.address,
+      );
       expect(linkerBalanceAfter - linkerBalanceBefore).to.equal(amount);
     });
-    
+
     it('should unlock native token', async () => {
       const amount = 1e6;
-      const payload = defaultAbiCoder.encode(['address', 'uint256'], [userWallet.address, amount]);
+      const payload = defaultAbiCoder.encode(
+        ['address', 'uint256'],
+        [userWallet.address, amount],
+      );
       const payloadHash = keccak256(payload);
       const commandId = getRandomID();
       const txHash = getRandomID();
       const txIndex = 0;
 
-      await tokenLinker.connect(ownerWallet).updateBalance({value: amount});
+      await tokenLinker.connect(ownerWallet).updateBalance({ value: amount });
 
       await expect(approve(payloadHash, commandId, txHash, txIndex))
         .to.emit(gateway, 'ContractCallApproved')
@@ -270,12 +273,20 @@ describe('TokenLinker', () => {
           txHash,
           txIndex,
         );
-      
-      const linkerBalanceBefore = await tokenLinker.provider.getBalance(tokenLinker.address);
-     
-      await (await tokenLinker.connect(userWallet).execute(commandId, sourceChain, tokenLinker.address, payload)).wait();
-      
-      const linkerBalanceAfter = await tokenLinker.provider.getBalance(tokenLinker.address);
+
+      const linkerBalanceBefore = await tokenLinker.provider.getBalance(
+        tokenLinker.address,
+      );
+
+      await (
+        await tokenLinker
+          .connect(userWallet)
+          .execute(commandId, sourceChain, tokenLinker.address, payload)
+      ).wait();
+
+      const linkerBalanceAfter = await tokenLinker.provider.getBalance(
+        tokenLinker.address,
+      );
       expect(linkerBalanceBefore - linkerBalanceAfter).to.equal(amount);
     });
   });

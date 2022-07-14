@@ -9,6 +9,6 @@ contract TokenLinkerProxy is Proxy {
     function contractId() internal pure override returns (bytes32) {
         return keccak256('token-linker');
     }
-    
-    receive() external payable override{}
+
+    receive() external payable override {}
 }

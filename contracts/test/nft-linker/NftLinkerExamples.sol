@@ -9,22 +9,26 @@ import { NftLinkerMintBurn } from '../../nft-linking/NftLinkerMintBurn.sol';
 
 abstract contract NftLinkerSender is NftLinker {
     using AddressToString for address;
-    
-    function sendNft(string memory destinationChain, address to, uint256 tokenId) external payable {
+
+    function sendNft(
+        string memory destinationChain,
+        address to,
+        uint256 tokenId
+    ) external payable {
         _takeNft(msg.sender, tokenId);
         bytes memory payload = abi.encode(to, tokenId);
-        gateway().callContract(
-            destinationChain, 
-            address(this).toString(), 
-            payload
-        );
+        gateway().callContract(destinationChain, address(this).toString(), payload);
     }
 }
 
 contract NftLinkerLockUnlockExample is NftLinkerLockUnlock, NftLinkerSender {
-    constructor(address gatewayAddress_, address operatorAddress_) NftLinkerLockUnlock(gatewayAddress_, operatorAddress_) {}
+    constructor(address gatewayAddress_, address operatorAddress_)
+        NftLinkerLockUnlock(gatewayAddress_, operatorAddress_)
+    {}
 }
 
 contract NftLinkerMintBurnExample is NftLinkerMintBurn, NftLinkerSender {
-    constructor(address gatewayAddress_, address operatorAddress_) NftLinkerMintBurn(gatewayAddress_, operatorAddress_) {}
+    constructor(address gatewayAddress_, address operatorAddress_)
+        NftLinkerMintBurn(gatewayAddress_, operatorAddress_)
+    {}
 }

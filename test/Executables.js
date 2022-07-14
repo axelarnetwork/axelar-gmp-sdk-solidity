@@ -13,13 +13,13 @@ const CHAIN_ID = 1;
 const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000';
 const ROLE_OWNER = 1;
 
-const AxelarGateway = require('../build/MockGateway.json');
-const MintableCappedERC20 = require('../build/ERC20MintableBurnable.json');
-const SourceChainSwapCaller = require('../build/SourceChainSwapCaller.json');
-const DestinationChainSwapExecutable = require('../build/DestinationChainSwapExecutable.json');
-const DestinationChainSwapForecallable = require('../build/DestinationChainSwapForecallable.json');
-const DestinationChainTokenSwapper = require('../build/DestinationChainTokenSwapper.json');
-const ConstAddressDeployer = require('../build/ConstAddressDeployer.json');
+const AxelarGateway = require('../artifacts/contracts/test/MockGateway.sol/MockGateway.json');
+const MintableCappedERC20 = require('../artifacts/contracts/test/ERC20MintableBurnable.sol/ERC20MintableBurnable.json');
+const SourceChainSwapCaller = require('../artifacts/contracts/test/gmp/SourceChainSwapCaller.sol/SourceChainSwapCaller.json');
+const DestinationChainSwapExecutable = require('../artifacts/contracts/test/gmp/DestinationChainSwapExecutable.sol/DestinationChainSwapExecutable.json');
+const DestinationChainSwapForecallable = require('../artifacts/contracts/test/gmp/DestinationChainSwapForecallable.sol/DestinationChainSwapForecallable.json');
+const DestinationChainTokenSwapper = require('../artifacts/contracts/test/gmp/DestinationChainTokenSwapper.sol/DestinationChainTokenSwapper.json');
+const ConstAddressDeployer = require('../dist/ConstAddressDeployer.json');
 
 const getRandomID = () => id(Math.floor(Math.random() * 1e10).toString());
 

@@ -1,4 +1,7 @@
 {
+  "_format": "hh-sol-artifact-1",
+  "contractName": "IUpgradable",
+  "sourceName": "contracts/interfaces/IUpgradable.sol",
   "abi": [
     {
       "inputs": [],
@@ -119,24 +122,8 @@
       "type": "function"
     }
   ],
-  "evm": {
-    "bytecode": {
-      "functionDebugData": {},
-      "generatedSources": [],
-      "linkReferences": {},
-      "object": "",
-      "opcodes": "",
-      "sourceMap": ""
-    },
-    "deployedBytecode": {
-      "functionDebugData": {},
-      "generatedSources": [],
-      "immutableReferences": {},
-      "linkReferences": {},
-      "object": "",
-      "opcodes": "",
-      "sourceMap": ""
-    }
-  },
-  "bytecode": ""
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
 }

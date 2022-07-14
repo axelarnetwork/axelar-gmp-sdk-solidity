@@ -10,24 +10,10 @@ abstract contract AxelarForecallable is IAxelarForecallable {
     error AlreadyForecalled();
     error TransferFailed();
 
-    //keccak256('gateway');
-    uint256 public constant GATEWAY_SLOT = 0x00d936aa803619b075b0b1eaff89e1cf989dd683d61dc611f667f876bd8e3bc5;
     //keccak256('forecallers');
     uint256 public constant FORECALLERS_SALT = 0xdb79ee324babd8834c3c1a1a2739c004fce73b812ac9f637241ff47b19e4b71f;
 
-    function gateway() public view override returns (IAxelarGateway gateway_) {
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            gateway_ := sload(GATEWAY_SLOT)
-        }
-    }
-
-    function _setGateway(address gateway_) internal {
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            sstore(GATEWAY_SLOT, gateway_)
-        }
-    }
+    function gateway() public view virtual override returns (IAxelarGateway);
 
     function getForecaller(
         string calldata sourceChain,

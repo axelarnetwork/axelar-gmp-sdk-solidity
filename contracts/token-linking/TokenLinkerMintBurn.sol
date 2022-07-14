@@ -9,16 +9,13 @@ contract TokenLinkerMintBurn is TokenLinker {
     error MintFailed();
     error BurnFailed();
 
-    address immutable public tokenAddress;
+    address public immutable tokenAddress;
 
     constructor(address gatewayAddress_, address tokenAddress_) TokenLinker(gatewayAddress_) {
         tokenAddress = tokenAddress_;
     }
 
-    function _giveToken(
-        address to,
-        uint256 amount
-    ) internal override {
+    function _giveToken(address to, uint256 amount) internal override {
         (bool success, bytes memory returnData) = tokenAddress.call(
             abi.encodeWithSelector(IERC20MintableBurnable.mint.selector, to, amount)
         );
@@ -27,10 +24,7 @@ contract TokenLinkerMintBurn is TokenLinker {
         if (!transferred || tokenAddress.code.length == 0) revert MintFailed();
     }
 
-    function _takeToken(
-        address from,
-        uint256 amount
-    ) internal override {
+    function _takeToken(address from, uint256 amount) internal override {
         (bool success, bytes memory returnData) = tokenAddress.call(
             abi.encodeWithSelector(IERC20MintableBurnable.burn.selector, from, amount)
         );

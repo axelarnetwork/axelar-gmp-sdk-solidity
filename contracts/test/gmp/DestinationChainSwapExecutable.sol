@@ -9,14 +9,14 @@ import { IAxelarGateway } from '../../interfaces/IAxelarGateway.sol';
 
 contract DestinationChainSwapExecutable is AxelarExecutable {
     DestinationChainTokenSwapper public swapper;
-    address immutable public gatewayAddress;
+    address public immutable gatewayAddress;
 
     constructor(address gatewayAddress_, address swapperAddress) {
         swapper = DestinationChainTokenSwapper(swapperAddress);
         gatewayAddress = gatewayAddress_;
     }
 
-        function gateway() public view override returns (IAxelarGateway) {
+    function gateway() public view override returns (IAxelarGateway) {
         return IAxelarGateway(gatewayAddress);
     }
 

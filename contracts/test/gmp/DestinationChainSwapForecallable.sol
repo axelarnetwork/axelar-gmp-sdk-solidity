@@ -5,13 +5,19 @@ pragma solidity 0.8.9;
 import { AxelarForecallable } from '../../executables/AxelarForecallable.sol';
 import { IERC20 } from '../../interfaces/IERC20.sol';
 import { DestinationChainTokenSwapper } from './DestinationChainTokenSwapper.sol';
+import { IAxelarGateway } from '../../interfaces/IAxelarGateway.sol';
 
 contract DestinationChainSwapForecallable is AxelarForecallable {
     DestinationChainTokenSwapper public swapper;
+    address public immutable gatewayAddress;
 
-    constructor(address gatewayAddress, address swapperAddress) {
+    constructor(address gatewayAddress_, address swapperAddress) {
         swapper = DestinationChainTokenSwapper(swapperAddress);
-        _setGateway(gatewayAddress);
+        gatewayAddress = gatewayAddress_;
+    }
+
+    function gateway() public view override returns (IAxelarGateway) {
+        return IAxelarGateway(gatewayAddress);
     }
 
     function _executeWithToken(

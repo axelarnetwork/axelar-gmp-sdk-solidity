@@ -10,35 +10,20 @@ const { deployUpgradable } = require('../index.js');
 chai.use(solidity);
 const { expect } = chai;
 
-const AxelarGateway = require('../build/MockGateway.json');
-const ERC721MintableBurnable = require('../build/ERC721MintableBurnable.json');
-const ConstAddressDeployer = require('../build/ConstAddressDeployer.json');
-const NftLinkerProxy = require('../build/NftLinkerProxy.json');
-const NftLinkerLockUnlock = require('../build/NftLinkerLockUnlockExample.json');
-const NftLinkerMintBurn = require('../build/NftLinkerMintBurnExample.json');
+const AxelarGateway = require('../artifacts/contracts/test/MockGateway.sol/MockGateway.json');
+const ERC721MintableBurnable = require('../artifacts/contracts/test/ERC721MintableBurnable.sol/ERC721MintableBurnable.json');
+const ConstAddressDeployer = require('../dist/ConstAddressDeployer.json');
+const NftLinkerProxy = require('../artifacts/contracts/nft-linking/NftLinkerProxy.sol/NftLinkerProxy.json');
+const NftLinkerLockUnlock = require('../artifacts/contracts/test/nft-linker/NftLinkerExamples.sol/NftLinkerLockUnlockExample.json');
+const NftLinkerMintBurn = require('../artifacts/contracts/test/nft-linker/NftLinkerExamples.sol/NftLinkerMintBurnExample.json');
 
 const getRandomID = () => id(Math.floor(Math.random() * 1e10).toString());
 
 describe('NftLinker', () => {
   const [
     ownerWallet,
-    operatorWallet,
     userWallet,
-    adminWallet1,
-    adminWallet2,
-    adminWallet3,
-    adminWallet4,
-    adminWallet5,
-    adminWallet6,
   ] = new MockProvider().getWallets();
-  const adminWallets = [
-    adminWallet1,
-    adminWallet2,
-    adminWallet3,
-    adminWallet4,
-    adminWallet5,
-    adminWallet6,
-  ];
 
   let gateway;
   let nftLinker;
@@ -52,14 +37,7 @@ describe('NftLinker', () => {
 
   const approve = (payloadHash, commandId, txHash, txIndex) => {
     const approveData = defaultAbiCoder.encode(
-      [
-        'string',
-        'string',
-        'address',
-        'bytes32',
-        'bytes32',
-        'uint256',
-      ],
+      ['string', 'string', 'address', 'bytes32', 'bytes32', 'uint256'],
       [
         sourceChain,
         nftLinker.address,
@@ -70,11 +48,8 @@ describe('NftLinker', () => {
       ],
     );
 
-    return gateway.approveContractCall(
-        approveData,
-        commandId,
-      );
-  }
+    return gateway.approveContractCall(approveData, commandId);
+  };
 
   beforeEach(async () => {
     gateway = await deployContract(ownerWallet, AxelarGateway);
@@ -92,8 +67,8 @@ describe('NftLinker', () => {
   describe('Lock-Unlock', () => {
     beforeEach(async () => {
       nftLinker = await deployUpgradable(
-        constAddressDeployer.address, 
-        ownerWallet, 
+        constAddressDeployer.address,
+        ownerWallet,
         NftLinkerLockUnlock,
         NftLinkerProxy,
         [gateway.address, token.address],
@@ -103,34 +78,42 @@ describe('NftLinker', () => {
       const tokenid = 1e6;
       await token.connect(userWallet).mint(userWallet.address, tokenid);
       await token.connect(userWallet).approve(nftLinker.address, tokenid);
-      const payload = defaultAbiCoder.encode(['address', 'uint256'], [userWallet.address, tokenid]);
+      const payload = defaultAbiCoder.encode(
+        ['address', 'uint256'],
+        [userWallet.address, tokenid],
+      );
       const payloadHash = keccak256(payload);
-      await expect(nftLinker.connect(userWallet).sendNft(destinationChain, userWallet.address, tokenid))
-          .to.emit(token, 'Transfer')
-          .withArgs(
-            userWallet.address,
-            nftLinker.address,
-            tokenid,
-          )
-          .and.to.emit(gateway, 'ContractCall')
-          .withArgs(
-            nftLinker.address,
-            destinationChain,
-            nftLinker.address.toLowerCase(),
-            payloadHash,
-            payload,
-          )
+      await expect(
+        nftLinker
+          .connect(userWallet)
+          .sendNft(destinationChain, userWallet.address, tokenid),
+      )
+        .to.emit(token, 'Transfer')
+        .withArgs(userWallet.address, nftLinker.address, tokenid)
+        .and.to.emit(gateway, 'ContractCall')
+        .withArgs(
+          nftLinker.address,
+          destinationChain,
+          nftLinker.address.toLowerCase(),
+          payloadHash,
+          payload,
+        );
     });
     it('should unlock nft', async () => {
       const tokenid = 1e5;
-      const payload = defaultAbiCoder.encode(['address', 'uint256'], [userWallet.address, tokenid]);
+      const payload = defaultAbiCoder.encode(
+        ['address', 'uint256'],
+        [userWallet.address, tokenid],
+      );
       const payloadHash = keccak256(payload);
       const commandId = getRandomID();
       const txHash = getRandomID();
       const txIndex = 0;
 
-      await (await token.connect(userWallet).mint(nftLinker.address, tokenid)).wait();
-      
+      await (
+        await token.connect(userWallet).mint(nftLinker.address, tokenid)
+      ).wait();
+
       await expect(approve(payloadHash, commandId, txHash, txIndex))
         .to.emit(gateway, 'ContractCallApproved')
         .withArgs(
@@ -142,22 +125,22 @@ describe('NftLinker', () => {
           txHash,
           txIndex,
         );
-        
-      await expect(nftLinker.connect(userWallet).execute(commandId, sourceChain, nftLinker.address, payload))
-          .to.emit(token, 'Transfer')
-          .withArgs(
-            nftLinker.address,
-            userWallet.address,
-            tokenid,
-          )
+
+      await expect(
+        nftLinker
+          .connect(userWallet)
+          .execute(commandId, sourceChain, nftLinker.address, payload),
+      )
+        .to.emit(token, 'Transfer')
+        .withArgs(nftLinker.address, userWallet.address, tokenid);
     });
   });
 
   describe('Mint-Burn', () => {
     beforeEach(async () => {
       nftLinker = await deployUpgradable(
-        constAddressDeployer.address, 
-        ownerWallet, 
+        constAddressDeployer.address,
+        ownerWallet,
         NftLinkerMintBurn,
         NftLinkerProxy,
         [gateway.address, token.address],
@@ -167,33 +150,39 @@ describe('NftLinker', () => {
       const tokenid = 1e6;
       await token.connect(userWallet).mint(userWallet.address, tokenid);
       await token.connect(userWallet).approve(nftLinker.address, tokenid);
-      const payload = defaultAbiCoder.encode(['address', 'uint256'], [userWallet.address, tokenid]);
+      const payload = defaultAbiCoder.encode(
+        ['address', 'uint256'],
+        [userWallet.address, tokenid],
+      );
       const payloadHash = keccak256(payload);
 
-      await expect(nftLinker.connect(userWallet).sendNft(destinationChain, userWallet.address, tokenid))
-          .to.emit(token, 'Transfer')
-          .withArgs(
-            userWallet.address,
-            AddressZero,
-            tokenid,
-          )
-          .and.to.emit(gateway, 'ContractCall')
-          .withArgs(
-            nftLinker.address,
-            destinationChain,
-            nftLinker.address.toLowerCase(),
-            payloadHash,
-            payload,
-          )
+      await expect(
+        nftLinker
+          .connect(userWallet)
+          .sendNft(destinationChain, userWallet.address, tokenid),
+      )
+        .to.emit(token, 'Transfer')
+        .withArgs(userWallet.address, AddressZero, tokenid)
+        .and.to.emit(gateway, 'ContractCall')
+        .withArgs(
+          nftLinker.address,
+          destinationChain,
+          nftLinker.address.toLowerCase(),
+          payloadHash,
+          payload,
+        );
     });
     it('should mint nft', async () => {
       const tokenid = 1e6;
-      const payload = defaultAbiCoder.encode(['address', 'uint256'], [userWallet.address, tokenid]);
+      const payload = defaultAbiCoder.encode(
+        ['address', 'uint256'],
+        [userWallet.address, tokenid],
+      );
       const payloadHash = keccak256(payload);
       const commandId = getRandomID();
       const txHash = getRandomID();
       const txIndex = 0;
-      
+
       await expect(approve(payloadHash, commandId, txHash, txIndex))
         .to.emit(gateway, 'ContractCallApproved')
         .withArgs(
@@ -205,15 +194,14 @@ describe('NftLinker', () => {
           txHash,
           txIndex,
         );
-        
-      await expect(nftLinker.connect(userWallet).execute(commandId, sourceChain, nftLinker.address, payload))
-          .to.emit(token, 'Transfer')
-          .withArgs(
-            AddressZero,
-            userWallet.address,
-            tokenid,
-          )
+
+      await expect(
+        nftLinker
+          .connect(userWallet)
+          .execute(commandId, sourceChain, nftLinker.address, payload),
+      )
+        .to.emit(token, 'Transfer')
+        .withArgs(AddressZero, userWallet.address, tokenid);
     });
   });
-
 });

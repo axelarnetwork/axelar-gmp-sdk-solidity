@@ -9,16 +9,13 @@ contract NftLinkerMintBurn is NftLinker {
     error TransferFailed();
     error TransferFromFailed();
 
-    address immutable public operatorAddress;
+    address public immutable operatorAddress;
 
     constructor(address gatewayAddress_, address operatorAddress_) NftLinker(gatewayAddress_) {
         operatorAddress = operatorAddress_;
     }
 
-    function _giveNft(
-        address to,
-        uint256 tokenId
-    ) internal override {
+    function _giveNft(address to, uint256 tokenId) internal override {
         (bool success, bytes memory returnData) = operatorAddress.call(
             abi.encodeWithSelector(IERC721MintableBurnable.mint.selector, to, tokenId)
         );
@@ -28,7 +25,7 @@ contract NftLinkerMintBurn is NftLinker {
     }
 
     function _takeNft(
-        address /*from*/,
+        address, /*from*/
         uint256 tokenId
     ) internal override {
         (bool success, bytes memory returnData) = operatorAddress.call(

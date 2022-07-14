@@ -9,6 +9,6 @@ contract NftLinkerProxy is Proxy {
     function contractId() internal pure override returns (bytes32) {
         return keccak256('nft-linker');
     }
-    
-    receive() external payable override{}
+
+    receive() external payable override {}
 }

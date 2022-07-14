@@ -10,7 +10,7 @@ import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
 abstract contract TokenLinker is AxelarExecutable, Upgradable {
     using StringToAddress for string;
 
-    address immutable public gatewayAddress;
+    address public immutable gatewayAddress;
 
     constructor(address gatewayAddress_) {
         gatewayAddress = gatewayAddress_;
@@ -25,7 +25,7 @@ abstract contract TokenLinker is AxelarExecutable, Upgradable {
     }
 
     function _execute(
-        string calldata /*sourceChain*/, 
+        string calldata, /*sourceChain*/
         string calldata sourceAddress,
         bytes calldata payload
     ) internal override {

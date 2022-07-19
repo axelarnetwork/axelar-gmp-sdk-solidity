@@ -1,0 +1,30 @@
+name: Linting
+
+on:
+  - pull_request
+
+jobs:
+  lint:
+    strategy:
+      matrix:
+        node-version:
+          - 14.x
+        os:
+          - ubuntu-18.04
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Flatten
+        run: npm run flatten

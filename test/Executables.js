@@ -3,15 +3,13 @@
 const chai = require('chai');
 const {
   Contract,
-  utils: { defaultAbiCoder, arrayify, keccak256, id },
+  utils: { defaultAbiCoder, keccak256, id },
 } = require('ethers');
 const { deployContract, MockProvider, solidity } = require('ethereum-waffle');
 chai.use(solidity);
 const { expect } = chai;
 
-const CHAIN_ID = 1;
 const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000';
-const ROLE_OWNER = 1;
 
 const AxelarGateway = require('../artifacts/contracts/test/MockGateway.sol/MockGateway.json');
 const MintableCappedERC20 = require('../artifacts/contracts/test/ERC20MintableBurnable.sol/ERC20MintableBurnable.json');
@@ -19,35 +17,18 @@ const SourceChainSwapCaller = require('../artifacts/contracts/test/gmp/SourceCha
 const DestinationChainSwapExecutable = require('../artifacts/contracts/test/gmp/DestinationChainSwapExecutable.sol/DestinationChainSwapExecutable.json');
 const DestinationChainSwapForecallable = require('../artifacts/contracts/test/gmp/DestinationChainSwapForecallable.sol/DestinationChainSwapForecallable.json');
 const DestinationChainTokenSwapper = require('../artifacts/contracts/test/gmp/DestinationChainTokenSwapper.sol/DestinationChainTokenSwapper.json');
-const ConstAddressDeployer = require('../dist/ConstAddressDeployer.json');
 
 const getRandomID = () => id(Math.floor(Math.random() * 1e10).toString());
 
 describe('GeneralMessagePassing', () => {
   const [
     ownerWallet,
-    operatorWallet,
     userWallet,
-    adminWallet1,
-    adminWallet2,
-    adminWallet3,
-    adminWallet4,
-    adminWallet5,
-    adminWallet6,
   ] = new MockProvider().getWallets();
-  const adminWallets = [
-    adminWallet1,
-    adminWallet2,
-    adminWallet3,
-    adminWallet4,
-    adminWallet5,
-    adminWallet6,
-  ];
-  const threshold = 3;
+
 
   let sourceChainGateway;
   let destinationChainGateway;
-  let sourceChainGasService;
   let sourceChainSwapCaller;
   let destinationChainSwapExecutable;
   let destinationChainSwapForecallable;
@@ -67,10 +48,6 @@ describe('GeneralMessagePassing', () => {
   beforeEach(async () => {
     sourceChainGateway = await deployContract(ownerWallet, AxelarGateway);
     destinationChainGateway = await deployContract(ownerWallet, AxelarGateway);
-    const constAddressDeployer = await deployContract(
-      ownerWallet,
-      ConstAddressDeployer,
-    );
 
     tokenA = await deployContract(ownerWallet, MintableCappedERC20, [
       nameA,

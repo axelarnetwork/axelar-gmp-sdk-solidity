@@ -6,14 +6,17 @@ import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
 import { IERC20 } from '../interfaces/IERC20.sol';
 import { IAxelarForecallable } from '../interfaces/IAxelarForecallable.sol';
 
-abstract contract AxelarForecallable is IAxelarForecallable {
-    error AlreadyForecalled();
-    error TransferFailed();
+contract AxelarForecallable is IAxelarForecallable {
+    IAxelarGateway public immutable gateway;
 
     //keccak256('forecallers');
     uint256 public constant FORECALLERS_SALT = 0xdb79ee324babd8834c3c1a1a2739c004fce73b812ac9f637241ff47b19e4b71f;
 
-    function gateway() public view virtual override returns (IAxelarGateway);
+    constructor(address gateway_) {
+        if (gateway_ == address(0)) revert InvalidAddress();
+
+        gateway = IAxelarGateway(gateway_);
+    }
 
     function getForecaller(
         string calldata sourceChain,
@@ -59,7 +62,7 @@ abstract contract AxelarForecallable is IAxelarForecallable {
         bytes calldata payload
     ) external override {
         bytes32 payloadHash = keccak256(payload);
-        if (!gateway().validateContractCall(commandId, sourceChain, sourceAddress, payloadHash))
+        if (!gateway.validateContractCall(commandId, sourceChain, sourceAddress, payloadHash))
             revert NotApprovedByGateway();
         address forecaller = getForecaller(sourceChain, sourceAddress, payload);
         if (forecaller != address(0)) {
@@ -106,7 +109,7 @@ abstract contract AxelarForecallable is IAxelarForecallable {
         uint256 amount,
         address forecaller
     ) external override {
-        address token = gateway().tokenAddresses(tokenSymbol);
+        address token = gateway.tokenAddresses(tokenSymbol);
         uint256 amountPost = amountPostFee(amount, payload);
         _safeTransferFrom(token, msg.sender, amountPost);
         _checkForecallWithToken(sourceChain, sourceAddress, payload, tokenSymbol, amount, forecaller);
@@ -126,7 +129,7 @@ abstract contract AxelarForecallable is IAxelarForecallable {
     ) external override {
         bytes32 payloadHash = keccak256(payload);
         if (
-            !gateway().validateContractCallAndMint(
+            !gateway.validateContractCallAndMint(
                 commandId,
                 sourceChain,
                 sourceAddress,
@@ -138,7 +141,7 @@ abstract contract AxelarForecallable is IAxelarForecallable {
         address forecaller = getForecallerWithToken(sourceChain, sourceAddress, payload, tokenSymbol, amount);
         if (forecaller != address(0)) {
             _setForecallerWithToken(sourceChain, sourceAddress, payload, tokenSymbol, amount, address(0));
-            address token = gateway().tokenAddresses(tokenSymbol);
+            address token = gateway.tokenAddresses(tokenSymbol);
             _safeTransfer(token, forecaller, amount);
         } else {
             _executeWithToken(sourceChain, sourceAddress, payload, tokenSymbol, amount);

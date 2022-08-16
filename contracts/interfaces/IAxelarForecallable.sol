@@ -5,6 +5,9 @@ pragma solidity ^0.8.0;
 import { IAxelarExecutable } from '../interfaces/IAxelarExecutable.sol';
 
 interface IAxelarForecallable is IAxelarExecutable {
+    error AlreadyForecalled();
+    error TransferFailed();
+
     function forecall(
         string calldata sourceChain,
         string calldata sourceAddress,

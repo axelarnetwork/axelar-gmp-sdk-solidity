@@ -18,7 +18,7 @@ abstract contract TokenLinkerSender is TokenLinker {
     ) external payable {
         _takeToken(msg.sender, amount);
         bytes memory payload = abi.encode(to, amount);
-        gateway().callContract(destinationChain, address(this).toString(), payload);
+        gateway.callContract(destinationChain, address(this).toString(), payload);
     }
 }
 

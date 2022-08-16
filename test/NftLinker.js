@@ -20,10 +20,7 @@ const NftLinkerMintBurn = require('../artifacts/contracts/test/nft-linker/NftLin
 const getRandomID = () => id(Math.floor(Math.random() * 1e10).toString());
 
 describe('NftLinker', () => {
-  const [
-    ownerWallet,
-    userWallet,
-  ] = new MockProvider().getWallets();
+  const [ownerWallet, userWallet] = new MockProvider().getWallets();
 
   let gateway;
   let nftLinker;

@@ -160,12 +160,20 @@ contract MockGateway is IAxelarGateway {
     |* Getters *|
     \***********/
 
-    function tokenDailyMintLimit(string memory symbol) public view override returns (uint256) {
-        return uints[_getTokenDailyMintLimitKey(symbol)];
+    function authModule() public pure returns (address) {
+        return address(0);
     }
 
-    function tokenDailyMintAmount(string memory symbol) public view override returns (uint256) {
-        return uints[_getTokenDailyMintAmountKey(symbol, block.timestamp / 1 days)];
+    function tokenDeployer() public pure returns (address) {
+        return address(0);
+    }
+
+    function tokenMintLimit(string memory symbol) public view override returns (uint256) {
+        return uints[_getTokenMintLimitKey(symbol)];
+    }
+
+    function tokenMintAmount(string memory symbol) public view override returns (uint256) {
+        return uints[_getTokenMintAmountKey(symbol, block.timestamp / 6 hours)];
     }
 
     function allTokensFrozen() external pure override returns (bool) {
@@ -199,7 +207,7 @@ contract MockGateway is IAxelarGateway {
             uint8 decimals,
             uint256 cap,
             address tokenAddress,
-            uint256 dailyMintLimit
+            uint256 mintLimit
         ) = abi.decode(params, (string, string, uint8, uint256, address, uint256));
 
         // Ensure that this symbol has not been taken.
@@ -221,7 +229,7 @@ contract MockGateway is IAxelarGateway {
         }
 
         _setTokenAddress(symbol, tokenAddress);
-        _setTokenDailyMintLimit(symbol, dailyMintLimit);
+        _setTokenMintLimit(symbol, mintLimit);
 
         emit TokenDeployed(symbol, tokenAddress);
     }
@@ -306,22 +314,6 @@ contract MockGateway is IAxelarGateway {
     |* Internal Methods *|
     \********************/
 
-    function _unpackLegacyCommands(bytes memory executeData)
-        external
-        pure
-        returns (
-            uint256 chainId,
-            bytes32[] memory commandIds,
-            string[] memory commands,
-            bytes[] memory params
-        )
-    {
-        (chainId, , commandIds, commands, params) = abi.decode(
-            executeData,
-            (uint256, uint256, bytes32[], string[], bytes[])
-        );
-    }
-
     function _callERC20Token(address tokenAddress, bytes memory callData) internal returns (bool) {
         (bool success, bytes memory returnData) = tokenAddress.call(callData);
         return success && (returnData.length == uint256(0) || abi.decode(returnData, (bool)));
@@ -346,7 +338,7 @@ contract MockGateway is IAxelarGateway {
 
         if (tokenAddress == address(0)) revert TokenDoesNotExist(symbol);
 
-        _setTokenDailyMintAmount(symbol, tokenDailyMintAmount(symbol) + amount);
+        _setTokenMintAmount(symbol, tokenMintAmount(symbol) + amount);
 
         if (_getTokenType(symbol) == TokenType.External) {
             bool success = _callERC20Token(
@@ -400,11 +392,11 @@ contract MockGateway is IAxelarGateway {
     |* Pure Key Getters *|
     \********************/
 
-    function _getTokenDailyMintLimitKey(string memory symbol) internal pure returns (bytes32) {
+    function _getTokenMintLimitKey(string memory symbol) internal pure returns (bytes32) {
         return keccak256(abi.encodePacked(PREFIX_TOKEN_DAILY_MINT_LIMIT, symbol));
     }
 
-    function _getTokenDailyMintAmountKey(string memory symbol, uint256 day) internal pure returns (bytes32) {
+    function _getTokenMintAmountKey(string memory symbol, uint256 day) internal pure returns (bytes32) {
         return keccak256(abi.encodePacked(PREFIX_TOKEN_DAILY_MINT_AMOUNT, symbol, day));
     }
 
@@ -476,17 +468,17 @@ contract MockGateway is IAxelarGateway {
     |* Internal Setters *|
     \********************/
 
-    function _setTokenDailyMintLimit(string memory symbol, uint256 limit) internal {
-        uints[_getTokenDailyMintLimitKey(symbol)] = limit;
+    function _setTokenMintLimit(string memory symbol, uint256 limit) internal {
+        uints[_getTokenMintLimitKey(symbol)] = limit;
 
-        emit TokenDailyMintLimitUpdated(symbol, limit);
+        emit TokenMintLimitUpdated(symbol, limit);
     }
 
-    function _setTokenDailyMintAmount(string memory symbol, uint256 amount) internal {
-        uint256 limit = tokenDailyMintLimit(symbol);
-        if (limit > 0 && amount > limit) revert ExceedDailyMintLimit(symbol);
+    function _setTokenMintAmount(string memory symbol, uint256 amount) internal {
+        uint256 limit = tokenMintLimit(symbol);
+        if (limit > 0 && amount > limit) revert ExceedMintLimit(symbol);
 
-        uints[_getTokenDailyMintAmountKey(symbol, block.timestamp / 1 days)] = amount;
+        uints[_getTokenMintAmountKey(symbol, block.timestamp / 6 hours)] = amount;
     }
 
     function _setTokenType(string memory symbol, TokenType tokenType) internal {
@@ -553,7 +545,7 @@ contract MockGateway is IAxelarGateway {
 
     function execute(bytes calldata input) external override {}
 
-    function setTokenDailyMintLimits(string[] calldata symbols, uint256[] calldata limits) external override {}
+    function setTokenMintLimits(string[] calldata symbols, uint256[] calldata limits) external override {}
 
     function setup(bytes calldata params) external override {}
 

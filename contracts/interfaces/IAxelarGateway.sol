@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.9;
+pragma solidity ^0.8.9;
 
 interface IAxelarGateway {
     /**********\
@@ -22,20 +22,14 @@ interface IAxelarGateway {
     error TokenContractDoesNotExist(address token);
     error BurnFailed(string symbol);
     error MintFailed(string symbol);
-    error InvalidSetDailyMintLimitsParams();
-    error ExceedDailyMintLimit(string symbol);
+    error InvalidSetMintLimitsParams();
+    error ExceedMintLimit(string symbol);
 
     /**********\
     |* Events *|
     \**********/
 
-    event TokenSent(
-        address indexed sender,
-        string destinationChain,
-        string destinationAddress,
-        string symbol,
-        uint256 amount
-    );
+    event TokenSent(address indexed sender, string destinationChain, string destinationAddress, string symbol, uint256 amount);
 
     event ContractCall(
         address indexed sender,
@@ -81,7 +75,7 @@ interface IAxelarGateway {
         uint256 sourceEventIndex
     );
 
-    event TokenDailyMintLimitUpdated(string symbol, uint256 limit);
+    event TokenMintLimitUpdated(string symbol, uint256 limit);
 
     event OperatorshipTransferred(bytes newOperatorsData);
 
@@ -150,9 +144,13 @@ interface IAxelarGateway {
     |* Getters *|
     \***********/
 
-    function tokenDailyMintLimit(string memory symbol) external view returns (uint256);
+    function authModule() external view returns (address);
 
-    function tokenDailyMintAmount(string memory symbol) external view returns (uint256);
+    function tokenDeployer() external view returns (address);
+
+    function tokenMintLimit(string memory symbol) external view returns (uint256);
+
+    function tokenMintAmount(string memory symbol) external view returns (uint256);
 
     function allTokensFrozen() external view returns (bool);
 
@@ -174,7 +172,7 @@ interface IAxelarGateway {
     |* Admin Functions *|
     \*******************/
 
-    function setTokenDailyMintLimits(string[] calldata symbols, uint256[] calldata limits) external;
+    function setTokenMintLimits(string[] calldata symbols, uint256[] calldata limits) external;
 
     function upgrade(
         address newImplementation,

@@ -5,8 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "npx hardhat test",
-    "copyartifacts": "rm -rf dist/** && cp artifacts/contracts/ConstAddressDeployer.sol/ConstAddressDeployer.json dist/ && cp artifacts/contracts/interfaces/IUpgradable.sol/IUpgradable.json dist/",
-    "build": "rm -rf artifacts && hardhat compile && npm run copyartifacts",
+    "copy:artifacts": "rm -rf dist/** && cp artifacts/contracts/ConstAddressDeployer.sol/ConstAddressDeployer.json dist/ && cp artifacts/contracts/interfaces/IUpgradable.sol/IUpgradable.json dist/",
+    "copy:interface": "cp node_modules/@axelar-network/axelar-cgp-solidity/contracts/interfaces/IAxelarGateway.sol contracts/interfaces/",
+    "build": "rm -rf artifacts && npm run copy:interface && hardhat compile && npm run copy:artifacts",
     "lint": "solhint 'contracts/**/*.sol' && eslint 'test/**/*.js'",
     "prettier": "prettier --write 'test/**/*.js' && prettier --write 'contracts/**/*.sol'",
     "flatten": "sh scripts/flatten-contracts.sh"
@@ -14,11 +15,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "ganache": "^7.3.2",
     "ethers": "^5.5.2",
-    "fs-extra": "^10.1.0"
+    "fs-extra": "^10.1.0",
+    "ganache": "^7.3.2"
   },
   "devDependencies": {
+    "@axelar-network/axelar-cgp-solidity": "^4.3.0",
     "@openzeppelin/contracts": "^4.7.0",
     "chai": "^4.3.4",
     "eslint": "^8.4.1",

@@ -21,10 +21,7 @@ const TokenLinkerNative = require('../artifacts/contracts/test/token-linker/Toke
 const getRandomID = () => id(Math.floor(Math.random() * 1e10).toString());
 
 describe('TokenLinker', () => {
-  const [
-    ownerWallet,
-    userWallet,
-  ] = new MockProvider().getWallets();
+  const [ownerWallet, userWallet] = new MockProvider().getWallets();
 
   let gateway;
   let tokenLinker;

@@ -5,8 +5,14 @@ pragma solidity ^0.8.0;
 import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
 import { IAxelarExecutable } from '../interfaces/IAxelarExecutable.sol';
 
-abstract contract AxelarExecutable is IAxelarExecutable {
-    function gateway() public view virtual override returns (IAxelarGateway gateway_);
+contract AxelarExecutable is IAxelarExecutable {
+    IAxelarGateway public immutable gateway;
+
+    constructor(address gateway_) {
+        if (gateway_ == address(0)) revert InvalidAddress();
+
+        gateway = IAxelarGateway(gateway_);
+    }
 
     function execute(
         bytes32 commandId,
@@ -16,7 +22,7 @@ abstract contract AxelarExecutable is IAxelarExecutable {
     ) external override {
         if (bytes(sourceAddress).length != 42) revert('start');
         bytes32 payloadHash = keccak256(payload);
-        if (!gateway().validateContractCall(commandId, sourceChain, sourceAddress, payloadHash))
+        if (!gateway.validateContractCall(commandId, sourceChain, sourceAddress, payloadHash))
             revert NotApprovedByGateway();
         _execute(sourceChain, sourceAddress, payload);
     }
@@ -31,7 +37,7 @@ abstract contract AxelarExecutable is IAxelarExecutable {
     ) external override {
         bytes32 payloadHash = keccak256(payload);
         if (
-            !gateway().validateContractCallAndMint(
+            !gateway.validateContractCallAndMint(
                 commandId,
                 sourceChain,
                 sourceAddress,

@@ -17,7 +17,7 @@ abstract contract NftLinkerSender is NftLinker {
     ) external payable {
         _takeNft(msg.sender, tokenId);
         bytes memory payload = abi.encode(to, tokenId);
-        gateway().callContract(destinationChain, address(this).toString(), payload);
+        gateway.callContract(destinationChain, address(this).toString(), payload);
     }
 }
 

@@ -9,15 +9,9 @@ import { IAxelarGateway } from '../../interfaces/IAxelarGateway.sol';
 
 contract DestinationChainSwapForecallable is AxelarForecallable {
     DestinationChainTokenSwapper public swapper;
-    address public immutable gatewayAddress;
 
-    constructor(address gatewayAddress_, address swapperAddress) {
+    constructor(address gatewayAddress, address swapperAddress) AxelarForecallable(gatewayAddress) {
         swapper = DestinationChainTokenSwapper(swapperAddress);
-        gatewayAddress = gatewayAddress_;
-    }
-
-    function gateway() public view override returns (IAxelarGateway) {
-        return IAxelarGateway(gatewayAddress);
     }
 
     function _executeWithToken(
@@ -29,13 +23,13 @@ contract DestinationChainSwapForecallable is AxelarForecallable {
     ) internal override {
         (string memory tokenSymbolB, string memory recipient) = abi.decode(payload, (string, string));
 
-        address tokenA = gateway().tokenAddresses(tokenSymbolA);
-        address tokenB = gateway().tokenAddresses(tokenSymbolB);
+        address tokenA = gateway.tokenAddresses(tokenSymbolA);
+        address tokenB = gateway.tokenAddresses(tokenSymbolB);
 
         IERC20(tokenA).approve(address(swapper), amount);
         uint256 convertedAmount = swapper.swap(tokenA, tokenB, amount, address(this));
 
-        IERC20(tokenB).approve(address(gateway()), convertedAmount);
-        gateway().sendToken(sourceChain, recipient, tokenSymbolB, convertedAmount);
+        IERC20(tokenB).approve(address(gateway), convertedAmount);
+        gateway.sendToken(sourceChain, recipient, tokenSymbolB, convertedAmount);
     }
 }

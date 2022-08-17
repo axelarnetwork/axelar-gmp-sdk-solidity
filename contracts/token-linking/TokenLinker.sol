@@ -10,18 +10,10 @@ import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
 abstract contract TokenLinker is AxelarExecutable, Upgradable {
     using StringToAddress for string;
 
-    address public immutable gatewayAddress;
-
-    constructor(address gatewayAddress_) {
-        gatewayAddress = gatewayAddress_;
-    }
+    constructor(address gatewayAddress) AxelarExecutable(gatewayAddress) {}
 
     function contractId() external pure override returns (bytes32) {
         return keccak256('token-linker');
-    }
-
-    function gateway() public view override returns (IAxelarGateway) {
-        return IAxelarGateway(gatewayAddress);
     }
 
     function _execute(

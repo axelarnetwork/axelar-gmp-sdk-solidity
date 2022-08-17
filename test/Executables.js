@@ -21,11 +21,7 @@ const DestinationChainTokenSwapper = require('../artifacts/contracts/test/gmp/De
 const getRandomID = () => id(Math.floor(Math.random() * 1e10).toString());
 
 describe('GeneralMessagePassing', () => {
-  const [
-    ownerWallet,
-    userWallet,
-  ] = new MockProvider().getWallets();
-
+  const [ownerWallet, userWallet] = new MockProvider().getWallets();
 
   let sourceChainGateway;
   let destinationChainGateway;

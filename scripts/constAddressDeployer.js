@@ -4,73 +4,76 @@ const {
   Contract,
   ContractFactory,
   utils: { keccak256, defaultAbiCoder },
-  providers: {Web3Provider},
+  providers: { Web3Provider },
   Wallet,
 } = require('ethers');
 const ganache = require('ganache');
 
 const ConstAddressDeployer = require('../dist/ConstAddressDeployer.json');
 
-
 const getSaltFromKey = (key) => {
   return keccak256(defaultAbiCoder.encode(['string'], [key]));
 };
 
 const estimateGasForDeploy = async (contractJson, args = []) => {
-    const key = keccak256(0);
-    const ganacheProvider = ganache.provider({
-        wallet: { accounts: [{balance:1e18, secretKey: key}] },
-        logging: { quiet: true },
-    });
-    const provider = new Web3Provider(ganacheProvider);
-    const wallet = new Wallet(key, provider);
-    //console.log(await provider.getBalance(wallet.address));
+  const key = keccak256(0);
+  const ganacheProvider = ganache.provider({
+    wallet: { accounts: [{ balance: 1e18, secretKey: key }] },
+    logging: { quiet: true },
+  });
+  const provider = new Web3Provider(ganacheProvider);
+  const wallet = new Wallet(key, provider);
 
-    const deployerFactory = new ContractFactory(
-        ConstAddressDeployer.abi,
-        ConstAddressDeployer.bytecode,
-        wallet
-    );
+  const deployerFactory = new ContractFactory(
+    ConstAddressDeployer.abi,
+    ConstAddressDeployer.bytecode,
+    wallet,
+  );
 
-    const deployer =  await deployerFactory.deploy();
-    await deployer.deployed();
+  const deployer = await deployerFactory.deploy();
+  await deployer.deployed();
 
-    const salt = getSaltFromKey('');
-    const factory = new ContractFactory(contractJson.abi, contractJson.bytecode);
-    const bytecode = factory.getDeployTransaction(...args).data;
-    return await deployer.estimateGas.deploy(bytecode, salt);
-}
-const estimateGasForDeployAndInit = async (contractJson, args = [], initArgs = []) => {
-    const key = keccak256(0);
-    const ganacheProvider = ganache.provider({
-        wallet: { accounts: [{balance:1e18, secretKey: key}] },
-        logging: { quiet: true },
-    });
-    const provider = new Web3Provider(ganacheProvider);
-    const wallet = new Wallet(key, provider);
-    //console.log(await provider.getBalance(wallet.address));
-    const deployerFactory = new ContractFactory(
-        ConstAddressDeployer.abi,
-        ConstAddressDeployer.bytecode,
-        wallet
-    );
+  const salt = getSaltFromKey('');
+  const factory = new ContractFactory(contractJson.abi, contractJson.bytecode);
+  const bytecode = factory.getDeployTransaction(...args).data;
+  return await deployer.estimateGas.deploy(bytecode, salt);
+};
 
-    const deployer =  await deployerFactory.deploy();
-    await deployer.deployed();
+const estimateGasForDeployAndInit = async (
+  contractJson,
+  args = [],
+  initArgs = [],
+) => {
+  const key = keccak256(0);
+  const ganacheProvider = ganache.provider({
+    wallet: { accounts: [{ balance: 1e18, secretKey: key }] },
+    logging: { quiet: true },
+  });
+  const provider = new Web3Provider(ganacheProvider);
+  const wallet = new Wallet(key, provider);
 
-    const salt = getSaltFromKey('');
-    const factory = new ContractFactory(contractJson.abi, contractJson.bytecode);
-    const bytecode = factory.getDeployTransaction(...args).data;
+  const deployerFactory = new ContractFactory(
+    ConstAddressDeployer.abi,
+    ConstAddressDeployer.bytecode,
+    wallet,
+  );
 
-    const address = await deployer.deployedAddress(
-        bytecode,
-        wallet.address,
-        salt,
-    );
-    const contract = new Contract(address, contractJson.abi, wallet);
-    const initData = (await contract.populateTransaction.init(...initArgs)).data;
-    return await deployer.estimateGas.deployAndInit(bytecode, salt, initData);
-}
+  const deployer = await deployerFactory.deploy();
+  await deployer.deployed();
+
+  const salt = getSaltFromKey('');
+  const factory = new ContractFactory(contractJson.abi, contractJson.bytecode);
+  const bytecode = factory.getDeployTransaction(...args).data;
+
+  const address = await deployer.deployedAddress(
+    bytecode,
+    wallet.address,
+    salt,
+  );
+  const contract = new Contract(address, contractJson.abi, wallet);
+  const initData = (await contract.populateTransaction.init(...initArgs)).data;
+  return await deployer.estimateGas.deployAndInit(bytecode, salt, initData);
+};
 
 const deployContractConstant = async (
   deployerAddress,
@@ -80,12 +83,18 @@ const deployContractConstant = async (
   args = [],
   gasLimit = null,
 ) => {
-    const deployer = new Contract(deployerAddress, ConstAddressDeployer.abi, wallet);
+  const deployer = new Contract(
+    deployerAddress,
+    ConstAddressDeployer.abi,
+    wallet,
+  );
   const salt = getSaltFromKey(key);
   const factory = new ContractFactory(contractJson.abi, contractJson.bytecode);
   const bytecode = factory.getDeployTransaction(...args).data;
-  const gas = gasLimit || await estimateGasForDeploy(contractJson, args);
-  const tx = await deployer.connect(wallet).deploy(bytecode, salt, {gasLimit: BigInt(Math.floor(gas * 1.2))});
+  const gas = gasLimit || (await estimateGasForDeploy(contractJson, args));
+  const tx = await deployer
+    .connect(wallet)
+    .deploy(bytecode, salt, { gasLimit: BigInt(Math.floor(gas * 1.2)) });
   await tx.wait();
   const address = await deployer.deployedAddress(
     bytecode,
@@ -104,7 +113,11 @@ const deployAndInitContractConstant = async (
   initArgs = [],
   gasLimit = null,
 ) => {
-    const deployer = new Contract(deployerAddress, ConstAddressDeployer.abi, wallet);
+  const deployer = new Contract(
+    deployerAddress,
+    ConstAddressDeployer.abi,
+    wallet,
+  );
   const salt = getSaltFromKey(key);
   const factory = new ContractFactory(contractJson.abi, contractJson.bytecode);
   const bytecode = factory.getDeployTransaction(...args).data;
@@ -115,10 +128,14 @@ const deployAndInitContractConstant = async (
   );
   const contract = new Contract(address, contractJson.abi, wallet);
   const initData = (await contract.populateTransaction.init(...initArgs)).data;
-  const gas = gasLimit || await estimateGasForDeployAndInit(contractJson, args, initArgs);
+  const gas =
+    gasLimit ||
+    (await estimateGasForDeployAndInit(contractJson, args, initArgs));
   const tx = await deployer
     .connect(wallet)
-    .deployAndInit(bytecode, salt, initData, {gasLimit: BigInt(Math.floor(gas * 1.2))});
+    .deployAndInit(bytecode, salt, initData, {
+      gasLimit: BigInt(Math.floor(gas * 1.2)),
+    });
   await tx.wait();
   return contract;
 };
@@ -130,7 +147,11 @@ const predictContractConstant = async (
   key,
   args = [],
 ) => {
-    const deployer = new Contract(deployerAddress, ConstAddressDeployer.abi, wallet);
+  const deployer = new Contract(
+    deployerAddress,
+    ConstAddressDeployer.abi,
+    wallet,
+  );
   const salt = getSaltFromKey(key);
 
   const factory = new ContractFactory(contractJson.abi, contractJson.bytecode);
@@ -139,9 +160,9 @@ const predictContractConstant = async (
 };
 
 module.exports = {
-    estimateGasForDeploy,
-    estimateGasForDeployAndInit,
-    deployContractConstant,
-    deployAndInitContractConstant,
-    predictContractConstant,
-}
+  estimateGasForDeploy,
+  estimateGasForDeployAndInit,
+  deployContractConstant,
+  deployAndInitContractConstant,
+  predictContractConstant,
+};

@@ -1,4 +1,4 @@
-# Axelar GMP SDK
+# Axelar GMP SDK Solidity
 ###### General Message Passing Development Kit
 
 This repository contains all the necessary ingredients for successful cross-chain development 

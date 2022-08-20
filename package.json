@@ -1,7 +1,7 @@
 {
-  "name": "@axelar-network/axelar-utils-solidity",
-  "version": "1.0.1",
-  "description": "Solidity libraries and utilities provided by Axelar.",
+  "name": "@axelar-network/gmp-sdk",
+  "version": "1.0.0",
+  "description": "Solidity GPM SDK and utilities provided by Axelar for cross-chain development",
   "main": "index.js",
   "scripts": {
     "test": "npx hardhat test",

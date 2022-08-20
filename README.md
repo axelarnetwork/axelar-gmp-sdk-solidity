@@ -20,7 +20,7 @@ This simplifies message validation from peer Executables. You can learn more in 
 Base implementation of upgradable contracts designed to be deployed with `ConstAddressDeployer`
 and to have the same Proxy address on different EVM chains.
 
-### TokenLiner and NTFLinker
+### TokenLinker and NTFLinker
 Allows developers to create their own cross-chain gateways for
 ERC20 and ERC721 tokens utilizing the GMP protocol.
 Also it's a great example how to use AxelarExecutable with Upgradable.

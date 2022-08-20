@@ -24,3 +24,10 @@ and to have the same Proxy address on different EVM chains.
 Allows developers to create their own cross-chain gateways for
 ERC20 and ERC721 tokens utilizing the GMP protocol.
 Also it's a great example how to use AxelarExecutable with Upgradable.
+
+### StringAddressUtils
+Allows conversion between `string` and `address` data types
+
+### StringBytesUtil
+Allows conversion between `string` and `bytes32` data types 
+for storing strings under 31 bytes into a single storage slot

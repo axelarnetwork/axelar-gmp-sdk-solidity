@@ -1,5 +1,5 @@
 {
-  "name": "@axelar-network/gmp-sdk",
+  "name": "@axelar-network/axelar-gmp-sdk-solidity",
   "version": "1.0.0",
   "description": "Solidity GMP SDK and utilities provided by Axelar for cross-chain development",
   "main": "index.js",

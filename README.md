@@ -4,6 +4,19 @@
 This repository contains all the necessary ingredients for successful cross-chain development 
 utilizing the Axelar General Message Passing protocol.  
 
+## Installation
+```shell
+$ npm install @axelar-network/axelar-gmp-sdk-solidity
+```
+
+## Documentation
+ * [Introduction](https://docs.axelar.dev/dev/intro)
+ * [General Message Passing](https://docs.axelar.dev/dev/gmp-overview)
+ * [Build](https://docs.axelar.dev/dev/build/getting-started)
+ * [Video](https://docs.axelar.dev/dev/guides/video-guides)
+
+## Available contracts
+
 ### AxelarExecutable
 Base interface for validating and executing GMP contract calls.
 

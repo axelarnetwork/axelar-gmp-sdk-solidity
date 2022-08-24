@@ -303,7 +303,6 @@ describe('GeneralMessagePassing', () => {
             payload,
             symbolA,
             swapAmount,
-            userWallet.address,
           ),
       )
         .to.emit(tokenA, 'Transfer')

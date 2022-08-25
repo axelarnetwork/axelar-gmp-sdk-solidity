@@ -14,10 +14,10 @@ const AxelarGateway = require('../artifacts/contracts/test/MockGateway.sol/MockG
 const GasService = require('../artifacts/contracts/test/MockGasService.sol/MockGasService.json');
 const ERC20MintableBurnable = require('../artifacts/contracts/test/ERC20MintableBurnable.sol/ERC20MintableBurnable.json');
 const ConstAddressDeployer = require('../dist/ConstAddressDeployer.json');
-const TokenLinkerProxy = require('../artifacts/contracts/token-linking/TokenLinkerProxy.sol/TokenLinkerProxy.json');
-const TokenLinkerLockUnlock = require('../artifacts/contracts/token-linking/TokenLinkerLockUnlock.sol/TokenLinkerLockUnlock.json');
-const TokenLinkerMintBurn = require('../artifacts/contracts/token-linking/TokenLinkerMintBurn.sol/TokenLinkerMintBurn.json');
-const TokenLinkerNative = require('../artifacts/contracts/token-linking/TokenLinkerNative.sol/TokenLinkerNative.json');
+const TokenLinkerProxy = require('../artifacts/contracts/token-linker/TokenLinkerProxy.sol/TokenLinkerProxy.json');
+const TokenLinkerLockUnlock = require('../artifacts/contracts/token-linker/TokenLinkerLockUnlock.sol/TokenLinkerLockUnlock.json');
+const TokenLinkerMintBurn = require('../artifacts/contracts/token-linker/TokenLinkerMintBurn.sol/TokenLinkerMintBurn.json');
+const TokenLinkerNative = require('../artifacts/contracts/token-linker/TokenLinkerNative.sol/TokenLinkerNative.json');
 
 const getRandomID = () => id(Math.floor(Math.random() * 1e10).toString());
 

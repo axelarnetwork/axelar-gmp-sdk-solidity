@@ -14,9 +14,9 @@ const AxelarGateway = require('../artifacts/contracts/test/MockGateway.sol/MockG
 const GasService = require('../artifacts/contracts/test/MockGasService.sol/MockGasService.json');
 const ERC721MintableBurnable = require('../artifacts/contracts/test/ERC721MintableBurnable.sol/ERC721MintableBurnable.json');
 const ConstAddressDeployer = require('../dist/ConstAddressDeployer.json');
-const NftLinkerProxy = require('../artifacts/contracts/nft-linking/NftLinkerProxy.sol/NftLinkerProxy.json');
-const NftLinkerLockUnlock = require('../artifacts/contracts/nft-linking/NftLinkerLockUnlock.sol/NftLinkerLockUnlock.json');
-const NftLinkerMintBurn = require('../artifacts/contracts/nft-linking/NftLinkerMintBurn.sol/NftLinkerMintBurn.json');
+const NftLinkerProxy = require('../artifacts/contracts/nft-linker/NftLinkerProxy.sol/NftLinkerProxy.json');
+const NftLinkerLockUnlock = require('../artifacts/contracts/nft-linker/NftLinkerLockUnlock.sol/NftLinkerLockUnlock.json');
+const NftLinkerMintBurn = require('../artifacts/contracts/nft-linker/NftLinkerMintBurn.sol/NftLinkerMintBurn.json');
 
 const getRandomID = () => id(Math.floor(Math.random() * 1e10).toString());
 

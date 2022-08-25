@@ -8,7 +8,7 @@ import { AxelarExecutable } from '../executables/AxelarExecutable.sol';
 import { StringToAddress, AddressToString } from '../StringAddressUtils.sol';
 import { Upgradable } from '../upgradables/Upgradable.sol';
 
-abstract contract TokenLinker is AxelarExecutable, Upgradable {
+abstract contract TokenLinkerBase is AxelarExecutable, Upgradable {
     using StringToAddress for string;
     using AddressToString for address;
 

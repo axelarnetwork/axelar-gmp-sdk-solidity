@@ -3,9 +3,9 @@
 pragma solidity ^0.8.0;
 
 import { IERC20 } from '../interfaces/IERC20.sol';
-import { TokenLinker } from './TokenLinker.sol';
+import { TokenLinkerBase } from './TokenLinkerBase.sol';
 
-contract TokenLinkerLockUnlock is TokenLinker {
+contract TokenLinkerLockUnlock is TokenLinkerBase {
     error TransferFailed();
     error TransferFromFailed();
 
@@ -15,7 +15,7 @@ contract TokenLinkerLockUnlock is TokenLinker {
         address gatewayAddress_,
         address gasServiceAddress_,
         address tokenAddress_
-    ) TokenLinker(gatewayAddress_, gasServiceAddress_) {
+    ) TokenLinkerBase(gatewayAddress_, gasServiceAddress_) {
         if (tokenAddress_ == address(0)) revert InvalidAddress();
 
         tokenAddress = tokenAddress_;

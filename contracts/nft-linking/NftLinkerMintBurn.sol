@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.9;
+pragma solidity ^0.8.0;
 
 import { IERC721MintableBurnable } from '../interfaces/IERC721MintableBurnable.sol';
 import { NftLinker } from './NftLinker.sol';

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.9;
+pragma solidity ^0.8.0;
 
 library StringToAddress {
     function toAddress(string memory _a) internal pure returns (address) {

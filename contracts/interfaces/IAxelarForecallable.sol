@@ -11,8 +11,7 @@ interface IAxelarForecallable is IAxelarExecutable {
     function forecall(
         string calldata sourceChain,
         string calldata sourceAddress,
-        bytes calldata payload,
-        address forecaller
+        bytes calldata payload
     ) external;
 
     function forecallWithToken(
@@ -20,8 +19,7 @@ interface IAxelarForecallable is IAxelarExecutable {
         string calldata sourceAddress,
         bytes calldata payload,
         string calldata tokenSymbol,
-        uint256 amount,
-        address forecaller
+        uint256 amount
     ) external;
 
     function getForecaller(

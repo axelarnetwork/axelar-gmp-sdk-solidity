@@ -11,7 +11,11 @@ contract NftLinkerMintBurn is NftLinker {
 
     address public immutable operatorAddress;
 
-    constructor(address gatewayAddress_, address operatorAddress_) NftLinker(gatewayAddress_) {
+    constructor(
+        address gatewayAddress_,
+        address gasServiceAddress_,
+        address operatorAddress_
+    ) NftLinker(gatewayAddress_, gasServiceAddress_) {
         operatorAddress = operatorAddress_;
     }
 

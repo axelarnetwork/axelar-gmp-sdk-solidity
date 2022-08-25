@@ -11,7 +11,13 @@ contract TokenLinkerLockUnlock is TokenLinker {
 
     address public immutable tokenAddress;
 
-    constructor(address gatewayAddress_, address tokenAddress_) TokenLinker(gatewayAddress_) {
+    constructor(
+        address gatewayAddress_,
+        address gasServiceAddress_,
+        address tokenAddress_
+    ) TokenLinker(gatewayAddress_, gasServiceAddress_) {
+        if (tokenAddress_ == address(0)) revert InvalidAddress();
+
         tokenAddress = tokenAddress_;
     }
 

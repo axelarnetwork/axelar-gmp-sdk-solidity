@@ -11,11 +11,12 @@ chai.use(solidity);
 const { expect } = chai;
 
 const AxelarGateway = require('../artifacts/contracts/test/MockGateway.sol/MockGateway.json');
+const GasService = require('../artifacts/contracts/test/MockGasService.sol/MockGasService.json');
 const ERC721MintableBurnable = require('../artifacts/contracts/test/ERC721MintableBurnable.sol/ERC721MintableBurnable.json');
 const ConstAddressDeployer = require('../dist/ConstAddressDeployer.json');
 const NftLinkerProxy = require('../artifacts/contracts/nft-linking/NftLinkerProxy.sol/NftLinkerProxy.json');
-const NftLinkerLockUnlock = require('../artifacts/contracts/test/nft-linker/NftLinkerExamples.sol/NftLinkerLockUnlockExample.json');
-const NftLinkerMintBurn = require('../artifacts/contracts/test/nft-linker/NftLinkerExamples.sol/NftLinkerMintBurnExample.json');
+const NftLinkerLockUnlock = require('../artifacts/contracts/nft-linking/NftLinkerLockUnlock.sol/NftLinkerLockUnlock.json');
+const NftLinkerMintBurn = require('../artifacts/contracts/nft-linking/NftLinkerMintBurn.sol/NftLinkerMintBurn.json');
 
 const getRandomID = () => id(Math.floor(Math.random() * 1e10).toString());
 
@@ -23,6 +24,7 @@ describe('NftLinker', () => {
   const [ownerWallet, userWallet] = new MockProvider().getWallets();
 
   let gateway;
+  let gasService;
   let nftLinker;
   let token;
   let constAddressDeployer;
@@ -50,6 +52,7 @@ describe('NftLinker', () => {
 
   beforeEach(async () => {
     gateway = await deployContract(ownerWallet, AxelarGateway);
+    gasService = await deployContract(ownerWallet, GasService);
     constAddressDeployer = await deployContract(
       ownerWallet,
       ConstAddressDeployer,
@@ -68,7 +71,7 @@ describe('NftLinker', () => {
         ownerWallet,
         NftLinkerLockUnlock,
         NftLinkerProxy,
-        [gateway.address, token.address],
+        [gateway.address, gasService.address, token.address],
       );
     });
     it('should lock nft', async () => {
@@ -140,7 +143,7 @@ describe('NftLinker', () => {
         ownerWallet,
         NftLinkerMintBurn,
         NftLinkerProxy,
-        [gateway.address, token.address],
+        [gateway.address, gasService.address, token.address],
       );
     });
     it('should burn nft', async () => {

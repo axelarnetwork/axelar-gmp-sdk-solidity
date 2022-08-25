@@ -2,18 +2,44 @@
 
 pragma solidity ^0.8.0;
 
-import { AxelarExecutable } from '../executables/AxelarExecutable.sol';
-import { StringToAddress } from '../StringAddressUtils.sol';
-import { Upgradable } from '../upgradables/Upgradable.sol';
 import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
+import { IAxelarGasService } from '../interfaces/IAxelarGasService.sol';
+import { AxelarExecutable } from '../executables/AxelarExecutable.sol';
+import { AddressToString, StringToAddress } from '../StringAddressUtils.sol';
+import { Upgradable } from '../upgradables/Upgradable.sol';
 
 abstract contract NftLinker is AxelarExecutable, Upgradable {
     using StringToAddress for string;
+    using AddressToString for address;
 
-    constructor(address gatewayAddress) AxelarExecutable(gatewayAddress) {}
+    IAxelarGasService public immutable gasService;
+
+    constructor(address gatewayAddress, address gasServiceAddress_) AxelarExecutable(gatewayAddress) {
+        gasService = IAxelarGasService(gasServiceAddress_);
+    }
 
     function contractId() external pure override returns (bytes32) {
         return keccak256('nft-linker');
+    }
+
+    function sendNft(
+        string memory destinationChain,
+        address to,
+        uint256 tokenId
+    ) external payable virtual {
+        string memory thisAddress = address(this).toString();
+        _takeNft(msg.sender, tokenId);
+        bytes memory payload = abi.encode(to, tokenId);
+        if (msg.value > 0) {
+            gasService.payNativeGasForContractCall{ value: msg.value }(
+                address(this),
+                destinationChain,
+                thisAddress,
+                payload,
+                msg.sender
+            );
+        }
+        gateway.callContract(destinationChain, thisAddress, payload);
     }
 
     function _execute(

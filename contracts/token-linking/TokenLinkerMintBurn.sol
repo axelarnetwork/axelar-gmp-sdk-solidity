@@ -11,7 +11,11 @@ contract TokenLinkerMintBurn is TokenLinker {
 
     address public immutable tokenAddress;
 
-    constructor(address gatewayAddress_, address tokenAddress_) TokenLinker(gatewayAddress_) {
+    constructor(
+        address gatewayAddress_,
+        address gasServiceAddress_,
+        address tokenAddress_
+    ) TokenLinker(gatewayAddress_, gasServiceAddress_) {
         tokenAddress = tokenAddress_;
     }
 

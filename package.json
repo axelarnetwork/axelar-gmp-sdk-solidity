@@ -6,8 +6,7 @@
   "scripts": {
     "test": "npx hardhat test",
     "copy:artifacts": "rm -rf dist/** && cp artifacts/contracts/ConstAddressDeployer.sol/ConstAddressDeployer.json dist/ && cp artifacts/contracts/interfaces/IUpgradable.sol/IUpgradable.json dist/",
-    "copy:interface": "cp node_modules/@axelar-network/axelar-cgp-solidity/contracts/interfaces/IAxelarGateway.sol contracts/interfaces/",
-    "build": "rm -rf artifacts && npm run copy:interface && hardhat compile && npm run copy:artifacts",
+    "build": "rm -rf artifacts && hardhat compile && npm run copy:artifacts",
     "lint": "solhint 'contracts/**/*.sol' && eslint 'test/**/*.js'",
     "prettier": "prettier --write 'contracts/**/*.sol' 'test/**/*.js' 'scripts/**/*.js' '*.js'",
     "flatten": "sh scripts/flatten-contracts.sh"

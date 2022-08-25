@@ -46,12 +46,11 @@ contract AxelarForecallable is IAxelarForecallable {
     function forecall(
         string calldata sourceChain,
         string calldata sourceAddress,
-        bytes calldata payload,
-        address forecaller
+        bytes calldata payload
     ) external {
-        _checkForecall(sourceChain, sourceAddress, payload, forecaller);
+        _checkForecall(sourceChain, sourceAddress, payload, msg.sender);
         if (getForecaller(sourceChain, sourceAddress, payload) != address(0)) revert AlreadyForecalled();
-        _setForecaller(sourceChain, sourceAddress, payload, forecaller);
+        _setForecaller(sourceChain, sourceAddress, payload, msg.sender);
         _execute(sourceChain, sourceAddress, payload);
     }
 
@@ -106,16 +105,15 @@ contract AxelarForecallable is IAxelarForecallable {
         string calldata sourceAddress,
         bytes calldata payload,
         string calldata tokenSymbol,
-        uint256 amount,
-        address forecaller
+        uint256 amount
     ) external override {
         address token = gateway.tokenAddresses(tokenSymbol);
         uint256 amountPost = amountPostFee(amount, payload);
         _safeTransferFrom(token, msg.sender, amountPost);
-        _checkForecallWithToken(sourceChain, sourceAddress, payload, tokenSymbol, amount, forecaller);
+        _checkForecallWithToken(sourceChain, sourceAddress, payload, tokenSymbol, amount, msg.sender);
         if (getForecallerWithToken(sourceChain, sourceAddress, payload, tokenSymbol, amount) != address(0))
             revert AlreadyForecalled();
-        _setForecallerWithToken(sourceChain, sourceAddress, payload, tokenSymbol, amount, forecaller);
+        _setForecallerWithToken(sourceChain, sourceAddress, payload, tokenSymbol, amount, msg.sender);
         _executeWithToken(sourceChain, sourceAddress, payload, tokenSymbol, amountPost);
     }
 

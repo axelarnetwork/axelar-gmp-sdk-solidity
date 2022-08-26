@@ -86,7 +86,12 @@ describe('NftLinker', () => {
       await expect(
         nftLinker
           .connect(userWallet)
-          .sendNft(destinationChain, userWallet.address, tokenid),
+          .sendNft(
+            destinationChain,
+            userWallet.address,
+            tokenid,
+            userWallet.address,
+          ),
       )
         .to.emit(token, 'Transfer')
         .withArgs(userWallet.address, nftLinker.address, tokenid)
@@ -159,7 +164,12 @@ describe('NftLinker', () => {
       await expect(
         nftLinker
           .connect(userWallet)
-          .sendNft(destinationChain, userWallet.address, tokenid),
+          .sendNft(
+            destinationChain,
+            userWallet.address,
+            tokenid,
+            userWallet.address,
+          ),
       )
         .to.emit(token, 'Transfer')
         .withArgs(userWallet.address, AddressZero, tokenid)

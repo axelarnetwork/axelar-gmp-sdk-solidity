@@ -25,7 +25,8 @@ abstract contract NftLinkerBase is AxelarExecutable, Upgradable {
     function sendNft(
         string memory destinationChain,
         address to,
-        uint256 tokenId
+        uint256 tokenId,
+        address refundAddress
     ) external payable virtual {
         string memory thisAddress = address(this).toString();
         _takeNft(msg.sender, tokenId);
@@ -36,7 +37,7 @@ abstract contract NftLinkerBase is AxelarExecutable, Upgradable {
                 destinationChain,
                 thisAddress,
                 payload,
-                msg.sender
+                refundAddress
             );
         }
         gateway.callContract(destinationChain, thisAddress, payload);

@@ -89,7 +89,12 @@ describe('TokenLinker', () => {
       await expect(
         tokenLinker
           .connect(userWallet)
-          .sendToken(destinationChain, userWallet.address, amount),
+          .sendToken(
+            destinationChain,
+            userWallet.address,
+            amount,
+            userWallet.address,
+          ),
       )
         .to.emit(token, 'Transfer')
         .withArgs(userWallet.address, tokenLinker.address, amount)
@@ -161,7 +166,12 @@ describe('TokenLinker', () => {
       await expect(
         tokenLinker
           .connect(userWallet)
-          .sendToken(destinationChain, userWallet.address, amount),
+          .sendToken(
+            destinationChain,
+            userWallet.address,
+            amount,
+            userWallet.address,
+          ),
       )
         .to.emit(token, 'Transfer')
         .withArgs(userWallet.address, AddressZero, amount)
@@ -230,9 +240,15 @@ describe('TokenLinker', () => {
       await expect(
         tokenLinker
           .connect(userWallet)
-          .sendToken(destinationChain, userWallet.address, amount, {
-            value: amount,
-          }),
+          .sendToken(
+            destinationChain,
+            userWallet.address,
+            amount,
+            userWallet.address,
+            {
+              value: amount,
+            },
+          ),
       )
         .to.emit(gateway, 'ContractCall')
         .withArgs(

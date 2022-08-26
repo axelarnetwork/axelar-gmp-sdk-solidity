@@ -27,7 +27,8 @@ abstract contract TokenLinkerBase is AxelarExecutable, Upgradable {
     function sendToken(
         string calldata destinationChain,
         address to,
-        uint256 amount
+        uint256 amount,
+        address refundAddress
     ) external payable virtual {
         _takeToken(msg.sender, amount);
         string memory thisAddress = address(this).toString();
@@ -39,7 +40,7 @@ abstract contract TokenLinkerBase is AxelarExecutable, Upgradable {
                 destinationChain,
                 thisAddress,
                 payload,
-                msg.sender
+                refundAddress
             );
         }
         gateway.callContract(destinationChain, thisAddress, payload);

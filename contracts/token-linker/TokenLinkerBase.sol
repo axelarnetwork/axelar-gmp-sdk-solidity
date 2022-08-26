@@ -12,6 +12,7 @@ abstract contract TokenLinkerBase is AxelarExecutable, Upgradable {
     using StringToAddress for string;
     using AddressToString for address;
 
+    bytes32 internal constant CONTRACT_ID = keccak256('token-linker');
     IAxelarGasService public immutable gasService;
 
     constructor(address gatewayAddress_, address gasServiceAddress_) AxelarExecutable(gatewayAddress_) {
@@ -21,7 +22,7 @@ abstract contract TokenLinkerBase is AxelarExecutable, Upgradable {
     }
 
     function contractId() external pure override returns (bytes32) {
-        return keccak256('token-linker');
+        return CONTRACT_ID;
     }
 
     function sendToken(

@@ -3,15 +3,19 @@
 pragma solidity ^0.8.0;
 
 import { IERC721MintableBurnable } from '../interfaces/IERC721MintableBurnable.sol';
-import { NftLinker } from './NftLinker.sol';
+import { NftLinkerBase } from './NftLinkerBase.sol';
 
-contract NftLinkerMintBurn is NftLinker {
+contract NftLinkerMintBurn is NftLinkerBase {
     error TransferFailed();
     error TransferFromFailed();
 
     address public immutable operatorAddress;
 
-    constructor(address gatewayAddress_, address operatorAddress_) NftLinker(gatewayAddress_) {
+    constructor(
+        address gatewayAddress_,
+        address gasServiceAddress_,
+        address operatorAddress_
+    ) NftLinkerBase(gatewayAddress_, gasServiceAddress_) {
         operatorAddress = operatorAddress_;
     }
 

@@ -11,12 +11,13 @@ chai.use(solidity);
 const { expect } = chai;
 
 const AxelarGateway = require('../artifacts/contracts/test/MockGateway.sol/MockGateway.json');
+const GasService = require('../artifacts/contracts/test/MockGasService.sol/MockGasService.json');
 const ERC20MintableBurnable = require('../artifacts/contracts/test/ERC20MintableBurnable.sol/ERC20MintableBurnable.json');
 const ConstAddressDeployer = require('../dist/ConstAddressDeployer.json');
-const TokenLinkerProxy = require('../artifacts/contracts/token-linking/TokenLinkerProxy.sol/TokenLinkerProxy.json');
-const TokenLinkerLockUnlock = require('../artifacts/contracts/test/token-linker/TokenLinkerExamples.sol/TokenLinkerLockUnlockExample.json');
-const TokenLinkerMintBurn = require('../artifacts/contracts/test/token-linker/TokenLinkerExamples.sol/TokenLinkerMintBurnExample.json');
-const TokenLinkerNative = require('../artifacts/contracts/test/token-linker/TokenLinkerExamples.sol/TokenLinkerNativeExample.json');
+const TokenLinkerProxy = require('../artifacts/contracts/token-linker/TokenLinkerProxy.sol/TokenLinkerProxy.json');
+const TokenLinkerLockUnlock = require('../artifacts/contracts/token-linker/TokenLinkerLockUnlock.sol/TokenLinkerLockUnlock.json');
+const TokenLinkerMintBurn = require('../artifacts/contracts/token-linker/TokenLinkerMintBurn.sol/TokenLinkerMintBurn.json');
+const TokenLinkerNative = require('../artifacts/contracts/token-linker/TokenLinkerNative.sol/TokenLinkerNative.json');
 
 const getRandomID = () => id(Math.floor(Math.random() * 1e10).toString());
 
@@ -24,6 +25,7 @@ describe('TokenLinker', () => {
   const [ownerWallet, userWallet] = new MockProvider().getWallets();
 
   let gateway;
+  let gasService;
   let tokenLinker;
   let token;
   let constAddressDeployer;
@@ -52,6 +54,7 @@ describe('TokenLinker', () => {
 
   beforeEach(async () => {
     gateway = await deployContract(ownerWallet, AxelarGateway);
+    gasService = await deployContract(ownerWallet, GasService);
     constAddressDeployer = await deployContract(
       ownerWallet,
       ConstAddressDeployer,
@@ -71,7 +74,7 @@ describe('TokenLinker', () => {
         ownerWallet,
         TokenLinkerLockUnlock,
         TokenLinkerProxy,
-        [gateway.address, token.address],
+        [gateway.address, gasService.address, token.address],
       );
     });
     it('should lock token', async () => {
@@ -86,7 +89,12 @@ describe('TokenLinker', () => {
       await expect(
         tokenLinker
           .connect(userWallet)
-          .sendToken(destinationChain, userWallet.address, amount),
+          .sendToken(
+            destinationChain,
+            userWallet.address,
+            amount,
+            userWallet.address,
+          ),
       )
         .to.emit(token, 'Transfer')
         .withArgs(userWallet.address, tokenLinker.address, amount)
@@ -143,7 +151,7 @@ describe('TokenLinker', () => {
         ownerWallet,
         TokenLinkerMintBurn,
         TokenLinkerProxy,
-        [gateway.address, token.address],
+        [gateway.address, gasService.address, token.address],
       );
     });
     it('should burn token', async () => {
@@ -158,7 +166,12 @@ describe('TokenLinker', () => {
       await expect(
         tokenLinker
           .connect(userWallet)
-          .sendToken(destinationChain, userWallet.address, amount),
+          .sendToken(
+            destinationChain,
+            userWallet.address,
+            amount,
+            userWallet.address,
+          ),
       )
         .to.emit(token, 'Transfer')
         .withArgs(userWallet.address, AddressZero, amount)
@@ -211,7 +224,7 @@ describe('TokenLinker', () => {
         ownerWallet,
         TokenLinkerNative,
         TokenLinkerProxy,
-        [gateway.address],
+        [gateway.address, gasService.address],
       );
     });
     it('should lock native token', async () => {
@@ -227,9 +240,15 @@ describe('TokenLinker', () => {
       await expect(
         tokenLinker
           .connect(userWallet)
-          .sendToken(destinationChain, userWallet.address, amount, {
-            value: amount,
-          }),
+          .sendToken(
+            destinationChain,
+            userWallet.address,
+            amount,
+            userWallet.address,
+            {
+              value: amount,
+            },
+          ),
       )
         .to.emit(gateway, 'ContractCall')
         .withArgs(

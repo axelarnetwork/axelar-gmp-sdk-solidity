@@ -3,15 +3,19 @@
 pragma solidity ^0.8.0;
 
 import { IERC20MintableBurnable } from '../interfaces/IERC20MintableBurnable.sol';
-import { TokenLinker } from './TokenLinker.sol';
+import { TokenLinkerBase } from './TokenLinkerBase.sol';
 
-contract TokenLinkerMintBurn is TokenLinker {
+contract TokenLinkerMintBurn is TokenLinkerBase {
     error MintFailed();
     error BurnFailed();
 
     address public immutable tokenAddress;
 
-    constructor(address gatewayAddress_, address tokenAddress_) TokenLinker(gatewayAddress_) {
+    constructor(
+        address gatewayAddress_,
+        address gasServiceAddress_,
+        address tokenAddress_
+    ) TokenLinkerBase(gatewayAddress_, gasServiceAddress_) {
         tokenAddress = tokenAddress_;
     }
 

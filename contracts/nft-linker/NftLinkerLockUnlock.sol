@@ -3,15 +3,19 @@
 pragma solidity ^0.8.0;
 
 import { IERC721 } from '../interfaces/IERC721.sol';
-import { NftLinker } from './NftLinker.sol';
+import { NftLinkerBase } from './NftLinkerBase.sol';
 
-contract NftLinkerLockUnlock is NftLinker {
+contract NftLinkerLockUnlock is NftLinkerBase {
     error TransferFailed();
     error TransferFromFailed();
 
     address public immutable operatorAddress;
 
-    constructor(address gatewayAddress_, address operatorAddress_) NftLinker(gatewayAddress_) {
+    constructor(
+        address gatewayAddress_,
+        address gasServiceAddress_,
+        address operatorAddress_
+    ) NftLinkerBase(gatewayAddress_, gasServiceAddress_) {
         operatorAddress = operatorAddress_;
     }
 

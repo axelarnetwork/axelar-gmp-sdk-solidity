@@ -7,9 +7,6 @@ import { IERC20 } from '../interfaces/IERC20.sol';
 import { IAxelarForecallable } from '../interfaces/IAxelarForecallable.sol';
 
 abstract contract AxelarForecallable is IAxelarForecallable {
-    error AlreadyForecalled();
-    error TransferFailed();
-
     //keccak256('forecallers');
     uint256 public constant FORECALLERS_SALT = 0xdb79ee324babd8834c3c1a1a2739c004fce73b812ac9f637241ff47b19e4b71f;
 
@@ -46,6 +43,7 @@ abstract contract AxelarForecallable is IAxelarForecallable {
         bytes calldata payload,
         address forecaller
     ) external {
+        if(forecaller == address(0)) revert ZeroAddress();
         _checkForecall(sourceChain, sourceAddress, payload, forecaller);
         if (getForecaller(sourceChain, sourceAddress, payload) != address(0)) revert AlreadyForecalled();
         _setForecaller(sourceChain, sourceAddress, payload, forecaller);
@@ -106,6 +104,7 @@ abstract contract AxelarForecallable is IAxelarForecallable {
         uint256 amount,
         address forecaller
     ) external override {
+        if(forecaller == address(0)) revert ZeroAddress();
         address token = gateway().tokenAddresses(tokenSymbol);
         uint256 amountPost = amountPostFee(amount, payload);
         _safeTransferFrom(token, msg.sender, amountPost);

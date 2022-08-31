@@ -50,8 +50,8 @@ contract ConstAddressDeployer {
         deployedAddress_ = _deploy(bytecode, msg.sender, salt);
 
         // solhint-disable-next-line avoid-low-level-calls
-        (bool success, bytes memory returnData) = deployedAddress_.call(init);
-        if (!success || returnData.length != uint256(0)) revert FailedInit();
+        (bool success, ) = deployedAddress_.call(init);
+        if (!success) revert FailedInit();
     }
 
     /**

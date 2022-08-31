@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 
 contract ConstAddressDeployer {
     error EmptyBytecode();
-    error EmptyInit();
     error FailedDeploy();
     error FailedInit();
 
@@ -23,7 +22,7 @@ contract ConstAddressDeployer {
      * - `salt` must have not been used for `bytecode` already by the same `msg.sender`.
      */
     function deploy(bytes memory bytecode, bytes32 salt) external returns (address deployedAddress_) {
-        deployedAddress_ = _deploy(bytecode, msg.sender, salt);
+        deployedAddress_ = _deploy(bytecode, keccak256(abi.encode(msg.sender, salt)));
     }
 
     /**
@@ -37,7 +36,7 @@ contract ConstAddressDeployer {
      *
      * - `bytecode` must not be empty.
      * - `salt` must have not been used for `bytecode` already by the same `msg.sender`.
-     * - `init` must not be empty. It is used to initialize the deployed contract
+     * - `init` is used to initialize the deployed contract
      *    as an option to not have the constructor args affect the address derived by `CREATE2`.
      */
     function deployAndInit(
@@ -45,9 +44,7 @@ contract ConstAddressDeployer {
         bytes32 salt,
         bytes calldata init
     ) external returns (address deployedAddress_) {
-        if (init.length == uint256(0)) revert EmptyInit();
-
-        deployedAddress_ = _deploy(bytecode, msg.sender, salt);
+        deployedAddress_ = _deploy(bytecode, keccak256(abi.encode(msg.sender, salt)));
 
         // solhint-disable-next-line avoid-low-level-calls
         (bool success, ) = deployedAddress_.call(init);
@@ -80,13 +77,12 @@ contract ConstAddressDeployer {
         );
     }
 
-    function _deploy(bytes memory bytecode, address sender, bytes32 salt) internal returns (address deployedAddress_) {
+    function _deploy(bytes memory bytecode, bytes32 salt) internal returns (address deployedAddress_) {
         if (bytecode.length == 0) revert EmptyBytecode();
 
-        bytes32 newSalt = keccak256(abi.encode(sender, salt));
         // solhint-disable-next-line no-inline-assembly
         assembly {
-            deployedAddress_ := create2(0, add(bytecode, 32), mload(bytecode), newSalt)
+            deployedAddress_ := create2(0, add(bytecode, 32), mload(bytecode), salt)
         }
 
         if (deployedAddress_ == address(0)) revert FailedDeploy();

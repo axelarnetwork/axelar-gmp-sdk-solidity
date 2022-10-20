@@ -25,6 +25,9 @@ describe('UtilTest', () => {
   it('should convert string of any format to address', async () => {
     const address = ownerWallet.address;
     expect(await utilTest.stringToAddress(address)).to.equal(address);
+    expect(await utilTest.stringToAddress(address.toString())).to.equal(
+      address,
+    );
     expect(
       await utilTest.stringToAddress(address.toString().toLowerCase()),
     ).to.equal(address);

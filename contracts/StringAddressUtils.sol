@@ -3,36 +3,43 @@
 pragma solidity ^0.8.0;
 
 library StringToAddress {
-    function toAddress(string memory _a) internal pure returns (address) {
-        bytes memory tmp = bytes(_a);
-        if (tmp.length != 42) return address(0);
-        uint160 iaddr = 0;
-        uint8 b;
-        for (uint256 i = 2; i < 42; i++) {
-            b = uint8(tmp[i]);
-            if ((b >= 97) && (b <= 102)) b -= 87;
-            else if ((b >= 65) && (b <= 70)) b -= 55;
-            else if ((b >= 48) && (b <= 57)) b -= 48;
-            else return address(0);
-            iaddr |= uint160(uint256(b) << ((41 - i) << 2));
+    error InvalidAddressString();
+
+    function toAddress(string memory addressString) internal pure returns (address) {
+        bytes memory stringBytes = bytes(addressString);
+        uint160 addressNumber = 0;
+        uint8 stringByte;
+
+        if (stringBytes.length != 42 || stringBytes[0] != '0' || stringBytes[1] != 'x') revert InvalidAddressString();
+
+        for (uint256 i = 2; i < 42; ++i) {
+            stringByte = uint8(stringBytes[i]);
+
+            if ((stringByte >= 97) && (stringByte <= 102)) stringByte -= 87;
+            else if ((stringByte >= 65) && (stringByte <= 70)) stringByte -= 55;
+            else if ((stringByte >= 48) && (stringByte <= 57)) stringByte -= 48;
+            else revert InvalidAddressString();
+
+            addressNumber |= uint160(uint256(stringByte) << ((41 - i) << 2));
         }
-        return address(iaddr);
+        return address(addressNumber);
     }
 }
 
 library AddressToString {
-    function toString(address a) internal pure returns (string memory) {
-        bytes memory data = abi.encodePacked(a);
+    function toString(address addr) internal pure returns (string memory) {
+        bytes memory addressBytes = abi.encodePacked(addr);
+        uint256 length = addressBytes.length;
         bytes memory characters = '0123456789abcdef';
-        bytes memory byteString = new bytes(2 + data.length * 2);
+        bytes memory stringBytes = new bytes(2 + addressBytes.length * 2);
 
-        byteString[0] = '0';
-        byteString[1] = 'x';
+        stringBytes[0] = '0';
+        stringBytes[1] = 'x';
 
-        for (uint256 i; i < data.length; ++i) {
-            byteString[2 + i * 2] = characters[uint256(uint8(data[i] >> 4))];
-            byteString[3 + i * 2] = characters[uint256(uint8(data[i] & 0x0f))];
+        for (uint256 i; i < length; ++i) {
+            stringBytes[2 + i * 2] = characters[uint8(addressBytes[i] >> 4)];
+            stringBytes[3 + i * 2] = characters[uint8(addressBytes[i] & 0x0f)];
         }
-        return string(byteString);
+        return string(stringBytes);
     }
 }

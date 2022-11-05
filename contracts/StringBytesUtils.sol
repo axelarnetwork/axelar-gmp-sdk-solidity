@@ -16,7 +16,7 @@ library StringToBytes32 {
 
         // Storing string length as the last byte of the data
         stringNumber |= 0xff & stringBytes.length;
-        return bytes32(abi.encodePacked(stringNumber));
+        return bytes32(stringNumber);
     }
 }
 

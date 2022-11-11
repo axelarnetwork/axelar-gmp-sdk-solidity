@@ -10,8 +10,22 @@ import { IAxelarGateway } from '../../interfaces/IAxelarGateway.sol';
 contract DestinationChainSwapForecallable is AxelarForecallable {
     DestinationChainTokenSwapper public swapper;
 
-    constructor(address gatewayAddress, address swapperAddress) AxelarForecallable(gatewayAddress) {
+    event Executed(string sourceChain, string sourceAddress, bytes payload);
+
+    constructor(
+        address gatewayAddress,
+        address forecallService,
+        address swapperAddress
+    ) AxelarForecallable(gatewayAddress, forecallService) {
         swapper = DestinationChainTokenSwapper(swapperAddress);
+    }
+
+    function _execute(
+        string calldata sourceChain,
+        string calldata sourceAddress,
+        bytes calldata payload
+    ) internal override {
+        emit Executed(sourceChain, sourceAddress, payload);
     }
 
     function _executeWithToken(

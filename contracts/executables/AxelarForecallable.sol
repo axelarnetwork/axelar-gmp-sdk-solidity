@@ -10,9 +10,9 @@ contract AxelarForecallable is IAxelarForecallable {
     IAxelarGateway public immutable gateway;
     address public immutable forecallService;
 
-    //keccak256('forecall');
+    // keccak256('forecall');
     uint256 public constant PREFIX_FORECALL = 0xf1aaf9d468ca954ceeb575b8219bb627c97f319a0b6f11da046e9a513f6a7159;
-    //keccak256('forecallWithToken');
+    // keccak256('forecallWithToken');
     uint256 public constant PREFIX_FORECALL_WITH_TOKEN =
         0x863fd763cde7f124f9f58ffa48b233da1b7dab397d43949cd55e3885b252a28c;
 

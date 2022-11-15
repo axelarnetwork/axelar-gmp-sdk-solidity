@@ -5,6 +5,7 @@ pragma solidity ^0.8.0;
 import { IAxelarExecutable } from '../interfaces/IAxelarExecutable.sol';
 
 interface IAxelarForecallable is IAxelarExecutable {
+    error InvalidForecaller();
     error AlreadyForecalled();
     error TransferFailed();
 
@@ -35,6 +36,4 @@ interface IAxelarForecallable is IAxelarExecutable {
         string calldata symbol,
         uint256 amount
     ) external returns (address forecaller);
-
-    function amountPostFee(uint256 amount, bytes calldata payload) external returns (uint256);
 }

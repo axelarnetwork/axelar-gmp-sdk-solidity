@@ -23,15 +23,12 @@ contract AxelarForecallable is IAxelarForecallable {
         forecallService = forecallService_;
     }
 
-    function _getForecallSlot(
+    function _getForecallData(
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
-    ) public pure returns (bytes32) {
-        return keccak256(abi.encode(PREFIX_FORECALL, sourceChain, sourceAddress, payload));
-    }
-
-    function _getForecaller(bytes32 forecallSlot) public view returns (address forecaller) {
+    ) internal view returns (bytes32 forecallSlot, address forecaller) {
+        forecallSlot = keccak256(abi.encode(PREFIX_FORECALL, sourceChain, sourceAddress, payload));
         // solhint-disable-next-line no-inline-assembly
         assembly {
             forecaller := sload(forecallSlot)
@@ -42,8 +39,8 @@ contract AxelarForecallable is IAxelarForecallable {
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
-    ) external view override returns (address) {
-        return _getForecaller(_getForecallSlot(sourceChain, sourceAddress, payload));
+    ) external view override returns (address forecaller) {
+        (, forecaller) = _getForecallData(sourceChain, sourceAddress, payload);
     }
 
     function _setForecaller(bytes32 forecallSlot, address forecaller) internal {
@@ -60,9 +57,9 @@ contract AxelarForecallable is IAxelarForecallable {
     ) external {
         _authForecall(sourceChain, sourceAddress, payload, msg.sender);
 
-        bytes32 forecallSlot = _getForecallSlot(sourceChain, sourceAddress, payload);
+        (bytes32 forecallSlot, address forecaller) = _getForecallData(sourceChain, sourceAddress, payload);
 
-        if (_getForecaller(forecallSlot) != address(0)) revert AlreadyForecalled();
+        if (forecaller != address(0)) revert AlreadyForecalled();
         _setForecaller(forecallSlot, msg.sender);
         _execute(sourceChain, sourceAddress, payload);
     }
@@ -78,8 +75,7 @@ contract AxelarForecallable is IAxelarForecallable {
         if (!gateway.validateContractCall(commandId, sourceChain, sourceAddress, payloadHash))
             revert NotApprovedByGateway();
 
-        bytes32 forecallSlot = _getForecallSlot(sourceChain, sourceAddress, payload);
-        address forecaller = _getForecaller(forecallSlot);
+        (bytes32 forecallSlot, address forecaller) = _getForecallData(sourceChain, sourceAddress, payload);
 
         if (forecaller != address(0)) {
             _setForecaller(forecallSlot, address(0));
@@ -88,17 +84,16 @@ contract AxelarForecallable is IAxelarForecallable {
         }
     }
 
-    function _getForecallWithTokenSlot(
+    function _getForecallWithTokenData(
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload,
         string calldata symbol,
         uint256 amount
-    ) public pure returns (bytes32) {
-        return keccak256(abi.encode(PREFIX_FORECALL_WITH_TOKEN, sourceChain, sourceAddress, payload, symbol, amount));
-    }
-
-    function _getForecallerWithToken(bytes32 forecallSlot) public view returns (address forecaller) {
+    ) public view returns (bytes32 forecallSlot, address forecaller) {
+forecallSlot = keccak256(
+            abi.encode(PREFIX_FORECALL_WITH_TOKEN, sourceChain, sourceAddress, payload, symbol, amount)
+        );
         // solhint-disable-next-line no-inline-assembly
         assembly {
             forecaller := sload(forecallSlot)
@@ -109,10 +104,10 @@ contract AxelarForecallable is IAxelarForecallable {
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload,
-        string calldata symbol,
+        string calldata tokenSymbol,
         uint256 amount
-    ) external view override returns (address) {
-        return _getForecallerWithToken(_getForecallWithTokenSlot(sourceChain, sourceAddress, payload, symbol, amount));
+    ) external view override returns (address forecaller) {
+        (, forecaller) = _getForecallWithTokenData(sourceChain, sourceAddress, payload, tokenSymbol, amount);
     }
 
     function _setForecallerWithToken(bytes32 forecallSlot, address forecaller) internal {
@@ -133,9 +128,15 @@ contract AxelarForecallable is IAxelarForecallable {
     ) external override {
         _authForecallWithToken(sourceChain, sourceAddress, payload, tokenSymbol, amount, msg.sender);
 
-        bytes32 forecallSlot = _getForecallWithTokenSlot(sourceChain, sourceAddress, payload, tokenSymbol, amount);
+        (bytes32 forecallSlot, address forecaller) = _getForecallWithTokenData(
+            sourceChain,
+            sourceAddress,
+            payload,
+            tokenSymbol,
+            amount
+        );
 
-        if (_getForecallerWithToken(forecallSlot) != address(0)) revert AlreadyForecalled();
+        if (forecaller != address(0)) revert AlreadyForecalled();
 
         _setForecallerWithToken(forecallSlot, msg.sender);
         _executeWithToken(sourceChain, sourceAddress, payload, tokenSymbol, amount);
@@ -161,8 +162,13 @@ contract AxelarForecallable is IAxelarForecallable {
             )
         ) revert NotApprovedByGateway();
 
-        bytes32 forecallSlot = _getForecallWithTokenSlot(sourceChain, sourceAddress, payload, tokenSymbol, amount);
-        address forecaller = _getForecallerWithToken(forecallSlot);
+        (bytes32 forecallSlot, address forecaller) = _getForecallWithTokenData(
+            sourceChain,
+            sourceAddress,
+            payload,
+            tokenSymbol,
+            amount
+        );
 
         if (forecaller != address(0)) {
             _setForecallerWithToken(forecallSlot, address(0));

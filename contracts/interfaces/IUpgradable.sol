@@ -12,10 +12,18 @@ interface IUpgradable {
     error NotProxy();
 
     event Upgraded(address indexed newImplementation);
+    event OwnershipTransferStarted(address indexed newOwner);
     event OwnershipTransferred(address indexed newOwner);
 
     // Get current owner
     function owner() external view returns (address);
+
+    // Get pending ownership transfer
+    function pendingOwner() external view returns (address);
+
+    function transferOwnership(address newOwner) external;
+
+    function acceptOwnership() external;
 
     function contractId() external pure returns (bytes32);
 

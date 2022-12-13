@@ -91,7 +91,7 @@ contract AxelarForecallable is IAxelarForecallable {
         string calldata symbol,
         uint256 amount
     ) public view returns (bytes32 forecallSlot, address forecaller) {
-forecallSlot = keccak256(
+        forecallSlot = keccak256(
             abi.encode(PREFIX_FORECALL_WITH_TOKEN, sourceChain, sourceAddress, payload, symbol, amount)
         );
         // solhint-disable-next-line no-inline-assembly

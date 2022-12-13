@@ -135,7 +135,6 @@ describe('GeneralMessagePassing', () => {
   describe('AxelarExecutable', () => {
     it('should swap tokens on remote chain', async () => {
       const swapAmount = 1e6;
-      const gasFeeAmount = 1e3;
       const convertedAmount = 2 * swapAmount;
       const payload = defaultAbiCoder.encode(
         ['string', 'string'],
@@ -150,7 +149,7 @@ describe('GeneralMessagePassing', () => {
       );
       await sourceChainTokenA.approve(
         sourceChainSwapCaller.address,
-        swapAmount + gasFeeAmount,
+        swapAmount,
       );
 
       await expect(
@@ -274,7 +273,7 @@ describe('GeneralMessagePassing', () => {
       const sourceTxHash = keccak256('0x123abc123abc');
       const sourceEventIndex = 17;
 
-      const approveWithMintData = defaultAbiCoder.encode(
+      const approveContractCallData = defaultAbiCoder.encode(
         ['string', 'string', 'address', 'bytes32', 'bytes32', 'uint256'],
         [
           sourceChain,
@@ -287,7 +286,7 @@ describe('GeneralMessagePassing', () => {
       );
 
       const approveExecute = await destinationChainGateway.approveContractCall(
-        approveWithMintData,
+        approveContractCallData,
         approveCommandId,
       );
 
@@ -318,7 +317,6 @@ describe('GeneralMessagePassing', () => {
 
     it('should forecallWithToken a swap on remote chain', async () => {
       const swapAmount = 1e6;
-      const gasFeeAmount = 1e3;
       const convertedAmount = 2 * swapAmount;
       const payload = defaultAbiCoder.encode(
         ['string', 'string'],
@@ -333,7 +331,7 @@ describe('GeneralMessagePassing', () => {
       );
       await sourceChainTokenA.approve(
         sourceChainSwapCaller.address,
-        swapAmount + gasFeeAmount,
+        swapAmount,
       );
 
       await expect(

@@ -5,7 +5,6 @@ pragma solidity 0.8.9;
 import { AxelarForecallable } from '../../executables/AxelarForecallable.sol';
 import { IERC20 } from '../../interfaces/IERC20.sol';
 import { DestinationChainTokenSwapper } from './DestinationChainTokenSwapper.sol';
-import { IAxelarGateway } from '../../interfaces/IAxelarGateway.sol';
 
 contract DestinationChainSwapForecallable is AxelarForecallable {
     DestinationChainTokenSwapper public swapper;

@@ -7,6 +7,8 @@ import { IERC20 } from '../interfaces/IERC20.sol';
 
 // This should be owned by the microservice that is paying for gas.
 contract MockGasService is IAxelarGasService {
+    address public gasCollector;
+
     // This is called on the source chain before calling the gateway to execute a remote contract.
     function payGasForContractCall(
         address sender,
@@ -101,6 +103,101 @@ contract MockGasService is IAxelarGasService {
         );
     }
 
+    // This is called on the source chain before calling the gateway to execute a remote contract.
+    function payGasForExpressCall(
+        address sender,
+        string calldata destinationChain,
+        string calldata destinationAddress,
+        bytes calldata payload,
+        address gasToken,
+        uint256 gasFeeAmount,
+        address refundAddress
+    ) external override {
+        _safeTransferFrom(gasToken, msg.sender, gasFeeAmount);
+
+        emit GasPaidForExpressCall(
+            sender,
+            destinationChain,
+            destinationAddress,
+            keccak256(payload),
+            gasToken,
+            gasFeeAmount,
+            refundAddress
+        );
+    }
+
+    // This is called on the source chain before calling the gateway to execute a remote contract.
+    function payGasForExpressCallWithToken(
+        address sender,
+        string calldata destinationChain,
+        string calldata destinationAddress,
+        bytes calldata payload,
+        string memory symbol,
+        uint256 amount,
+        address gasToken,
+        uint256 gasFeeAmount,
+        address refundAddress
+    ) external override {
+        _safeTransferFrom(gasToken, msg.sender, gasFeeAmount);
+
+        emit GasPaidForExpressCallWithToken(
+            sender,
+            destinationChain,
+            destinationAddress,
+            keccak256(payload),
+            symbol,
+            amount,
+            gasToken,
+            gasFeeAmount,
+            refundAddress
+        );
+    }
+
+    // This is called on the source chain before calling the gateway to execute a remote contract.
+    function payNativeGasForExpressCall(
+        address sender,
+        string calldata destinationChain,
+        string calldata destinationAddress,
+        bytes calldata payload,
+        address refundAddress
+    ) external payable override {
+        if (msg.value == 0) revert NothingReceived();
+
+        emit NativeGasPaidForExpressCall(
+            sender,
+            destinationChain,
+            destinationAddress,
+            keccak256(payload),
+            msg.value,
+            refundAddress
+        );
+    }
+
+    // This is called on the source chain before calling the gateway to execute a remote contract.
+    function payNativeGasForExpressCallWithToken(
+        address sender,
+        string calldata destinationChain,
+        string calldata destinationAddress,
+        bytes calldata payload,
+        string calldata symbol,
+        uint256 amount,
+        address refundAddress
+    ) external payable override {
+        if (msg.value == 0) revert NothingReceived();
+
+        emit NativeGasPaidForExpressCallWithToken(
+            sender,
+            destinationChain,
+            destinationAddress,
+            keccak256(payload),
+            symbol,
+            amount,
+            msg.value,
+            refundAddress
+        );
+    }
+
+    // This can be called on the source chain after calling the gateway to execute a remote contract.
     function addGas(
         bytes32 txHash,
         uint256 logIndex,
@@ -113,6 +210,7 @@ contract MockGasService is IAxelarGasService {
         emit GasAdded(txHash, logIndex, gasToken, gasFeeAmount, refundAddress);
     }
 
+    // This can be called on the source chain after calling the gateway to execute a remote contract.
     function addNativeGas(
         bytes32 txHash,
         uint256 logIndex,
@@ -123,18 +221,49 @@ contract MockGasService is IAxelarGasService {
         emit NativeGasAdded(txHash, logIndex, msg.value, refundAddress);
     }
 
-    function collectFees(address payable receiver, address[] calldata tokens) external {
+    // This can be called on the source chain after calling the gateway to execute a remote contract.
+    function addExpressCallGas(
+        bytes32 txHash,
+        uint256 logIndex,
+        address gasToken,
+        uint256 gasFeeAmount,
+        address refundAddress
+    ) external override {
+        _safeTransferFrom(gasToken, msg.sender, gasFeeAmount);
+
+        emit ExpressCallGasAdded(txHash, logIndex, gasToken, gasFeeAmount, refundAddress);
+    }
+
+    // This can be called on the source chain after calling the gateway to execute a remote contract.
+    function addNativeExpressCallGas(
+        bytes32 txHash,
+        uint256 logIndex,
+        address refundAddress
+    ) external payable override {
+        if (msg.value == 0) revert NothingReceived();
+
+        emit NativeExpressCallGasAdded(txHash, logIndex, msg.value, refundAddress);
+    }
+
+    function collectFees(
+        address payable receiver,
+        address[] calldata tokens,
+        uint256[] calldata amounts
+    ) external {
         if (receiver == address(0)) revert InvalidAddress();
 
-        for (uint256 i; i < tokens.length; i++) {
+        uint256 tokensLength = tokens.length;
+        if (tokensLength != amounts.length) revert InvalidAmounts();
+
+        for (uint256 i; i < tokensLength; i++) {
             address token = tokens[i];
+            uint256 amount = amounts[i];
+            if (amount == 0) revert InvalidAmounts();
 
             if (token == address(0)) {
-                uint256 amount = address(this).balance;
-                if (amount > 0) receiver.transfer(amount);
+                if (amount <= address(this).balance) receiver.transfer(amount);
             } else {
-                uint256 amount = IERC20(token).balanceOf(address(this));
-                if (amount > 0) _safeTransfer(token, receiver, amount);
+                if (amount <= IERC20(token).balanceOf(address(this))) _safeTransfer(token, receiver, amount);
             }
         }
     }
@@ -183,9 +312,5 @@ contract MockGasService is IAxelarGasService {
         bool transferred = success && (returnData.length == uint256(0) || abi.decode(returnData, (bool)));
 
         if (!transferred || tokenAddress.code.length == 0) revert TransferFailed();
-    }
-
-    function contractId() external pure returns (bytes32) {
-        return keccak256('axelar-gas-service');
     }
 }

@@ -19,7 +19,7 @@ contract AxelarExecutable is IAxelarExecutable {
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
-    ) external override {
+    ) external {
         bytes32 payloadHash = keccak256(payload);
         if (!gateway.validateContractCall(commandId, sourceChain, sourceAddress, payloadHash))
             revert NotApprovedByGateway();
@@ -33,7 +33,7 @@ contract AxelarExecutable is IAxelarExecutable {
         bytes calldata payload,
         string calldata tokenSymbol,
         uint256 amount
-    ) external override {
+    ) external {
         bytes32 payloadHash = keccak256(payload);
         if (
             !gateway.validateContractCallAndMint(

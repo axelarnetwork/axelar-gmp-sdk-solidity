@@ -134,7 +134,7 @@ const deployAndInitContractConstant = async (
   const tx = await deployer
     .connect(wallet)
     .deployAndInit(bytecode, salt, initData, {
-      gasLimit: BigInt(Math.floor(gas * 1.2)),
+      gasLimit: BigInt(Math.floor(gas * 1.3)),
     });
   await tx.wait();
   return contract;

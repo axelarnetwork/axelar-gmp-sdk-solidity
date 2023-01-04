@@ -25,8 +25,6 @@ interface IUpgradable {
 
     function acceptOwnership() external;
 
-    function contractId() external pure returns (bytes32);
-
     function upgrade(
         address newImplementation,
         bytes32 newImplementationCodeHash,
@@ -34,4 +32,6 @@ interface IUpgradable {
     ) external;
 
     function setup(bytes calldata data) external;
+
+    function contractId() external pure returns (bytes32);
 }

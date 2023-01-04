@@ -33,9 +33,13 @@ contract Proxy {
         assembly {
             owner := sload(_OWNER_SLOT)
         }
+
         if (msg.sender != owner) revert NotOwner();
         if (implementation() != address(0)) revert AlreadyInitialized();
-        if (IUpgradable(implementationAddress).contractId() != contractId()) revert InvalidImplementation();
+
+        bytes32 id = contractId();
+        if (id != bytes32(0) && IUpgradable(implementationAddress).contractId() != id)
+            revert('InvalidImplementation()');
 
         // solhint-disable-next-line no-inline-assembly
         assembly {
@@ -50,8 +54,9 @@ contract Proxy {
         if (!success) revert SetupFailed();
     }
 
-    // solhint-disable-next-line no-empty-blocks
-    function contractId() internal pure virtual returns (bytes32) {}
+    function contractId() internal pure virtual returns (bytes32) {
+        return bytes32(0);
+    }
 
     function implementation() public view returns (address implementation_) {
         // solhint-disable-next-line no-inline-assembly

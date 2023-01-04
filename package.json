@@ -6,7 +6,7 @@
   "scripts": {
     "test": "npx hardhat test",
     "build": "rm -rf artifacts && hardhat compile && npm run copy:artifacts",
-    "copy:artifacts": "rm -rf dist && mkdir dist && cp artifacts/contracts{/interfaces/IUpgradable.sol/IUpgradable.json,/ConstAddressDeployer.sol/ConstAddressDeployer.json} dist/",
+    "copy:artifacts": "rm -rf dist && mkdir dist && cp artifacts/contracts/ConstAddressDeployer.sol/ConstAddressDeployer.json artifacts/contracts/interfaces/IUpgradable.sol/IUpgradable.json dist/",
     "lint": "solhint 'contracts/**/*.sol' && eslint 'scripts/**/*.js' 'test/**/*.js'",
     "prettier": "prettier --write 'contracts/**/*.sol' 'test/**/*.js' 'scripts/**/*.js' '*.js'",
     "flatten": "sh scripts/flatten-contracts.sh"

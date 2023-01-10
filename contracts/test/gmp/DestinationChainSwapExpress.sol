@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.9;
 
-import { ExpressExecutable } from '../../executable/ExpressExecutable.sol';
+import { ExpressExecutable } from '../../express/ExpressExecutable.sol';
 import { IERC20 } from '../../interfaces/IERC20.sol';
 import { DestinationChainTokenSwapper } from './DestinationChainTokenSwapper.sol';
 

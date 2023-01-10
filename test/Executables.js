@@ -18,7 +18,8 @@ const GMPExpressService = require('../artifacts/contracts/test/MockGMPExpressSer
 const MintableCappedERC20 = require('../artifacts/contracts/test/ERC20MintableBurnable.sol/ERC20MintableBurnable.json');
 const SourceChainSwapCaller = require('../artifacts/contracts/test/gmp/SourceChainSwapCaller.sol/SourceChainSwapCaller.json');
 const DestinationChainSwapExecutable = require('../artifacts/contracts/test/gmp/DestinationChainSwapExecutable.sol/DestinationChainSwapExecutable.json');
-const ExpressExecutableProxy = require('../artifacts/contracts/executable/ExpressExecutableProxy.sol/ExpressExecutableProxy.json');
+const ExpressExecutableProxy = require('../artifacts/contracts/express/ExpressExecutableProxy.sol/ExpressExecutableProxy.json');
+const ExpressRegistry = require('../artifacts/contracts/express/ExpressRegistry.sol/ExpressRegistry.json');
 const DestinationChainSwapExpress = require('../artifacts/contracts/test/gmp/DestinationChainSwapExpress.sol/DestinationChainSwapExpress.json');
 const DestinationChainTokenSwapper = require('../artifacts/contracts/test/gmp/DestinationChainTokenSwapper.sol/DestinationChainTokenSwapper.json');
 const ConstAddressDeployer = require('../dist/ConstAddressDeployer.json');
@@ -34,6 +35,7 @@ describe('GeneralMessagePassing', () => {
   let sourceChainSwapCaller;
   let destinationChainSwapExecutable;
   let destinationChainSwapExpress;
+  let destinationChainExpressRegistry;
   let destinationChainTokenSwapper;
   let tokenA;
   let tokenB;
@@ -120,6 +122,17 @@ describe('GeneralMessagePassing', () => {
       ExpressExecutableProxy,
       [destinationChainGateway.address, destinationChainTokenSwapper.address],
       [gmpExpressService.address, ADDRESS_ZERO],
+    );
+
+    const destinationChainSwapExpressProxy = new Contract(
+      destinationChainSwapExpress.address,
+      ExpressExecutableProxy.abi,
+      ownerWallet,
+    );
+    destinationChainExpressRegistry = new Contract(
+      await destinationChainSwapExpressProxy.registry(),
+      ExpressRegistry.abi,
+      ownerWallet,
     );
 
     sourceChainSwapCaller = await deployContract(
@@ -269,73 +282,6 @@ describe('GeneralMessagePassing', () => {
   });
 
   describe('AxelarForecallable', () => {
-    it('should forecall and execute', async () => {
-      const payload = defaultAbiCoder.encode(
-        ['string'],
-        [userWallet.address.toString()],
-      );
-      const payloadHash = keccak256(payload);
-
-      await expect(
-        await gmpExpressService
-          .connect(ownerWallet)
-          .call(
-            getRandomID(),
-            sourceChain,
-            sourceChainSwapCaller.address,
-            destinationChainSwapExpress.address,
-            payload,
-          ),
-      )
-        .to.emit(destinationChainSwapExpress, 'Executed')
-        .withArgs(sourceChain, sourceChainSwapCaller.address, payload);
-
-      const approveCommandId = getRandomID();
-      const sourceTxHash = keccak256('0x123abc123abc');
-      const sourceEventIndex = 17;
-
-      const approveContractCallData = defaultAbiCoder.encode(
-        ['string', 'string', 'address', 'bytes32', 'bytes32', 'uint256'],
-        [
-          sourceChain,
-          sourceChainSwapCaller.address.toString(),
-          destinationChainSwapExpress.address,
-          payloadHash,
-          sourceTxHash,
-          sourceEventIndex,
-        ],
-      );
-
-      const approveExecute = await destinationChainGateway.approveContractCall(
-        approveContractCallData,
-        approveCommandId,
-      );
-
-      await expect(approveExecute)
-        .to.emit(destinationChainGateway, 'ContractCallApproved')
-        .withArgs(
-          approveCommandId,
-          sourceChain,
-          sourceChainSwapCaller.address.toString(),
-          destinationChainSwapExpress.address,
-          payloadHash,
-          sourceTxHash,
-          sourceEventIndex,
-        );
-
-      const execute = await destinationChainSwapExpress.execute(
-        approveCommandId,
-        sourceChain,
-        sourceChainSwapCaller.address.toString(),
-        payload,
-      );
-
-      await expect(execute).not.to.emit(
-        destinationChainSwapExpress,
-        'Executed',
-      );
-    });
-
     it('should forecallWithToken a swap on remote chain', async () => {
       const swapAmount = 1e6;
       const convertedAmount = 2 * swapAmount;
@@ -393,6 +339,15 @@ describe('GeneralMessagePassing', () => {
             swapAmount,
           ),
       )
+        .to.emit(destinationChainExpressRegistry, 'ExpressCallWithToken')
+        .withArgs(
+          gmpExpressService.address,
+          sourceChain,
+          sourceChainSwapCaller.address.toString(),
+          payloadHash,
+          symbolA,
+          swapAmount,
+        )
         .to.emit(tokenA, 'Transfer')
         .withArgs(
           gmpExpressService.address,
@@ -483,6 +438,19 @@ describe('GeneralMessagePassing', () => {
       );
 
       await expect(execute)
+        .to.emit(
+          destinationChainExpressRegistry,
+          'ExpressCallWithTokenCompleted',
+        )
+        .withArgs(
+          gmpExpressService.address,
+          approveCommandId,
+          sourceChain,
+          sourceChainSwapCaller.address.toString(),
+          payloadHash,
+          symbolA,
+          swapAmount,
+        )
         .to.emit(tokenA, 'Transfer')
         .withArgs(
           destinationChainGateway.address,

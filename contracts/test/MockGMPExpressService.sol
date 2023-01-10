@@ -7,7 +7,7 @@ import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
 import { IGMPExpressService } from '../interfaces/IGMPExpressService.sol';
 import { IERC20 } from '../interfaces/IERC20.sol';
 import { AxelarExecutable } from '../executable/AxelarExecutable.sol';
-import { ExpressExecutableProxy } from '../executable/ExpressExecutableProxy.sol';
+import { ExpressExecutableProxy } from '../express/ExpressExecutableProxy.sol';
 
 contract MockGMPExpressService is AxelarExecutable, IGMPExpressService {
     address public immutable expressOperator;
@@ -30,31 +30,6 @@ contract MockGMPExpressService is AxelarExecutable, IGMPExpressService {
         if (msg.sender != expressOperator) revert NotOperator();
 
         _;
-    }
-
-    function call(
-        bytes32 commandId,
-        string calldata sourceChain,
-        string calldata sourceAddress,
-        address contractAddress,
-        bytes calldata payload
-    ) external onlyOperator {
-        if (contractAddress == address(0)) revert InvalidContractAddress();
-
-        if (commandId != bytes32(0) && gateway.isCommandExecuted(commandId)) {
-            IExpressExecutable(contractAddress).execute(commandId, sourceChain, sourceAddress, payload);
-        } else {
-            if (contractAddress.codehash != expressProxyCodeHash) revert NotExpressProxy();
-
-            (bytes32 slot, uint256 count) = _getExpressCall(
-                sourceChain,
-                sourceAddress,
-                contractAddress,
-                keccak256(payload)
-            );
-            _setExpressCall(slot, count + 1);
-            IExpressExecutable(contractAddress).expressExecute(sourceChain, sourceAddress, payload);
-        }
     }
 
     function callWithToken(
@@ -80,16 +55,7 @@ contract MockGMPExpressService is AxelarExecutable, IGMPExpressService {
         } else {
             if (contractAddress.codehash != expressProxyCodeHash) revert NotExpressProxy();
 
-            (bytes32 slot, uint256 count) = _getExpressCallWithToken(
-                sourceChain,
-                sourceAddress,
-                contractAddress,
-                keccak256(payload),
-                tokenSymbol,
-                amount
-            );
-            _setExpressCallWithToken(slot, count + 1);
-            _safeTransfer(gateway.tokenAddresses(tokenSymbol), contractAddress, amount);
+            IERC20(gateway.tokenAddresses(tokenSymbol)).approve(contractAddress, amount);
             IExpressExecutable(contractAddress).expressExecuteWithToken(
                 sourceChain,
                 sourceAddress,
@@ -98,64 +64,6 @@ contract MockGMPExpressService is AxelarExecutable, IGMPExpressService {
                 amount
             );
         }
-    }
-
-    function getPendingExpressCallCount(
-        string calldata sourceChain,
-        string calldata sourceAddress,
-        address contractAddress,
-        bytes32 payloadHash
-    ) external view returns (uint256 count) {
-        (, count) = _getExpressCall(sourceChain, sourceAddress, contractAddress, payloadHash);
-    }
-
-    function getPendingExpressCallWithTokenCount(
-        string calldata sourceChain,
-        string calldata sourceAddress,
-        address contractAddress,
-        bytes32 payloadHash,
-        string calldata tokenSymbol,
-        uint256 amount
-    ) external view returns (uint256 count) {
-        (, count) = _getExpressCallWithToken(
-            sourceChain,
-            sourceAddress,
-            contractAddress,
-            payloadHash,
-            tokenSymbol,
-            amount
-        );
-    }
-
-    function completeCall(
-        string calldata sourceChain,
-        string calldata sourceAddress,
-        bytes32 payloadHash
-    ) external returns (bool expressCalled) {
-        (bytes32 slot, uint256 count) = _getExpressCall(sourceChain, sourceAddress, msg.sender, payloadHash);
-        expressCalled = count != 0;
-
-        if (expressCalled) _setExpressCall(slot, count - 1);
-    }
-
-    function completeCallWithToken(
-        string calldata sourceChain,
-        string calldata sourceAddress,
-        bytes32 payloadHash,
-        string calldata tokenSymbol,
-        uint256 amount
-    ) external returns (bool expressCalled) {
-        (bytes32 slot, uint256 count) = _getExpressCallWithToken(
-            sourceChain,
-            sourceAddress,
-            msg.sender,
-            payloadHash,
-            tokenSymbol,
-            amount
-        );
-        expressCalled = count != 0;
-
-        if (expressCalled) _setExpressCallWithToken(slot, count - 1);
     }
 
     function deployExpressProxy(
@@ -197,58 +105,6 @@ contract MockGMPExpressService is AxelarExecutable, IGMPExpressService {
             receiver.transfer(amount);
         } else {
             _safeTransfer(token, receiver, amount);
-        }
-    }
-
-    function _getExpressCall(
-        string calldata sourceChain,
-        string calldata sourceAddress,
-        address contractAddress,
-        bytes32 payloadHash
-    ) internal view returns (bytes32 slot, uint256 count) {
-        slot = keccak256(abi.encode(PREFIX_EXPRESS_CALL, sourceChain, sourceAddress, contractAddress, payloadHash));
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            count := sload(slot)
-        }
-    }
-
-    function _setExpressCall(bytes32 slot, uint256 count) internal {
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            sstore(slot, count)
-        }
-    }
-
-    function _getExpressCallWithToken(
-        string calldata sourceChain,
-        string calldata sourceAddress,
-        address contractAddress,
-        bytes32 payloadHash,
-        string calldata symbol,
-        uint256 amount
-    ) internal view returns (bytes32 slot, uint256 count) {
-        slot = keccak256(
-            abi.encode(
-                PREFIX_EXPRESS_CALL_WITH_TOKEN,
-                sourceChain,
-                sourceAddress,
-                contractAddress,
-                payloadHash,
-                symbol,
-                amount
-            )
-        );
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            count := sload(slot)
-        }
-    }
-
-    function _setExpressCallWithToken(bytes32 slot, uint256 count) internal {
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            sstore(slot, count)
         }
     }
 

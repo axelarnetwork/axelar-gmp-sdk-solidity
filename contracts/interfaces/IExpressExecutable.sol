@@ -3,21 +3,27 @@
 pragma solidity ^0.8.0;
 
 import { IAxelarExecutable } from '../interfaces/IAxelarExecutable.sol';
-import { IGMPExpressService } from '../interfaces/IGMPExpressService.sol';
+import { IExpressRegistry } from '../interfaces/IExpressRegistry.sol';
 
 interface IExpressExecutable is IAxelarExecutable {
-    error NotGMPExpressService();
+    error NotExpressRegistry();
     error TransferFailed();
 
-    function gmpExpressService() external view returns (IGMPExpressService);
+    function registry() external view returns (IExpressRegistry);
 
-    function expressExecute(
-        string calldata sourceChain,
-        string calldata sourceAddress,
-        bytes calldata payload
-    ) external;
+    function registryCodeHash() external view returns (bytes32);
 
     function expressExecuteWithToken(
+        string calldata sourceChain,
+        string calldata sourceAddress,
+        bytes calldata payload,
+        string calldata tokenSymbol,
+        uint256 amount
+    ) external;
+
+    function completeExecuteWithToken(
+        address expressCaller,
+        bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload,

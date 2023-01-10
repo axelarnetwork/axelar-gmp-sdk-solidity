@@ -4,11 +4,11 @@ pragma solidity ^0.8.0;
 
 import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
 import { IERC20 } from '../interfaces/IERC20.sol';
+import { IAxelarExecutable } from '../interfaces/IAxelarExecutable.sol';
 import { IExpressExecutable } from '../interfaces/IExpressExecutable.sol';
 import { Upgradable } from '../upgradable/Upgradable.sol';
 
-abstract contract ExpressExecutable is Upgradable {
-    error InvalidAddress();
+abstract contract ExpressExecutable is Upgradable, IAxelarExecutable {
     error NotSelf();
 
     IAxelarGateway public immutable gateway;

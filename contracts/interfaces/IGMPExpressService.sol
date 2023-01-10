@@ -11,6 +11,7 @@ interface IGMPExpressService is IAxelarExecutable {
     error InvalidGateway();
     error InvalidOperator();
     error InvalidContractAddress();
+    error InvalidTokenSymbol();
     error NotExpressProxy();
     error NotOperator();
     error FailedDeploy();
@@ -20,53 +21,15 @@ interface IGMPExpressService is IAxelarExecutable {
 
     function expressOperator() external returns (address);
 
-    function call(
-        bytes32 commandId,
-        string calldata sourceChain,
-        string calldata sourceAddress,
-        address contractAddress,
-        bytes calldata payload
-    ) external;
-
     function callWithToken(
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
         address contractAddress,
         bytes calldata payload,
-        string calldata tokenSymbolA,
+        string calldata tokenSymbol,
         uint256 amount
     ) external;
-
-    function getPendingExpressCallCount(
-        string calldata sourceChain,
-        string calldata sourceAddress,
-        address contractAddress,
-        bytes32 payloadHash
-    ) external view returns (uint256 count);
-
-    function getPendingExpressCallWithTokenCount(
-        string calldata sourceChain,
-        string calldata sourceAddress,
-        address contractAddress,
-        bytes32 payloadHash,
-        string calldata tokenSymbol,
-        uint256 amount
-    ) external returns (uint256 count);
-
-    function completeCall(
-        string calldata sourceChain,
-        string calldata sourceAddress,
-        bytes32 payloadHash
-    ) external returns (bool expressCalled);
-
-    function completeCallWithToken(
-        string calldata sourceChain,
-        string calldata sourceAddress,
-        bytes32 payloadHash,
-        string calldata tokenSymbol,
-        uint256 amount
-    ) external returns (bool expressCalled);
 
     function deployExpressProxy(
         bytes32 salt,

@@ -73,7 +73,7 @@ contract ExpressRegistry is IExpressRegistry {
                 commandId,
                 sourceChain,
                 sourceAddress,
-                address(proxy),
+                msg.sender,
                 payloadHash,
                 tokenSymbol,
                 amount

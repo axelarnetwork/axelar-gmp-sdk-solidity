@@ -8,8 +8,7 @@ import { IExpressRegistry } from '../interfaces/IExpressRegistry.sol';
 
 contract ExpressRegistry is IExpressRegistry {
     IAxelarGateway public immutable gateway;
-    // Can't use immutable for proxy to keep consistent codehash
-    IExpressExecutable public proxy;
+    bytes32 public immutable proxyCodeHash;
 
     mapping(bytes32 => address) private expressCallsWithToken;
 
@@ -17,13 +16,7 @@ contract ExpressRegistry is IExpressRegistry {
         if (gateway_ == address(0)) revert InvalidGateway();
 
         gateway = IAxelarGateway(gateway_);
-        proxy = IExpressExecutable(msg.sender);
-    }
-
-    modifier onlyProxy() {
-        if (msg.sender != address(proxy)) revert NotExpressProxy();
-
-        _;
+        proxyCodeHash = msg.sender.codehash;
     }
 
     function registerExpressCallWithToken(
@@ -33,7 +26,9 @@ contract ExpressRegistry is IExpressRegistry {
         bytes32 payloadHash,
         string calldata tokenSymbol,
         uint256 amount
-    ) external onlyProxy {
+    ) external {
+        _onlyProxy();
+
         (bytes32 slot, address existingExpressCaller) = _getExpressCallWithToken(
             sourceChain,
             sourceAddress,
@@ -57,7 +52,9 @@ contract ExpressRegistry is IExpressRegistry {
         bytes calldata payload,
         string calldata tokenSymbol,
         uint256 amount
-    ) external onlyProxy {
+    ) external {
+        _onlyProxy();
+
         bytes32 payloadHash = keccak256(payload);
         (bytes32 slot, address expressCaller) = _getExpressCallWithToken(
             sourceChain,
@@ -99,6 +96,12 @@ contract ExpressRegistry is IExpressRegistry {
             tokenSymbol,
             amount
         );
+    }
+
+    function _onlyProxy() internal view {
+        address proxyRegistry = address(IExpressExecutable(msg.sender).registry());
+
+        if (msg.sender.codehash != proxyCodeHash || proxyRegistry != address(this)) revert NotExpressProxy();
     }
 
     function _getExpressCallWithToken(

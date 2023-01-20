@@ -19,6 +19,12 @@ abstract contract ExpressExecutable is Upgradable, IAxelarExecutable {
         gateway = IAxelarGateway(gateway_);
     }
 
+    modifier onlySelf() {
+        if (msg.sender != address(this)) revert NotSelf();
+
+        _;
+    }
+
     /// @notice this function is shadowed by the proxy and can be called only internally
     function execute(
         bytes32,

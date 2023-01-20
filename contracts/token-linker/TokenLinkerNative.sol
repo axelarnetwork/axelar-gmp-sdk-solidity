@@ -2,9 +2,12 @@
 
 pragma solidity ^0.8.0;
 
+import { SafeNativeTransfer } from '../utils/SafeTransfer.sol';
 import { TokenLinkerBase } from './TokenLinkerBase.sol';
 
 contract TokenLinkerNative is TokenLinkerBase {
+    using SafeNativeTransfer for address;
+
     error InsufficientBalance();
     error TranferFromNativeFailed();
 
@@ -34,7 +37,7 @@ contract TokenLinkerNative is TokenLinkerBase {
     function _giveToken(address to, uint256 amount) internal override {
         uint256 balance = getNativeBalance();
         if (balance < amount) revert('InsufficientBalance()');
-        payable(to).transfer(amount);
+        to.safeNativeTransfer(amount);
         _setNativeBalance(balance - amount);
     }
 

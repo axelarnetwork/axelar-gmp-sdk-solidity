@@ -9,11 +9,13 @@ import { IGMPExpressService } from '../interfaces/IGMPExpressService.sol';
 import { IExpressRegistry } from '../interfaces/IExpressRegistry.sol';
 import { Proxy } from '../upgradable/Proxy.sol';
 import { ExpressRegistry } from './ExpressRegistry.sol';
+import { SafeTokenTransfer, SafeTokenTransferFrom } from '../utils/SafeTransfer.sol';
 
-contract ExpressExecutableProxy is Proxy, IExpressExecutable {
+contract ExpressProxy is Proxy, IExpressExecutable {
+    using SafeTokenTransfer for IERC20;
+    using SafeTokenTransferFrom for IERC20;
+
     IAxelarGateway public immutable gateway;
-    // Integrity of ExpressRegistry bytecode is included in ExpressExecutableProxy codehash
-    bytes32 public immutable registryCodeHash;
 
     constructor(address gmpExpressService_, address gateway_) {
         IAxelarGateway resolvedGateway;
@@ -28,14 +30,16 @@ contract ExpressExecutableProxy is Proxy, IExpressExecutable {
         }
 
         gateway = resolvedGateway;
-        IExpressRegistry deployedRegistry = new ExpressRegistry(address(resolvedGateway));
-        registryCodeHash = address(deployedRegistry).codehash;
     }
 
     modifier onlyRegistry() {
         if (msg.sender != address(registry())) revert NotExpressRegistry();
 
         _;
+    }
+
+    function deployRegistry() external {
+        if (address(registry()).code.length == 0) new ExpressRegistry(address(gateway));
     }
 
     function registry() public view returns (IExpressRegistry) {
@@ -94,7 +98,7 @@ contract ExpressExecutableProxy is Proxy, IExpressExecutable {
             amount
         );
 
-        _safeTransferFrom(token, msg.sender, amount);
+        IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
         _executeWithToken(sourceChain, sourceAddress, payload, tokenSymbol, amount);
     }
 
@@ -138,7 +142,7 @@ contract ExpressExecutableProxy is Proxy, IExpressExecutable {
             // Returning the lent token
             address token = gateway.tokenAddresses(tokenSymbol);
 
-            _safeTransfer(token, expressCaller, amount);
+            IERC20(token).safeTransfer(expressCaller, amount);
         }
     }
 
@@ -150,13 +154,7 @@ contract ExpressExecutableProxy is Proxy, IExpressExecutable {
     ) internal {
         // solhint-disable-next-line avoid-low-level-calls
         (bool success, ) = implementation().delegatecall(
-            abi.encodeWithSelector(
-                ExpressExecutableProxy.execute.selector,
-                bytes32(0),
-                sourceChain,
-                sourceAddress,
-                payload
-            )
+            abi.encodeWithSelector(ExpressProxy.execute.selector, bytes32(0), sourceChain, sourceAddress, payload)
         );
 
         // if not success revert with the original revert data
@@ -182,7 +180,7 @@ contract ExpressExecutableProxy is Proxy, IExpressExecutable {
         // solhint-disable-next-line avoid-low-level-calls
         (bool success, ) = implementation().delegatecall(
             abi.encodeWithSelector(
-                ExpressExecutableProxy.executeWithToken.selector,
+                ExpressProxy.executeWithToken.selector,
                 bytes32(0),
                 sourceChain,
                 sourceAddress,
@@ -202,32 +200,5 @@ contract ExpressExecutableProxy is Proxy, IExpressExecutable {
                 revert(ptr, size)
             }
         }
-    }
-
-    function _safeTransfer(
-        address tokenAddress,
-        address receiver,
-        uint256 amount
-    ) internal {
-        (bool success, bytes memory returnData) = tokenAddress.call(
-            abi.encodeWithSelector(IERC20.transfer.selector, receiver, amount)
-        );
-        bool transferred = success && (returnData.length == uint256(0) || abi.decode(returnData, (bool)));
-
-        if (!transferred || tokenAddress.code.length == 0) revert TransferFailed();
-    }
-
-    function _safeTransferFrom(
-        address tokenAddress,
-        address from,
-        uint256 amount
-    ) internal {
-        // solhint-disable-next-line avoid-low-level-calls
-        (bool success, bytes memory returnData) = tokenAddress.call(
-            abi.encodeWithSelector(IERC20.transferFrom.selector, from, address(this), amount)
-        );
-        bool transferred = success && (returnData.length == uint256(0) || abi.decode(returnData, (bool)));
-
-        if (!transferred || tokenAddress.code.length == 0) revert TransferFailed();
     }
 }

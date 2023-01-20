@@ -18,7 +18,7 @@ const GMPExpressService = require('../artifacts/contracts/test/MockGMPExpressSer
 const MintableCappedERC20 = require('../artifacts/contracts/test/ERC20MintableBurnable.sol/ERC20MintableBurnable.json');
 const SourceChainSwapCaller = require('../artifacts/contracts/test/gmp/SourceChainSwapCaller.sol/SourceChainSwapCaller.json');
 const DestinationChainSwapExecutable = require('../artifacts/contracts/test/gmp/DestinationChainSwapExecutable.sol/DestinationChainSwapExecutable.json');
-const ExpressExecutableProxy = require('../artifacts/contracts/express/ExpressExecutableProxy.sol/ExpressExecutableProxy.json');
+const ExpressProxy = require('../artifacts/contracts/express/ExpressProxy.sol/ExpressProxy.json');
 const ExpressRegistry = require('../artifacts/contracts/express/ExpressRegistry.sol/ExpressRegistry.json');
 const DestinationChainSwapExpress = require('../artifacts/contracts/test/gmp/DestinationChainSwapExpress.sol/DestinationChainSwapExpress.json');
 const DestinationChainTokenSwapper = require('../artifacts/contracts/test/gmp/DestinationChainTokenSwapper.sol/DestinationChainTokenSwapper.json');
@@ -119,16 +119,18 @@ describe('GeneralMessagePassing', () => {
       constAddressDeployer.address,
       ownerWallet,
       DestinationChainSwapExpress,
-      ExpressExecutableProxy,
+      ExpressProxy,
       [destinationChainGateway.address, destinationChainTokenSwapper.address],
       [gmpExpressService.address, ADDRESS_ZERO],
     );
 
     const destinationChainSwapExpressProxy = new Contract(
       destinationChainSwapExpress.address,
-      ExpressExecutableProxy.abi,
+      ExpressProxy.abi,
       ownerWallet,
     );
+    await destinationChainSwapExpressProxy.deployRegistry();
+
     destinationChainExpressRegistry = new Contract(
       await destinationChainSwapExpressProxy.registry(),
       ExpressRegistry.abi,
@@ -282,7 +284,7 @@ describe('GeneralMessagePassing', () => {
   });
 
   describe('AxelarForecallable', () => {
-    it('should forecallWithToken a swap on remote chain', async () => {
+    it('should expressCallWithToken a swap on remote chain', async () => {
       const swapAmount = 1e6;
       const convertedAmount = 2 * swapAmount;
       const payload = defaultAbiCoder.encode(

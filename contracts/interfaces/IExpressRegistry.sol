@@ -31,7 +31,7 @@ interface IExpressRegistry {
 
     function gateway() external returns (IAxelarGateway);
 
-    function proxy() external returns (IExpressExecutable);
+    function proxyCodeHash() external returns (bytes32);
 
     function registerExpressCallWithToken(
         address caller,

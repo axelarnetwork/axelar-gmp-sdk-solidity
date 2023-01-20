@@ -17,7 +17,6 @@ interface IGMPExpressService is IAxelarExecutable {
     error FailedDeploy();
     error EmptyBytecode();
     error WrongGasAmounts();
-    error TransferFailed();
 
     function expressOperator() external returns (address);
 

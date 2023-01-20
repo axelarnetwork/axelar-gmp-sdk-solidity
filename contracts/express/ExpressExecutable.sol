@@ -5,7 +5,6 @@ pragma solidity ^0.8.0;
 import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
 import { IERC20 } from '../interfaces/IERC20.sol';
 import { IAxelarExecutable } from '../interfaces/IAxelarExecutable.sol';
-import { IExpressExecutable } from '../interfaces/IExpressExecutable.sol';
 import { Upgradable } from '../upgradable/Upgradable.sol';
 
 abstract contract ExpressExecutable is Upgradable, IAxelarExecutable {
@@ -17,12 +16,6 @@ abstract contract ExpressExecutable is Upgradable, IAxelarExecutable {
         if (gateway_ == address(0)) revert InvalidAddress();
 
         gateway = IAxelarGateway(gateway_);
-    }
-
-    modifier onlySelf() {
-        if (msg.sender != address(this)) revert NotSelf();
-
-        _;
     }
 
     /// @notice this function is shadowed by the proxy and can be called only internally

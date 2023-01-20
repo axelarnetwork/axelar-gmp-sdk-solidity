@@ -3,7 +3,6 @@
 pragma solidity ^0.8.0;
 
 import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
-import { IExpressExecutable } from '../interfaces/IExpressExecutable.sol';
 
 interface IExpressRegistry {
     error InvalidGateway();

@@ -17,7 +17,9 @@ contract ExpressProxy is Proxy, IExpressExecutable {
 
     IAxelarGateway public immutable gateway;
 
-    constructor(address gmpExpressService_, address gateway_) {
+    constructor(address gateway_, address gmpExpressService_) {
+        if (gateway_ == address(0) && gmpExpressService_ == address(0)) revert InvalidAddress();
+
         IAxelarGateway resolvedGateway;
 
         // Providing gateway_ as address(0) allows having the same address across chains

@@ -21,7 +21,7 @@ contract MockGMPExpressService is AxelarExecutable, IGMPExpressService {
         if (expressOperator_ == address(0)) revert InvalidOperator();
 
         expressOperator = expressOperator_;
-        expressProxyCodeHash = address(new ExpressProxy(address(this), gateway_)).codehash;
+        expressProxyCodeHash = address(new ExpressProxy(gateway_, address(this))).codehash;
     }
 
     modifier onlyOperator() {

@@ -121,7 +121,7 @@ describe('GeneralMessagePassing', () => {
       DestinationChainSwapExpress,
       ExpressProxy,
       [destinationChainGateway.address, destinationChainTokenSwapper.address],
-      [gmpExpressService.address, ADDRESS_ZERO],
+      [ADDRESS_ZERO, gmpExpressService.address],
     );
 
     const destinationChainSwapExpressProxy = new Contract(

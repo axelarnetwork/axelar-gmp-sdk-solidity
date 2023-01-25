@@ -98,6 +98,7 @@ contract ExpressRegistry is IExpressRegistry {
         );
     }
 
+    /// @notice internal function instead of a modifier to avoid stack too deep error
     function _onlyProxy() internal view {
         address proxyRegistry = address(IExpressExecutable(msg.sender).registry());
 

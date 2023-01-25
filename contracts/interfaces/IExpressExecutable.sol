@@ -7,6 +7,7 @@ import { IExpressRegistry } from './IExpressRegistry.sol';
 
 interface IExpressExecutable is IAxelarExecutable {
     error NotExpressRegistry();
+    error InvalidTokenSymbol();
 
     function deployRegistry() external;
 

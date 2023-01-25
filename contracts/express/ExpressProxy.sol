@@ -91,6 +91,8 @@ contract ExpressProxy is Proxy, IExpressExecutable {
         bytes32 payloadHash = keccak256(payload);
         address token = gateway.tokenAddresses(tokenSymbol);
 
+        if (token == address(0)) revert InvalidTokenSymbol();
+
         registry().registerExpressCallWithToken(
             msg.sender,
             sourceChain,
@@ -143,6 +145,8 @@ contract ExpressProxy is Proxy, IExpressExecutable {
         } else {
             // Returning the lent token
             address token = gateway.tokenAddresses(tokenSymbol);
+
+            if (token == address(0)) revert InvalidTokenSymbol();
 
             IERC20(token).safeTransfer(expressCaller, amount);
         }

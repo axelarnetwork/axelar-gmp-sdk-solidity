@@ -51,7 +51,7 @@ contract MockGMPExpressService is AxelarExecutable, IGMPExpressService {
                 amount
             );
         } else {
-            if (contractAddress.codehash != expressProxyCodeHash) revert NotExpressProxy();
+            if (!isExpressProxy(contractAddress)) revert NotExpressProxy();
 
             IERC20(gateway.tokenAddresses(tokenSymbol)).approve(contractAddress, amount);
             IExpressExecutable(contractAddress).expressExecuteWithToken(
@@ -62,6 +62,14 @@ contract MockGMPExpressService is AxelarExecutable, IGMPExpressService {
                 amount
             );
         }
+    }
+
+    function deployedProxyAddress(bytes32, address) external pure returns (address) {
+        return address(0);
+    }
+
+    function isExpressProxy(address proxyAddress) public view returns (bool) {
+        return proxyAddress.codehash == expressProxyCodeHash;
     }
 
     function deployExpressProxy(

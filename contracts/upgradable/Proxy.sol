@@ -49,7 +49,7 @@ contract Proxy {
         if (params.length != 0) {
             // solhint-disable-next-line avoid-low-level-calls
             (bool success, ) = implementationAddress.delegatecall(
-            // 0x9ded06df is the setup selector
+                // 0x9ded06df is the setup selector
                 abi.encodeWithSelector(0x9ded06df, params)
             );
             if (!success) revert SetupFailed();

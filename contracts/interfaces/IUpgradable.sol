@@ -25,6 +25,8 @@ interface IUpgradable {
 
     function acceptOwnership() external;
 
+    function implementation() external view returns (address);
+
     function upgrade(
         address newImplementation,
         bytes32 newImplementationCodeHash,

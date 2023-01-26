@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
+import { IAxelarGateway } from './IAxelarGateway.sol';
 
 interface IAxelarExecutable {
     error InvalidAddress();

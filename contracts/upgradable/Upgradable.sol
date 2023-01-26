@@ -15,6 +15,14 @@ abstract contract Upgradable is IUpgradable {
 
     modifier onlyOwner() {
         if (owner() != msg.sender) revert NotOwner();
+
+        _;
+    }
+
+    modifier onlyProxy() {
+        // Prevent setup from being called on the implementation
+        if (implementation() == address(0)) revert NotProxy();
+
         _;
     }
 
@@ -82,10 +90,7 @@ abstract contract Upgradable is IUpgradable {
         }
     }
 
-    function setup(bytes calldata data) external override {
-        // Prevent setup from being called on the implementation
-        if (implementation() == address(0)) revert NotProxy();
-
+    function setup(bytes calldata data) external override onlyProxy {
         _setup(data);
     }
 

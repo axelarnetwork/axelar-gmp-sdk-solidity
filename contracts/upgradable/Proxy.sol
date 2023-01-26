@@ -33,25 +33,32 @@ contract Proxy {
         assembly {
             owner := sload(_OWNER_SLOT)
         }
+
         if (msg.sender != owner) revert NotOwner();
         if (implementation() != address(0)) revert AlreadyInitialized();
-        if (IUpgradable(implementationAddress).contractId() != contractId()) revert InvalidImplementation();
+
+        bytes32 id = contractId();
+        if (id != bytes32(0) && IUpgradable(implementationAddress).contractId() != id)
+            revert('InvalidImplementation()');
 
         // solhint-disable-next-line no-inline-assembly
         assembly {
             sstore(_IMPLEMENTATION_SLOT, implementationAddress)
             sstore(_OWNER_SLOT, newOwner)
         }
-        // solhint-disable-next-line avoid-low-level-calls
-        (bool success, ) = implementationAddress.delegatecall(
-            //0x9ded06df is the setup selector.
-            abi.encodeWithSelector(0x9ded06df, params)
-        );
-        if (!success) revert SetupFailed();
+        if (params.length != 0) {
+            // solhint-disable-next-line avoid-low-level-calls
+            (bool success, ) = implementationAddress.delegatecall(
+                // 0x9ded06df is the setup selector
+                abi.encodeWithSelector(0x9ded06df, params)
+            );
+            if (!success) revert SetupFailed();
+        }
     }
 
-    // solhint-disable-next-line no-empty-blocks
-    function contractId() internal pure virtual returns (bytes32) {}
+    function contractId() internal pure virtual returns (bytes32) {
+        return bytes32(0);
+    }
 
     function implementation() public view returns (address implementation_) {
         // solhint-disable-next-line no-inline-assembly

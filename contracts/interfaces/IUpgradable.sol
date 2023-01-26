@@ -25,7 +25,7 @@ interface IUpgradable {
 
     function acceptOwnership() external;
 
-    function contractId() external pure returns (bytes32);
+    function implementation() external view returns (address);
 
     function upgrade(
         address newImplementation,
@@ -34,4 +34,6 @@ interface IUpgradable {
     ) external;
 
     function setup(bytes calldata data) external;
+
+    function contractId() external pure returns (bytes32);
 }

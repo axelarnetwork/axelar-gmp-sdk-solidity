@@ -128,13 +128,10 @@ const deployAndInitContractConstant = async (
   );
   const contract = new Contract(address, contractJson.abi, wallet);
   const initData = (await contract.populateTransaction.init(...initArgs)).data;
-  const gas =
-    gasLimit ||
-    (await estimateGasForDeployAndInit(contractJson, args, initArgs));
   const tx = await deployer
     .connect(wallet)
     .deployAndInit(bytecode, salt, initData, {
-      gasLimit: BigInt(Math.floor(gas * 1.2)),
+      gasLimit,
     });
   await tx.wait();
   return contract;

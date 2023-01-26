@@ -18,6 +18,7 @@ async function deployUpgradable(
   proxyConstructorArgs = [],
   setupParams = '0x',
   key = Date.now(),
+  gasLimit = null,
 ) {
   const implementationFactory = new ContractFactory(
     implementationJson.abi,
@@ -37,7 +38,7 @@ async function deployUpgradable(
     key,
     proxyConstructorArgs,
     [implementation.address, wallet.address, setupParams],
-    1e6,
+    gasLimit,
   );
 
   return new Contract(proxy.address, implementationJson.abi, wallet);

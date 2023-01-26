@@ -4,9 +4,9 @@ pragma solidity ^0.8.0;
 
 import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
 import { IAxelarGasService } from '../interfaces/IAxelarGasService.sol';
-import { AxelarExecutable } from '../executables/AxelarExecutable.sol';
-import { AddressToString, StringToAddress } from '../StringAddressUtils.sol';
-import { Upgradable } from '../upgradables/Upgradable.sol';
+import { AxelarExecutable } from '../executable/AxelarExecutable.sol';
+import { AddressToString, StringToAddress } from '../utils/AddressString.sol';
+import { Upgradable } from '../upgradable/Upgradable.sol';
 
 abstract contract NftLinkerBase is AxelarExecutable, Upgradable {
     using StringToAddress for string;

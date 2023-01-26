@@ -2,8 +2,8 @@
 
 pragma solidity 0.8.9;
 
-import { StringToAddress, AddressToString } from '../StringAddressUtils.sol';
-import { Bytes32ToString, StringToBytes32 } from '../StringBytesUtils.sol';
+import { StringToAddress, AddressToString } from '../utils/AddressString.sol';
+import { Bytes32ToString, StringToBytes32 } from '../utils/Bytes32String.sol';
 
 contract UtilTest {
     using AddressToString for address;

@@ -2,18 +2,14 @@
 
 const {
   estimateGasForDeploy,
-  estimateGasForDeployAndInit,
   deployContractConstant,
-  deployAndInitContractConstant,
   predictContractConstant,
-} = require('./scripts/constAddressDeployer');
+} = require('./scripts/deploy');
 const { deployUpgradable, upgradeUpgradable } = require('./scripts/upgradable');
 
 module.exports = {
   estimateGasForDeploy,
-  estimateGasForDeployAndInit,
   deployContractConstant,
-  deployAndInitContractConstant,
   predictContractConstant,
   deployUpgradable,
   upgradeUpgradable,

@@ -7,6 +7,12 @@ import { Proxy } from '../upgradable/Proxy.sol';
 contract NftLinkerProxy is Proxy {
     bytes32 internal constant CONTRACT_ID = keccak256('nft-linker');
 
+    constructor(
+        address implementationAddress,
+        address owner,
+        bytes memory setupParams
+    ) Proxy(implementationAddress, owner, setupParams) {}
+
     function contractId() internal pure override returns (bytes32) {
         return CONTRACT_ID;
     }

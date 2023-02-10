@@ -2,36 +2,33 @@
 
 pragma solidity ^0.8.0;
 
-import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
 import { IERC20 } from '../interfaces/IERC20.sol';
-import { IExpressExecutable } from '../interfaces/IExpressExecutable.sol';
+import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
+import { IExpressProxy } from '../interfaces/IExpressProxy.sol';
 import { IGMPExpressService } from '../interfaces/IGMPExpressService.sol';
 import { IExpressRegistry } from '../interfaces/IExpressRegistry.sol';
-import { Proxy } from '../upgradable/Proxy.sol';
-import { ExpressRegistry } from './ExpressRegistry.sol';
+import { FinalProxy } from '../upgradable/FinalProxy.sol';
 import { SafeTokenTransfer, SafeTokenTransferFrom } from '../utils/SafeTransfer.sol';
+import { Create3 } from '../deploy/Create3.sol';
+import { ExpressRegistry } from './ExpressRegistry.sol';
 
-contract ExpressProxy is Proxy, IExpressExecutable {
+contract ExpressProxy is FinalProxy, IExpressProxy {
     using SafeTokenTransfer for IERC20;
     using SafeTokenTransferFrom for IERC20;
 
+    bytes32 internal constant REGISTRY_SALT = keccak256('express-registry');
+
     IAxelarGateway public immutable gateway;
 
-    constructor(address gateway_, address gmpExpressService_) {
-        if (gateway_ == address(0) && gmpExpressService_ == address(0)) revert InvalidAddress();
+    constructor(
+        address implementationAddress,
+        address owner,
+        bytes memory setupParams,
+        address gateway_
+    ) FinalProxy(implementationAddress, owner, setupParams) {
+        if (gateway_ == address(0)) revert InvalidAddress();
 
-        IAxelarGateway resolvedGateway;
-
-        // Providing gateway_ as address(0) allows having the same address across chains
-        // assuming condition that gmpExpressService_ address is the same
-        // and gateway address is different across chains.
-        if (gateway_ == address(0)) {
-            resolvedGateway = IGMPExpressService(gmpExpressService_).gateway();
-        } else {
-            resolvedGateway = IAxelarGateway(gateway_);
-        }
-
-        gateway = resolvedGateway;
+        gateway = IAxelarGateway(gateway_);
     }
 
     modifier onlyRegistry() {
@@ -41,30 +38,16 @@ contract ExpressProxy is Proxy, IExpressExecutable {
     }
 
     function deployRegistry() external {
-        if (address(registry()).code.length == 0) new ExpressRegistry(address(gateway));
+        Create3.deploy(
+            REGISTRY_SALT,
+            abi.encodePacked(type(ExpressRegistry).creationCode, abi.encode(address(gateway), address(this)))
+        );
     }
 
     function registry() public view returns (IExpressRegistry) {
         // Computing address is cheaper than using storage
-        // Can't use immutable storage as it will alter the codehash for each instance
-        return
-            IExpressRegistry(
-                address(
-                    uint160(
-                        uint256(
-                            keccak256(
-                                abi.encodePacked(
-                                    // 0xd6 = 0xc0 (short RLP prefix) + 0x16 (length of: 0x94 ++ proxy ++ 0x01)
-                                    // 0x94 = 0x80 + 0x14 (0x14 = the length of an address, 20 bytes, in hex)
-                                    hex'd6_94',
-                                    address(this),
-                                    hex'01' // Nonce of the registry contract deployment
-                                )
-                            )
-                        )
-                    )
-                )
-            );
+        // Can't use immutable storage as it will alter the codehash for each proxy instance
+        return IExpressRegistry(Create3.deployedAddress(REGISTRY_SALT, address(this)));
     }
 
     function execute(
@@ -115,9 +98,10 @@ contract ExpressProxy is Proxy, IExpressExecutable {
         string calldata tokenSymbol,
         uint256 amount
     ) external override {
-        registry().processCallWithToken(commandId, sourceChain, sourceAddress, payload, tokenSymbol, amount);
+        registry().processExecuteWithToken(commandId, sourceChain, sourceAddress, payload, tokenSymbol, amount);
     }
 
+    /// @notice callback to complete the GMP call
     function completeExecuteWithToken(
         address expressCaller,
         bytes32 commandId,

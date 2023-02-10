@@ -6,7 +6,7 @@ chai.use(solidity);
 const { expect } = chai;
 
 const { deployUpgradable, upgradeUpgradable } = require('../index');
-const ConstAddressDeployer = require('../dist/ConstAddressDeployer.json');
+const Create3Deployer = require('../dist/Create3Deployer.json');
 const Proxy = require('../artifacts/contracts/test/ProxyTest.sol/ProxyTest.json');
 const Upgradable = require('../artifacts/contracts/test/UpgradableTest.sol/UpgradableTest.json');
 
@@ -17,7 +17,7 @@ describe('Upgradable', () => {
   beforeEach(async () => {
     const constAddressDeployer = await deployContract(
       ownerWallet,
-      ConstAddressDeployer,
+      Create3Deployer,
     );
 
     upgradable = await deployUpgradable(

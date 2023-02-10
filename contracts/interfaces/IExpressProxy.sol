@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import { IAxelarExecutable } from './IAxelarExecutable.sol';
 import { IExpressRegistry } from './IExpressRegistry.sol';
 
-interface IExpressExecutable is IAxelarExecutable {
+interface IExpressProxy is IAxelarExecutable {
     error NotExpressRegistry();
     error InvalidTokenSymbol();
 

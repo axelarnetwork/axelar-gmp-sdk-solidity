@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
-import { IExpressExecutable } from '../interfaces/IExpressExecutable.sol';
+import { IExpressProxy } from '../interfaces/IExpressProxy.sol';
 import { IExpressRegistry } from '../interfaces/IExpressRegistry.sol';
 
 contract ExpressRegistry is IExpressRegistry {
@@ -12,11 +12,11 @@ contract ExpressRegistry is IExpressRegistry {
 
     mapping(bytes32 => address) private expressCallsWithToken;
 
-    constructor(address gateway_) {
+    constructor(address gateway_, address proxy_) {
         if (gateway_ == address(0)) revert InvalidGateway();
 
         gateway = IAxelarGateway(gateway_);
-        proxyCodeHash = msg.sender.codehash;
+        proxyCodeHash = proxy_.codehash;
     }
 
     function registerExpressCallWithToken(
@@ -41,11 +41,9 @@ contract ExpressRegistry is IExpressRegistry {
         if (existingExpressCaller != address(0)) revert AlreadyExpressCalled();
 
         _setExpressCallWithToken(slot, expressCaller);
-
-        emit ExpressCallWithToken(expressCaller, sourceChain, sourceAddress, payloadHash, tokenSymbol, amount);
     }
 
-    function processCallWithToken(
+    function processExecuteWithToken(
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
@@ -77,7 +75,7 @@ contract ExpressRegistry is IExpressRegistry {
             ) && expressCaller != address(0)
         ) _setExpressCallWithToken(slot, address(0));
 
-        IExpressExecutable(msg.sender).completeExecuteWithToken(
+        IExpressProxy(msg.sender).completeExecuteWithToken(
             expressCaller,
             commandId,
             sourceChain,
@@ -86,21 +84,11 @@ contract ExpressRegistry is IExpressRegistry {
             tokenSymbol,
             amount
         );
-
-        emit ExpressCallWithTokenCompleted(
-            expressCaller,
-            commandId,
-            sourceChain,
-            sourceAddress,
-            payloadHash,
-            tokenSymbol,
-            amount
-        );
     }
 
     /// @notice internal function instead of a modifier to avoid stack too deep error
     function _onlyProxy() internal view {
-        address proxyRegistry = address(IExpressExecutable(msg.sender).registry());
+        address proxyRegistry = address(IExpressProxy(msg.sender).registry());
 
         if (msg.sender.codehash != proxyCodeHash || proxyRegistry != address(this)) revert NotExpressProxy();
     }

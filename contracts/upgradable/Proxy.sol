@@ -2,55 +2,50 @@
 
 pragma solidity ^0.8.0;
 
+import { IProxy } from '../interfaces/IProxy.sol';
 import { IUpgradable } from '../interfaces/IUpgradable.sol';
 
-contract Proxy {
-    error InvalidImplementation();
-    error SetupFailed();
-    error EtherNotAccepted();
-    error NotOwner();
-    error AlreadyInitialized();
-
+contract Proxy is IProxy {
     // bytes32(uint256(keccak256('eip1967.proxy.implementation')) - 1)
     bytes32 internal constant _IMPLEMENTATION_SLOT = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
     // keccak256('owner')
     bytes32 internal constant _OWNER_SLOT = 0x02016836a56b71f0d02689e69e326f4f4c1b9057164ef592671cf0d37c8040c0;
 
-    constructor() {
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            sstore(_OWNER_SLOT, caller())
-        }
-    }
-
-    function init(
+    constructor(
         address implementationAddress,
-        address newOwner,
-        bytes memory params
-    ) external {
-        address owner;
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            owner := sload(_OWNER_SLOT)
-        }
-
-        if (msg.sender != owner) revert NotOwner();
+        address owner,
+        bytes memory setupParams
+    ) {
+        if (owner == address(0)) revert InvalidOwner();
         if (implementation() != address(0)) revert AlreadyInitialized();
 
         bytes32 id = contractId();
-        if (id != bytes32(0) && IUpgradable(implementationAddress).contractId() != id)
-            revert('InvalidImplementation()');
+        if (id != bytes32(0) && IUpgradable(implementationAddress).contractId() != id) revert InvalidImplementation();
 
         // solhint-disable-next-line no-inline-assembly
         assembly {
             sstore(_IMPLEMENTATION_SLOT, implementationAddress)
-            sstore(_OWNER_SLOT, newOwner)
+            sstore(_OWNER_SLOT, owner)
         }
-        if (params.length != 0) {
+
+        _setup(implementationAddress, setupParams);
+    }
+
+    function implementation() public view virtual returns (address implementation_) {
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            implementation_ := sload(_IMPLEMENTATION_SLOT)
+        }
+    }
+
+    // solhint-disable-next-line no-empty-blocks
+    function setup(bytes calldata setupParams) external {}
+
+    function _setup(address newImplementation, bytes memory setupParams) internal {
+        if (setupParams.length != 0) {
             // solhint-disable-next-line avoid-low-level-calls
-            (bool success, ) = implementationAddress.delegatecall(
-                // 0x9ded06df is the setup selector
-                abi.encodeWithSelector(0x9ded06df, params)
+            (bool success, ) = newImplementation.delegatecall(
+                abi.encodeWithSelector(Proxy.setup.selector, setupParams)
             );
             if (!success) revert SetupFailed();
         }
@@ -60,18 +55,8 @@ contract Proxy {
         return bytes32(0);
     }
 
-    function implementation() public view returns (address implementation_) {
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            implementation_ := sload(_IMPLEMENTATION_SLOT)
-        }
-    }
-
-    // solhint-disable-next-line no-empty-blocks
-    function setup(bytes calldata data) public {}
-
     // solhint-disable-next-line no-complex-fallback
-    fallback() external payable {
+    fallback() external payable virtual {
         address implementaion_ = implementation();
         // solhint-disable-next-line no-inline-assembly
         assembly {
@@ -90,7 +75,6 @@ contract Proxy {
         }
     }
 
-    receive() external payable virtual {
-        revert EtherNotAccepted();
-    }
+    // solhint-disable-next-line no-empty-blocks
+    receive() external payable virtual {}
 }

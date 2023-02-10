@@ -20,6 +20,7 @@ const MintableCappedERC20 = require('../artifacts/contracts/test/ERC20MintableBu
 const SourceChainSwapCaller = require('../artifacts/contracts/test/gmp/SourceChainSwapCaller.sol/SourceChainSwapCaller.json');
 const DestinationChainSwapExecutable = require('../artifacts/contracts/test/gmp/DestinationChainSwapExecutable.sol/DestinationChainSwapExecutable.json');
 const ExpressProxy = require('../artifacts/contracts/express/ExpressProxy.sol/ExpressProxy.json');
+const ExpressRegistry = require('../artifacts/contracts/express/ExpressRegistry.sol/ExpressRegistry.json');
 const DestinationChainSwapExpress = require('../artifacts/contracts/test/gmp/DestinationChainSwapExpress.sol/DestinationChainSwapExpress.json');
 const DestinationChainTokenSwapper = require('../artifacts/contracts/test/gmp/DestinationChainTokenSwapper.sol/DestinationChainTokenSwapper.json');
 const Create3Deployer = require('../dist/Create3Deployer.json');
@@ -131,7 +132,9 @@ describe('GMP', () => {
       ExpressProxy.abi,
       ownerWallet,
     );
-    await destinationChainSwapExpressProxy.deployRegistry();
+    await destinationChainSwapExpressProxy.deployRegistry(
+      ExpressRegistry.bytecode,
+    );
 
     sourceChainSwapCaller = await deployContract(
       ownerWallet,

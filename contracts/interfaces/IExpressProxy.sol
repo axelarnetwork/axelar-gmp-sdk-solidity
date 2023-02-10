@@ -9,9 +9,9 @@ interface IExpressProxy is IAxelarExecutable {
     error NotExpressRegistry();
     error InvalidTokenSymbol();
 
-    function deployRegistry() external;
-
     function registry() external view returns (IExpressRegistry);
+
+    function deployRegistry(bytes calldata registryCreationCode) external;
 
     function expressExecuteWithToken(
         string calldata sourceChain,

@@ -10,7 +10,6 @@ import { IExpressRegistry } from '../interfaces/IExpressRegistry.sol';
 import { FinalProxy } from '../upgradable/FinalProxy.sol';
 import { SafeTokenTransfer, SafeTokenTransferFrom } from '../utils/SafeTransfer.sol';
 import { Create3 } from '../deploy/Create3.sol';
-import { ExpressRegistry } from './ExpressRegistry.sol';
 
 contract ExpressProxy is FinalProxy, IExpressProxy {
     using SafeTokenTransfer for IERC20;
@@ -37,17 +36,18 @@ contract ExpressProxy is FinalProxy, IExpressProxy {
         _;
     }
 
-    function deployRegistry() external {
-        Create3.deploy(
-            REGISTRY_SALT,
-            abi.encodePacked(type(ExpressRegistry).creationCode, abi.encode(address(gateway), address(this)))
-        );
-    }
-
     function registry() public view returns (IExpressRegistry) {
         // Computing address is cheaper than using storage
         // Can't use immutable storage as it will alter the codehash for each proxy instance
         return IExpressRegistry(Create3.deployedAddress(REGISTRY_SALT, address(this)));
+    }
+
+    // @notice should be called right after the proxy is deployed
+    function deployRegistry(bytes calldata registryCreationCode) external {
+        Create3.deploy(
+            REGISTRY_SALT,
+            abi.encodePacked(registryCreationCode, abi.encode(address(gateway), address(this)))
+        );
     }
 
     function execute(

@@ -19,7 +19,7 @@ contract ExpressProxyDeployer is IExpressProxyDeployer {
         gateway = gateway_;
 
         ExpressProxy proxy = new ExpressProxy(address(this), address(this), '', gateway_);
-        proxy.deployRegistry();
+        proxy.deployRegistry(type(ExpressRegistry).creationCode);
 
         proxyCodeHash = address(proxy).codehash;
         registryCodeHash = address(proxy.registry()).codehash;
@@ -57,6 +57,6 @@ contract ExpressProxyDeployer is IExpressProxyDeployer {
         );
 
         ExpressProxy proxy = ExpressProxy(payable(proxyAddress));
-        proxy.deployRegistry();
+        proxy.deployRegistry(type(ExpressRegistry).creationCode);
     }
 }

@@ -8,5 +8,7 @@ import { IProxy } from './IProxy.sol';
 interface IFinalProxy is IProxy {
     error NotOwner();
 
+    function isFinal() external view returns (bool);
+
     function finalUpgrade(bytes memory bytecode, bytes calldata setupParams) external returns (address);
 }

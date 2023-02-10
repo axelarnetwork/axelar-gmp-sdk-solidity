@@ -26,6 +26,10 @@ contract FinalProxy is Proxy, IFinalProxy {
         }
     }
 
+    function isFinal() public view returns (bool) {
+        return _finalImplementation() != address(0);
+    }
+
     function _finalImplementation() internal view virtual returns (address implementation_) {
         // Computing address is cheaper than using storage
         implementation_ = Create3.deployedAddress(FINAL_IMPLEMENTATION_SALT, address(this));

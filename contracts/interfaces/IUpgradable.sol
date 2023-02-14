@@ -2,28 +2,16 @@
 
 pragma solidity ^0.8.0;
 
+import { IOwnable } from './IOwnable.sol';
+
 // General interface for upgradable contracts
-interface IUpgradable {
-    error NotOwner();
-    error InvalidOwner();
+interface IUpgradable is IOwnable {
     error InvalidCodeHash();
     error InvalidImplementation();
     error SetupFailed();
     error NotProxy();
 
     event Upgraded(address indexed newImplementation);
-    event OwnershipTransferStarted(address indexed newOwner);
-    event OwnershipTransferred(address indexed newOwner);
-
-    // Get current owner
-    function owner() external view returns (address);
-
-    // Get pending ownership transfer
-    function pendingOwner() external view returns (address);
-
-    function transferOwnership(address newOwner) external;
-
-    function acceptOwnership() external;
 
     function implementation() external view returns (address);
 

@@ -6,14 +6,14 @@ const {
   constants: { AddressZero },
 } = require('ethers');
 const { deployContract, MockProvider, solidity } = require('ethereum-waffle');
-const { deployUpgradable } = require('../index.js');
+const { deployCreate3Upgradable } = require('../index.js');
 chai.use(solidity);
 const { expect } = chai;
 
 const AxelarGateway = require('../artifacts/contracts/test/MockGateway.sol/MockGateway.json');
 const GasService = require('../artifacts/contracts/test/MockGasService.sol/MockGasService.json');
 const ERC721MintableBurnable = require('../artifacts/contracts/test/ERC721MintableBurnable.sol/ERC721MintableBurnable.json');
-const ConstAddressDeployer = require('../dist/ConstAddressDeployer.json');
+const Create3Deployer = require('../dist/Create3Deployer.json');
 const NftLinkerProxy = require('../artifacts/contracts/nft-linker/NftLinkerProxy.sol/NftLinkerProxy.json');
 const NftLinkerLockUnlock = require('../artifacts/contracts/nft-linker/NftLinkerLockUnlock.sol/NftLinkerLockUnlock.json');
 const NftLinkerMintBurn = require('../artifacts/contracts/nft-linker/NftLinkerMintBurn.sol/NftLinkerMintBurn.json');
@@ -53,10 +53,7 @@ describe('NftLinker', () => {
   beforeEach(async () => {
     gateway = await deployContract(ownerWallet, AxelarGateway);
     gasService = await deployContract(ownerWallet, GasService);
-    constAddressDeployer = await deployContract(
-      ownerWallet,
-      ConstAddressDeployer,
-    );
+    constAddressDeployer = await deployContract(ownerWallet, Create3Deployer);
 
     token = await deployContract(ownerWallet, ERC721MintableBurnable, [
       tokenName,
@@ -66,7 +63,7 @@ describe('NftLinker', () => {
 
   describe('Lock-Unlock', () => {
     beforeEach(async () => {
-      nftLinker = await deployUpgradable(
+      nftLinker = await deployCreate3Upgradable(
         constAddressDeployer.address,
         ownerWallet,
         NftLinkerLockUnlock,
@@ -143,7 +140,7 @@ describe('NftLinker', () => {
 
   describe('Mint-Burn', () => {
     beforeEach(async () => {
-      nftLinker = await deployUpgradable(
+      nftLinker = await deployCreate3Upgradable(
         constAddressDeployer.address,
         ownerWallet,
         NftLinkerMintBurn,

@@ -5,8 +5,8 @@ const { deployContract, MockProvider, solidity } = require('ethereum-waffle');
 chai.use(solidity);
 const { expect } = chai;
 
-const { deployUpgradable, upgradeUpgradable } = require('../index');
-const ConstAddressDeployer = require('../dist/ConstAddressDeployer.json');
+const { deployCreate3Upgradable, upgradeUpgradable } = require('../index');
+const Create3Deployer = require('../dist/Create3Deployer.json');
 const Proxy = require('../artifacts/contracts/test/ProxyTest.sol/ProxyTest.json');
 const Upgradable = require('../artifacts/contracts/test/UpgradableTest.sol/UpgradableTest.json');
 
@@ -17,10 +17,10 @@ describe('Upgradable', () => {
   beforeEach(async () => {
     const constAddressDeployer = await deployContract(
       ownerWallet,
-      ConstAddressDeployer,
+      Create3Deployer,
     );
 
-    upgradable = await deployUpgradable(
+    upgradable = await deployCreate3Upgradable(
       constAddressDeployer.address,
       ownerWallet,
       Upgradable,

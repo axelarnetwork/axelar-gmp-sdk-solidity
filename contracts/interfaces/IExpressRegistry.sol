@@ -9,25 +9,6 @@ interface IExpressRegistry {
     error NotExpressProxy();
     error AlreadyExpressCalled();
 
-    event ExpressCallWithToken(
-        address expressCaller,
-        string sourceChain,
-        string sourceAddress,
-        bytes32 payloadHash,
-        string tokenSymbol,
-        uint256 amount
-    );
-
-    event ExpressCallWithTokenCompleted(
-        address expressCaller,
-        bytes32 commandId,
-        string sourceChain,
-        string sourceAddress,
-        bytes32 payloadHash,
-        string tokenSymbol,
-        uint256 amount
-    );
-
     function gateway() external returns (IAxelarGateway);
 
     function proxyCodeHash() external returns (bytes32);
@@ -41,7 +22,7 @@ interface IExpressRegistry {
         uint256 amount
     ) external;
 
-    function processCallWithToken(
+    function processExecuteWithToken(
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,

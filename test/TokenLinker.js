@@ -6,14 +6,14 @@ const {
   constants: { AddressZero },
 } = require('ethers');
 const { deployContract, MockProvider, solidity } = require('ethereum-waffle');
-const { deployUpgradable } = require('../index.js');
+const { deployCreate3Upgradable } = require('../index.js');
 chai.use(solidity);
 const { expect } = chai;
 
 const AxelarGateway = require('../artifacts/contracts/test/MockGateway.sol/MockGateway.json');
 const GasService = require('../artifacts/contracts/test/MockGasService.sol/MockGasService.json');
 const ERC20MintableBurnable = require('../artifacts/contracts/test/ERC20MintableBurnable.sol/ERC20MintableBurnable.json');
-const ConstAddressDeployer = require('../dist/ConstAddressDeployer.json');
+const Create3Deployer = require('../dist/Create3Deployer.json');
 const TokenLinkerProxy = require('../artifacts/contracts/token-linker/TokenLinkerProxy.sol/TokenLinkerProxy.json');
 const TokenLinkerLockUnlock = require('../artifacts/contracts/token-linker/TokenLinkerLockUnlock.sol/TokenLinkerLockUnlock.json');
 const TokenLinkerMintBurn = require('../artifacts/contracts/token-linker/TokenLinkerMintBurn.sol/TokenLinkerMintBurn.json');
@@ -55,10 +55,7 @@ describe('TokenLinker', () => {
   beforeEach(async () => {
     gateway = await deployContract(ownerWallet, AxelarGateway);
     gasService = await deployContract(ownerWallet, GasService);
-    constAddressDeployer = await deployContract(
-      ownerWallet,
-      ConstAddressDeployer,
-    );
+    constAddressDeployer = await deployContract(ownerWallet, Create3Deployer);
 
     token = await deployContract(ownerWallet, ERC20MintableBurnable, [
       tokenName,
@@ -69,7 +66,7 @@ describe('TokenLinker', () => {
 
   describe('Lock-Unlock', () => {
     beforeEach(async () => {
-      tokenLinker = await deployUpgradable(
+      tokenLinker = await deployCreate3Upgradable(
         constAddressDeployer.address,
         ownerWallet,
         TokenLinkerLockUnlock,
@@ -146,7 +143,7 @@ describe('TokenLinker', () => {
 
   describe('Mint-Burn', () => {
     beforeEach(async () => {
-      tokenLinker = await deployUpgradable(
+      tokenLinker = await deployCreate3Upgradable(
         constAddressDeployer.address,
         ownerWallet,
         TokenLinkerMintBurn,
@@ -219,7 +216,7 @@ describe('TokenLinker', () => {
 
   describe('Native', () => {
     beforeEach(async () => {
-      tokenLinker = await deployUpgradable(
+      tokenLinker = await deployCreate3Upgradable(
         constAddressDeployer.address,
         ownerWallet,
         TokenLinkerNative,

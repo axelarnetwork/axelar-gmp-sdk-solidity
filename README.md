@@ -20,17 +20,17 @@ $ npm install @axelar-network/axelar-gmp-sdk-solidity
 ### AxelarExecutable
 Base interface for validating and executing GMP contract calls.
 
-### AxelarForecallable
+### ExpressProxy and ExpressExecutable
 Interface that allows to expedite GMP calls by lending assets and performing execution 
 before it fully propagates through the Axelar network.
 
-### ConstAddressDeployer
-This contract is used to deploy your Executable to have the same address on different EVM chains.
+### Create3Deployer and ConstAddressDeployer
+These contracts are used to deploy your Executable to have the same address on different EVM chains.
 This simplifies message validation from peer Executables. You can learn more in the
 [documentation](https://docs.axelar.dev/dev/build/solidity-utilities).
 
 ### Proxy and Upgradable
-Base implementation of upgradable contracts designed to be deployed with `ConstAddressDeployer`
+Base implementation of upgradable contracts designed to be deployed with `Create3Deployer`
 and to have the same Proxy address on different EVM chains.
 
 ### TokenLinker and NTFLinker

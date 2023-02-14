@@ -36,7 +36,7 @@ contract TokenLinkerNative is TokenLinkerBase {
 
     function _giveToken(address to, uint256 amount) internal override {
         uint256 balance = getNativeBalance();
-        if (balance < amount) revert('InsufficientBalance()');
+        if (balance < amount) revert InsufficientBalance();
         to.safeNativeTransfer(amount);
         _setNativeBalance(balance - amount);
     }

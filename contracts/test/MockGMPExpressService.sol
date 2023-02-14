@@ -2,12 +2,12 @@
 
 pragma solidity 0.8.9;
 
-import { IExpressExecutable } from '../interfaces/IExpressExecutable.sol';
+import { IExpressProxy } from '../interfaces/IExpressProxy.sol';
 import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
 import { IGMPExpressService } from '../interfaces/IGMPExpressService.sol';
 import { IERC20 } from '../interfaces/IERC20.sol';
 import { AxelarExecutable } from '../executable/AxelarExecutable.sol';
-import { ExpressProxy } from '../express/ExpressProxy.sol';
+import { ExpressProxyDeployer } from '../express/ExpressProxyDeployer.sol';
 import { SafeTokenTransfer, SafeNativeTransfer } from '../utils/SafeTransfer.sol';
 
 contract MockGMPExpressService is AxelarExecutable, IGMPExpressService {
@@ -15,13 +15,17 @@ contract MockGMPExpressService is AxelarExecutable, IGMPExpressService {
     using SafeNativeTransfer for address payable;
 
     address public immutable expressOperator;
-    bytes32 public immutable expressProxyCodeHash;
+    ExpressProxyDeployer public immutable proxyDeployer;
 
-    constructor(address gateway_, address expressOperator_) AxelarExecutable(gateway_) {
+    constructor(
+        address gateway_,
+        address expressOperator_,
+        address proxyDeployer_
+    ) AxelarExecutable(gateway_) {
         if (expressOperator_ == address(0)) revert InvalidOperator();
 
         expressOperator = expressOperator_;
-        expressProxyCodeHash = address(new ExpressProxy(gateway_, address(this))).codehash;
+        proxyDeployer = ExpressProxyDeployer(proxyDeployer_);
     }
 
     modifier onlyOperator() {
@@ -42,7 +46,7 @@ contract MockGMPExpressService is AxelarExecutable, IGMPExpressService {
         if (contractAddress == address(0)) revert InvalidContractAddress();
 
         if (commandId != bytes32(0) && gateway.isCommandExecuted(commandId)) {
-            IExpressExecutable(contractAddress).executeWithToken(
+            IExpressProxy(contractAddress).executeWithToken(
                 commandId,
                 sourceChain,
                 sourceAddress,
@@ -54,7 +58,7 @@ contract MockGMPExpressService is AxelarExecutable, IGMPExpressService {
             if (!isExpressProxy(contractAddress)) revert NotExpressProxy();
 
             IERC20(gateway.tokenAddresses(tokenSymbol)).approve(contractAddress, amount);
-            IExpressExecutable(contractAddress).expressExecuteWithToken(
+            IExpressProxy(contractAddress).expressExecuteWithToken(
                 sourceChain,
                 sourceAddress,
                 payload,
@@ -69,7 +73,7 @@ contract MockGMPExpressService is AxelarExecutable, IGMPExpressService {
     }
 
     function isExpressProxy(address proxyAddress) public view returns (bool) {
-        return proxyAddress.codehash == expressProxyCodeHash;
+        return proxyDeployer.isExpressProxy(proxyAddress);
     }
 
     function deployExpressProxy(

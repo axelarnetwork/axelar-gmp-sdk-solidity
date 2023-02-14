@@ -4,9 +4,9 @@ pragma solidity ^0.8.0;
 
 import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
 import { IERC20 } from '../interfaces/IERC20.sol';
-import { IAxelarExecutable } from '../interfaces/IAxelarExecutable.sol';
+import { IExpressExecutable } from '../interfaces/IExpressExecutable.sol';
 
-abstract contract ExpressExecutable is IAxelarExecutable {
+abstract contract ExpressExecutable is IExpressExecutable {
     error NotSelf();
 
     IAxelarGateway public immutable gateway;
@@ -15,6 +15,10 @@ abstract contract ExpressExecutable is IAxelarExecutable {
         if (gateway_ == address(0)) revert InvalidAddress();
 
         gateway = IAxelarGateway(gateway_);
+    }
+
+    function enableExpressCallWithToken() external virtual returns (bool) {
+        return true;
     }
 
     /// @notice this function is shadowed by the proxy and can be called only internally

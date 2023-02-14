@@ -7,6 +7,7 @@ import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
 import { IExpressProxy } from '../interfaces/IExpressProxy.sol';
 import { IGMPExpressService } from '../interfaces/IGMPExpressService.sol';
 import { IExpressRegistry } from '../interfaces/IExpressRegistry.sol';
+import { IExpressExecutable } from '../interfaces/IExpressExecutable.sol';
 import { FinalProxy } from '../upgradable/FinalProxy.sol';
 import { SafeTokenTransfer, SafeTokenTransferFrom } from '../utils/SafeTransfer.sol';
 import { Create3 } from '../deploy/Create3.sol';
@@ -73,6 +74,8 @@ contract ExpressProxy is FinalProxy, IExpressProxy {
     ) external override {
         bytes32 payloadHash = keccak256(payload);
         address token = gateway.tokenAddresses(tokenSymbol);
+
+        if (IExpressExecutable(implementation()).enableExpressCallWithToken() == false) revert ExpressCallNotEnabled();
 
         if (token == address(0)) revert InvalidTokenSymbol();
 

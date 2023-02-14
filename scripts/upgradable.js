@@ -5,11 +5,47 @@ const {
   ContractFactory,
   utils: { keccak256 },
 } = require('ethers');
-const { deployContractConstant } = require('./deploy');
+const { deployAndInitContractConstant } = require('./constAddressDeployer');
+const { deployCreate3Contract } = require('./create3Deployer');
 
 const IUpgradable = require('../dist/IUpgradable.json');
 
 async function deployUpgradable(
+  constAddressDeployerAddress,
+  wallet,
+  implementationJson,
+  proxyJson,
+  implementationConstructorArgs = [],
+  proxyConstructorArgs = [],
+  setupParams = '0x',
+  key = Date.now(),
+  gasLimit = null,
+) {
+  const implementationFactory = new ContractFactory(
+    implementationJson.abi,
+    implementationJson.bytecode,
+    wallet,
+  );
+
+  const implementation = await implementationFactory.deploy(
+    ...implementationConstructorArgs,
+  );
+  await implementation.deployed();
+
+  const proxy = await deployAndInitContractConstant(
+    constAddressDeployerAddress,
+    wallet,
+    proxyJson,
+    key,
+    proxyConstructorArgs,
+    [implementation.address, wallet.address, setupParams],
+    gasLimit,
+  );
+
+  return new Contract(proxy.address, implementationJson.abi, wallet);
+}
+
+async function deployCreate3Upgradable(
   create3DeployerAddress,
   wallet,
   implementationJson,
@@ -31,7 +67,7 @@ async function deployUpgradable(
   );
   await implementation.deployed();
 
-  const proxy = await deployContractConstant(
+  const proxy = await deployCreate3Contract(
     create3DeployerAddress,
     wallet,
     proxyJson,
@@ -84,5 +120,6 @@ async function upgradeUpgradable(
 
 module.exports = {
   deployUpgradable,
+  deployCreate3Upgradable,
   upgradeUpgradable,
 };

@@ -6,7 +6,7 @@ const {
   constants: { AddressZero },
 } = require('ethers');
 const { deployContract, MockProvider, solidity } = require('ethereum-waffle');
-const { deployUpgradable } = require('../index.js');
+const { deployCreate3Upgradable } = require('../index.js');
 chai.use(solidity);
 const { expect } = chai;
 
@@ -63,7 +63,7 @@ describe('NftLinker', () => {
 
   describe('Lock-Unlock', () => {
     beforeEach(async () => {
-      nftLinker = await deployUpgradable(
+      nftLinker = await deployCreate3Upgradable(
         constAddressDeployer.address,
         ownerWallet,
         NftLinkerLockUnlock,
@@ -140,7 +140,7 @@ describe('NftLinker', () => {
 
   describe('Mint-Burn', () => {
     beforeEach(async () => {
-      nftLinker = await deployUpgradable(
+      nftLinker = await deployCreate3Upgradable(
         constAddressDeployer.address,
         ownerWallet,
         NftLinkerMintBurn,

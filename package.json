@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "npx hardhat test",
-    "build": "rm -rf artifacts && hardhat compile && npm run copy:artifacts",
-    "copy:artifacts": "rm -rf dist && mkdir dist && cp artifacts/contracts/express/ExpressProxyDeployer.sol/ExpressProxyDeployer.json artifacts/contracts/deploy/Create3Deployer.sol/Create3Deployer.json artifacts/contracts/interfaces/IUpgradable.sol/IUpgradable.json dist/",
+    "build": "rm -rf artifacts && hardhat compile && npm run copy:artifacts && npm run flatten",
+    "copy:artifacts": "rm -rf dist && mkdir dist && cp artifacts/contracts/express/ExpressProxyDeployer.sol/ExpressProxyDeployer.json artifacts/contracts/deploy/ConstAddressDeployer.sol/ConstAddressDeployer.json artifacts/contracts/deploy/Create3Deployer.sol/Create3Deployer.json artifacts/contracts/interfaces/IUpgradable.sol/IUpgradable.json dist/",
     "lint": "solhint 'contracts/**/*.sol' && eslint 'scripts/**/*.js' 'test/**/*.js'",
     "prettier": "prettier --write 'contracts/**/*.sol' 'test/**/*.js' 'scripts/**/*.js' '*.js'",
     "flatten": "sh scripts/flatten-contracts.sh"

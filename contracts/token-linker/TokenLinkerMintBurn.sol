@@ -34,6 +34,6 @@ contract TokenLinkerMintBurn is TokenLinkerBase {
         );
         bool transferred = success && (returnData.length == uint256(0) || abi.decode(returnData, (bool)));
 
-        if (!transferred || tokenAddress.code.length == 0) revert('BurnFailed()');
+        if (!transferred || tokenAddress.code.length == 0) revert BurnFailed();
     }
 }

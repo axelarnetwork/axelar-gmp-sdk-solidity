@@ -5,15 +5,15 @@ const { deployContract, MockProvider, solidity } = require('ethereum-waffle');
 chai.use(solidity);
 const { expect } = chai;
 const {
-  deployCreate3Contract,
-  deployCreate3AndInitContract,
-  getCreate3Address,
+  deployContractConstant,
+  deployAndInitContractConstant,
+  predictContractConstant,
 } = require('../index.js');
-const Create3Deployer = require('../dist/Create3Deployer.json');
+const ConstAddressDeployer = require('../dist/ConstAddressDeployer.json');
 const BurnableMintableCappedERC20 = require('../artifacts/contracts/test/ERC20MintableBurnable.sol/ERC20MintableBurnable.json');
 const BurnableMintableCappedERC20Init = require('../artifacts/contracts/test/ERC20MintableBurnableInit.sol/ERC20MintableBurnableInit.json');
 
-describe('Create3Deployer', () => {
+describe('ConstAddressDeployer', () => {
   const [deployerWallet, userWallet] = new MockProvider().getWallets();
   let deployer;
   const name = 'test';
@@ -21,14 +21,21 @@ describe('Create3Deployer', () => {
   const decimals = 16;
 
   beforeEach(async () => {
-    deployer = (await deployContract(deployerWallet, Create3Deployer)).address;
+    deployer = (await deployContract(deployerWallet, ConstAddressDeployer))
+      .address;
   });
 
   describe('deploy', () => {
     it('should deploy to the predicted address', async () => {
       const key = 'a test key';
-      const address = await getCreate3Address(deployer, userWallet, key);
-      const contract = await deployCreate3Contract(
+      const address = await predictContractConstant(
+        deployer,
+        userWallet,
+        BurnableMintableCappedERC20,
+        key,
+        [name, symbol, decimals],
+      );
+      const contract = await deployContractConstant(
         deployer,
         userWallet,
         BurnableMintableCappedERC20,
@@ -43,8 +50,14 @@ describe('Create3Deployer', () => {
 
     it('should deploy to the predicted address even with a different nonce', async () => {
       const key = 'a test key';
-      const address = await getCreate3Address(deployer, userWallet, key);
-      const contract = await deployCreate3Contract(
+      const address = await predictContractConstant(
+        deployer,
+        userWallet,
+        BurnableMintableCappedERC20,
+        key,
+        [name, symbol, decimals],
+      );
+      const contract = await deployContractConstant(
         deployer,
         userWallet,
         BurnableMintableCappedERC20,
@@ -67,9 +80,15 @@ describe('Create3Deployer', () => {
       const addresses = [];
 
       for (const key of keys) {
-        const address = await getCreate3Address(deployer, userWallet, key);
+        const address = await predictContractConstant(
+          deployer,
+          userWallet,
+          BurnableMintableCappedERC20,
+          key,
+          [name, symbol, decimals],
+        );
         addresses.push(address);
-        const contract = await deployCreate3Contract(
+        const contract = await deployContractConstant(
           deployer,
           userWallet,
           BurnableMintableCappedERC20,
@@ -89,8 +108,14 @@ describe('Create3Deployer', () => {
   describe('deployAndInit', () => {
     it('should deploy to the predicted address regardless of init data', async () => {
       const key = 'a test key';
-      const address = await getCreate3Address(deployer, userWallet, key);
-      const contract = await deployCreate3AndInitContract(
+      const address = await predictContractConstant(
+        deployer,
+        userWallet,
+        BurnableMintableCappedERC20Init,
+        key,
+        [decimals],
+      );
+      const contract = await deployAndInitContractConstant(
         deployer,
         userWallet,
         BurnableMintableCappedERC20Init,

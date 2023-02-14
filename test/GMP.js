@@ -11,7 +11,7 @@ const { expect } = chai;
 
 const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000';
 
-const { deployUpgradable } = require('../index');
+const { deployCreate3Upgradable } = require('../index');
 
 const AxelarGateway = require('../artifacts/contracts/test/MockGateway.sol/MockGateway.json');
 const ExpressProxyDeployer = require('../artifacts/contracts/express/ExpressProxyDeployer.sol/ExpressProxyDeployer.json');
@@ -118,7 +118,7 @@ describe('GMP', () => {
       [destinationChainGateway.address, destinationChainTokenSwapper.address],
     );
 
-    destinationChainSwapExpress = await deployUpgradable(
+    destinationChainSwapExpress = await deployCreate3Upgradable(
       create3Deployer.address,
       ownerWallet,
       DestinationChainSwapExpress,

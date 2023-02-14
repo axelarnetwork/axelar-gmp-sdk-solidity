@@ -5,6 +5,8 @@ pragma solidity ^0.8.0;
 import { Create3 } from './Create3.sol';
 
 contract Create3Deployer {
+    error FailedInit();
+
     event Deployed(bytes32 indexed bytecodeHash, bytes32 indexed salt, address indexed deployedAddress);
 
     /**
@@ -24,6 +26,32 @@ contract Create3Deployer {
         deployedAddress_ = Create3.deploy(deploySalt, bytecode);
 
         emit Deployed(keccak256(bytecode), salt, deployedAddress_);
+    }
+
+    /**
+     * @dev Deploys a contract using `CREATE3` and initialize it. The address where the contract
+     * will be deployed can be known in advance via {deployedAddress}.
+     *
+     * The bytecode for a contract can be obtained from Solidity with
+     * `type(contractName).creationCode`.
+     *
+     * Requirements:
+     *
+     * - `bytecode` must not be empty.
+     * - `salt` must have not been used for `bytecode` already by the same `msg.sender`.
+     * - `init` is used to initialize the deployed contract
+     */
+    function deployAndInit(
+        bytes memory bytecode,
+        bytes32 salt,
+        bytes calldata init
+    ) external returns (address deployedAddress_) {
+        bytes32 deploySalt = keccak256(abi.encode(msg.sender, salt));
+        deployedAddress_ = Create3.deploy(deploySalt, bytecode);
+
+        // solhint-disable-next-line avoid-low-level-calls
+        (bool success, ) = deployedAddress_.call(init);
+        if (!success) revert FailedInit();
     }
 
     /**

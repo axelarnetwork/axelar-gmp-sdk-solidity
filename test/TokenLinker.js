@@ -6,7 +6,7 @@ const {
   constants: { AddressZero },
 } = require('ethers');
 const { deployContract, MockProvider, solidity } = require('ethereum-waffle');
-const { deployUpgradable } = require('../index.js');
+const { deployCreate3Upgradable } = require('../index.js');
 chai.use(solidity);
 const { expect } = chai;
 
@@ -66,7 +66,7 @@ describe('TokenLinker', () => {
 
   describe('Lock-Unlock', () => {
     beforeEach(async () => {
-      tokenLinker = await deployUpgradable(
+      tokenLinker = await deployCreate3Upgradable(
         constAddressDeployer.address,
         ownerWallet,
         TokenLinkerLockUnlock,
@@ -143,7 +143,7 @@ describe('TokenLinker', () => {
 
   describe('Mint-Burn', () => {
     beforeEach(async () => {
-      tokenLinker = await deployUpgradable(
+      tokenLinker = await deployCreate3Upgradable(
         constAddressDeployer.address,
         ownerWallet,
         TokenLinkerMintBurn,
@@ -216,7 +216,7 @@ describe('TokenLinker', () => {
 
   describe('Native', () => {
     beforeEach(async () => {
-      tokenLinker = await deployUpgradable(
+      tokenLinker = await deployCreate3Upgradable(
         constAddressDeployer.address,
         ownerWallet,
         TokenLinkerNative,

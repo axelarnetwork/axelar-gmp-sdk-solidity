@@ -5,6 +5,7 @@ pragma solidity ^0.8.0;
 import { IProxy } from '../interfaces/IProxy.sol';
 import { IFinalProxy } from '../interfaces/IFinalProxy.sol';
 import { Create3 } from '../deploy/Create3.sol';
+import { BaseProxy } from './BaseProxy.sol';
 import { Proxy } from './Proxy.sol';
 
 contract FinalProxy is Proxy, IFinalProxy {
@@ -16,7 +17,9 @@ contract FinalProxy is Proxy, IFinalProxy {
         bytes memory setupParams
     ) Proxy(implementationAddress, owner, setupParams) {}
 
-    function implementation() public view override(Proxy, IProxy) returns (address implementation_) {
+    // final implementation uses less gas to compute compared to using storage
+    // that makes FinalProxy to be more efficient in proxying calls when final implementation is deployed
+    function implementation() public view override(BaseProxy, IProxy) returns (address implementation_) {
         implementation_ = _finalImplementation();
         if (implementation_ == address(0)) {
             // solhint-disable-next-line no-inline-assembly
@@ -50,6 +53,12 @@ contract FinalProxy is Proxy, IFinalProxy {
         if (implementation() != address(0)) revert AlreadyInitialized();
 
         finalImplementation_ = Create3.deploy(FINAL_IMPLEMENTATION_SALT, bytecode);
-        _setup(finalImplementation_, setupParams);
+        if (setupParams.length != 0) {
+            // solhint-disable-next-line avoid-low-level-calls
+            (bool success, ) = finalImplementation_.delegatecall(
+                abi.encodeWithSelector(BaseProxy.setup.selector, setupParams)
+            );
+            if (!success) revert SetupFailed();
+        }
     }
 }

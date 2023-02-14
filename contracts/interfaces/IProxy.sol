@@ -7,6 +7,7 @@ interface IProxy {
     error InvalidOwner();
     error InvalidImplementation();
     error SetupFailed();
+    error NotOwner();
     error AlreadyInitialized();
 
     function implementation() external view returns (address implementation_);

@@ -8,6 +8,7 @@ import { Create3 } from '../deploy/Create3.sol';
 import { BaseProxy } from './BaseProxy.sol';
 import { Proxy } from './Proxy.sol';
 
+// @notice FinalProxy is a proxy that can be upgraded to final implementation that uses less gas to proxy calls
 contract FinalProxy is Proxy, IFinalProxy {
     bytes32 internal constant FINAL_IMPLEMENTATION_SALT = keccak256('final-implementation');
 
@@ -17,15 +18,12 @@ contract FinalProxy is Proxy, IFinalProxy {
         bytes memory setupParams
     ) Proxy(implementationAddress, owner, setupParams) {}
 
-    // final implementation uses less gas to compute compared to using storage
+    // @dev final implementation uses less gas to compute compared to using storage
     // that makes FinalProxy to be more efficient in proxying calls when final implementation is deployed
     function implementation() public view override(BaseProxy, IProxy) returns (address implementation_) {
         implementation_ = _finalImplementation();
         if (implementation_ == address(0)) {
-            // solhint-disable-next-line no-inline-assembly
-            assembly {
-                implementation_ := sload(_IMPLEMENTATION_SLOT)
-            }
+            implementation_ = super.implementation();
         }
     }
 

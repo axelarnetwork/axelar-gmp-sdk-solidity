@@ -7,8 +7,6 @@ import { IERC20 } from '../interfaces/IERC20.sol';
 import { IExpressExecutable } from '../interfaces/IExpressExecutable.sol';
 
 abstract contract ExpressExecutable is IExpressExecutable {
-    error NotSelf();
-
     IAxelarGateway public immutable gateway;
 
     constructor(address gateway_) {

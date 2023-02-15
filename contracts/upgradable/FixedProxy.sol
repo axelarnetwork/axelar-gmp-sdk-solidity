@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import { IProxy } from '../interfaces/IProxy.sol';
 
-contract ThinProxy is IProxy {
+contract FixedProxy is IProxy {
     address public immutable implementation;
 
     constructor(address implementationAddress) {

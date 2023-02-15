@@ -27,7 +27,7 @@ contract Proxy is BaseProxy {
         if (setupParams.length != 0) {
             // solhint-disable-next-line avoid-low-level-calls
             (bool success, ) = implementationAddress.delegatecall(
-                abi.encodeWithSelector(BaseProxy.setup.selector, setupParams)
+                abi.encodeWithSelector(IUpgradable.setup.selector, setupParams)
             );
             if (!success) revert SetupFailed();
         }

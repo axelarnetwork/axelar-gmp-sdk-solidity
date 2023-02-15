@@ -24,5 +24,5 @@ interface IExpressProxyDeployer {
         address implementationAddress,
         address owner,
         bytes memory setupParams
-    ) external returns (address);
+    ) external payable returns (address);
 }

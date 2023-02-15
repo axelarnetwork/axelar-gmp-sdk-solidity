@@ -18,7 +18,7 @@ contract ExpressProxyDeployer is IExpressProxyDeployer {
 
         gateway = gateway_;
 
-        ExpressProxy proxy = new ExpressProxy(address(this), address(this), '', gateway_);
+        ExpressProxy proxy = new ExpressProxy(address(1), address(1), '', gateway_);
         proxy.deployRegistry(type(ExpressRegistry).creationCode);
 
         proxyCodeHash = address(proxy).codehash;
@@ -52,7 +52,7 @@ contract ExpressProxyDeployer is IExpressProxyDeployer {
             deploySalt,
             abi.encodePacked(
                 type(ExpressProxy).creationCode,
-                abi.encode(gateway, implementationAddress, owner, setupParams)
+                abi.encode(implementationAddress, owner, setupParams, gateway)
             )
         );
 

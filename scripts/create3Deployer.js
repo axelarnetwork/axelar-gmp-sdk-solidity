@@ -12,7 +12,7 @@ const ganache = require('ganache');
 const Create3Deployer = require('../dist/Create3Deployer.json');
 
 const getSaltFromKey = (key) => {
-  return keccak256(defaultAbiCoder.encode(['string'], [key]));
+  return keccak256(defaultAbiCoder.encode(['string'], [key.toString()]));
 };
 
 const estimateGasForCreate3Deploy = async (contractJson, args = []) => {

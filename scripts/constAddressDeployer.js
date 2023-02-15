@@ -12,7 +12,7 @@ const ganache = require('ganache');
 const ConstAddressDeployer = require('../dist/ConstAddressDeployer.json');
 
 const getSaltFromKey = (key) => {
-  return keccak256(defaultAbiCoder.encode(['string'], [key]));
+  return keccak256(defaultAbiCoder.encode(['string'], [key.toString()]));
 };
 
 const estimateGasForDeploy = async (contractJson, args = []) => {

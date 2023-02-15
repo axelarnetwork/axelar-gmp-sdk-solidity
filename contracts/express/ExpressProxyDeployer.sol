@@ -42,12 +42,13 @@ contract ExpressProxyDeployer is IExpressProxyDeployer {
     }
 
     /// @dev delegatecall to this function to deploy a proxy from a host contract
+    /// @dev payable is for compatibility to delegate from payable functions
     function deployExpressProxy(
         bytes32 deploySalt,
         address implementationAddress,
         address owner,
         bytes memory setupParams
-    ) external returns (address proxyAddress) {
+    ) external payable returns (address proxyAddress) {
         proxyAddress = Create3.deploy(
             deploySalt,
             abi.encodePacked(

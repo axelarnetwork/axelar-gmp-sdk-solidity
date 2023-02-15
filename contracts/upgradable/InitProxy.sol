@@ -39,7 +39,7 @@ contract InitProxy is BaseProxy, IInitProxy {
         if (params.length != 0) {
             // solhint-disable-next-line avoid-low-level-calls
             (bool success, ) = implementationAddress.delegatecall(
-                abi.encodeWithSelector(BaseProxy.setup.selector, params)
+                abi.encodeWithSelector(IUpgradable.setup.selector, params)
             );
             if (!success) revert SetupFailed();
         }

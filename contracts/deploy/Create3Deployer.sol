@@ -19,7 +19,7 @@ contract Create3Deployer {
      * Requirements:
      *
      * - `bytecode` must not be empty.
-     * - `salt` must not have been used for `bytecode` already by the same `msg.sender`.
+     * - `salt` must not have been used already by the same `msg.sender`.
      */
     function deploy(bytes calldata bytecode, bytes32 salt) external returns (address deployedAddress_) {
         bytes32 deploySalt = keccak256(abi.encode(msg.sender, salt));

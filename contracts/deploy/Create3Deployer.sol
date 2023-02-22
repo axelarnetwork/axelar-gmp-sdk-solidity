@@ -38,7 +38,7 @@ contract Create3Deployer {
      * Requirements:
      *
      * - `bytecode` must not be empty.
-     * - `salt` must have not been used for `bytecode` already by the same `msg.sender`.
+     * - `salt` must have not been used already by the same `msg.sender`.
      * - `init` is used to initialize the deployed contract
      */
     function deployAndInit(
@@ -56,7 +56,7 @@ contract Create3Deployer {
 
     /**
      * @dev Returns the address where a contract will be stored if deployed via {deploy} or {deployAndInit} by `sender`.
-     * Any change in the `bytecode`, `sender`, or `salt` will result in a new destination address.
+     * Any change in `salt` or `sender` will result in a new destination address.
      */
     function deployedAddress(address sender, bytes32 salt) external view returns (address) {
         bytes32 deploySalt = keccak256(abi.encode(sender, salt));

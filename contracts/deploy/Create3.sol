@@ -8,9 +8,13 @@ error DeployFailed();
 
 contract CreateDeployer {
     function deploy(bytes memory bytecode) external {
+        address deployed;
         // solhint-disable-next-line no-inline-assembly
         assembly {
-            pop(create(0, add(bytecode, 32), mload(bytecode)))
+            deployed := create(0, add(bytecode, 32), mload(bytecode))
+            if iszero(deployed) {
+                revert(0, 0)
+            }
         }
 
         selfdestruct(payable(msg.sender));
@@ -23,7 +27,7 @@ library Create3 {
     function deploy(bytes32 salt, bytes memory bytecode) internal returns (address deployed) {
         deployed = deployedAddress(salt, address(this));
 
-        if (deployed.code.length != 0) revert AlreadyDeployed();
+        if (deployed.codehash != bytes32(0)) revert AlreadyDeployed();
         if (bytecode.length == 0) revert EmptyBytecode();
 
         // CREATE2
@@ -33,7 +37,8 @@ library Create3 {
 
         deployer.deploy(bytecode);
 
-        if (deployed.code.length == 0) revert DeployFailed();
+        // checking for codehash instead of code length to support contracts that selfdestruct in constructor
+        if (deployed.codehash == bytes32(0)) revert DeployFailed();
     }
 
     function deployedAddress(bytes32 salt, address host) internal pure returns (address deployed) {

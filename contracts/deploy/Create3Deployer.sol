@@ -38,7 +38,7 @@ contract Create3Deployer {
      * Requirements:
      *
      * - `bytecode` must not be empty.
-     * - `salt` must have not been used already by the same `msg.sender`.
+     * - `salt` must not have been used already by the same `msg.sender`.
      * - `init` is used to initialize the deployed contract
      */
     function deployAndInit(

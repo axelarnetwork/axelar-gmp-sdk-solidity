@@ -5,8 +5,9 @@ const {
   Contract,
   utils: { defaultAbiCoder, keccak256, id },
 } = require('ethers');
-const { deployContract, MockProvider, solidity } = require('ethereum-waffle');
-chai.use(solidity);
+const { waffle } = require('hardhat');
+const { deployContract } = waffle;
+const provider = waffle.provider;
 const { expect } = chai;
 
 const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000';
@@ -29,7 +30,7 @@ const ExecutableSample = require('../artifacts/contracts/test/gmp/ExecutableSamp
 const getRandomID = () => id(Math.floor(Math.random() * 1e10).toString());
 
 describe('GMPE', () => {
-  const [ownerWallet, userWallet] = new MockProvider().getWallets();
+  const [ownerWallet, userWallet] = provider.getWallets();
 
   let sourceChainGateway;
   let destinationChainGateway;
@@ -354,7 +355,6 @@ describe('GMPE', () => {
 
       // Attempt to perform interchain token swap
       const swapAmount = 1e6;
-      //const convertedAmount = 2 * swapAmount;
       const payload = defaultAbiCoder.encode(
         ['string', 'string'],
         [symbolB, userWallet.address.toString()],
@@ -409,7 +409,7 @@ describe('GMPE', () => {
             swapAmount,
             { gasLimit: 250000 },
           ),
-      ).to.be.reverted; // With ExpressCallNotEnabled
+      ).to.be.revertedWith('ExpressCallNotEnabled');
     });
 
     it('should revert if registry is deployed twice', async () => {
@@ -417,7 +417,7 @@ describe('GMPE', () => {
         destinationChainSwapExpressProxy
           .connect(ownerWallet)
           .deployRegistry(ExpressRegistry.bytecode, { gasLimit: 250000 }),
-      ).to.be.reverted; // With AlreadyDeployed
+      ).to.be.revertedWith('AlreadyDeployed');
     });
 
     it('should not execute if not approved by gateway', async () => {
@@ -480,7 +480,7 @@ describe('GMPE', () => {
             executableSampleSource.address.toString(),
             payload,
           ),
-      ).to.be.reverted; // With NotApprovedByGateway
+      ).to.be.revertedWith('NotApprovedByGateway');
     });
 
     it('should not execute with token if not approved by gateway', async () => {
@@ -586,7 +586,7 @@ describe('GMPE', () => {
           symbolA,
           swapAmount,
         ),
-      ).to.be.reverted; // With NotApprovedByGateway
+      ).to.be.revertedWith('NotApprovedByGateway');
     });
 
     it('should only complete execute with token if called by registry', async () => {
@@ -740,7 +740,7 @@ describe('GMPE', () => {
             symbolA,
             swapAmount,
           ),
-      ).to.be.reverted; // With NotExpressRegistry
+      ).to.be.revertedWith('NotExpressRegistry');
     });
 
     it('should execute non-express token transfer normally', async () => {

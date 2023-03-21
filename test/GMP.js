@@ -5,40 +5,36 @@ const {
   Contract,
   utils: { defaultAbiCoder, keccak256, id },
 } = require('ethers');
-const { deployContract, MockProvider, solidity } = require('ethereum-waffle');
-chai.use(solidity);
 const { expect } = chai;
+const { ethers } = require('hardhat');
 
 const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000';
 
 const { deployCreate3Upgradable } = require('../index');
-
-const AxelarGateway = require('../artifacts/contracts/test/MockGateway.sol/MockGateway.json');
-const ExpressProxyDeployer = require('../artifacts/contracts/express/ExpressProxyDeployer.sol/ExpressProxyDeployer.json');
-const GMPExpressService = require('../artifacts/contracts/test/MockGMPExpressService.sol/MockGMPExpressService.json');
 const MintableCappedERC20 = require('../artifacts/contracts/test/ERC20MintableBurnable.sol/ERC20MintableBurnable.json');
-const SourceChainSwapCaller = require('../artifacts/contracts/test/gmp/SourceChainSwapCaller.sol/SourceChainSwapCaller.json');
-const DestinationChainSwapExecutable = require('../artifacts/contracts/test/gmp/DestinationChainSwapExecutable.sol/DestinationChainSwapExecutable.json');
-const ExpressProxy = require('../artifacts/contracts/express/ExpressProxy.sol/ExpressProxy.json');
-const ExpressRegistry = require('../artifacts/contracts/express/ExpressRegistry.sol/ExpressRegistry.json');
-const DestinationChainSwapExpress = require('../artifacts/contracts/test/gmp/DestinationChainSwapExpress.sol/DestinationChainSwapExpress.json');
-const DestinationChainTokenSwapper = require('../artifacts/contracts/test/gmp/DestinationChainTokenSwapper.sol/DestinationChainTokenSwapper.json');
-const Create3Deployer = require('../dist/Create3Deployer.json');
 
 const getRandomID = () => id(Math.floor(Math.random() * 1e10).toString());
 
 describe('GMP', () => {
-  const [ownerWallet, userWallet] = new MockProvider().getWallets();
+  let gatewayFactory;
+  let sourceChainSwapCallerFactory;
+  let destinationChainSwapExecutableFactory;
+  let destinationChainTokenSwapperFactory;
+  let tokenFactory;
+  let create3DeployerFactory;
 
   let sourceChainGateway;
   let destinationChainGateway;
-  let gmpExpressService;
   let sourceChainSwapCaller;
   let destinationChainSwapExecutable;
-  let destinationChainSwapExpress;
   let destinationChainTokenSwapper;
   let tokenA;
   let tokenB;
+  let create3Deployer;
+
+  let wallets;
+  let ownerWallet;
+  let userWallet;
 
   const sourceChain = 'chainA';
   const destinationChain = 'chainB';
@@ -49,33 +45,57 @@ describe('GMP', () => {
   const decimals = 16;
   const capacity = 0;
 
-  beforeEach(async () => {
-    const create3Deployer = await deployContract(ownerWallet, Create3Deployer);
+  before(async () => {
+    wallets = await ethers.getSigners();
+    ownerWallet = wallets[0];
+    userWallet = wallets[1];
 
-    sourceChainGateway = await deployContract(ownerWallet, AxelarGateway);
-    destinationChainGateway = await deployContract(ownerWallet, AxelarGateway);
-    const expressProxyDeployer = await deployContract(
+    gatewayFactory = await ethers.getContractFactory(
+      'MockGateway',
       ownerWallet,
-      ExpressProxyDeployer,
-      [destinationChainGateway.address],
     );
-    gmpExpressService = await deployContract(ownerWallet, GMPExpressService, [
-      destinationChainGateway.address,
-      ownerWallet.address,
-      expressProxyDeployer.address,
-    ]);
+    sourceChainSwapCallerFactory = await ethers.getContractFactory(
+      'SourceChainSwapCaller',
+      ownerWallet,
+    );
+    destinationChainTokenSwapperFactory = await ethers.getContractFactory(
+      'DestinationChainTokenSwapper',
+      ownerWallet,
+    );
+    destinationChainSwapExecutableFactory = await ethers.getContractFactory(
+      'DestinationChainSwapExecutable',
+      ownerWallet,
+    );
+    tokenFactory = await ethers.getContractFactory(
+      'ERC20MintableBurnable',
+      ownerWallet,
+    );
+    create3DeployerFactory = await ethers.getContractFactory(
+      'Create3Deployer',
+      ownerWallet,
+    );
+  });
 
-    tokenA = await deployContract(ownerWallet, MintableCappedERC20, [
-      nameA,
-      symbolA,
-      decimals,
-    ]);
+  beforeEach(async () => {
+    create3Deployer = await create3DeployerFactory
+      .deploy()
+      .then((d) => d.deployed());
 
-    tokenB = await deployContract(ownerWallet, MintableCappedERC20, [
-      nameB,
-      symbolB,
-      decimals,
-    ]);
+    sourceChainGateway = await gatewayFactory
+      .deploy()
+      .then((d) => d.deployed());
+    destinationChainGateway = await gatewayFactory
+      .deploy()
+      .then((d) => d.deployed());
+
+    tokenA = await tokenFactory
+      .deploy(nameA, symbolA, decimals)
+      .then((d) => d.deployed());
+
+    tokenB = await tokenFactory
+      .deploy(nameB, symbolB, decimals)
+      .then((d) => d.deployed());
+
     await sourceChainGateway.deployToken(
       defaultAbiCoder.encode(
         ['string', 'string', 'uint8', 'uint256', ' address', 'uint256'],
@@ -106,45 +126,25 @@ describe('GMP', () => {
       keccak256('0x'),
     );
 
-    destinationChainTokenSwapper = await deployContract(
-      ownerWallet,
-      DestinationChainTokenSwapper,
-      [tokenA.address, tokenB.address],
-    );
+    destinationChainTokenSwapper = await destinationChainTokenSwapperFactory
+      .deploy(tokenA.address.toString(), tokenB.address.toString())
+      .then((d) => d.deployed());
 
-    destinationChainSwapExecutable = await deployContract(
-      ownerWallet,
-      DestinationChainSwapExecutable,
-      [destinationChainGateway.address, destinationChainTokenSwapper.address],
-    );
+    destinationChainSwapExecutable = await destinationChainSwapExecutableFactory
+      .deploy(
+        destinationChainGateway.address,
+        destinationChainTokenSwapper.address,
+      )
+      .then((d) => d.deployed());
 
-    destinationChainSwapExpress = await deployCreate3Upgradable(
-      create3Deployer.address,
-      ownerWallet,
-      DestinationChainSwapExpress,
-      ExpressProxy,
-      [destinationChainGateway.address, destinationChainTokenSwapper.address],
-      [destinationChainGateway.address],
-    );
-
-    const destinationChainSwapExpressProxy = new Contract(
-      destinationChainSwapExpress.address,
-      ExpressProxy.abi,
-      ownerWallet,
-    );
-    await destinationChainSwapExpressProxy.deployRegistry(
-      ExpressRegistry.bytecode,
-    );
-
-    sourceChainSwapCaller = await deployContract(
-      ownerWallet,
-      SourceChainSwapCaller,
-      [
+    sourceChainSwapCaller = await sourceChainSwapCallerFactory
+      .deploy(
         sourceChainGateway.address,
         destinationChain,
-        destinationChainSwapExecutable.address.toString(),
-      ],
-    );
+        destinationChainSwapExecutable.address,
+      )
+      .then((d) => d.deployed());
+
     await tokenA.mint(destinationChainGateway.address, 1e9);
     await tokenB.mint(destinationChainTokenSwapper.address, 1e9);
 

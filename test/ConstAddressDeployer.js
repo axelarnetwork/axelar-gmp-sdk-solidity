@@ -1,8 +1,7 @@
 'use strict';
 
 const chai = require('chai');
-const { deployContract, MockProvider, solidity } = require('ethereum-waffle');
-chai.use(solidity);
+const { ethers } = require('hardhat');
 const { expect } = chai;
 const {
   deployContractConstant,
@@ -14,14 +13,29 @@ const BurnableMintableCappedERC20 = require('../artifacts/contracts/test/ERC20Mi
 const BurnableMintableCappedERC20Init = require('../artifacts/contracts/test/ERC20MintableBurnableInit.sol/ERC20MintableBurnableInit.json');
 
 describe('ConstAddressDeployer', () => {
-  const [deployerWallet, userWallet] = new MockProvider().getWallets();
+  let wallets;
+  let deployerWallet;
+  let userWallet;
+
+  let deployerFactory;
   let deployer;
   const name = 'test';
   const symbol = 'test';
   const decimals = 16;
 
+  before(async () => {
+    wallets = await ethers.getSigners();
+    deployerWallet = wallets[0];
+    userWallet = wallets[1];
+
+    deployerFactory = await ethers.getContractFactory(
+      'ConstAddressDeployer',
+      deployerWallet,
+    );
+  });
+
   beforeEach(async () => {
-    deployer = (await deployContract(deployerWallet, ConstAddressDeployer))
+    deployer = (await deployerFactory.deploy().then((d) => d.deployed()))
       .address;
   });
 

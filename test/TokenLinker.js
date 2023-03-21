@@ -5,15 +5,10 @@ const {
   utils: { defaultAbiCoder, keccak256, id },
   constants: { AddressZero },
 } = require('ethers');
-const { deployContract, MockProvider, solidity } = require('ethereum-waffle');
 const { deployCreate3Upgradable } = require('../index.js');
-chai.use(solidity);
+const { ethers } = require('hardhat');
 const { expect } = chai;
 
-const AxelarGateway = require('../artifacts/contracts/test/MockGateway.sol/MockGateway.json');
-const GasService = require('../artifacts/contracts/test/MockGasService.sol/MockGasService.json');
-const ERC20MintableBurnable = require('../artifacts/contracts/test/ERC20MintableBurnable.sol/ERC20MintableBurnable.json');
-const Create3Deployer = require('../dist/Create3Deployer.json');
 const TokenLinkerProxy = require('../artifacts/contracts/token-linker/TokenLinkerProxy.sol/TokenLinkerProxy.json');
 const TokenLinkerLockUnlock = require('../artifacts/contracts/token-linker/TokenLinkerLockUnlock.sol/TokenLinkerLockUnlock.json');
 const TokenLinkerMintBurn = require('../artifacts/contracts/token-linker/TokenLinkerMintBurn.sol/TokenLinkerMintBurn.json');
@@ -22,13 +17,20 @@ const TokenLinkerNative = require('../artifacts/contracts/token-linker/TokenLink
 const getRandomID = () => id(Math.floor(Math.random() * 1e10).toString());
 
 describe('TokenLinker', () => {
-  const [ownerWallet, userWallet] = new MockProvider().getWallets();
+  let gatewayFactory;
+  let gasServiceFactory;
+  let tokenFactory;
+  let constAddressDeployerFactory;
 
   let gateway;
   let gasService;
   let tokenLinker;
   let token;
   let constAddressDeployer;
+
+  let wallets;
+  let ownerWallet;
+  let userWallet;
 
   const sourceChain = 'chainA';
   const destinationChain = 'chainB';
@@ -52,16 +54,41 @@ describe('TokenLinker', () => {
     return gateway.approveContractCall(approveData, commandId);
   };
 
-  beforeEach(async () => {
-    gateway = await deployContract(ownerWallet, AxelarGateway);
-    gasService = await deployContract(ownerWallet, GasService);
-    constAddressDeployer = await deployContract(ownerWallet, Create3Deployer);
+  before(async () => {
+    wallets = await ethers.getSigners();
+    ownerWallet = wallets[0];
+    userWallet = wallets[1];
 
-    token = await deployContract(ownerWallet, ERC20MintableBurnable, [
-      tokenName,
-      tokenSymbol,
-      decimals,
-    ]);
+    gatewayFactory = await ethers.getContractFactory(
+      'MockGateway',
+      ownerWallet,
+    );
+    gasServiceFactory = await ethers.getContractFactory(
+      'MockGasService',
+      ownerWallet,
+    );
+    tokenFactory = await ethers.getContractFactory(
+      'ERC20MintableBurnable',
+      ownerWallet,
+    );
+    constAddressDeployerFactory = await ethers.getContractFactory(
+      'Create3Deployer',
+      ownerWallet,
+    );
+  });
+
+  beforeEach(async () => {
+    gateway = await gatewayFactory.deploy().then((d) => d.deployed());
+
+    gasService = await gasServiceFactory.deploy().then((d) => d.deployed());
+
+    constAddressDeployer = await constAddressDeployerFactory
+      .deploy()
+      .then((d) => d.deployed());
+
+    token = await tokenFactory
+      .deploy(tokenName, tokenSymbol, decimals)
+      .then((d) => d.deployed());
   });
 
   describe('Lock-Unlock', () => {

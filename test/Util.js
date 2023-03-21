@@ -1,18 +1,25 @@
 'use strict';
 
 const chai = require('chai');
-const { deployContract, MockProvider, solidity } = require('ethereum-waffle');
-chai.use(solidity);
 const { expect } = chai;
-
-const UtilTest = require('../artifacts/contracts/test/UtilTest.sol/UtilTest.json');
+const { ethers } = require('hardhat');
 
 describe('UtilTest', () => {
-  const [ownerWallet] = new MockProvider().getWallets();
+  let utilTestFactory;
   let utilTest;
 
+  let wallets;
+  let ownerWallet;
+
+  before(async () => {
+    wallets = await ethers.getSigners();
+    ownerWallet = wallets[0];
+
+    utilTestFactory = await ethers.getContractFactory('UtilTest', ownerWallet);
+  });
+
   beforeEach(async () => {
-    utilTest = await deployContract(ownerWallet, UtilTest);
+    utilTest = await utilTestFactory.deploy().then((d) => d.deployed());
   });
 
   it('should convert address to lowercase string', async () => {

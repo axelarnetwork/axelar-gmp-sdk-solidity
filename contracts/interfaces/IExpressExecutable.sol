@@ -12,5 +12,5 @@ interface IExpressExecutable is IAxelarExecutable {
         bytes32 payloadHash, /*payloadHash*/
         string calldata tokenSymbol, /*tokenSymbol*/
         uint256 /*amount*/
-    ) external returns (bool);
+    ) external view returns (bool);
 }

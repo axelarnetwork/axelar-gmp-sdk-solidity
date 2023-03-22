@@ -22,7 +22,7 @@ abstract contract ExpressExecutable is IExpressExecutable {
         bytes32, /*payloadHash*/
         string calldata, /*tokenSymbol*/
         uint256 /*amount*/
-    ) external virtual returns (bool) {
+    ) external view virtual returns (bool) {
         return true;
     }
 

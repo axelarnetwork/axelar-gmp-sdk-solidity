@@ -8,7 +8,7 @@ import { IExpressRegistry } from './IExpressRegistry.sol';
 interface IExpressProxy is IAxelarExecutable {
     error NotExpressRegistry();
     error InvalidTokenSymbol();
-    error ExpressCallNotEnabled();
+    error ExpressCallNotAccepted();
 
     function registry() external view returns (IExpressRegistry);
 

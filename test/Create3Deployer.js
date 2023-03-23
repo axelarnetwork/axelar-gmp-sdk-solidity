@@ -8,7 +8,6 @@ const {
   deployCreate3AndInitContract,
   getCreate3Address,
 } = require('../index.js');
-const Create3Deployer = require('../dist/Create3Deployer.json');
 const BurnableMintableCappedERC20 = require('../artifacts/contracts/test/ERC20MintableBurnable.sol/ERC20MintableBurnable.json');
 const BurnableMintableCappedERC20Init = require('../artifacts/contracts/test/ERC20MintableBurnableInit.sol/ERC20MintableBurnableInit.json');
 

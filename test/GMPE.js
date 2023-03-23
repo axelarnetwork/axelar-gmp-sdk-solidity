@@ -3,7 +3,7 @@
 const chai = require('chai');
 const {
   Contract,
-  utils: { defaultAbiCoder, keccak256, id },
+  utils: { defaultAbiCoder, keccak256, id, formatBytes32String },
 } = require('ethers');
 const { expect } = chai;
 const { ethers } = require('hardhat');
@@ -18,6 +18,7 @@ const ExpressRegistry = require('../artifacts/contracts/express/ExpressRegistry.
 const DestinationChainSwapExpress = require('../artifacts/contracts/test/gmp/DestinationChainSwapExpress.sol/DestinationChainSwapExpress.json');
 const DestinationChainSwapExpressDisabled = require('../artifacts/contracts/test/gmp/DestinationChainSwapExpressDisabled.sol/DestinationChainSwapExpressDisabled.json');
 const ExecutableSample = require('../artifacts/contracts/test/gmp/ExecutableSample.sol/ExecutableSample.json');
+const DummyRegistry = require('../artifacts/contracts/test/gmp/DummyRegistry.sol/DummyRegistry.json');
 
 const getRandomID = () => id(Math.floor(Math.random() * 1e10).toString());
 
@@ -26,9 +27,6 @@ describe('GMPE', async () => {
   let gmpExpressServiceFactory;
   let sourceChainSwapCallerFactory;
   let destinationChainTokenSwapperFactory;
-  let destinationChainSwapExpressFactory;
-  let destinationChainSwapExpressProxyFactory;
-  let destinationChainSwapExpressDisabledFactory;
   let tokenFactory;
   let create3DeployerFactory;
   let expressProxyDeployerFactory;
@@ -77,19 +75,6 @@ describe('GMPE', async () => {
       'SourceChainSwapCaller',
       ownerWallet,
     );
-    destinationChainSwapExpressFactory = await ethers.getContractFactory(
-      'DestinationChainSwapExpress',
-      ownerWallet,
-    );
-    destinationChainSwapExpressProxyFactory = await ethers.getContractFactory(
-      'ExpressProxy',
-      ownerWallet,
-    );
-    destinationChainSwapExpressDisabledFactory =
-      await ethers.getContractFactory(
-        'DestinationChainSwapExpressDisabled',
-        ownerWallet,
-      );
     destinationChainTokenSwapperFactory = await ethers.getContractFactory(
       'DestinationChainTokenSwapper',
       ownerWallet,
@@ -933,7 +918,49 @@ describe('GMPE', async () => {
         );
     });
 
-    // it('should fail upgrade if it is the final implementation', async () => {});
+    // Test Case commented out, pending PR for line 51 of FinalProxy
+    // it('should fail upgrade if it is the final implementation', async () => {
+    //   // Check that current implementation is not final
+    //   expect(
+    //     await destinationChainSwapExpressProxy.connect(ownerWallet).isFinal(),
+    //   ).to.be.false;
+
+    //   const implementationAddress = await destinationChainSwapExpressProxy
+    //     .connect(ownerWallet)
+    //     .implementation();
+
+    //   // Perform final upgrade
+    //   let setupParams = defaultAbiCoder.encode(
+    //     ['address', 'address'],
+    //     [destinationChainGateway.address, destinationChainTokenSwapper.address],
+    //   );
+
+    //   await destinationChainSwapExpressProxy
+    //     .connect(ownerWallet)
+    //     .finalUpgrade(
+    //       DestinationChainSwapExpressDisabled.bytecode,
+    //       setupParams,
+    //       { gasLimit: 250000 },
+    //     );
+
+    //   const updatedImplementationAddress =
+    //     await destinationChainSwapExpressProxy
+    //       .connect(ownerWallet)
+    //       .implementation();
+
+    //   expect(implementationAddress).to.not.equal(updatedImplementationAddress);
+
+    //   // Attempt final upgrade again, should fail
+    //   await destinationChainSwapExpressProxy
+    //     .connect(ownerWallet)
+    //     .finalUpgrade(DestinationChainSwapExpress.bytecode, setupParams, {
+    //       gasLimit: 250000,
+    //     })
+    //     .to.be.revertedWithCustomError(
+    //       destinationChainSwapExpressProxy,
+    //       'AlreadyInitialized',
+    //     );
+    // });
   });
 
   describe('Registry', () => {
@@ -1260,9 +1287,129 @@ describe('GMPE', async () => {
     });
   });
 
-  // describe('ExpressProxyDeployer', () => {
-  //   it('should predict the correct address of deployed proxy', async () => {});
-  //   it('should deploy proxy and registry correctly', async () => {});
-  //   it('should revert on proxy or registry bytecode mismatch', async () => {});
-  // });
+  describe('ExpressProxyDeployer', () => {
+    it('should deploy proxy and registry correctly', async () => {
+      const salt = formatBytes32String(1);
+      const deploySaltBytes = defaultAbiCoder.encode(
+        ['address', 'bytes32'],
+        [ownerWallet.address, salt],
+      );
+      const deploySalt = keccak256(deploySaltBytes);
+
+      const setupParams = defaultAbiCoder.encode(
+        ['address', 'address', 'bytes', 'address'],
+        [
+          destinationChainSwapExpress.address,
+          ownerWallet.address,
+          [],
+          destinationChainGateway.address,
+        ],
+      );
+
+      await expressProxyDeployer
+        .connect(ownerWallet)
+        .deployExpressProxy(
+          deploySalt,
+          destinationChainSwapExpress.address,
+          ownerWallet.address,
+          setupParams,
+        );
+
+      const destinationChainSwapExpressProxyAddress = await expressProxyDeployer
+        .connect(ownerWallet)
+        .deployedProxyAddress(
+          salt,
+          ownerWallet.address,
+          expressProxyDeployer.address,
+        );
+
+      const sampleProxy = new Contract(
+        destinationChainSwapExpressProxyAddress,
+        ExpressProxy.abi,
+        ownerWallet,
+      );
+
+      // Should return true if address is correct and proxy & registry are deployed correctly
+      expect(await expressProxyDeployer.isExpressProxy(sampleProxy.address)).to
+        .be.true;
+    });
+
+    it('should revert on proxy or registry bytecode mismatch', async () => {
+      const expressProxyDeployer2 = await expressProxyDeployerFactory
+        .deploy(destinationChainGateway.address)
+        .then((d) => d.deployed());
+
+      const destinationChainSwapExpress2 = await deployCreate3Upgradable(
+        create3Deployer.address,
+        ownerWallet,
+        DestinationChainSwapExpress,
+        ExpressProxy,
+        [destinationChainGateway.address, destinationChainTokenSwapper.address],
+        [destinationChainGateway.address],
+      );
+
+      const destinationChainSwapExpressProxy2 = new Contract(
+        destinationChainSwapExpress2.address,
+        ExpressProxy.abi,
+        ownerWallet,
+      );
+
+      const dummyProxyFactory = await ethers.getContractFactory(
+        'DummyProxy',
+        ownerWallet,
+      );
+
+      const dummyProxy = await dummyProxyFactory
+        .deploy()
+        .then((d) => d.deployed());
+
+      // should fail first condition (line 31 of ExpressProxyDeployer)
+      expect(
+        await expressProxyDeployer2
+          .connect(ownerWallet)
+          .isExpressProxy(dummyProxy.address),
+      ).to.be.false;
+
+      // should fail second condition (line 31 of ExpressProxyDeployer)
+      expect(
+        await expressProxyDeployer2
+          .connect(ownerWallet)
+          .isExpressProxy(destinationChainSwapExpressProxy2.address),
+      ).to.be.false;
+
+      // add case for wrong registry bytecode, should fail second condition
+      await destinationChainSwapExpressProxy2.deployRegistry(
+        DummyRegistry.bytecode,
+      );
+      expect(
+        await expressProxyDeployer2
+          .connect(ownerWallet)
+          .isExpressProxy(destinationChainSwapExpressProxy2.address),
+      ).to.be.false;
+
+      // should pass second condition once correct proxy & corresponding registry are deployed
+      const destinationChainSwapExpress3 = await deployCreate3Upgradable(
+        create3Deployer.address,
+        ownerWallet,
+        DestinationChainSwapExpress,
+        ExpressProxy,
+        [destinationChainGateway.address, destinationChainTokenSwapper.address],
+        [destinationChainGateway.address],
+      );
+
+      const destinationChainSwapExpressProxy3 = new Contract(
+        destinationChainSwapExpress3.address,
+        ExpressProxy.abi,
+        ownerWallet,
+      );
+      await destinationChainSwapExpressProxy3.deployRegistry(
+        ExpressRegistry.bytecode,
+      );
+      expect(
+        await expressProxyDeployer2
+          .connect(ownerWallet)
+          .isExpressProxy(destinationChainSwapExpressProxy3.address),
+      ).to.be.true;
+    });
+  });
 });

@@ -8,7 +8,6 @@ const {
   deployAndInitContractConstant,
   predictContractConstant,
 } = require('../index.js');
-const ConstAddressDeployer = require('../dist/ConstAddressDeployer.json');
 const BurnableMintableCappedERC20 = require('../artifacts/contracts/test/ERC20MintableBurnable.sol/ERC20MintableBurnable.json');
 const BurnableMintableCappedERC20Init = require('../artifacts/contracts/test/ERC20MintableBurnableInit.sol/ERC20MintableBurnableInit.json');
 

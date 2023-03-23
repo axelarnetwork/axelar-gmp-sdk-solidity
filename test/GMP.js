@@ -10,7 +10,6 @@ const { ethers } = require('hardhat');
 
 const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000';
 
-const { deployCreate3Upgradable } = require('../index');
 const MintableCappedERC20 = require('../artifacts/contracts/test/ERC20MintableBurnable.sol/ERC20MintableBurnable.json');
 
 const getRandomID = () => id(Math.floor(Math.random() * 1e10).toString());
@@ -21,7 +20,6 @@ describe('GMP', () => {
   let destinationChainSwapExecutableFactory;
   let destinationChainTokenSwapperFactory;
   let tokenFactory;
-  let create3DeployerFactory;
 
   let sourceChainGateway;
   let destinationChainGateway;
@@ -30,7 +28,6 @@ describe('GMP', () => {
   let destinationChainTokenSwapper;
   let tokenA;
   let tokenB;
-  let create3Deployer;
 
   let wallets;
   let ownerWallet;
@@ -70,17 +67,9 @@ describe('GMP', () => {
       'ERC20MintableBurnable',
       ownerWallet,
     );
-    create3DeployerFactory = await ethers.getContractFactory(
-      'Create3Deployer',
-      ownerWallet,
-    );
   });
 
   beforeEach(async () => {
-    create3Deployer = await create3DeployerFactory
-      .deploy()
-      .then((d) => d.deployed());
-
     sourceChainGateway = await gatewayFactory
       .deploy()
       .then((d) => d.deployed());

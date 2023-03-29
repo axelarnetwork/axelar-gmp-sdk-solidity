@@ -19,7 +19,6 @@
     "ganache": "^7.3.2"
   },
   "devDependencies": {
-    "@axelar-network/axelar-cgp-solidity": "^4.3.0",
     "@openzeppelin/contracts": "^4.8.0",
     "chai": "^4.3.4",
     "eslint": "^8.4.1",

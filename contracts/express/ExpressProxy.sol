@@ -76,14 +76,14 @@ contract ExpressProxy is FinalProxy, IExpressProxy {
         address token = gateway.tokenAddresses(tokenSymbol);
 
         if (
-            IExpressExecutable(address(this)).acceptExpressCallWithToken(
+            !IExpressExecutable(address(this)).acceptExpressCallWithToken(
                 msg.sender,
                 sourceChain,
                 sourceAddress,
                 payloadHash,
                 tokenSymbol,
                 amount
-            ) == false
+            )
         ) revert ExpressCallNotAccepted();
 
         if (token == address(0)) revert InvalidTokenSymbol();

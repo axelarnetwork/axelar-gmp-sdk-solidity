@@ -19,15 +19,14 @@ describe('NftLinker', () => {
   let gatewayFactory;
   let gasServiceFactory;
   let tokenFactory;
-  let constAddressDeployerFactory;
+  let create3DeployerFactory;
 
   let gateway;
   let gasService;
   let nftLinker;
   let token;
-  let constAddressDeployer;
+  let create3Deployer;
 
-  let wallets;
   let ownerWallet;
   let userWallet;
 
@@ -53,9 +52,7 @@ describe('NftLinker', () => {
   };
 
   before(async () => {
-    wallets = await ethers.getSigners();
-    ownerWallet = wallets[0];
-    userWallet = wallets[1];
+    [ownerWallet, userWallet] = await ethers.getSigners();
 
     gatewayFactory = await ethers.getContractFactory(
       'MockGateway',
@@ -69,7 +66,7 @@ describe('NftLinker', () => {
       'ERC721MintableBurnable',
       ownerWallet,
     );
-    constAddressDeployerFactory = await ethers.getContractFactory(
+    create3DeployerFactory = await ethers.getContractFactory(
       'Create3Deployer',
       ownerWallet,
     );
@@ -80,7 +77,7 @@ describe('NftLinker', () => {
 
     gasService = await gasServiceFactory.deploy().then((d) => d.deployed());
 
-    constAddressDeployer = await constAddressDeployerFactory
+    create3Deployer = await create3DeployerFactory
       .deploy()
       .then((d) => d.deployed());
 
@@ -92,7 +89,7 @@ describe('NftLinker', () => {
   describe('Lock-Unlock', () => {
     beforeEach(async () => {
       nftLinker = await deployCreate3Upgradable(
-        constAddressDeployer.address,
+        create3Deployer.address,
         ownerWallet,
         NftLinkerLockUnlock,
         NftLinkerProxy,
@@ -169,7 +166,7 @@ describe('NftLinker', () => {
   describe('Mint-Burn', () => {
     beforeEach(async () => {
       nftLinker = await deployCreate3Upgradable(
-        constAddressDeployer.address,
+        create3Deployer.address,
         ownerWallet,
         NftLinkerMintBurn,
         NftLinkerProxy,

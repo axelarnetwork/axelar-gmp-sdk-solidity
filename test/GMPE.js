@@ -2,17 +2,13 @@
 
 const chai = require('chai');
 const {
-  Contract,
   utils: { defaultAbiCoder, keccak256, id, formatBytes32String },
 } = require('ethers');
 const { expect } = chai;
 const { ethers } = require('hardhat');
 
-const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000';
-
 const { deployCreate3Upgradable } = require('../index');
 
-const MintableCappedERC20 = require('../artifacts/contracts/test/ERC20MintableBurnable.sol/ERC20MintableBurnable.json');
 const ExpressProxy = require('../artifacts/contracts/express/ExpressProxy.sol/ExpressProxy.json');
 const ExpressRegistry = require('../artifacts/contracts/express/ExpressRegistry.sol/ExpressRegistry.json');
 const DestinationChainSwapExpress = require('../artifacts/contracts/test/gmp/DestinationChainSwapExpress.sol/DestinationChainSwapExpress.json');
@@ -31,6 +27,8 @@ describe('GMPE', async () => {
   let create3DeployerFactory;
   let expressProxyDeployerFactory;
   let executableSampleFactory;
+  let expressProxyFactory;
+  let expressRegistryFactory;
 
   let sourceChainGateway;
   let sourceChainSwapCaller;
@@ -45,7 +43,6 @@ describe('GMPE', async () => {
   let destinationChainTokenSwapper;
   let destinationChainSwapExpressDisabled;
 
-  let wallets;
   let ownerWallet;
   let userWallet;
 
@@ -59,9 +56,7 @@ describe('GMPE', async () => {
   const capacity = 0;
 
   before(async () => {
-    wallets = await ethers.getSigners();
-    ownerWallet = wallets[0];
-    userWallet = wallets[1];
+    [ownerWallet, userWallet] = await ethers.getSigners();
 
     gatewayFactory = await ethers.getContractFactory(
       'MockGateway',
@@ -93,6 +88,14 @@ describe('GMPE', async () => {
     );
     executableSampleFactory = await ethers.getContractFactory(
       'ExecutableSample',
+      ownerWallet,
+    );
+    expressProxyFactory = await ethers.getContractFactory(
+      'ExpressProxy',
+      ownerWallet,
+    );
+    expressRegistryFactory = await ethers.getContractFactory(
+      'ExpressRegistry',
       ownerWallet,
     );
   });
@@ -132,14 +135,14 @@ describe('GMPE', async () => {
     await sourceChainGateway.deployToken(
       defaultAbiCoder.encode(
         ['string', 'string', 'uint8', 'uint256', ' address', 'uint256'],
-        [nameA, symbolA, decimals, capacity, ADDRESS_ZERO, 0],
+        [nameA, symbolA, decimals, capacity, ethers.constants.AddressZero, 0],
       ),
       keccak256('0x'),
     );
     await sourceChainGateway.deployToken(
       defaultAbiCoder.encode(
         ['string', 'string', 'uint8', 'uint256', ' address', 'uint256'],
-        [nameB, symbolB, decimals, capacity, ADDRESS_ZERO, 0],
+        [nameB, symbolB, decimals, capacity, ethers.constants.AddressZero, 0],
       ),
       keccak256('0x'),
     );
@@ -172,10 +175,8 @@ describe('GMPE', async () => {
       [destinationChainGateway.address],
     );
 
-    destinationChainSwapExpressProxy = new Contract(
+    destinationChainSwapExpressProxy = await expressProxyFactory.attach(
       destinationChainSwapExpress.address,
-      ExpressProxy.abi,
-      ownerWallet,
     );
     await destinationChainSwapExpressProxy.deployRegistry(
       ExpressRegistry.bytecode,
@@ -214,11 +215,9 @@ describe('GMPE', async () => {
         [symbolB, userWallet.address.toString()],
       );
       const payloadHash = keccak256(payload);
-      const sourceChainTokenA = new Contract(
-        await sourceChainGateway.tokenAddresses(symbolA),
-        MintableCappedERC20.abi,
-        userWallet,
-      );
+      const sourceChainTokenA = tokenFactory
+        .connect(userWallet)
+        .attach(await sourceChainGateway.tokenAddresses(symbolA));
       await sourceChainTokenA.approve(
         sourceChainSwapCaller.address,
         swapAmount,
@@ -370,11 +369,10 @@ describe('GMPE', async () => {
         [destinationChainGateway.address],
       );
 
-      const destinationChainSwapExpressProxy = new Contract(
+      const destinationChainSwapExpressProxy = await expressProxyFactory.attach(
         destinationChainSwapExpressDisabled.address,
-        ExpressProxy.abi,
-        ownerWallet,
       );
+
       await destinationChainSwapExpressProxy.deployRegistry(
         ExpressRegistry.bytecode,
       );
@@ -395,11 +393,9 @@ describe('GMPE', async () => {
       );
       const payloadHash = keccak256(payload);
 
-      const sourceChainTokenA = new Contract(
-        await sourceChainGateway.tokenAddresses(symbolA),
-        MintableCappedERC20.abi,
-        userWallet,
-      );
+      const sourceChainTokenA = tokenFactory
+        .connect(userWallet)
+        .attach(await sourceChainGateway.tokenAddresses(symbolA));
       await sourceChainTokenA.approve(
         sourceChainSwapCaller.address,
         swapAmount,
@@ -462,12 +458,6 @@ describe('GMPE', async () => {
       const payload = defaultAbiCoder.encode(['string'], [value]);
       const payloadHash = keccak256(payload);
 
-      // const executableSampleSource = await deployContract(
-      //   ownerWallet,
-      //   ExecutableSample,
-      //   [sourceChainGateway.address],
-      // );
-
       const executableSampleSource = await executableSampleFactory
         .deploy(sourceChainGateway.address)
         .then((d) => d.deployed());
@@ -481,11 +471,8 @@ describe('GMPE', async () => {
         [destinationChainGateway.address],
       );
 
-      const destinationChainSampleExpressProxy = new Contract(
-        executableSampleDest.address,
-        ExpressProxy.abi,
-        ownerWallet,
-      );
+      const destinationChainSampleExpressProxy =
+        await expressProxyFactory.attach(executableSampleDest.address);
       await destinationChainSampleExpressProxy.deployRegistry(
         ExpressRegistry.bytecode,
       );
@@ -536,11 +523,9 @@ describe('GMPE', async () => {
       );
       const payloadHash = keccak256(payload);
 
-      const sourceChainTokenA = new Contract(
-        await sourceChainGateway.tokenAddresses(symbolA),
-        MintableCappedERC20.abi,
-        userWallet,
-      );
+      const sourceChainTokenA = tokenFactory
+        .connect(userWallet)
+        .attach(await sourceChainGateway.tokenAddresses(symbolA));
       await sourceChainTokenA.approve(
         sourceChainSwapCaller.address,
         swapAmount,
@@ -645,11 +630,9 @@ describe('GMPE', async () => {
       );
       const payloadHash = keccak256(payload);
 
-      const sourceChainTokenA = new Contract(
-        await sourceChainGateway.tokenAddresses(symbolA),
-        MintableCappedERC20.abi,
-        userWallet,
-      );
+      const sourceChainTokenA = tokenFactory
+        .connect(userWallet)
+        .attach(await sourceChainGateway.tokenAddresses(symbolA));
       await sourceChainTokenA.approve(
         sourceChainSwapCaller.address,
         swapAmount,
@@ -802,11 +785,9 @@ describe('GMPE', async () => {
       );
       const payloadHash = keccak256(payload);
 
-      const sourceChainTokenA = new Contract(
-        await sourceChainGateway.tokenAddresses(symbolA),
-        MintableCappedERC20.abi,
-        userWallet,
-      );
+      const sourceChainTokenA = tokenFactory
+        .connect(userWallet)
+        .attach(await sourceChainGateway.tokenAddresses(symbolA));
       await sourceChainTokenA.approve(
         sourceChainSwapCaller.address,
         swapAmount,
@@ -917,50 +898,6 @@ describe('GMPE', async () => {
           convertedAmount,
         );
     });
-
-    // Test Case commented out, pending PR for line 51 of FinalProxy
-    // it('should fail upgrade if it is the final implementation', async () => {
-    //   // Check that current implementation is not final
-    //   expect(
-    //     await destinationChainSwapExpressProxy.connect(ownerWallet).isFinal(),
-    //   ).to.be.false;
-
-    //   const implementationAddress = await destinationChainSwapExpressProxy
-    //     .connect(ownerWallet)
-    //     .implementation();
-
-    //   // Perform final upgrade
-    //   let setupParams = defaultAbiCoder.encode(
-    //     ['address', 'address'],
-    //     [destinationChainGateway.address, destinationChainTokenSwapper.address],
-    //   );
-
-    //   await destinationChainSwapExpressProxy
-    //     .connect(ownerWallet)
-    //     .finalUpgrade(
-    //       DestinationChainSwapExpressDisabled.bytecode,
-    //       setupParams,
-    //       { gasLimit: 250000 },
-    //     );
-
-    //   const updatedImplementationAddress =
-    //     await destinationChainSwapExpressProxy
-    //       .connect(ownerWallet)
-    //       .implementation();
-
-    //   expect(implementationAddress).to.not.equal(updatedImplementationAddress);
-
-    //   // Attempt final upgrade again, should fail
-    //   await destinationChainSwapExpressProxy
-    //     .connect(ownerWallet)
-    //     .finalUpgrade(DestinationChainSwapExpress.bytecode, setupParams, {
-    //       gasLimit: 250000,
-    //     })
-    //     .to.be.revertedWithCustomError(
-    //       destinationChainSwapExpressProxy,
-    //       'AlreadyInitialized',
-    //     );
-    // });
   });
 
   describe('Registry', () => {
@@ -973,11 +910,9 @@ describe('GMPE', async () => {
       );
       const payloadHash = keccak256(payload);
 
-      const sourceChainTokenA = new Contract(
-        await sourceChainGateway.tokenAddresses(symbolA),
-        MintableCappedERC20.abi,
-        userWallet,
-      );
+      const sourceChainTokenA = tokenFactory
+        .connect(userWallet)
+        .attach(await sourceChainGateway.tokenAddresses(symbolA));
       await sourceChainTokenA.approve(
         sourceChainSwapCaller.address,
         swapAmount,
@@ -1149,11 +1084,9 @@ describe('GMPE', async () => {
         [symbolB, userWallet.address.toString()],
       );
       const payloadHash = keccak256(payload);
-      const sourceChainTokenA = new Contract(
-        await sourceChainGateway.tokenAddresses(symbolA),
-        MintableCappedERC20.abi,
-        userWallet,
-      );
+      const sourceChainTokenA = tokenFactory
+        .connect(userWallet)
+        .attach(await sourceChainGateway.tokenAddresses(symbolA));
       await sourceChainTokenA.approve(
         sourceChainSwapCaller.address,
         swapAmount,
@@ -1230,11 +1163,10 @@ describe('GMPE', async () => {
       const destinationChainSwapExpressRegistryAddress =
         await destinationChainSwapExpressProxy.connect(ownerWallet).registry();
 
-      const destinationChainSwapExpressRegistry = new Contract(
-        destinationChainSwapExpressRegistryAddress,
-        ExpressRegistry.abi,
-        ownerWallet,
-      );
+      const destinationChainSwapExpressRegistry =
+        await expressRegistryFactory.attach(
+          destinationChainSwapExpressRegistryAddress,
+        );
 
       // Directly call expressExecuteWithToken on ExpressProxy with identical parameters
       await expect(
@@ -1264,11 +1196,10 @@ describe('GMPE', async () => {
       const destinationChainSwapExpressRegistryAddress =
         await destinationChainSwapExpressProxy.connect(ownerWallet).registry();
 
-      const destinationChainSwapExpressRegistry = new Contract(
-        destinationChainSwapExpressRegistryAddress,
-        ExpressRegistry.abi,
-        ownerWallet,
-      );
+      const destinationChainSwapExpressRegistry =
+        await expressRegistryFactory.attach(
+          destinationChainSwapExpressRegistryAddress,
+        );
 
       // Should revert if called directly by an EOA with no custom error (Line 91 of ExpressRegistry)
 
@@ -1323,10 +1254,8 @@ describe('GMPE', async () => {
           expressProxyDeployer.address,
         );
 
-      const sampleProxy = new Contract(
+      const sampleProxy = await expressProxyFactory.attach(
         destinationChainSwapExpressProxyAddress,
-        ExpressProxy.abi,
-        ownerWallet,
       );
 
       // Should return true if address is correct and proxy & registry are deployed correctly
@@ -1348,11 +1277,8 @@ describe('GMPE', async () => {
         [destinationChainGateway.address],
       );
 
-      const destinationChainSwapExpressProxy2 = new Contract(
-        destinationChainSwapExpress2.address,
-        ExpressProxy.abi,
-        ownerWallet,
-      );
+      const destinationChainSwapExpressProxy2 =
+        await expressProxyFactory.attach(destinationChainSwapExpress2.address);
 
       const dummyProxyFactory = await ethers.getContractFactory(
         'DummyProxy',
@@ -1397,11 +1323,8 @@ describe('GMPE', async () => {
         [destinationChainGateway.address],
       );
 
-      const destinationChainSwapExpressProxy3 = new Contract(
-        destinationChainSwapExpress3.address,
-        ExpressProxy.abi,
-        ownerWallet,
-      );
+      const destinationChainSwapExpressProxy3 =
+        await expressProxyFactory.attach(destinationChainSwapExpress3.address);
       await destinationChainSwapExpressProxy3.deployRegistry(
         ExpressRegistry.bytecode,
       );

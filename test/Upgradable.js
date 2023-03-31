@@ -10,30 +10,27 @@ const Upgradable = require('../artifacts/contracts/test/UpgradableTest.sol/Upgra
 
 describe('Upgradable', () => {
   let upgradable;
-  let constAddressDeployerFactory;
+  let create3DeployerFactory;
 
-  let wallets;
   let ownerWallet;
   let userWallet;
 
   before(async () => {
-    wallets = await ethers.getSigners();
-    ownerWallet = wallets[0];
-    userWallet = wallets[1];
+    [ownerWallet, userWallet] = await ethers.getSigners();
 
-    constAddressDeployerFactory = await ethers.getContractFactory(
+    create3DeployerFactory = await ethers.getContractFactory(
       'Create3Deployer',
       ownerWallet,
     );
   });
 
   beforeEach(async () => {
-    const constAddressDeployer = await constAddressDeployerFactory
+    const create3Deployer = await create3DeployerFactory
       .deploy()
       .then((d) => d.deployed());
 
     upgradable = await deployCreate3Upgradable(
-      constAddressDeployer.address,
+      create3Deployer.address,
       ownerWallet,
       Upgradable,
       Proxy,

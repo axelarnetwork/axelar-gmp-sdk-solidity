@@ -6,8 +6,9 @@ const {
   constants: { AddressZero },
 } = require('ethers');
 const { deployCreate3Upgradable } = require('../index.js');
-const { ethers } = require('hardhat');
+
 const { expect } = chai;
+const { ethers } = require('hardhat');
 
 const TokenLinkerProxy = require('../artifacts/contracts/token-linker/TokenLinkerProxy.sol/TokenLinkerProxy.json');
 const TokenLinkerLockUnlock = require('../artifacts/contracts/token-linker/TokenLinkerLockUnlock.sol/TokenLinkerLockUnlock.json');
@@ -20,15 +21,14 @@ describe('TokenLinker', () => {
   let gatewayFactory;
   let gasServiceFactory;
   let tokenFactory;
-  let constAddressDeployerFactory;
+  let create3DeployerFactory;
 
   let gateway;
   let gasService;
   let tokenLinker;
   let token;
-  let constAddressDeployer;
+  let create3Deployer;
 
-  let wallets;
   let ownerWallet;
   let userWallet;
 
@@ -55,9 +55,7 @@ describe('TokenLinker', () => {
   };
 
   before(async () => {
-    wallets = await ethers.getSigners();
-    ownerWallet = wallets[0];
-    userWallet = wallets[1];
+    [ownerWallet, userWallet] = await ethers.getSigners();
 
     gatewayFactory = await ethers.getContractFactory(
       'MockGateway',
@@ -71,7 +69,7 @@ describe('TokenLinker', () => {
       'ERC20MintableBurnable',
       ownerWallet,
     );
-    constAddressDeployerFactory = await ethers.getContractFactory(
+    create3DeployerFactory = await ethers.getContractFactory(
       'Create3Deployer',
       ownerWallet,
     );
@@ -82,7 +80,7 @@ describe('TokenLinker', () => {
 
     gasService = await gasServiceFactory.deploy().then((d) => d.deployed());
 
-    constAddressDeployer = await constAddressDeployerFactory
+    create3Deployer = await create3DeployerFactory
       .deploy()
       .then((d) => d.deployed());
 
@@ -94,7 +92,7 @@ describe('TokenLinker', () => {
   describe('Lock-Unlock', () => {
     beforeEach(async () => {
       tokenLinker = await deployCreate3Upgradable(
-        constAddressDeployer.address,
+        create3Deployer.address,
         ownerWallet,
         TokenLinkerLockUnlock,
         TokenLinkerProxy,
@@ -171,7 +169,7 @@ describe('TokenLinker', () => {
   describe('Mint-Burn', () => {
     beforeEach(async () => {
       tokenLinker = await deployCreate3Upgradable(
-        constAddressDeployer.address,
+        create3Deployer.address,
         ownerWallet,
         TokenLinkerMintBurn,
         TokenLinkerProxy,
@@ -244,7 +242,7 @@ describe('TokenLinker', () => {
   describe('Native', () => {
     beforeEach(async () => {
       tokenLinker = await deployCreate3Upgradable(
-        constAddressDeployer.address,
+        create3Deployer.address,
         ownerWallet,
         TokenLinkerNative,
         TokenLinkerProxy,

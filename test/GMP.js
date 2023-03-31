@@ -2,16 +2,10 @@
 
 const chai = require('chai');
 const {
-  Contract,
   utils: { defaultAbiCoder, keccak256, id },
 } = require('ethers');
 const { expect } = chai;
 const { ethers } = require('hardhat');
-
-const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000';
-
-const MintableCappedERC20 = require('../artifacts/contracts/test/ERC20MintableBurnable.sol/ERC20MintableBurnable.json');
-
 const getRandomID = () => id(Math.floor(Math.random() * 1e10).toString());
 
 describe('GMP', () => {
@@ -29,7 +23,6 @@ describe('GMP', () => {
   let tokenA;
   let tokenB;
 
-  let wallets;
   let ownerWallet;
   let userWallet;
 
@@ -43,9 +36,7 @@ describe('GMP', () => {
   const capacity = 0;
 
   before(async () => {
-    wallets = await ethers.getSigners();
-    ownerWallet = wallets[0];
-    userWallet = wallets[1];
+    [ownerWallet, userWallet] = await ethers.getSigners();
 
     gatewayFactory = await ethers.getContractFactory(
       'MockGateway',
@@ -88,14 +79,14 @@ describe('GMP', () => {
     await sourceChainGateway.deployToken(
       defaultAbiCoder.encode(
         ['string', 'string', 'uint8', 'uint256', ' address', 'uint256'],
-        [nameA, symbolA, decimals, capacity, ADDRESS_ZERO, 0],
+        [nameA, symbolA, decimals, capacity, ethers.constants.AddressZero, 0],
       ),
       keccak256('0x'),
     );
     await sourceChainGateway.deployToken(
       defaultAbiCoder.encode(
         ['string', 'string', 'uint8', 'uint256', ' address', 'uint256'],
-        [nameB, symbolB, decimals, capacity, ADDRESS_ZERO, 0],
+        [nameB, symbolB, decimals, capacity, ethers.constants.AddressZero, 0],
       ),
       keccak256('0x'),
     );
@@ -160,11 +151,10 @@ describe('GMP', () => {
       );
       const payloadHash = keccak256(payload);
 
-      const sourceChainTokenA = new Contract(
-        await sourceChainGateway.tokenAddresses(symbolA),
-        MintableCappedERC20.abi,
-        userWallet,
-      );
+      const sourceChainTokenA = tokenFactory
+        .connect(userWallet)
+        .attach(await sourceChainGateway.tokenAddresses(symbolA));
+
       await sourceChainTokenA.approve(
         sourceChainSwapCaller.address,
         swapAmount,

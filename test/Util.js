@@ -8,12 +8,10 @@ describe('UtilTest', () => {
   let utilTestFactory;
   let utilTest;
 
-  let wallets;
   let ownerWallet;
 
   before(async () => {
-    wallets = await ethers.getSigners();
-    ownerWallet = wallets[0];
+    [ownerWallet] = await ethers.getSigners();
 
     utilTestFactory = await ethers.getContractFactory('UtilTest', ownerWallet);
   });

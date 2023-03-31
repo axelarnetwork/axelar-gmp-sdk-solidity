@@ -1,8 +1,8 @@
 'use strict';
 
 const chai = require('chai');
-const { ethers } = require('hardhat');
 const { expect } = chai;
+const { ethers } = require('hardhat');
 const {
   deployCreate3Contract,
   deployCreate3AndInitContract,
@@ -12,7 +12,6 @@ const BurnableMintableCappedERC20 = require('../artifacts/contracts/test/ERC20Mi
 const BurnableMintableCappedERC20Init = require('../artifacts/contracts/test/ERC20MintableBurnableInit.sol/ERC20MintableBurnableInit.json');
 
 describe('Create3Deployer', () => {
-  let wallets;
   let deployerWallet;
   let userWallet;
 
@@ -23,9 +22,7 @@ describe('Create3Deployer', () => {
   const decimals = 16;
 
   before(async () => {
-    wallets = await ethers.getSigners();
-    deployerWallet = wallets[0];
-    userWallet = wallets[1];
+    [deployerWallet, userWallet] = await ethers.getSigners();
 
     deployerFactory = await ethers.getContractFactory(
       'Create3Deployer',

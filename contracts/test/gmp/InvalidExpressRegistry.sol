@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import { IAxelarGateway } from '../../interfaces/IAxelarGateway.sol';
 
-contract DummyRegistry {
+contract InvalidExpressRegistry {
     IAxelarGateway public immutable gateway;
     bytes32 public immutable proxyCodeHash;
 

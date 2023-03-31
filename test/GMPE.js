@@ -14,7 +14,7 @@ const ExpressRegistry = require('../artifacts/contracts/express/ExpressRegistry.
 const DestinationChainSwapExpress = require('../artifacts/contracts/test/gmp/DestinationChainSwapExpress.sol/DestinationChainSwapExpress.json');
 const DestinationChainSwapExpressDisabled = require('../artifacts/contracts/test/gmp/DestinationChainSwapExpressDisabled.sol/DestinationChainSwapExpressDisabled.json');
 const ExecutableSample = require('../artifacts/contracts/test/gmp/ExecutableSample.sol/ExecutableSample.json');
-const DummyRegistry = require('../artifacts/contracts/test/gmp/DummyRegistry.sol/DummyRegistry.json');
+const InvalidExpressRegistry = require('../artifacts/contracts/test/gmp/InvalidExpressRegistry.sol/InvalidExpressRegistry.json');
 
 const getRandomID = () => id(Math.floor(Math.random() * 1e10).toString());
 
@@ -1280,12 +1280,12 @@ describe('GMPE', async () => {
       const destinationChainSwapExpressProxy2 =
         await expressProxyFactory.attach(destinationChainSwapExpress2.address);
 
-      const dummyProxyFactory = await ethers.getContractFactory(
-        'DummyProxy',
+      const invalidExpressProxyFactory = await ethers.getContractFactory(
+        'InvalidExpressProxy',
         ownerWallet,
       );
 
-      const dummyProxy = await dummyProxyFactory
+      const invalidExpressProxy = await invalidExpressProxyFactory
         .deploy()
         .then((d) => d.deployed());
 
@@ -1293,7 +1293,7 @@ describe('GMPE', async () => {
       expect(
         await expressProxyDeployer2
           .connect(ownerWallet)
-          .isExpressProxy(dummyProxy.address),
+          .isExpressProxy(invalidExpressProxy.address),
       ).to.be.false;
 
       // should fail second condition (line 31 of ExpressProxyDeployer)
@@ -1305,7 +1305,7 @@ describe('GMPE', async () => {
 
       // add case for wrong registry bytecode, should fail second condition
       await destinationChainSwapExpressProxy2.deployRegistry(
-        DummyRegistry.bytecode,
+        InvalidExpressRegistry.bytecode,
       );
       expect(
         await expressProxyDeployer2

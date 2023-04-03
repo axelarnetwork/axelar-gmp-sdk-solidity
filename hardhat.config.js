@@ -1,5 +1,4 @@
-require('hardhat-gas-reporter');
-require('solidity-coverage');
+require('@nomicfoundation/hardhat-toolbox');
 
 /**
  * @type import('hardhat/config').HardhatUserConfig

@@ -15,7 +15,14 @@ contract DestinationChainSwapExpressDisabled is ExpressExecutable {
         swapper = DestinationChainTokenSwapper(swapperAddress);
     }
 
-    function enableExpressCallWithToken() external pure override returns (bool) {
+    function acceptExpressCallWithToken(
+        address /*caller*/,
+        string calldata /*sourceChain*/,
+        string calldata /*sourceAddress*/,
+        bytes32 /*payloadHash*/,
+        string calldata /*tokenSymbol*/,
+        uint256 /*amount*/
+    ) external pure override returns (bool) {
         return false;
     }
 

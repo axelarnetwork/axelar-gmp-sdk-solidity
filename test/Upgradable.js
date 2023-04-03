@@ -1,27 +1,36 @@
 'use strict';
 
 const chai = require('chai');
-const { deployContract, MockProvider, solidity } = require('ethereum-waffle');
-chai.use(solidity);
 const { expect } = chai;
+const { ethers } = require('hardhat');
 
 const { deployCreate3Upgradable, upgradeUpgradable } = require('../index');
-const Create3Deployer = require('../dist/Create3Deployer.json');
 const Proxy = require('../artifacts/contracts/test/ProxyTest.sol/ProxyTest.json');
 const Upgradable = require('../artifacts/contracts/test/UpgradableTest.sol/UpgradableTest.json');
 
 describe('Upgradable', () => {
-  const [ownerWallet, userWallet] = new MockProvider().getWallets();
   let upgradable;
+  let create3DeployerFactory;
+
+  let ownerWallet;
+  let userWallet;
+
+  before(async () => {
+    [ownerWallet, userWallet] = await ethers.getSigners();
+
+    create3DeployerFactory = await ethers.getContractFactory(
+      'Create3Deployer',
+      ownerWallet,
+    );
+  });
 
   beforeEach(async () => {
-    const constAddressDeployer = await deployContract(
-      ownerWallet,
-      Create3Deployer,
-    );
+    const create3Deployer = await create3DeployerFactory
+      .deploy()
+      .then((d) => d.deployed());
 
     upgradable = await deployCreate3Upgradable(
-      constAddressDeployer.address,
+      create3Deployer.address,
       ownerWallet,
       Upgradable,
       Proxy,

@@ -1,27 +1,38 @@
 'use strict';
 
 const chai = require('chai');
-const { deployContract, MockProvider, solidity } = require('ethereum-waffle');
-chai.use(solidity);
 const { expect } = chai;
+const { ethers } = require('hardhat');
 const {
   deployCreate3Contract,
   deployCreate3AndInitContract,
   getCreate3Address,
 } = require('../index.js');
-const Create3Deployer = require('../dist/Create3Deployer.json');
 const BurnableMintableCappedERC20 = require('../artifacts/contracts/test/ERC20MintableBurnable.sol/ERC20MintableBurnable.json');
 const BurnableMintableCappedERC20Init = require('../artifacts/contracts/test/ERC20MintableBurnableInit.sol/ERC20MintableBurnableInit.json');
 
 describe('Create3Deployer', () => {
-  const [deployerWallet, userWallet] = new MockProvider().getWallets();
+  let deployerWallet;
+  let userWallet;
+
+  let deployerFactory;
   let deployer;
   const name = 'test';
   const symbol = 'test';
   const decimals = 16;
 
+  before(async () => {
+    [deployerWallet, userWallet] = await ethers.getSigners();
+
+    deployerFactory = await ethers.getContractFactory(
+      'Create3Deployer',
+      deployerWallet,
+    );
+  });
+
   beforeEach(async () => {
-    deployer = (await deployContract(deployerWallet, Create3Deployer)).address;
+    deployer = (await deployerFactory.deploy().then((d) => d.deployed()))
+      .address;
   });
 
   describe('deploy', () => {

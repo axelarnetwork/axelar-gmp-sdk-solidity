@@ -48,7 +48,6 @@ contract FinalProxy is Proxy, IFinalProxy {
             owner := sload(_OWNER_SLOT)
         }
         if (msg.sender != owner) revert NotOwner();
-        if (implementation() != address(0)) revert AlreadyInitialized();
 
         finalImplementation_ = Create3.deploy(FINAL_IMPLEMENTATION_SALT, bytecode);
         if (setupParams.length != 0) {

@@ -75,7 +75,16 @@ contract ExpressProxy is FinalProxy, IExpressProxy {
         bytes32 payloadHash = keccak256(payload);
         address token = gateway.tokenAddresses(tokenSymbol);
 
-        if (IExpressExecutable(implementation()).enableExpressCallWithToken() == false) revert ExpressCallNotEnabled();
+        if (
+            !IExpressExecutable(address(this)).acceptExpressCallWithToken(
+                msg.sender,
+                sourceChain,
+                sourceAddress,
+                payloadHash,
+                tokenSymbol,
+                amount
+            )
+        ) revert ExpressCallNotAccepted();
 
         if (token == address(0)) revert InvalidTokenSymbol();
 

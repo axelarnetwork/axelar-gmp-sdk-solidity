@@ -441,7 +441,7 @@ describe('GMPE', async () => {
           ),
       ).to.be.revertedWithCustomError(
         destinationChainSwapExpressProxy,
-        'ExpressCallNotEnabled',
+        'ExpressCallNotAccepted',
       );
     });
 

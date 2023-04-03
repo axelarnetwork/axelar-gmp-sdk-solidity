@@ -15,7 +15,14 @@ abstract contract ExpressExecutable is IExpressExecutable {
         gateway = IAxelarGateway(gateway_);
     }
 
-    function enableExpressCallWithToken() external virtual returns (bool) {
+    function acceptExpressCallWithToken(
+        address, /*caller*/
+        string calldata, /*sourceChain*/
+        string calldata, /*sourceAddress*/
+        bytes32, /*payloadHash*/
+        string calldata, /*tokenSymbol*/
+        uint256 /*amount*/
+    ) external view virtual returns (bool) {
         return true;
     }
 

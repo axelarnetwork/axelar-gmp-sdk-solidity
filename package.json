@@ -1,6 +1,6 @@
 {
   "name": "@axelar-network/axelar-gmp-sdk-solidity",
-  "version": "3.2.1",
+  "version": "3.3.0",
   "description": "Solidity GMP SDK and utilities provided by Axelar for cross-chain development",
   "main": "index.js",
   "scripts": {
@@ -14,23 +14,22 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "fs-extra": "^10.1.0",
-    "ganache": "^7.3.2"
+    "fs-extra": "^11.1.1",
+    "ganache": "^7.7.7"
   },
   "devDependencies": {
-    "@axelar-network/axelar-cgp-solidity": "^4.3.0",
-    "@nomicfoundation/hardhat-toolbox": "^2.0.2",
-    "@openzeppelin/contracts": "^4.8.0",
-    "eslint": "^8.4.1",
+    "@nomicfoundation/hardhat-toolbox": "^1.0.2",
+    "@openzeppelin/contracts": "^4.8.2",
+    "eslint": "^8.37.0",
     "eslint-config-richardpringle": "^2.0.0",
     "hardhat": "^2.9.9",
     "lodash": "^4.17.21",
     "mocha": "^10.2.0",
-    "prettier": "^2.5.1",
+    "prettier": "^2.8.7",
     "prettier-plugin-solidity": "^1.0.0-beta.19",
-    "solhint": "^3.3.6"
+    "solhint": "^3.4.1"
   },
   "engines": {
-    "node": ">=14"
+    "node": ">=16"
   }
 }

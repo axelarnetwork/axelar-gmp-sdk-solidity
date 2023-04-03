@@ -16,11 +16,11 @@ contract DestinationChainSwapExpressDisabled is ExpressExecutable {
     }
 
     function acceptExpressCallWithToken(
-        address /*caller*/,
-        string calldata /*sourceChain*/,
-        string calldata /*sourceAddress*/,
-        bytes32 /*payloadHash*/,
-        string calldata /*tokenSymbol*/,
+        address, /*caller*/
+        string calldata, /*sourceChain*/
+        string calldata, /*sourceAddress*/
+        bytes32, /*payloadHash*/
+        string calldata, /*tokenSymbol*/
         uint256 /*amount*/
     ) external pure override returns (bool) {
         return false;

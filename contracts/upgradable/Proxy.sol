@@ -13,7 +13,6 @@ contract Proxy is BaseProxy {
         bytes memory setupParams
     ) {
         if (owner == address(0)) revert InvalidOwner();
-        if (implementation() != address(0)) revert AlreadyInitialized();
 
         bytes32 id = contractId();
         if (id != bytes32(0) && IUpgradable(implementationAddress).contractId() != id) revert InvalidImplementation();

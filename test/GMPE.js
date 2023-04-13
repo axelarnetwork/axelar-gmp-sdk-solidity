@@ -29,6 +29,8 @@ describe('GMPE', async () => {
   let executableSampleFactory;
   let expressProxyFactory;
   let expressRegistryFactory;
+  let destinationChainSwapExpressFactory;
+  let destinationChainSwapExpressDisabledFactory;
 
   let sourceChainGateway;
   let sourceChainSwapCaller;
@@ -98,6 +100,15 @@ describe('GMPE', async () => {
       'ExpressRegistry',
       ownerWallet,
     );
+    destinationChainSwapExpressFactory = await ethers.getContractFactory(
+      'DestinationChainSwapExpress',
+      ownerWallet,
+    );
+    destinationChainSwapExpressDisabledFactory =
+      await ethers.getContractFactory(
+        'DestinationChainSwapExpressDisabled',
+        ownerWallet,
+      );
   });
 
   beforeEach(async () => {
@@ -358,6 +369,50 @@ describe('GMPE', async () => {
   });
 
   describe('ExpressProxy', () => {
+    it('should fail upgrade if it is the final implementation', async () => {
+      // Check that current implementation is not final
+      expect(
+        await destinationChainSwapExpressProxy.connect(ownerWallet).isFinal(),
+      ).to.be.false;
+
+      const implementationAddress = await destinationChainSwapExpressProxy
+        .connect(ownerWallet)
+        .implementation();
+
+      let bytecode =
+        await destinationChainSwapExpressDisabledFactory.getDeployTransaction(
+          destinationChainGateway.address,
+          destinationChainTokenSwapper.address,
+        ).data;
+
+      await destinationChainSwapExpressProxy
+        .connect(ownerWallet)
+        .finalUpgrade(bytecode, '0x');
+
+      const updatedImplementationAddress =
+        await destinationChainSwapExpressProxy
+          .connect(ownerWallet)
+          .implementation();
+
+      // Sanity check to make sure update occured
+      expect(implementationAddress).to.not.equal(updatedImplementationAddress);
+
+      bytecode = await destinationChainSwapExpressFactory.getDeployTransaction(
+        destinationChainGateway.address,
+        destinationChainTokenSwapper.address,
+      ).data;
+
+      // Attempt final upgrade again, should fail
+      await expect(
+        destinationChainSwapExpressProxy
+          .connect(ownerWallet)
+          .finalUpgrade(bytecode, '0x'),
+      ).to.be.revertedWithCustomError(
+        destinationChainSwapExpressProxy,
+        'AlreadyDeployed',
+      );
+    });
+
     it('should revert if expressCallWithToken is disabled', async () => {
       // Deploy swap express executable with express call disabled
       destinationChainSwapExpressDisabled = await deployCreate3Upgradable(

@@ -5,11 +5,11 @@ pragma solidity 0.8.9;
 import { IUpgradable } from '../../interfaces/IUpgradable.sol';
 
 contract InvalidSetupProxyImplementation is IUpgradable {
-    function owner() external view override returns (address) {
+    function owner() external pure override returns (address) {
         return address(0);
     }
 
-    function pendingOwner() external view override returns (address) {
+    function pendingOwner() external pure override returns (address) {
         return address(0);
     }
 
@@ -17,7 +17,7 @@ contract InvalidSetupProxyImplementation is IUpgradable {
 
     function acceptOwnership() external override {}
 
-    function implementation() external view override returns (address) {
+    function implementation() external pure override returns (address) {
         return address(0);
     }
 
@@ -27,7 +27,7 @@ contract InvalidSetupProxyImplementation is IUpgradable {
         bytes calldata
     ) external override {}
 
-    function setup(bytes calldata _data) external {
+    function setup(bytes calldata /* data */) external pure {
         revert('Always reverts');
     }
 

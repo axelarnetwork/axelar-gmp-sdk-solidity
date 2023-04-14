@@ -8,10 +8,15 @@ import { Ownable } from '../utils/Ownable.sol';
 abstract contract Upgradable is Ownable, IUpgradable {
     // bytes32(uint256(keccak256('eip1967.proxy.implementation')) - 1)
     bytes32 internal constant _IMPLEMENTATION_SLOT = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
+    address internal immutable implementationAddress;
+
+    constructor() {
+        implementationAddress = address(this);
+    }
 
     modifier onlyProxy() {
         // Prevent setup from being called on the implementation
-        if (implementation() == address(0)) revert NotProxy();
+        if (address(this) == implementationAddress) revert NotProxy();
 
         _;
     }

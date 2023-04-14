@@ -26,8 +26,11 @@ library Create3 {
 
     function deploy(bytes32 salt, bytes memory bytecode) internal returns (address deployed) {
         deployed = deployedAddress(salt, address(this));
+        bytes32 existingCodeHash = deployed.codehash;
 
-        if (deployed.codehash != bytes32(0)) revert AlreadyDeployed();
+        // https://eips.ethereum.org/EIPS/eip-1052
+        // keccak256('') == 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470
+        if (existingCodeHash != bytes32(0) && existingCodeHash != 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470) revert AlreadyDeployed();
         if (bytecode.length == 0) revert EmptyBytecode();
 
         // CREATE2

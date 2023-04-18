@@ -17,7 +17,6 @@ abstract contract Upgradable is Ownable, IUpgradable {
     modifier onlyProxy() {
         // Prevent setup from being called on the implementation
         if (address(this) == implementationAddress) revert NotProxy();
-
         _;
     }
 

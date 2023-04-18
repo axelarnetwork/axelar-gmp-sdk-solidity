@@ -21,16 +21,28 @@ contract CreateDeployer {
     }
 }
 
+library AddressUtils {
+    function isContract(address _address) internal view returns (bool) {
+        bytes32 existingCodeHash = _address.codehash;
+
+        // https://eips.ethereum.org/EIPS/eip-1052
+        // keccak256('') == 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470
+        return
+            existingCodeHash != bytes32(0) &&
+            existingCodeHash != 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
+    }
+}
+
 library Create3 {
+    using AddressUtils for address;
     bytes32 internal constant DEPLOYER_BYTECODE_HASH = keccak256(type(CreateDeployer).creationCode);
 
     function deploy(bytes32 salt, bytes memory bytecode) internal returns (address deployed) {
         deployed = deployedAddress(salt, address(this));
-        bytes32 existingCodeHash = deployed.codehash;
 
         // https://eips.ethereum.org/EIPS/eip-1052
         // keccak256('') == 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470
-        if (existingCodeHash != bytes32(0) && existingCodeHash != 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470) revert AlreadyDeployed();
+        if (deployed.isContract()) revert AlreadyDeployed();
         if (bytecode.length == 0) revert EmptyBytecode();
 
         // CREATE2
@@ -41,7 +53,7 @@ library Create3 {
         deployer.deploy(bytecode);
 
         // checking for codehash instead of code length to support contracts that selfdestruct in constructor
-        if (deployed.codehash == bytes32(0)) revert DeployFailed();
+        if (!deployed.isContract()) revert DeployFailed();
     }
 
     function deployedAddress(bytes32 salt, address host) internal pure returns (address deployed) {

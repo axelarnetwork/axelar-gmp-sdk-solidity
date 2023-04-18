@@ -11,12 +11,18 @@ const Upgradable = require('../artifacts/contracts/test/UpgradableTest.sol/Upgra
 describe('Upgradable', () => {
   let upgradable;
   let create3DeployerFactory;
+  let upgradableTestFactory;
 
   let ownerWallet;
   let userWallet;
 
   before(async () => {
     [ownerWallet, userWallet] = await ethers.getSigners();
+
+    upgradableTestFactory = await ethers.getContractFactory(
+      'UpgradableTest',
+      ownerWallet,
+    );
 
     create3DeployerFactory = await ethers.getContractFactory(
       'Create3Deployer',
@@ -54,5 +60,19 @@ describe('Upgradable', () => {
     await upgradable.connect(userWallet).acceptOwnership();
 
     expect(await upgradable.owner()).to.be.equal(userWallet.address);
+  });
+
+  it('should revert if setup is called on the implementation', async () => {
+    const implementationAddress = await upgradable.implementation();
+    const setupParams = '0x';
+
+    const implementation = await upgradableTestFactory.attach(
+      implementationAddress,
+    );
+
+    // call setup on the implementation
+    await expect(
+      implementation.setup(setupParams),
+    ).to.be.revertedWithCustomError(implementation, 'NotProxy');
   });
 });

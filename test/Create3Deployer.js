@@ -95,6 +95,62 @@ describe('Create3Deployer', () => {
 
       expect(addresses[0]).to.not.equal(addresses[1]);
     });
+
+    it('should revert if contract is deployed to an address where a contract already exists', async () => {
+      const key = 'a test key';
+      const address = await getCreate3Address(deployer, userWallet, key);
+      const contract = await deployCreate3Contract(
+        deployer,
+        userWallet,
+        BurnableMintableCappedERC20,
+        key,
+        [name, symbol, decimals],
+      );
+      expect(contract.address).to.equal(address);
+      expect(await contract.name()).to.equal(name);
+      expect(await contract.symbol()).to.equal(symbol);
+      expect(await contract.decimals()).to.equal(decimals);
+
+      const deployerContract = await deployerFactory.attach(deployer);
+
+      await expect(
+        deployCreate3Contract(
+          deployer,
+          userWallet,
+          BurnableMintableCappedERC20,
+          key,
+          [name, symbol, decimals],
+        ),
+      ).to.be.revertedWithCustomError(deployerContract, 'AlreadyDeployed');
+    });
+
+    it('should not revert if contract is deployed to address with preexisting ether balance', async () => {
+      const key = 'a test key';
+      const address = await getCreate3Address(deployer, userWallet, key);
+
+      // Send 1 eth to address
+      const amount = ethers.utils.parseEther('1');
+
+      await userWallet.sendTransaction({
+        to: address,
+        value: amount,
+      });
+
+      const balance = await ethers.provider.getBalance(address);
+      expect(balance).to.equal(amount);
+
+      const contract = await deployCreate3Contract(
+        deployer,
+        userWallet,
+        BurnableMintableCappedERC20,
+        key,
+        [name, symbol, decimals],
+      );
+      expect(contract.address).to.equal(address);
+      expect(await contract.name()).to.equal(name);
+      expect(await contract.symbol()).to.equal(symbol);
+      expect(await contract.decimals()).to.equal(decimals);
+    });
   });
 
   describe('deployAndInit', () => {

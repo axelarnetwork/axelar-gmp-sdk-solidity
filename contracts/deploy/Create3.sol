@@ -2,6 +2,8 @@
 
 pragma solidity ^0.8.0;
 
+import { ContractAddress } from '../utils/ContractAddress.sol';
+
 error AlreadyDeployed();
 error EmptyBytecode();
 error DeployFailed();
@@ -22,12 +24,14 @@ contract CreateDeployer {
 }
 
 library Create3 {
+    using ContractAddress for address;
+
     bytes32 internal constant DEPLOYER_BYTECODE_HASH = keccak256(type(CreateDeployer).creationCode);
 
     function deploy(bytes32 salt, bytes memory bytecode) internal returns (address deployed) {
         deployed = deployedAddress(salt, address(this));
 
-        if (deployed.codehash != bytes32(0)) revert AlreadyDeployed();
+        if (deployed.isContract()) revert AlreadyDeployed();
         if (bytecode.length == 0) revert EmptyBytecode();
 
         // CREATE2
@@ -36,9 +40,6 @@ library Create3 {
         if (address(deployer) == address(0)) revert DeployFailed();
 
         deployer.deploy(bytecode);
-
-        // checking for codehash instead of code length to support contracts that selfdestruct in constructor
-        if (deployed.codehash == bytes32(0)) revert DeployFailed();
     }
 
     function deployedAddress(bytes32 salt, address host) internal pure returns (address deployed) {

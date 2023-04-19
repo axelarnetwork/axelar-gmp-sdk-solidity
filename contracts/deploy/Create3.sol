@@ -25,6 +25,7 @@ contract CreateDeployer {
 
 library Create3 {
     using ContractAddress for address;
+
     bytes32 internal constant DEPLOYER_BYTECODE_HASH = keccak256(type(CreateDeployer).creationCode);
 
     function deploy(bytes32 salt, bytes memory bytecode) internal returns (address deployed) {

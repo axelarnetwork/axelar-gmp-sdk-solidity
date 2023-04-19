@@ -27,7 +27,9 @@ contract InvalidSetupProxyImplementation is IUpgradable {
         bytes calldata
     ) external override {}
 
-    function setup(bytes calldata /* data */) external pure {
+    function setup(
+        bytes calldata /* data */
+    ) external pure {
         revert('Always reverts');
     }
 

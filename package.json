@@ -18,11 +18,11 @@
     "ganache": "^7.7.7"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^1.0.2",
+    "@nomicfoundation/hardhat-toolbox": "^2.0.2",
     "@openzeppelin/contracts": "^4.8.2",
     "eslint": "^8.37.0",
     "eslint-config-richardpringle": "^2.0.0",
-    "hardhat": "^2.9.9",
+    "hardhat": "^2.13.0",
     "lodash": "^4.17.21",
     "mocha": "^10.2.0",
     "prettier": "^2.8.7",

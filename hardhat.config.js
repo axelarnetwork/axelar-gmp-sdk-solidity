@@ -33,4 +33,7 @@ module.exports = {
   mocha: {
     timeout: 100000,
   },
+  gasReporter: {
+    enabled: true,
+  },
 };

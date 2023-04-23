@@ -7,7 +7,6 @@ const {
   providers: { Web3Provider },
   Wallet,
 } = require('ethers');
-const ganache = require('ganache');
 
 const Create3Deployer = require('../dist/Create3Deployer.json');
 
@@ -15,24 +14,7 @@ const getSaltFromKey = (key) => {
   return keccak256(defaultAbiCoder.encode(['string'], [key.toString()]));
 };
 
-const estimateGasForCreate3Deploy = async (contractJson, args = []) => {
-  const key = keccak256(0);
-  const ganacheProvider = ganache.provider({
-    wallet: { accounts: [{ balance: 1e18, secretKey: key }] },
-    logging: { quiet: true },
-  });
-  const provider = new Web3Provider(ganacheProvider);
-  const wallet = new Wallet(key, provider);
-
-  const deployerFactory = new ContractFactory(
-    Create3Deployer.abi,
-    Create3Deployer.bytecode,
-    wallet,
-  );
-
-  const deployer = await deployerFactory.deploy();
-  await deployer.deployed();
-
+const estimateGasForCreate3Deploy = async (deployer, contractJson, args = []) => {
   const salt = getSaltFromKey('');
   const factory = new ContractFactory(contractJson.abi, contractJson.bytecode);
   const bytecode = factory.getDeployTransaction(...args).data;
@@ -40,27 +22,12 @@ const estimateGasForCreate3Deploy = async (contractJson, args = []) => {
 };
 
 const estimateGasForCreate3DeployAndInit = async (
+  deployer,
+  wallet,
   contractJson,
   args = [],
   initArgs = [],
 ) => {
-  const key = keccak256(0);
-  const ganacheProvider = ganache.provider({
-    wallet: { accounts: [{ balance: 1e18, secretKey: key }] },
-    logging: { quiet: true },
-  });
-  const provider = new Web3Provider(ganacheProvider);
-  const wallet = new Wallet(key, provider);
-
-  const deployerFactory = new ContractFactory(
-    Create3Deployer.abi,
-    Create3Deployer.bytecode,
-    wallet,
-  );
-
-  const deployer = await deployerFactory.deploy();
-  await deployer.deployed();
-
   const salt = getSaltFromKey('');
   const factory = new ContractFactory(contractJson.abi, contractJson.bytecode);
   const bytecode = factory.getDeployTransaction(...args).data;

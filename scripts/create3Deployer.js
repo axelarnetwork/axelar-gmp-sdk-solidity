@@ -4,8 +4,6 @@ const {
   Contract,
   ContractFactory,
   utils: { keccak256, defaultAbiCoder },
-  providers: { Web3Provider },
-  Wallet,
 } = require('ethers');
 
 const Create3Deployer = require('../dist/Create3Deployer.json');

@@ -12,7 +12,11 @@ const getSaltFromKey = (key) => {
   return keccak256(defaultAbiCoder.encode(['string'], [key.toString()]));
 };
 
-const estimateGasForCreate3Deploy = async (deployer, contractJson, args = []) => {
+const estimateGasForCreate3Deploy = async (
+  deployer,
+  contractJson,
+  args = [],
+) => {
   const salt = getSaltFromKey('');
   const factory = new ContractFactory(contractJson.abi, contractJson.bytecode);
   const bytecode = factory.getDeployTransaction(...args).data;

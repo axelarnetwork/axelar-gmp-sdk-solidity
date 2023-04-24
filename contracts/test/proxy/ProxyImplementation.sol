@@ -20,7 +20,7 @@ contract ProxyImplementation is IUpgradable {
 
     function acceptOwnership() external override {}
 
-    function implementation() external view override returns (address) {
+    function implementation() external pure override returns (address) {
         return address(0);
     }
 

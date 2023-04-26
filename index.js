@@ -19,6 +19,7 @@ const {
   upgradeUpgradable,
 } = require('./scripts/upgradable');
 const {
+  printObj,
   importNetworks,
   verifyContract,
 } = require('./scripts/utils');
@@ -37,6 +38,7 @@ module.exports = {
   deployUpgradable,
   deployCreate3Upgradable,
   upgradeUpgradable,
+  printObj,
   importNetworks,
   verifyContract,
 };

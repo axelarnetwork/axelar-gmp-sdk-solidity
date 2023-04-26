@@ -1,6 +1,8 @@
 const { ContractFactory } = require('ethers');
 const http = require('http');
 const { outputJsonSync } = require('fs-extra');
+const { execSync } = require('child_process');
+const fs = require('fs');
 
 const deployContract = async (
   wallet,
@@ -18,6 +20,10 @@ const deployContract = async (
   await contract.deployed();
   return contract;
 };
+
+function printObj(obj) {
+  console.log(JSON.stringify(obj, null, 2));
+}
 
 const setJSON = (data, name) => {
   outputJsonSync(name, data, {
@@ -112,30 +118,29 @@ function importNetworks(chains, keys) {
   }
 
   return { networks, etherscan };
-};
+}
 
 /**
  * Verifies a contract on etherscan-like explorer of the provided chain using hardhat.
  * This assumes that the chain has been loaded as a custom network in hardhat.
  *
- * @async
  * @param {string} env
  * @param {string} chain
  * @param {string} contract
  * @param {any[]} args
  * @returns {Promise<void>}
  */
-async function verifyContract(env, chain, contract, args) {
+function verifyContract(env, chain, contract, args) {
   const stringArgs = args.map((arg) => JSON.stringify(arg));
   const content = `module.exports = [\n    ${stringArgs.join(',\n    ')}\n];`;
   const file = 'temp-arguments.js';
   const cmd = `ENV=${env} npx hardhat verify --network ${chain.toLowerCase()} --no-compile --constructor-args ${file} ${contract} --show-stack-traces`;
   fs.writeFileSync(file, content, 'utf-8');
 
-  printLog(`Verifying contract ${contract} with args '${stringArgs.join(',')}'`);
-  printLog(cmd);
+  printObj(`Verifying contract ${contract} with args '${stringArgs.join(',')}'`);
+  printObj(cmd);
   execSync(cmd, { stdio: 'inherit' });
-  printLog('Verified!');
+  printObj('Verified!');
 }
 
 module.exports = {
@@ -144,4 +149,5 @@ module.exports = {
   httpGet,
   importNetworks,
   verifyContract,
+  printObj,
 };

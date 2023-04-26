@@ -18,6 +18,10 @@ const {
   deployCreate3Upgradable,
   upgradeUpgradable,
 } = require('./scripts/upgradable');
+const {
+  importNetworks,
+  verifyContract,
+} = require('./scripts/utils');
 
 module.exports = {
   estimateGasForDeploy,
@@ -33,4 +37,6 @@ module.exports = {
   deployUpgradable,
   deployCreate3Upgradable,
   upgradeUpgradable,
+  importNetworks,
+  verifyContract,
 };

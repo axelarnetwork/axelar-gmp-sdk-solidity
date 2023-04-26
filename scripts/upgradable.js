@@ -47,7 +47,12 @@ async function deployUpgradable(
   );
 
   if (shouldVerifyContract) {
-    verifyContract(env, chain, implementation.address, implementationConstructorArgs);
+    verifyContract(
+      env,
+      chain,
+      implementation.address,
+      implementationConstructorArgs,
+    );
     verifyContract(env, chain, proxy.address, proxyConstructorArgs);
   }
 
@@ -94,7 +99,12 @@ async function deployCreate3Upgradable(
   );
 
   if (shouldVerifyContract) {
-    verifyContract(env, chain, implementation.address, implementationConstructorArgs);
+    verifyContract(
+      env,
+      chain,
+      implementation.address,
+      implementationConstructorArgs,
+    );
     verifyContract(env, chain, proxy.address, additionalProxyConstructorArgs);
   }
 
@@ -137,7 +147,12 @@ async function upgradeUpgradable(
   await tx.wait();
 
   if (shouldVerifyContract) {
-    verifyContract(env, chain, implementation.address, implementationConstructorArgs);
+    verifyContract(
+      env,
+      chain,
+      implementation.address,
+      implementationConstructorArgs,
+    );
   }
 
   return tx;

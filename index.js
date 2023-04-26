@@ -18,11 +18,7 @@ const {
   deployCreate3Upgradable,
   upgradeUpgradable,
 } = require('./scripts/upgradable');
-const {
-  printObj,
-  importNetworks,
-  verifyContract,
-} = require('./scripts/utils');
+const { printObj, importNetworks, verifyContract } = require('./scripts/utils');
 
 module.exports = {
   estimateGasForDeploy,

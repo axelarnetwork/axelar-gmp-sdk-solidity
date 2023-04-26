@@ -44,7 +44,7 @@ const httpGet = (url) => {
       } else if (!/^application\/json/.test(contentType)) {
         error = new Error(
           'Invalid content-type.\n' +
-          `Expected application/json but received ${contentType}`,
+            `Expected application/json but received ${contentType}`,
         );
       }
 
@@ -137,7 +137,9 @@ function verifyContract(env, chain, contract, args) {
   const cmd = `ENV=${env} npx hardhat verify --network ${chain.toLowerCase()} --no-compile --constructor-args ${file} ${contract} --show-stack-traces`;
   fs.writeFileSync(file, content, 'utf-8');
 
-  printObj(`Verifying contract ${contract} with args '${stringArgs.join(',')}'`);
+  printObj(
+    `Verifying contract ${contract} with args '${stringArgs.join(',')}'`,
+  );
   printObj(cmd);
   execSync(cmd, { stdio: 'inherit' });
   printObj('Verified!');

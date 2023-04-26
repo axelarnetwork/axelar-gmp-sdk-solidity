@@ -4,7 +4,7 @@
   "description": "Solidity GMP SDK and utilities provided by Axelar for cross-chain development",
   "main": "index.js",
   "scripts": {
-    "build": "rm -rf artifacts && rm -r cache && hardhat compile && npm run copy:artifacts",
+    "build": "rm -rf artifacts && rm -rf cache && hardhat compile && npm run copy:artifacts",
     "test": "npx hardhat test",
     "test-evm-versions": "bash scripts/test-evm-versions.sh",
     "copy:artifacts": "rm -rf dist && mkdir dist && cp artifacts/contracts/express/ExpressProxyDeployer.sol/ExpressProxyDeployer.json artifacts/contracts/deploy/ConstAddressDeployer.sol/ConstAddressDeployer.json artifacts/contracts/deploy/Create3Deployer.sol/Create3Deployer.json artifacts/contracts/interfaces/IUpgradable.sol/IUpgradable.json dist/",

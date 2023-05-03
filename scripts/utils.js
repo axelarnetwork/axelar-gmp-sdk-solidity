@@ -1,8 +1,12 @@
 const { ContractFactory } = require('ethers');
 const http = require('http');
 const { outputJsonSync } = require('fs-extra');
-const { execSync } = require('child_process');
-const fs = require('fs');
+const { exec } = require('child_process');
+const { writeFile } = require('fs');
+const { promisify } = require('util');
+
+const execAsync = promisify(exec);
+const writeFileAsync = promisify(writeFile);
 
 const deployContract = async (
   wallet,
@@ -21,7 +25,7 @@ const deployContract = async (
   return contract;
 };
 
-function printObj(obj) {
+const printObj = (obj) => {
   console.log(JSON.stringify(obj, null, 2));
 }
 
@@ -79,20 +83,20 @@ const httpGet = (url) => {
  * @param {Object} keys - Object containing keys for contract verification and accounts
  * @returns {Object} - Object containing networks and etherscan config
  */
-function importNetworks(chains, keys) {
-  var networks = {
+const importNetworks = (chains, keys) => {
+  const networks = {
     hardhat: {
       chainId: 31337, // default hardhat network chain id
     },
   };
 
-  var etherscan = {
+  const etherscan = {
     apiKey: {},
     customChains: [],
   };
 
   // Add custom networks
-  for (const chain of chains) {
+  chains.forEach((chain) => {
     const name = chain.name.toLowerCase();
     networks[name] = {
       chainId: chain.chainId,
@@ -115,7 +119,7 @@ function importNetworks(chains, keys) {
         },
       });
     }
-  }
+  });
 
   return { networks, etherscan };
 }
@@ -130,19 +134,23 @@ function importNetworks(chains, keys) {
  * @param {any[]} args
  * @returns {Promise<void>}
  */
-function verifyContract(env, chain, contract, args) {
+const verifyContract = (env, chain, contract, args) => {
   const stringArgs = args.map((arg) => JSON.stringify(arg));
   const content = `module.exports = [\n    ${stringArgs.join(',\n    ')}\n];`;
   const file = 'temp-arguments.js';
   const cmd = `ENV=${env} npx hardhat verify --network ${chain.toLowerCase()} --no-compile --constructor-args ${file} ${contract} --show-stack-traces`;
-  fs.writeFileSync(file, content, 'utf-8');
+  return writeFileAsync(file, content, 'utf-8')
+    .then(() => {
+      console.log(
+        `Verifying contract ${contract} with args '${stringArgs.join(',')}'`,
+      );
+      console.log(cmd);
 
-  printObj(
-    `Verifying contract ${contract} with args '${stringArgs.join(',')}'`,
-  );
-  printObj(cmd);
-  execSync(cmd, { stdio: 'inherit' });
-  printObj('Verified!');
+      return execAsync(cmd, { stdio: 'inherit' });
+    })
+    .then(() => {
+      console.log('Verified!');
+    });
 }
 
 module.exports = {

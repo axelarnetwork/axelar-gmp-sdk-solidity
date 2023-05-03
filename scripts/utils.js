@@ -27,7 +27,7 @@ const deployContract = async (
 
 const printObj = (obj) => {
   console.log(JSON.stringify(obj, null, 2));
-}
+};
 
 const setJSON = (data, name) => {
   outputJsonSync(name, data, {
@@ -122,7 +122,7 @@ const importNetworks = (chains, keys) => {
   });
 
   return { networks, etherscan };
-}
+};
 
 /**
  * Verifies a contract on etherscan-like explorer of the provided chain using hardhat.
@@ -151,7 +151,7 @@ const verifyContract = (env, chain, contract, args) => {
     .then(() => {
       console.log('Verified!');
     });
-}
+};
 
 module.exports = {
   deployContract,

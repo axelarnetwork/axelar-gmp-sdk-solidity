@@ -47,13 +47,13 @@ async function deployUpgradable(
   );
 
   if (shouldVerifyContract) {
-    verifyContract(
+    await verifyContract(
       env,
       chain,
       implementation.address,
       implementationConstructorArgs,
     );
-    verifyContract(env, chain, proxy.address, proxyConstructorArgs);
+    await verifyContract(env, chain, proxy.address, proxyConstructorArgs);
   }
 
   return new Contract(proxy.address, implementationJson.abi, wallet);
@@ -99,13 +99,13 @@ async function deployCreate3Upgradable(
   );
 
   if (shouldVerifyContract) {
-    verifyContract(
+    await verifyContract(
       env,
       chain,
       implementation.address,
       implementationConstructorArgs,
     );
-    verifyContract(env, chain, proxy.address, additionalProxyConstructorArgs);
+    await verifyContract(env, chain, proxy.address, additionalProxyConstructorArgs);
   }
 
   return new Contract(proxy.address, implementationJson.abi, wallet);
@@ -147,7 +147,7 @@ async function upgradeUpgradable(
   await tx.wait();
 
   if (shouldVerifyContract) {
-    verifyContract(
+    await verifyContract(
       env,
       chain,
       implementation.address,

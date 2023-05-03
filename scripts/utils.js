@@ -48,7 +48,7 @@ const httpGet = (url) => {
       } else if (!/^application\/json/.test(contentType)) {
         error = new Error(
           'Invalid content-type.\n' +
-            `Expected application/json but received ${contentType}`,
+          `Expected application/json but received ${contentType}`,
         );
       }
 
@@ -128,17 +128,19 @@ const importNetworks = (chains, keys) => {
  * Verifies a contract on etherscan-like explorer of the provided chain using hardhat.
  * This assumes that the chain has been loaded as a custom network in hardhat.
  *
+ * @async
  * @param {string} env
  * @param {string} chain
  * @param {string} contract
  * @param {any[]} args
  * @returns {Promise<void>}
  */
-const verifyContract = (env, chain, contract, args) => {
+const verifyContract = async (env, chain, contract, args) => {
   const stringArgs = args.map((arg) => JSON.stringify(arg));
   const content = `module.exports = [\n    ${stringArgs.join(',\n    ')}\n];`;
   const file = 'temp-arguments.js';
   const cmd = `ENV=${env} npx hardhat verify --network ${chain.toLowerCase()} --no-compile --constructor-args ${file} ${contract} --show-stack-traces`;
+
   return writeFileAsync(file, content, 'utf-8')
     .then(() => {
       console.log(

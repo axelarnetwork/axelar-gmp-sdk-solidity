@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import '../interfaces/IUpgradable.sol';
+import { IOwnable } from '../interfaces/IOwnable.sol';
 
 abstract contract Ownable is IOwnable {
     // keccak256('owner')

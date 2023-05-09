@@ -8,11 +8,11 @@ contract ProxyImplementation is IUpgradable {
     uint256 public value;
     string public name;
 
-    function owner() external view override returns (address) {
+    function owner() external pure override returns (address) {
         return address(0);
     }
 
-    function pendingOwner() external view override returns (address) {
+    function pendingOwner() external pure override returns (address) {
         return address(0);
     }
 
@@ -20,7 +20,7 @@ contract ProxyImplementation is IUpgradable {
 
     function acceptOwnership() external override {}
 
-    function implementation() external view override returns (address) {
+    function implementation() external pure override returns (address) {
         return address(0);
     }
 

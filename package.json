@@ -1,28 +1,28 @@
 {
   "name": "@axelar-network/axelar-gmp-sdk-solidity",
-  "version": "3.3.0",
+  "version": "3.4.0",
   "description": "Solidity GMP SDK and utilities provided by Axelar for cross-chain development",
   "main": "index.js",
   "scripts": {
+    "build": "rm -rf artifacts && hardhat compile && npm run copy:artifacts",
     "test": "npx hardhat test",
-    "build": "rm -rf artifacts && hardhat compile && npm run copy:artifacts && npm run flatten",
+    "test-evm-versions": "bash scripts/test-evm-versions.sh",
     "copy:artifacts": "rm -rf dist && mkdir dist && cp artifacts/contracts/express/ExpressProxyDeployer.sol/ExpressProxyDeployer.json artifacts/contracts/deploy/ConstAddressDeployer.sol/ConstAddressDeployer.json artifacts/contracts/deploy/Create3Deployer.sol/Create3Deployer.json artifacts/contracts/interfaces/IUpgradable.sol/IUpgradable.json dist/",
     "lint": "solhint 'contracts/**/*.sol' && eslint 'scripts/**/*.js' 'test/**/*.js'",
     "prettier": "prettier --write 'contracts/**/*.sol' 'test/**/*.js' 'scripts/**/*.js' '*.js'",
     "flatten": "sh scripts/flatten-contracts.sh"
   },
-  "author": "",
+  "author": "axelar-network",
   "license": "ISC",
   "dependencies": {
-    "fs-extra": "^11.1.1",
-    "ganache": "^7.7.7"
+    "fs-extra": "^11.1.1"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^1.0.2",
-    "@openzeppelin/contracts": "^4.8.2",
+    "@nomicfoundation/hardhat-toolbox": "^2.0.2",
+    "@openzeppelin/contracts": "^4.8.3",
     "eslint": "^8.37.0",
     "eslint-config-richardpringle": "^2.0.0",
-    "hardhat": "^2.9.9",
+    "hardhat": "^2.14.0",
     "lodash": "^4.17.21",
     "mocha": "^10.2.0",
     "prettier": "^2.8.7",

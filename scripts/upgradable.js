@@ -7,6 +7,7 @@ const {
 } = require('ethers');
 const { deployAndInitContractConstant } = require('./constAddressDeployer');
 const { deployCreate3Contract } = require('./create3Deployer');
+const { verifyContract } = require('./utils');
 
 const IUpgradable = require('../dist/IUpgradable.json');
 
@@ -20,6 +21,9 @@ async function deployUpgradable(
   setupParams = '0x',
   key = Date.now(),
   gasLimit = null,
+  env = 'testnet',
+  chain = 'ethereum',
+  shouldVerifyContract = false,
 ) {
   const implementationFactory = new ContractFactory(
     implementationJson.abi,
@@ -42,6 +46,16 @@ async function deployUpgradable(
     gasLimit,
   );
 
+  if (shouldVerifyContract) {
+    await verifyContract(
+      env,
+      chain,
+      implementation.address,
+      implementationConstructorArgs,
+    );
+    await verifyContract(env, chain, proxy.address, proxyConstructorArgs);
+  }
+
   return new Contract(proxy.address, implementationJson.abi, wallet);
 }
 
@@ -55,6 +69,9 @@ async function deployCreate3Upgradable(
   setupParams = '0x',
   key = Date.now().toString(),
   gasLimit = null,
+  env = 'testnet',
+  chain = 'ethereum',
+  shouldVerifyContract = false,
 ) {
   const implementationFactory = new ContractFactory(
     implementationJson.abi,
@@ -81,6 +98,16 @@ async function deployCreate3Upgradable(
     gasLimit,
   );
 
+  if (shouldVerifyContract) {
+    await verifyContract(
+      env,
+      chain,
+      implementation.address,
+      implementationConstructorArgs,
+    );
+    await verifyContract(env, chain, proxy.address, additionalProxyConstructorArgs);
+  }
+
   return new Contract(proxy.address, implementationJson.abi, wallet);
 }
 
@@ -90,6 +117,9 @@ async function upgradeUpgradable(
   contractJson,
   implementationConstructorArgs = [],
   setupParams = '0x',
+  env = 'testnet',
+  chain = 'ethereum',
+  shouldVerifyContract = false,
 ) {
   const proxy = new Contract(proxyAddress, IUpgradable.abi, wallet);
 
@@ -115,6 +145,16 @@ async function upgradeUpgradable(
     setupParams,
   );
   await tx.wait();
+
+  if (shouldVerifyContract) {
+    await verifyContract(
+      env,
+      chain,
+      implementation.address,
+      implementationConstructorArgs,
+    );
+  }
+
   return tx;
 }
 

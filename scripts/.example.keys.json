@@ -1,0 +1,17 @@
+{
+    "chains": {
+        "ethereum": {
+            "api": "xyz"
+        },
+        "avalanche": {
+            "api": "xyz"
+        },
+        "polygon": {
+            "api": "xyz"
+        }
+    },
+    "accounts": [
+        "private key 1",
+        "private key 2"
+    ]
+}

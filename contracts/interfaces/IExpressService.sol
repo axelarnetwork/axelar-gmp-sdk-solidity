@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.9;
 
 import { IExpressProxyFactory } from './IExpressProxyFactory.sol';
 
 // This should be owned by the microservice that is paying for gas.
-interface IGMPExpressService is IExpressProxyFactory {
+interface IExpressService is IExpressProxyFactory {
     error InvalidOperator();
     error InvalidContractAddress();
     error InvalidTokenSymbol();

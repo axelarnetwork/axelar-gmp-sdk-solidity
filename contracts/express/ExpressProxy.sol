@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import { IERC20 } from '../interfaces/IERC20.sol';
 import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
 import { IExpressProxy } from '../interfaces/IExpressProxy.sol';
-import { IGMPExpressService } from '../interfaces/IGMPExpressService.sol';
+import { IExpressService } from '../interfaces/IExpressService.sol';
 import { IExpressRegistry } from '../interfaces/IExpressRegistry.sol';
 import { IExpressExecutable } from '../interfaces/IExpressExecutable.sol';
 import { FinalProxy } from '../upgradable/FinalProxy.sol';

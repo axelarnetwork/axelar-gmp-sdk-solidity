@@ -6,12 +6,15 @@ import { Upgradable } from '../upgradable/Upgradable.sol';
 import { SafeTokenTransfer, SafeNativeTransfer } from '../utils/SafeTransfer.sol';
 import { IExpressProxy } from '../interfaces/IExpressProxy.sol';
 import { IERC20 } from '../interfaces/IERC20.sol';
+import { IExpressProxyDeployer } from '../interfaces/IExpressProxyDeployer.sol';
 import { IExpressService } from '../interfaces/IExpressService.sol';
-import { ExpressProxyFactory } from './ExpressProxyFactory.sol';
+import { AxelarExecutable } from '../executable/AxelarExecutable.sol';
 
-contract ExpressService is Upgradable, ExpressProxyFactory, IExpressService {
+contract ExpressService is Upgradable, AxelarExecutable, IExpressService {
     using SafeTokenTransfer for IERC20;
     using SafeNativeTransfer for address payable;
+
+    IExpressProxyDeployer public immutable proxyDeployer;
 
     address public immutable expressOperator;
 
@@ -19,9 +22,11 @@ contract ExpressService is Upgradable, ExpressProxyFactory, IExpressService {
         address gateway_,
         address proxyDeployer_,
         address expressOperator_
-    ) ExpressProxyFactory(gateway_, proxyDeployer_) {
+    ) AxelarExecutable(gateway_) {
         if (expressOperator_ == address(0)) revert InvalidOperator();
+        if (proxyDeployer_ == address(0)) revert InvalidAddress();
 
+        proxyDeployer = IExpressProxyDeployer(proxyDeployer_);
         expressOperator = expressOperator_;
     }
 
@@ -29,6 +34,42 @@ contract ExpressService is Upgradable, ExpressProxyFactory, IExpressService {
         if (msg.sender != expressOperator) revert NotOperator();
 
         _;
+    }
+
+    function isExpressProxy(address proxyAddress) public view returns (bool) {
+        return proxyDeployer.isExpressProxy(proxyAddress);
+    }
+
+    function deployedProxyAddress(bytes32 salt, address sender) external view returns (address) {
+        return proxyDeployer.deployedProxyAddress(salt, sender, address(this));
+    }
+
+    function deployExpressProxy(
+        bytes32 salt,
+        address implementationAddress,
+        address owner,
+        bytes calldata setupParams
+    ) external returns (address) {
+        bytes32 deploySalt = keccak256(abi.encode(msg.sender, salt));
+        return _deployExpressProxy(deploySalt, implementationAddress, owner, setupParams);
+    }
+
+    function _deployExpressProxy(
+        bytes32 deploySalt,
+        address implementationAddress,
+        address owner,
+        bytes memory setupParams
+    ) internal returns (address deployedAddress) {
+        (, bytes memory data) = address(proxyDeployer).delegatecall(
+            abi.encodeWithSelector(
+                IExpressProxyDeployer.deployExpressProxy.selector,
+                deploySalt,
+                implementationAddress,
+                owner,
+                setupParams
+            )
+        );
+        (deployedAddress) = abi.decode(data, (address));
     }
 
     function callWithToken(

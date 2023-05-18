@@ -2,16 +2,26 @@
 
 pragma solidity ^0.8.9;
 
-import { IExpressProxyFactory } from './IExpressProxyFactory.sol';
-
 // This should be owned by the microservice that is paying for gas.
-interface IExpressService is IExpressProxyFactory {
+interface IExpressService {
     error InvalidOperator();
     error InvalidContractAddress();
     error InvalidTokenSymbol();
     error NotOperator();
+    error NotExpressProxy();
 
     function expressOperator() external returns (address);
+
+    function isExpressProxy(address proxyAddress) external view returns (bool);
+
+    function deployedProxyAddress(bytes32 salt, address sender) external view returns (address deployedAddress);
+
+    function deployExpressProxy(
+        bytes32 salt,
+        address implementationAddress,
+        address owner,
+        bytes calldata setupParams
+    ) external returns (address);
 
     function callWithToken(
         bytes32 commandId,

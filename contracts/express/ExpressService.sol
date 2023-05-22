@@ -49,17 +49,8 @@ contract ExpressService is Upgradable, AxelarExecutable, IExpressService {
         address implementationAddress,
         address owner,
         bytes calldata setupParams
-    ) external returns (address) {
+    ) external returns (address deployedAddress) {
         bytes32 deploySalt = keccak256(abi.encode(msg.sender, salt));
-        return _deployExpressProxy(deploySalt, implementationAddress, owner, setupParams);
-    }
-
-    function _deployExpressProxy(
-        bytes32 deploySalt,
-        address implementationAddress,
-        address owner,
-        bytes memory setupParams
-    ) internal returns (address deployedAddress) {
         (, bytes memory data) = address(proxyDeployer).delegatecall(
             abi.encodeWithSelector(
                 IExpressProxyDeployer.deployExpressProxy.selector,

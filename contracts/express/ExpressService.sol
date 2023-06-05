@@ -10,6 +10,11 @@ import { IExpressProxyDeployer } from '../interfaces/IExpressProxyDeployer.sol';
 import { IExpressService } from '../interfaces/IExpressService.sol';
 import { AxelarExecutable } from '../executable/AxelarExecutable.sol';
 
+/**
+ * @title ExpressService
+ * @notice A contract for facilitating express service operations in the Axelar network.
+ * @dev It inherits the Upgradable and AxelarExecutable contracts, and implements the IExpressService interface.
+ */
 contract ExpressService is Upgradable, AxelarExecutable, IExpressService {
     using SafeTokenTransfer for IERC20;
     using SafeNativeTransfer for address payable;
@@ -18,6 +23,12 @@ contract ExpressService is Upgradable, AxelarExecutable, IExpressService {
 
     address public immutable expressOperator;
 
+    /**
+     * @notice Constructor for creating a new ExpressService contract.
+     * @param gateway_ The instance of the AxelarGateway contract.
+     * @param proxyDeployer_ The instance of the ExpressProxyDeployer contract.
+     * @param expressOperator_ The address of the express operator.
+     */
     constructor(
         address gateway_,
         address proxyDeployer_,
@@ -30,20 +41,42 @@ contract ExpressService is Upgradable, AxelarExecutable, IExpressService {
         expressOperator = expressOperator_;
     }
 
+    /**
+     * @dev Modifier to restrict function access to the express operator.
+     */
     modifier onlyOperator() {
         if (msg.sender != expressOperator) revert NotOperator();
 
         _;
     }
 
+    /**
+     * @notice Checks if an address is an express proxy.
+     * @param proxyAddress The address to check.
+     * @return bool indicating whether the address is an express proxy.
+     */
     function isExpressProxy(address proxyAddress) public view returns (bool) {
         return proxyDeployer.isExpressProxy(proxyAddress);
     }
 
+    /**
+     * @notice Returns the deployed proxy address.
+     * @param salt The salt used for deploying the proxy.
+     * @param sender The address used to deploy the proxy.
+     * @return address of the deployed proxy.
+     */
     function deployedProxyAddress(bytes32 salt, address sender) external view returns (address) {
         return proxyDeployer.deployedProxyAddress(salt, sender, address(this));
     }
 
+    /**
+     * @notice Deploys an express proxy.
+     * @param salt The salt used for deploying the proxy.
+     * @param implementationAddress The address of the ExpressExecutable implementation.
+     * @param owner The owner of the deployed proxy.
+     * @param setupParams The parameters used for setting up the implementation.
+     * @return deployedAddress address of the deployed proxy.
+     */
     function deployExpressProxy(
         bytes32 salt,
         address implementationAddress,
@@ -63,6 +96,18 @@ contract ExpressService is Upgradable, AxelarExecutable, IExpressService {
         (deployedAddress) = abi.decode(data, (address));
     }
 
+    /**
+     * @notice Executes a call with a token, if the command has not be executed by the AxelarGateway performs
+     * an express execute with token. If the command has been executed by the AxelarGateway, performs an execute
+     * with token.
+     * @param commandId The ID of the command.
+     * @param sourceChain The source chain of the call.
+     * @param sourceAddress The source address of the call.
+     * @param contractAddress The contract address for the call.
+     * @param payload The payload of the call.
+     * @param tokenSymbol The symbol of the token associated with the call.
+     * @param amount The amount of the token associated with the call.
+     */
     function callWithToken(
         bytes32 commandId,
         string calldata sourceChain,
@@ -101,6 +146,12 @@ contract ExpressService is Upgradable, AxelarExecutable, IExpressService {
         }
     }
 
+    /**
+     * @notice Withdraws tokens to a receiver.
+     * @param receiver The receiver of the withdrawal.
+     * @param token The token to withdraw.
+     * @param amount The amount of tokens to withdraw.
+     */
     function withdraw(
         address payable receiver,
         address token,
@@ -115,6 +166,10 @@ contract ExpressService is Upgradable, AxelarExecutable, IExpressService {
         }
     }
 
+    /**
+     * @notice Returns the ID of the contract.
+     * @return bytes32 ID of the contract.
+     */
     function contractId() external pure returns (bytes32) {
         return keccak256('axelar-gmp-express-service');
     }

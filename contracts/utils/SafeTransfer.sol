@@ -39,14 +39,12 @@ library SafeTokenTransferFrom {
 }
 
 library SafeNativeTransfer {
-    uint256 internal constant NATIVE_TRANSFER_GAS_LIMIT = 2300;
-
     function safeNativeTransfer(address receiver, uint256 amount) internal {
         bool success;
 
         // solhint-disable-next-line no-inline-assembly
         assembly {
-            success := call(NATIVE_TRANSFER_GAS_LIMIT, receiver, amount, 0, 0, 0, 0)
+            success := call(gasleft(), receiver, amount, 0, 0, 0, 0)
         }
 
         if (!success) revert NativeTransferFailed();

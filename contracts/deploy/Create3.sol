@@ -18,8 +18,6 @@ contract CreateDeployer {
                 revert(0, 0)
             }
         }
-
-        selfdestruct(payable(msg.sender));
     }
 }
 

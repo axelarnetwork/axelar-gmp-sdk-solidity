@@ -10,10 +10,12 @@ const {
 } = require('../index.js');
 const BurnableMintableCappedERC20 = require('../artifacts/contracts/test/ERC20MintableBurnable.sol/ERC20MintableBurnable.json');
 const BurnableMintableCappedERC20Init = require('../artifacts/contracts/test/ERC20MintableBurnableInit.sol/ERC20MintableBurnableInit.json');
+const MockDepositReceiver = require('../artifacts/contracts/test/MockDepositReceiver.sol/MockDepositReceiver.json');
 
 describe('Create3Deployer', () => {
   let deployerWallet;
   let userWallet;
+  let receiverWallet;
 
   let deployerFactory;
   let deployer;
@@ -22,7 +24,7 @@ describe('Create3Deployer', () => {
   const decimals = 16;
 
   before(async () => {
-    [deployerWallet, userWallet] = await ethers.getSigners();
+    [deployerWallet, userWallet, receiverWallet] = await ethers.getSigners();
 
     deployerFactory = await ethers.getContractFactory(
       'Create3Deployer',
@@ -150,6 +152,26 @@ describe('Create3Deployer', () => {
       expect(await contract.name()).to.equal(name);
       expect(await contract.symbol()).to.equal(symbol);
       expect(await contract.decimals()).to.equal(decimals);
+    });
+
+    it('should revert if a contract that self-destructs is deployed a second time', async () => {
+      const key = 'a test key';
+
+      // Deploy contract that self-destructs in its constructor
+      await deployCreate3Contract(
+        deployer,
+        userWallet,
+        MockDepositReceiver,
+        key,
+        [receiverWallet.address],
+      );
+
+      // Attempt to deploy MockDepositReceiver again, should fail
+      await expect(
+        deployCreate3Contract(deployer, userWallet, MockDepositReceiver, key, [
+          receiverWallet.address,
+        ]),
+      ).to.be.reverted;
     });
   });
 

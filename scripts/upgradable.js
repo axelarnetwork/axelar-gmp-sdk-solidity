@@ -105,7 +105,12 @@ async function deployCreate3Upgradable(
       implementation.address,
       implementationConstructorArgs,
     );
-    await verifyContract(env, chain, proxy.address, additionalProxyConstructorArgs);
+    await verifyContract(
+      env,
+      chain,
+      proxy.address,
+      additionalProxyConstructorArgs,
+    );
   }
 
   return new Contract(proxy.address, implementationJson.abi, wallet);

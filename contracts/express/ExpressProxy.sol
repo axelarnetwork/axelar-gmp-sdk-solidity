@@ -5,13 +5,20 @@ pragma solidity ^0.8.0;
 import { IERC20 } from '../interfaces/IERC20.sol';
 import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
 import { IExpressProxy } from '../interfaces/IExpressProxy.sol';
-import { IGMPExpressService } from '../interfaces/IGMPExpressService.sol';
+import { IExpressService } from '../interfaces/IExpressService.sol';
 import { IExpressRegistry } from '../interfaces/IExpressRegistry.sol';
 import { IExpressExecutable } from '../interfaces/IExpressExecutable.sol';
 import { FinalProxy } from '../upgradable/FinalProxy.sol';
 import { SafeTokenTransfer, SafeTokenTransferFrom } from '../utils/SafeTransfer.sol';
 import { Create3 } from '../deploy/Create3.sol';
 
+/**
+ * @title ExpressProxy
+ * @notice A special type of proxy contract used for ExpressExecutable contracts.
+ * @dev It extends the FinalProxy contract and implements the IExpressProxy interface.
+ * It utilizes safe transfer functionalities from the SafeTokenTransfer library for IERC20 tokens.
+ * It interacts with an ExpressRegistry contract to keep track of GMP Express calls.
+ */
 contract ExpressProxy is FinalProxy, IExpressProxy {
     using SafeTokenTransfer for IERC20;
     using SafeTokenTransferFrom for IERC20;
@@ -20,6 +27,13 @@ contract ExpressProxy is FinalProxy, IExpressProxy {
 
     IAxelarGateway public immutable gateway;
 
+    /**
+     * @notice Constructor for creating a new ExpressProxy contract.
+     * @param implementationAddress The address of the implementation contract.
+     * @param owner The owner of the proxy.
+     * @param setupParams The parameters for setting up the implementation.
+     * @param gateway_ The instance of the AxelarGateway contract.
+     */
     constructor(
         address implementationAddress,
         address owner,
@@ -31,19 +45,30 @@ contract ExpressProxy is FinalProxy, IExpressProxy {
         gateway = IAxelarGateway(gateway_);
     }
 
+    /**
+     * @dev A modifier that ensures only the ExpressRegistry can call the function.
+     */
     modifier onlyRegistry() {
         if (msg.sender != address(registry())) revert NotExpressRegistry();
 
         _;
     }
 
+    /**
+     * @notice Returns the ExpressRegistry associated with this proxy.
+     * @return address of the corresponding ExpressRegistry contract.
+     */
     function registry() public view returns (IExpressRegistry) {
         // Computing address is cheaper than using storage
         // Can't use immutable storage as it will alter the codehash for each proxy instance
         return IExpressRegistry(Create3.deployedAddress(REGISTRY_SALT, address(this)));
     }
 
-    // @notice should be called right after the proxy is deployed
+    /**
+     * @notice Deploys the ExpressRegistry associated with this proxy.
+     * @notice should be called right after the proxy is deployed.
+     * @param registryCreationCode The creation code of the registry.
+     */
     function deployRegistry(bytes calldata registryCreationCode) external {
         Create3.deploy(
             REGISTRY_SALT,
@@ -51,6 +76,13 @@ contract ExpressProxy is FinalProxy, IExpressProxy {
         );
     }
 
+    /**
+     * @notice Executes a command after validating the contract call with the AxelarGateway.
+     * @param commandId The ID of the command to execute.
+     * @param sourceChain The source chain of the command.
+     * @param sourceAddress The source address of the command.
+     * @param payload The payload of the command.
+     */
     function execute(
         bytes32 commandId,
         string calldata sourceChain,
@@ -65,6 +97,15 @@ contract ExpressProxy is FinalProxy, IExpressProxy {
         _execute(sourceChain, sourceAddress, payload);
     }
 
+    /**
+     * @notice Executes an express call with token.
+     * @dev Validates that express calls are enabled by the Express Executable contract.
+     * @param sourceChain The source chain of the command.
+     * @param sourceAddress The source address of the command.
+     * @param payload The payload of the command.
+     * @param tokenSymbol The symbol of the token associated with the command.
+     * @param amount The amount of the token associated with the command.
+     */
     function expressExecuteWithToken(
         string calldata sourceChain,
         string calldata sourceAddress,
@@ -101,7 +142,15 @@ contract ExpressProxy is FinalProxy, IExpressProxy {
         _executeWithToken(sourceChain, sourceAddress, payload, tokenSymbol, amount);
     }
 
-    /// @notice used to handle a normal GMP call when it arrives
+    /**
+     * @notice Handles a normal GMP call when it arrives.
+     * @param commandId The ID of the command to execute.
+     * @param sourceChain The source chain of the command.
+     * @param sourceAddress The source address of the command.
+     * @param payload The payload of the command.
+     * @param tokenSymbol The symbol of the token associated with the command.
+     * @param amount The amount of the token associated with the command.
+     */
     function executeWithToken(
         bytes32 commandId,
         string calldata sourceChain,
@@ -113,7 +162,17 @@ contract ExpressProxy is FinalProxy, IExpressProxy {
         registry().processExecuteWithToken(commandId, sourceChain, sourceAddress, payload, tokenSymbol, amount);
     }
 
-    /// @notice callback to complete the GMP call
+    /**
+     * @notice Callback to complete the GMP call. Can only be called by the Express Registry.
+     * @dev Called by the Express Registry in processExecuteWithToken.
+     * @param expressCaller The address of the express caller.
+     * @param commandId The ID of the command to execute.
+     * @param sourceChain The source chain of the command.
+     * @param sourceAddress The source address of the command.
+     * @param payload The payload of the command.
+     * @param tokenSymbol The symbol of the token associated with the command.
+     * @param amount The amount of the token associated with the command.
+     */
     function completeExecuteWithToken(
         address expressCaller,
         bytes32 commandId,

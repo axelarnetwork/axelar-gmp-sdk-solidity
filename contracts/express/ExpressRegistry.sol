@@ -6,12 +6,22 @@ import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
 import { IExpressProxy } from '../interfaces/IExpressProxy.sol';
 import { IExpressRegistry } from '../interfaces/IExpressRegistry.sol';
 
+/**
+ * @title ExpressRegistry
+ * @notice A registry contract for tracking express calls with tokens.
+ * @dev It implements the IExpressRegistry interface and interacts with the AxelarGateway and ExpressProxy contracts.
+ */
 contract ExpressRegistry is IExpressRegistry {
     IAxelarGateway public immutable gateway;
     bytes32 public immutable proxyCodeHash;
 
     mapping(bytes32 => address) private expressCallsWithToken;
 
+    /**
+     * @notice Constructor for creating a new ExpressRegistry contract.
+     * @param gateway_ The instance of the AxelarGateway contract.
+     * @param proxy_ The instance of the ExpressProxy contract.
+     */
     constructor(address gateway_, address proxy_) {
         if (gateway_ == address(0)) revert InvalidGateway();
 
@@ -19,6 +29,15 @@ contract ExpressRegistry is IExpressRegistry {
         proxyCodeHash = proxy_.codehash;
     }
 
+    /**
+     * @notice Registers an express call with a token, fails if call has already been registered.
+     * @param expressCaller The address of the express caller.
+     * @param sourceChain The source chain of the call.
+     * @param sourceAddress The source address of the call.
+     * @param payloadHash The hash of the payload.
+     * @param tokenSymbol The symbol of the token associated with the call.
+     * @param amount The amount of the token associated with the call.
+     */
     function registerExpressCallWithToken(
         address expressCaller,
         string calldata sourceChain,
@@ -43,6 +62,15 @@ contract ExpressRegistry is IExpressRegistry {
         _setExpressCallWithToken(slot, expressCaller);
     }
 
+    /**
+     * @notice Processes an express call with token by calling completeExecuteWithToken on ExpressProxy.
+     * @param commandId The ID of the command.
+     * @param sourceChain The source chain of the call.
+     * @param sourceAddress The source address of the call.
+     * @param payload The payload of the call.
+     * @param tokenSymbol The symbol of the token associated with the call.
+     * @param amount The amount of the token associated with the call.
+     */
     function processExecuteWithToken(
         bytes32 commandId,
         string calldata sourceChain,
@@ -86,7 +114,10 @@ contract ExpressRegistry is IExpressRegistry {
         );
     }
 
-    /// @notice internal function instead of a modifier to avoid stack too deep error
+    /**
+     * @dev Internal function used instead of a modifier to avoid the "stack too deep" error.
+     * Checks that the caller is the correct ExpressProxy.
+     */
     function _onlyProxy() internal view {
         address proxyRegistry = address(IExpressProxy(msg.sender).registry());
 

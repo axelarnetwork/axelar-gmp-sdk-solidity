@@ -17,7 +17,7 @@ contract TimeLock is ITimeLock {
         return _getTimeLockEta(hash);
     }
 
-    function _scheduleTimeLock(bytes32 hash, uint256 eta) internal {
+    function _scheduleTimeLock(bytes32 hash, uint256 eta) internal returns (uint256){
         if (hash == 0) revert InvalidTimeLockHash();
         if (_getTimeLockEta(hash) != 0) revert TimeLockAlreadyScheduled();
 
@@ -26,6 +26,8 @@ contract TimeLock is ITimeLock {
         if (eta < minimumEta) eta = minimumEta;
 
         _setTimeLockEta(hash, eta);
+
+        return eta;
     }
 
     function _cancelTimeLock(bytes32 hash) internal {

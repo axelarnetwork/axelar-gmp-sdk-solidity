@@ -44,7 +44,7 @@ library SafeNativeTransfer {
 
         // solhint-disable-next-line no-inline-assembly
         assembly {
-            success := call(gasleft(), receiver, amount, 0, 0, 0, 0)
+            success := call(gas(), receiver, amount, 0, 0, 0, 0)
         }
 
         if (!success) revert NativeTransferFailed();

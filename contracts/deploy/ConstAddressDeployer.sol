@@ -2,6 +2,11 @@
 
 pragma solidity ^0.8.0;
 
+/**
+ * @title ConstAddressDeployer Contract
+ * @notice This contract deploys contracts in such a way that their addresses can be predicted in advance.
+ * @dev Uses the `CREATE2` opcode to create contracts. This allows the address of the deployed contract to be known in advance.
+ */
 contract ConstAddressDeployer {
     error EmptyBytecode();
     error FailedDeploy();
@@ -77,6 +82,14 @@ contract ConstAddressDeployer {
         );
     }
 
+    /**
+     * @dev Deploys a contract using `CREATE2`.
+     * @notice This internal function is used to deploy a contract using the `CREATE2` opcode.
+     * @param bytecode The bytecode of the contract to be deployed
+     * @param salt A salt to further randomize the contract address
+     * @return deployedAddress_ The address of the deployed contract
+     * @custom:requires The bytecode parameter must not be empty.
+     */
     function _deploy(bytes memory bytecode, bytes32 salt) internal returns (address deployedAddress_) {
         if (bytecode.length == 0) revert EmptyBytecode();
 

@@ -4,6 +4,12 @@ pragma solidity ^0.8.0;
 
 import { Create3 } from './Create3.sol';
 
+/**
+ * @title Create3Deployer Contract
+ * @notice This contract is responsible for deploying and initializing new contracts using the CREATE3 method
+ * which ensures that the contract bytecode and constructor arguments of the contract being deployed do not affect
+ * its deployed address.
+ */
 contract Create3Deployer {
     error FailedInit();
 

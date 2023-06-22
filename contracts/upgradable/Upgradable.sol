@@ -5,21 +5,38 @@ pragma solidity ^0.8.0;
 import { IUpgradable } from '../interfaces/IUpgradable.sol';
 import { Ownable } from '../utils/Ownable.sol';
 
+/**
+ * @title Upgradable Contract
+ * @notice This contract provides an interface for upgradable smart contracts and includes the functionality to perform upgrades.
+ * @dev Other contracts should inherit this contract for upgradable functionality.
+ */
 abstract contract Upgradable is Ownable, IUpgradable {
     // bytes32(uint256(keccak256('eip1967.proxy.implementation')) - 1)
     bytes32 internal constant _IMPLEMENTATION_SLOT = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
     address internal immutable implementationAddress;
 
+    /**
+     * @notice Constructor sets the implementation address to the address of the contract itself
+     * @dev This is used in the onlyProxy modifier to prevent certain functions from being called directly
+     * on the implementation contract itself
+     */
     constructor() {
         implementationAddress = address(this);
     }
 
+    /**
+     * @notice Modifier to ensure that a function can only be called by the proxy
+     */
     modifier onlyProxy() {
         // Prevent setup from being called on the implementation
         if (address(this) == implementationAddress) revert NotProxy();
         _;
     }
 
+    /**
+     * @notice Returns the address of the current implementation
+     * @return implementation_ Address of the current implementation
+     */
     function implementation() public view returns (address implementation_) {
         // solhint-disable-next-line no-inline-assembly
         assembly {
@@ -27,6 +44,13 @@ abstract contract Upgradable is Ownable, IUpgradable {
         }
     }
 
+    /**
+     * @notice Upgrades the contract to a new implementation
+     * @param newImplementation The address of the new implementation contract
+     * @param newImplementationCodeHash The codehash of the new implementation contract
+     * @param params Optional setup parameters for the new implementation contract
+     * @dev This function is only callable by the owner.
+     */
     function upgrade(
         address newImplementation,
         bytes32 newImplementationCodeHash,
@@ -50,10 +74,20 @@ abstract contract Upgradable is Ownable, IUpgradable {
         }
     }
 
+    /**
+     * @notice Sets up the contract with initial data
+     * @param data Initialization data for the contract
+     * @dev This function is only callable by the proxy contract.
+     */
     function setup(bytes calldata data) external override onlyProxy {
         _setup(data);
     }
 
+    /**
+     * @notice Internal function to set up the contract with initial data
+     * @param data Initialization data for the contract
+     * @dev This function should be implemented in derived contracts.
+     */
     // solhint-disable-next-line no-empty-blocks
     function _setup(bytes calldata data) internal virtual {}
 }

@@ -7,10 +7,14 @@ import { ITimeLock } from '../interfaces/ITimeLock.sol';
 contract TimeLock is ITimeLock {
     bytes32 internal constant PREFIX_TIME_LOCK = keccak256('time-lock');
 
-    uint256 public immutable MINIMUM_TIME_LOCK_DELAY;
+    uint256 internal immutable MINIMUM_TIME_LOCK_DELAY;
 
     constructor(uint256 minimumTimeDelay) {
         MINIMUM_TIME_LOCK_DELAY = minimumTimeDelay;
+    }
+
+    function minimumTimeLockDelay() external view override returns (uint256) {
+        return MINIMUM_TIME_LOCK_DELAY;
     }
 
     function getTimeLock(bytes32 hash) external view override returns (uint256) {
@@ -55,8 +59,6 @@ contract TimeLock is ITimeLock {
     }
 
     function _setTimeLockEta(bytes32 hash, uint256 eta) private {
-        if (hash == 0) revert InvalidTimeLockHash();
-
         bytes32 key = keccak256(abi.encodePacked(PREFIX_TIME_LOCK, hash));
 
         assembly {

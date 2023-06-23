@@ -6,6 +6,7 @@ import { ITimeLock } from '../interfaces/ITimeLock.sol';
 
 /**
  * @title TimeLock
+ * @author Kiryl Yermakou
  * @dev A contract that enables function execution after a certain time has passed.
  * Implements the ITimeLock interface.
  */

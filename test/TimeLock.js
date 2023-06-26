@@ -44,7 +44,7 @@ describe('TimeLock', async () => {
     const block = await ethers.provider.getBlock('latest');
     const eta = block.timestamp + timeDelay;
 
-    await timeLock.scheduleSetNum(numHash, eta);
+    await timeLock.scheduleSetNum(numHash, eta).then((tx) => tx.wait());
 
     const etaTimeLock = await timeLock.getTimeLock(numHash);
     expect(etaTimeLock).to.equal(eta);
@@ -60,7 +60,7 @@ describe('TimeLock', async () => {
     const block = await ethers.provider.getBlock('latest');
     const eta = block.timestamp + timeDelay;
 
-    await timeLock.scheduleSetNum(numHash, eta);
+    await timeLock.scheduleSetNum(numHash, eta).then((tx) => tx.wait());
 
     const minEta = block.timestamp + minTimeDelay;
 
@@ -79,7 +79,7 @@ describe('TimeLock', async () => {
     const block = await ethers.provider.getBlock('latest');
     const eta = block.timestamp + timeDelay;
 
-    await timeLock.scheduleSetNum(numHash, eta);
+    await timeLock.scheduleSetNum(numHash, eta).then((tx) => tx.wait());
 
     await expect(
       timeLock.scheduleSetNum(numHash, eta),
@@ -102,12 +102,12 @@ describe('TimeLock', async () => {
     const block = await ethers.provider.getBlock('latest');
     const eta = block.timestamp + timeDelay;
 
-    await timeLock.scheduleSetNum(numHash, eta);
+    await timeLock.scheduleSetNum(numHash, eta).then((tx) => tx.wait());
 
     const etaTimeLock = await timeLock.getTimeLock(numHash);
     expect(etaTimeLock).to.equal(eta);
 
-    await timeLock.cancelSetNum(numHash);
+    await timeLock.cancelSetNum(numHash).then((tx) => tx.wait());
 
     const cancelledEta = await timeLock.getTimeLock(numHash);
     expect(cancelledEta).to.equal(0);
@@ -142,7 +142,7 @@ describe('TimeLock', async () => {
     const block = await ethers.provider.getBlock('latest');
     const eta = block.timestamp + timeDelay;
 
-    await timeLock.scheduleSetNum(numHash, eta);
+    await timeLock.scheduleSetNum(numHash, eta).then((tx) => tx.wait());
 
     const etaTimeLock = await timeLock.getTimeLock(numHash);
     expect(etaTimeLock).to.equal(eta);
@@ -162,7 +162,7 @@ describe('TimeLock', async () => {
     const block = await ethers.provider.getBlock('latest');
     const eta = block.timestamp + timeDelay;
 
-    await timeLock.scheduleSetNum(numHash, eta);
+    await timeLock.scheduleSetNum(numHash, eta).then((tx) => tx.wait());
 
     const etaTimeLock = await timeLock.getTimeLock(numHash);
     expect(etaTimeLock).to.equal(eta);

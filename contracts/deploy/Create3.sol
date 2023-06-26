@@ -10,6 +10,7 @@ error DeployFailed();
 
 /**
  * @title CreateDeployer Contract
+ * @author Kiryl Yermakou
  * @notice This contract deploys new contracts using the CREATE opcode. This contract is used as part of the
  * Create3 deployment method.
  */
@@ -32,6 +33,7 @@ contract CreateDeployer {
 
 /**
  * @title Create3 Library
+ * @author Kiryl Yermakou
  * @notice This library first deploys the CreateDeployer contract using the CREATE2 opcode and
  * then utilizes the CreateDeployer contract to deploy a contract with the bytecode parameter
  * using the CREATE bytecode. This is done to ensure that ensure that the contract bytecode and

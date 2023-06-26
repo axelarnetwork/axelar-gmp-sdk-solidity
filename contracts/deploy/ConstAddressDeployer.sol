@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 /**
  * @title ConstAddressDeployer Contract
+ * @author Foivos Antoulinakis
  * @notice This contract deploys contracts in such a way that their addresses can be predicted in advance.
  * @dev Uses the `CREATE2` opcode to create contracts. This allows the address of the deployed contract to be known in advance.
  */

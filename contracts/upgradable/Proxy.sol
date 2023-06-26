@@ -8,6 +8,7 @@ import { BaseProxy } from './BaseProxy.sol';
 
 /**
  * @title Proxy Contract
+ * @author Kiryl Yermakou
  * @notice A proxy contract that delegates calls to a designated implementation contract. Inherits from BaseProxy.
  * @dev The constructor takes in the address of the implementation contract, the owner address, and any optional setup
  * parameters for the implementation contract.

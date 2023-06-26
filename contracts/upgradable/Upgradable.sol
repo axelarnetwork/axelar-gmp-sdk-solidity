@@ -7,6 +7,7 @@ import { Ownable } from '../utils/Ownable.sol';
 
 /**
  * @title Upgradable Contract
+ * @author Kiryl Yermakou
  * @notice This contract provides an interface for upgradable smart contracts and includes the functionality to perform upgrades.
  * @dev Other contracts should inherit this contract for upgradable functionality.
  */

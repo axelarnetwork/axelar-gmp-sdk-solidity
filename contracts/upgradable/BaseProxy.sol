@@ -7,6 +7,7 @@ import { IUpgradable } from '../interfaces/IUpgradable.sol';
 
 /**
  * @title BaseProxy Contract
+ * @author Kiryl Yermakou
  * @notice This abstract contract implements basic proxy functionalities. It provides an implementation
  * address storage slot and a fallback function to delegate calls to the implementation address.
  * This contract is meant to be inherited by other proxy contracts.

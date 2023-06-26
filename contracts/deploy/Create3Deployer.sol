@@ -6,6 +6,7 @@ import { Create3 } from './Create3.sol';
 
 /**
  * @title Create3Deployer Contract
+ * @author Kiryl Yermakou
  * @notice This contract is responsible for deploying and initializing new contracts using the CREATE3 method
  * which ensures that the contract bytecode and constructor arguments of the contract being deployed do not affect
  * its deployed address.

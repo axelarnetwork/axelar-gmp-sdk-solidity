@@ -10,6 +10,7 @@ import { Proxy } from './Proxy.sol';
 
 /**
  * @title FinalProxy Contract
+ * @author Kiryl Yermakou
  * @notice The FinalProxy contract is a proxy that can be upgraded to a final implementation
  * that uses less gas than regular proxy calls. It inherits from the Proxy contract and implements
  * the IFinalProxy interface.

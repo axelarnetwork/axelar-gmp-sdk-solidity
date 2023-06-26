@@ -8,6 +8,7 @@ import { BaseProxy } from './BaseProxy.sol';
 
 /**
  * @title InitProxy Contract
+ * @author Kiryl Yermakou
  * @notice A proxy contract that can be initialized to use a specified implementation and owner. Inherits from BaseProxy
  * and implements the IInitProxy interface.
  * @dev This proxy is constructed empty and then later initialized with the implementation contract address, new owner address,

@@ -6,6 +6,7 @@ import { IProxy } from '../interfaces/IProxy.sol';
 
 /**
  * @title FixedProxy Contract
+ * @author Kiryl Yermakou
  * @notice The FixedProxy is a type of Proxy contract with a fixed implementation that cannot be updated.
  * It implements the IProxy interface. Any function calls to this contract will be forwarded to the implementation contract.
  */

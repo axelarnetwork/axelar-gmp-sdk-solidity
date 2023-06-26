@@ -16,19 +16,41 @@ contract TimeLockTest is TimeLock {
         return num;
     }
 
-    function scheduleSetNum(bytes32 _hash, uint256 _eta) external {
+    function scheduleSetNum(uint256 _num, uint256 _eta) external {
+        bytes32 hash = keccak256(abi.encodePacked(_num));
+
+        _scheduleTimeLock(hash, _eta);
+    }
+
+    function scheduleSetNumByHash(bytes32 _hash, uint256 _eta) external {
         _scheduleTimeLock(_hash, _eta);
     }
 
-    function cancelSetNum(bytes32 _hash) external {
+    function cancelSetNum(uint256 _num) external {
+        bytes32 hash = keccak256(abi.encodePacked(_num));
+
+        _cancelTimeLock(hash);
+    }
+
+    function cancelSetNumByHash(bytes32 _hash) external {
         _cancelTimeLock(_hash);
     }
 
-    function setNum(bytes32 _hash, uint256 _newNum) external {
+    function setNum(uint256 _num) external {
+        bytes32 hash = keccak256(abi.encodePacked(_num));
+
+        _executeTimeLock(hash);
+
+        num = _num;
+
+        emit NumUpdated(_num);
+    }
+
+    function setNumByHash(bytes32 _hash, uint256 _num) external {
         _executeTimeLock(_hash);
 
-        num = _newNum;
+        num = _num;
 
-        emit NumUpdated(_newNum);
+        emit NumUpdated(_num);
     }
 }

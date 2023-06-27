@@ -3,112 +3,276 @@
 pragma solidity ^0.8.0;
 
 import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
-import { IERC20 } from '../interfaces/IERC20.sol';
 import { IExpressExecutable } from '../interfaces/IExpressExecutable.sol';
 
-/**
- * @title ExpressExecutable
- * @dev This abstract contract provides base functionalities for express executions. Express Executable
- * contracts should inhererit this abstract contract and implement custom logic for all virtual functions.
- */
+import { SafeTokenTransferFrom, SafeTokenTransfer, SafeNativeTransfer } from '../utils/SafeTransfer.sol';
+import { IERC20 } from '../interfaces/IERC20.sol';
+
 abstract contract ExpressExecutable is IExpressExecutable {
+    using SafeTokenTransfer for IERC20;
+    using SafeTokenTransferFrom for IERC20;
+    using SafeNativeTransfer for address payable;
+
     IAxelarGateway public immutable gateway;
 
-    /**
-     * @dev Sets the address for the AxelarGateway.
-     * @param gateway_ The address of the AxelarGateway contract.
-     */
     constructor(address gateway_) {
         if (gateway_ == address(0)) revert InvalidAddress();
 
         gateway = IAxelarGateway(gateway_);
     }
 
-    /**
-     * @dev Checks if the express call can be accepted.
-     * param caller The address of the caller.
-     * param sourceChain The source blockchain.
-     * param sourceAddress The source address.
-     * param payloadHash The payload hash.
-     * param tokenSymbol The token symbol.
-     * param amount The token amount.
-     * @return bool boolean representing whether the express call can be accepted.
-     * This is a virtual function and should be implemented in derived contracts.
-     */
-    function acceptExpressCallWithToken(
-        address, /*caller*/
-        string calldata, /*sourceChain*/
-        string calldata, /*sourceAddress*/
-        bytes32, /*payloadHash*/
-        string calldata, /*tokenSymbol*/
-        uint256 /*amount*/
-    ) external view virtual returns (bool) {
-        return true;
-    }
+    // Returns the amount of native token that that this call is worth.
+    function contractCallValue(
+        string calldata sourceChain,
+        string calldata sourceAddress,
+        bytes calldata payload
+    ) public view virtual returns (uint256 value);
 
-    /**
-     * @notice This function is shadowed by the proxy and can be called only internally.
-     * @dev Executes the call.
-     * @param sourceChain The source blockchain.
-     * @param sourceAddress The source address.
-     * @param payload The payload.
-     */
+    // Returns the amount of token that that this call is worth. If `native` is true then native token is used, otherwise the token specified by `symbol` is used.
+    function contractCallWithTokenValue(
+        string calldata sourceChain,
+        string calldata sourceAddress,
+        bytes calldata payload,
+        string calldata symbol,
+        uint256 amount
+    ) public view virtual returns (uint256 value, bool useNative);
+
     function execute(
-        bytes32,
+        bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
     ) external {
-        _execute(sourceChain, sourceAddress, payload);
+        bytes32 payloadHash = keccak256(payload);
+
+        if (!gateway.validateContractCall(commandId, sourceChain, sourceAddress, payloadHash))
+            revert NotApprovedByGateway();
+        address expressCaller = _popExpressCaller(commandId, sourceChain, sourceAddress, payload);
+        if (expressCaller != address(0)) {
+            payable(expressCaller).safeNativeTransfer(contractCallValue(sourceChain, sourceAddress, payload));
+            emit ExpressExecutionFulfilled(commandId, sourceChain, sourceAddress, payload, expressCaller);
+        } else {
+            _execute(sourceChain, sourceAddress, payload);
+        }
     }
 
-    /**
-     * @notice This function is shadowed by the proxy and can be called only internally.
-     * @dev Executes the call with token.
-     * @param sourceChain The source blockchain.
-     * @param sourceAddress The source address.
-     * @param payload The payload.
-     * @param tokenSymbol The token symbol.
-     * @param amount The token amount.
-     */
     function executeWithToken(
-        bytes32,
+        bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload,
         string calldata tokenSymbol,
         uint256 amount
     ) external {
-        _executeWithToken(sourceChain, sourceAddress, payload, tokenSymbol, amount);
+        bytes32 payloadHash = keccak256(payload);
+
+        if (
+            !gateway.validateContractCallAndMint(
+                commandId,
+                sourceChain,
+                sourceAddress,
+                payloadHash,
+                tokenSymbol,
+                amount
+            )
+        ) revert NotApprovedByGateway();
+
+        address expressCaller = _popExpressCaller(commandId, sourceChain, sourceAddress, payload);
+        if (expressCaller != address(0)) {
+            {
+                (uint256 value, bool native) = contractCallWithTokenValue(
+                    sourceChain,
+                    sourceAddress,
+                    payload,
+                    tokenSymbol,
+                    amount
+                );
+                IERC20 token = IERC20(gateway.tokenAddresses(tokenSymbol));
+                if (native) {
+                    payable(expressCaller).safeNativeTransfer(value);
+                    token.safeTransfer(expressCaller, amount);
+                } else {
+                    token.safeTransfer(expressCaller, amount + value);
+                }
+            }
+            emit ExpressExecutionWithTokenFulfilled(
+                commandId,
+                sourceChain,
+                sourceAddress,
+                payload,
+                tokenSymbol,
+                amount,
+                expressCaller
+            );
+        } else {
+            _executeWithToken(sourceChain, sourceAddress, payload, tokenSymbol, amount);
+        }
     }
 
-    /**
-     * @dev Defines the logic to execute the call.
-     * @param sourceChain The source blockchain.
-     * @param sourceAddress The source address.
-     * @param payload The payload.
-     * This is a virtual function and needs to be implemented in the derived contracts.
-     */
-    function _execute(
+    function expressExecute(
+        bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
+    ) external payable {
+        if (gateway.isCommandExecuted(commandId)) revert AlreadyExecuted();
+        if (contractCallValue(sourceChain, sourceAddress, payload) != msg.value) revert InsufficientValue();
+        address expressCaller = msg.sender;
+        _setExpressCaller(commandId, sourceChain, sourceAddress, payload, expressCaller);
+        _execute(sourceChain, sourceAddress, payload);
+        emit ExpressExecuted(commandId, sourceChain, sourceAddress, payload, expressCaller);
+    }
+
+    function expressExecuteWithToken(
+        bytes32 commandId,
+        string calldata sourceChain,
+        string calldata sourceAddress,
+        bytes calldata payload,
+        string calldata symbol,
+        uint256 amount
+    ) external payable {
+        if (gateway.isCommandExecuted(commandId)) revert AlreadyExecuted();
+        address expressCaller = msg.sender;
+        {
+            (uint256 value, bool native) = contractCallWithTokenValue(sourceChain, sourceAddress, payload, symbol, amount);
+            IERC20 token = IERC20(gateway.tokenAddresses(symbol));
+            if (native) {
+                if (value != msg.value) revert InsufficientValue();
+                token.safeTransferFrom(expressCaller, address(this), amount);
+            } else {
+                token.safeTransferFrom(expressCaller, address(this), amount + value);
+            }
+        }
+        _setExpressCallerWithToken(commandId, sourceChain, sourceAddress, payload, symbol, amount, expressCaller);
+        _executeWithToken(sourceChain, sourceAddress, payload, symbol, amount);
+        emit ExpressExecutedWithToken(commandId, sourceChain, sourceAddress, payload, symbol, amount, expressCaller);
+    }
+
+    function _expressExecutionSlot(
+        bytes32 commandId,
+        string calldata sourceChain,
+        string calldata sourceAddress,
+        bytes calldata payload
+    ) internal pure returns (uint256 slot) {
+        // TODO: maybe add some salt although i doubt it will be an issue.
+        slot = uint256(keccak256(abi.encode(commandId, sourceChain, sourceAddress, payload))) - 1;
+    }
+
+    function _expressExecutedWithTokenSlot(
+        bytes32 commandId,
+        string calldata sourceChain,
+        string calldata sourceAddress,
+        bytes calldata payload,
+        string calldata symbol,
+        uint256 amount
+    ) internal pure returns (uint256 slot) {
+        // TODO: maybe add some salt although i doubt it will be an issue.
+        slot = uint256(keccak256(abi.encode(commandId, sourceChain, sourceAddress, payload, symbol, amount))) - 1;
+    }
+
+    function getExpressCaller(
+        bytes32 commandId,
+        string calldata sourceChain,
+        string calldata sourceAddress,
+        bytes calldata payload
+    ) public view returns (address expressCaller) {
+        uint256 slot = _expressExecutionSlot(commandId, sourceChain, sourceAddress, payload);
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            expressCaller := sload(slot)
+        }
+    }
+
+    function getExpressCallerWithToken(
+        bytes32 commandId,
+        string calldata sourceChain,
+        string calldata sourceAddress,
+        bytes calldata payload,
+        string calldata symbol,
+        uint256 amount
+    ) public view returns (address expressCaller) {
+        uint256 slot = _expressExecutedWithTokenSlot(commandId, sourceChain, sourceAddress, payload, symbol, amount);
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            expressCaller := sload(slot)
+        }
+    }
+
+    function _setExpressCaller(
+        bytes32 commandId,
+        string calldata sourceChain,
+        string calldata sourceAddress,
+        bytes calldata payload,
+        address expressCaller
+    ) private {
+        uint256 slot = _expressExecutionSlot(commandId, sourceChain, sourceAddress, payload);
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            sstore(slot, expressCaller)
+        }
+    }
+
+    function _setExpressCallerWithToken(
+        bytes32 commandId,
+        string calldata sourceChain,
+        string calldata sourceAddress,
+        bytes calldata payload,
+        string calldata symbol,
+        uint256 amount,
+        address expressCaller
+    ) private {
+        uint256 slot = _expressExecutedWithTokenSlot(commandId, sourceChain, sourceAddress, payload, symbol, amount);
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            sstore(slot, expressCaller)
+        }
+    }
+
+    function _popExpressCaller(
+        bytes32 commandId,
+        string calldata sourceChain,
+        string calldata sourceAddress,
+        bytes calldata payload
+    ) private returns (address expressCaller) {
+        uint256 slot = _expressExecutionSlot(commandId, sourceChain, sourceAddress, payload);
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            expressCaller := sload(slot)
+            if expressCaller {
+                sstore(slot, 0)
+            }
+        }
+    }
+
+    function _popExpressCallerWithToken(
+        bytes32 commandId,
+        string calldata sourceChain,
+        string calldata sourceAddress,
+        bytes calldata payload,
+        string calldata symbol,
+        uint256 amount
+    ) private returns (address expressCaller) {
+        uint256 slot = _expressExecutedWithTokenSlot(commandId, sourceChain, sourceAddress, payload, symbol, amount);
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            expressCaller := sload(slot)
+            if expressCaller {
+                sstore(slot, 0)
+            }
+        }
+    }
+
+    function _execute(
+        string calldata sourceChain,
+        string calldata sourceAddress,
+        bytes calldata payload // solhint-disable-next-line no-empty-blocks
     ) internal virtual {}
 
-    /**
-     * @dev Defines the steps to execute the call with token.
-     * @param sourceChain The source blockchain.
-     * @param sourceAddress The source address.
-     * @param payload The payload.
-     * @param tokenSymbol The token symbol.
-     * @param amount The token amount.
-     * This is a virtual function and needs to be implemented in the derived contracts.
-     */
     function _executeWithToken(
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload,
         string calldata tokenSymbol,
-        uint256 amount
+        uint256 amount // solhint-disable-next-line no-empty-blocks
     ) internal virtual {}
 }

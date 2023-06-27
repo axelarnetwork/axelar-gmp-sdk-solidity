@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity 0.8.9;
-
-import { ExpressExecutable } from '../../express/ExpressExecutable.sol';
+ 
+import { ExpressExecutableTest } from '../ExpressExecutableTest.sol';
 import { IAxelarGateway } from '../../interfaces/IAxelarGateway.sol';
 
-contract ExecutableSample is ExpressExecutable {
+contract ExecutableSample is ExpressExecutableTest {
     string public value;
     string public sourceChain;
     string public sourceAddress;
 
-    constructor(address gateway_) ExpressExecutable(gateway_) {}
+    constructor(address gateway_) ExpressExecutableTest(gateway_, 123, 0, true) {}
 
     // Call this function to update the value of this contract along with all its siblings'.
     function setRemoteValue(

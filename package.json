@@ -7,7 +7,7 @@
     "build": "rm -rf artifacts cache && hardhat compile && npm run copy:artifacts",
     "test": "npx hardhat test",
     "test-evm-versions": "bash scripts/test-evm-versions.sh",
-    "copy:artifacts": "rm -rf dist && mkdir dist && cp artifacts/contracts/express/ExpressProxyDeployer.sol/ExpressProxyDeployer.json artifacts/contracts/deploy/ConstAddressDeployer.sol/ConstAddressDeployer.json artifacts/contracts/deploy/Create3Deployer.sol/Create3Deployer.json artifacts/contracts/interfaces/IUpgradable.sol/IUpgradable.json dist/",
+    "copy:artifacts": "rm -rf dist && mkdir dist && cp artifacts/contracts/deploy/ConstAddressDeployer.sol/ConstAddressDeployer.json artifacts/contracts/deploy/Create3Deployer.sol/Create3Deployer.json artifacts/contracts/interfaces/IUpgradable.sol/IUpgradable.json dist/",
     "lint": "solhint 'contracts/**/*.sol' && eslint 'scripts/**/*.js' 'test/**/*.js'",
     "prettier": "prettier --write 'contracts/**/*.sol' 'test/**/*.js' 'scripts/**/*.js' '*.js'",
     "flatten": "sh scripts/flatten-contracts.sh",

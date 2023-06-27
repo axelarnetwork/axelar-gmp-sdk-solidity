@@ -2,16 +2,16 @@
 
 pragma solidity 0.8.9;
 
-import { ExpressExecutable } from '../../express/ExpressExecutable.sol';
+import { ExpressExecutableTest } from '../ExpressExecutableTest.sol';
 import { IERC20 } from '../../interfaces/IERC20.sol';
 import { DestinationChainTokenSwapper } from './DestinationChainTokenSwapper.sol';
 
-contract DestinationChainSwapExpress is ExpressExecutable {
+contract DestinationChainSwapExpress is ExpressExecutableTest {
     DestinationChainTokenSwapper public immutable swapper;
 
     event Executed(string sourceChain, string sourceAddress, bytes payload);
 
-    constructor(address gatewayAddress, address swapperAddress) ExpressExecutable(gatewayAddress) {
+    constructor(address gatewayAddress, address swapperAddress) ExpressExecutableTest(gatewayAddress, 123, 0, true) {
         swapper = DestinationChainTokenSwapper(swapperAddress);
     }
 

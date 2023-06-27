@@ -134,7 +134,13 @@ abstract contract ExpressExecutable is IExpressExecutable {
         if (gateway.isCommandExecuted(commandId)) revert AlreadyExecuted();
         address expressCaller = msg.sender;
         {
-            (uint256 value, bool native) = contractCallWithTokenValue(sourceChain, sourceAddress, payload, symbol, amount);
+            (uint256 value, bool native) = contractCallWithTokenValue(
+                sourceChain,
+                sourceAddress,
+                payload,
+                symbol,
+                amount
+            );
             IERC20 token = IERC20(gateway.tokenAddresses(symbol));
             if (native) {
                 if (value != msg.value) revert InsufficientValue();

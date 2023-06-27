@@ -89,7 +89,7 @@ contract TimeLock is ITimeLock {
     /**
      * @dev Returns the timestamp after which the timelock with the given hash can be executed.
      */
-    function _getTimeLockEta(bytes32 hash) private view returns (uint256 eta) {
+    function _getTimeLockEta(bytes32 hash) internal view returns (uint256 eta) {
         bytes32 key = keccak256(abi.encodePacked(PREFIX_TIME_LOCK, hash));
 
         assembly {

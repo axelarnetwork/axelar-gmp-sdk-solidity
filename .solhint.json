@@ -2,18 +2,16 @@
   "extends": "solhint:recommended",
   "plugins": [],
   "rules": {
-    "quotes": [
-      "error",
-      "single"
-    ],
-    "compiler-version": [
-      "off"
-    ],
+    "quotes": ["error", "single"],
+    "compiler-version": ["off"],
     "func-visibility": [
       "warn",
       {
         "ignoreConstructors": true
       }
-    ]
+    ],
+    "no-inline-assembly": "off",
+    "no-empty-blocks": "off",
+    "avoid-low-level-calls": "off"
   }
 }

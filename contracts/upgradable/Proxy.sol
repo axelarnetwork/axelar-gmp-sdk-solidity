@@ -8,7 +8,6 @@ import { BaseProxy } from './BaseProxy.sol';
 
 /**
  * @title Proxy Contract
- * @author Kiryl Yermakou
  * @notice A proxy contract that delegates calls to a designated implementation contract. Inherits from BaseProxy.
  * @dev The constructor takes in the address of the implementation contract, the owner address, and any optional setup
  * parameters for the implementation contract.
@@ -33,14 +32,12 @@ contract Proxy is BaseProxy {
         bytes32 id = contractId();
         if (id != bytes32(0) && IUpgradable(implementationAddress).contractId() != id) revert InvalidImplementation();
 
-        // solhint-disable-next-line no-inline-assembly
         assembly {
             sstore(_IMPLEMENTATION_SLOT, implementationAddress)
             sstore(_OWNER_SLOT, owner)
         }
 
         if (setupParams.length != 0) {
-            // solhint-disable-next-line avoid-low-level-calls
             (bool success, ) = implementationAddress.delegatecall(
                 abi.encodeWithSelector(IUpgradable.setup.selector, setupParams)
             );

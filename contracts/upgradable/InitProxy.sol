@@ -8,7 +8,6 @@ import { BaseProxy } from './BaseProxy.sol';
 
 /**
  * @title InitProxy Contract
- * @author Kiryl Yermakou
  * @notice A proxy contract that can be initialized to use a specified implementation and owner. Inherits from BaseProxy
  * and implements the IInitProxy interface.
  * @dev This proxy is constructed empty and then later initialized with the implementation contract address, new owner address,
@@ -19,7 +18,6 @@ contract InitProxy is BaseProxy, IInitProxy {
      * @dev Initializes the contract and sets the caller as the owner of the contract.
      */
     constructor() {
-        // solhint-disable-next-line no-inline-assembly
         assembly {
             sstore(_OWNER_SLOT, caller())
         }
@@ -40,7 +38,7 @@ contract InitProxy is BaseProxy, IInitProxy {
         bytes memory params
     ) external {
         address owner;
-        // solhint-disable-next-line no-inline-assembly
+
         assembly {
             owner := sload(_OWNER_SLOT)
         }
@@ -51,13 +49,12 @@ contract InitProxy is BaseProxy, IInitProxy {
         bytes32 id = contractId();
         if (id != bytes32(0) && IUpgradable(implementationAddress).contractId() != id) revert InvalidImplementation();
 
-        // solhint-disable-next-line no-inline-assembly
         assembly {
             sstore(_IMPLEMENTATION_SLOT, implementationAddress)
             sstore(_OWNER_SLOT, newOwner)
         }
+
         if (params.length != 0) {
-            // solhint-disable-next-line avoid-low-level-calls
             (bool success, ) = implementationAddress.delegatecall(
                 abi.encodeWithSelector(IUpgradable.setup.selector, params)
             );

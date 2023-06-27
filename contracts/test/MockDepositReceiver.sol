@@ -11,6 +11,5 @@ contract MockDepositReceiver {
     }
 
     // @dev This function is for receiving Ether from unwrapping WETH9
-    // solhint-disable-next-line no-empty-blocks
     receive() external payable {}
 }

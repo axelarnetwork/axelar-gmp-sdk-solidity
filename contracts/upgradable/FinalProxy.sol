@@ -10,7 +10,6 @@ import { Proxy } from './Proxy.sol';
 
 /**
  * @title FinalProxy Contract
- * @author Kiryl Yermakou
  * @notice The FinalProxy contract is a proxy that can be upgraded to a final implementation
  * that uses less gas than regular proxy calls. It inherits from the Proxy contract and implements
  * the IFinalProxy interface.
@@ -59,7 +58,7 @@ contract FinalProxy is Proxy, IFinalProxy {
         /**
          * @dev Computing the address is cheaper than using storage
          */
-        implementation_ = Create3.deployedAddress(FINAL_IMPLEMENTATION_SALT, address(this));
+        implementation_ = Create3.deployedAddress(address(this), FINAL_IMPLEMENTATION_SALT);
 
         if (implementation_.code.length == 0) implementation_ = address(0);
     }
@@ -75,7 +74,6 @@ contract FinalProxy is Proxy, IFinalProxy {
         returns (address finalImplementation_)
     {
         address owner;
-        // solhint-disable-next-line no-inline-assembly
         assembly {
             owner := sload(_OWNER_SLOT)
         }
@@ -83,7 +81,6 @@ contract FinalProxy is Proxy, IFinalProxy {
 
         finalImplementation_ = Create3.deploy(FINAL_IMPLEMENTATION_SALT, bytecode);
         if (setupParams.length != 0) {
-            // solhint-disable-next-line avoid-low-level-calls
             (bool success, ) = finalImplementation_.delegatecall(
                 abi.encodeWithSelector(BaseProxy.setup.selector, setupParams)
             );

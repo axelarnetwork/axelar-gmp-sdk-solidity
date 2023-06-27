@@ -7,10 +7,8 @@ import { IUpgradable } from '../interfaces/IUpgradable.sol';
 
 /**
  * @title BaseProxy Contract
- * @author Kiryl Yermakou
- * @notice This abstract contract implements basic proxy functionalities. It provides an implementation
- * address storage slot and a fallback function to delegate calls to the implementation address.
- * This contract is meant to be inherited by other proxy contracts.
+ * @dev This abstract contract implements a basic proxy that stores an implementation address. Fallback function
+ * calls are delegated to the implementation. This contract is meant to be inherited by other proxy contracts.
  */
 abstract contract BaseProxy is IProxy {
     // bytes32(uint256(keccak256('eip1967.proxy.implementation')) - 1)
@@ -23,22 +21,20 @@ abstract contract BaseProxy is IProxy {
      * @return implementation_ The address of the current implementation contract
      */
     function implementation() public view virtual returns (address implementation_) {
-        // solhint-disable-next-line no-inline-assembly
         assembly {
             implementation_ := sload(_IMPLEMENTATION_SLOT)
         }
     }
 
     /**
-     * @dev Shadows the setup function on the implementation contract. This way calling the setup function on the proxy
-     * will call the empty code block below instead of hitting the setup function of the implementation.
-     * @param setupParams The setup parameters for the implementation contract.
+     * @dev Shadows the setup function of the implementation contract so it can't be called directly via the proxy.
+     * @param params The setup parameters for the implementation contract.
      */
-    // solhint-disable-next-line no-empty-blocks
-    function setup(bytes calldata setupParams) external {}
+    function setup(bytes calldata params) external {}
 
     /**
-     * @dev Returns the contract ID. Meant to be overridden in derived contracts.
+     * @dev Returns the contract ID. It can be used as a check during upgrades.
+     * Meant to be overridden in derived contracts.
      * @return bytes32 The contract ID
      */
     function contractId() internal pure virtual returns (bytes32) {
@@ -50,12 +46,11 @@ abstract contract BaseProxy is IProxy {
      */
     // solhint-disable-next-line no-complex-fallback
     fallback() external payable virtual {
-        address implementaion_ = implementation();
-        // solhint-disable-next-line no-inline-assembly
+        address implementation_ = implementation();
         assembly {
             calldatacopy(0, 0, calldatasize())
 
-            let result := delegatecall(gas(), implementaion_, 0, calldatasize(), 0, 0)
+            let result := delegatecall(gas(), implementation_, 0, calldatasize(), 0, 0)
             returndatacopy(0, 0, returndatasize())
 
             switch result
@@ -71,6 +66,5 @@ abstract contract BaseProxy is IProxy {
     /**
      * @dev Payable fallback function. Can be overridden in derived contracts.
      */
-    // solhint-disable-next-line no-empty-blocks
     receive() external payable virtual {}
 }

@@ -18,14 +18,12 @@ abstract contract Ownable is IOwnable {
     }
 
     function owner() public view returns (address owner_) {
-        // solhint-disable-next-line no-inline-assembly
         assembly {
             owner_ := sload(_OWNER_SLOT)
         }
     }
 
     function pendingOwner() public view returns (address owner_) {
-        // solhint-disable-next-line no-inline-assembly
         assembly {
             owner_ := sload(_OWNERSHIP_TRANSFER_SLOT)
         }
@@ -33,7 +31,7 @@ abstract contract Ownable is IOwnable {
 
     function transferOwnership(address newOwner) external virtual onlyOwner {
         emit OwnershipTransferStarted(newOwner);
-        // solhint-disable-next-line no-inline-assembly
+
         assembly {
             sstore(_OWNERSHIP_TRANSFER_SLOT, newOwner)
         }
@@ -44,7 +42,7 @@ abstract contract Ownable is IOwnable {
         if (newOwner != msg.sender) revert InvalidOwner();
 
         emit OwnershipTransferred(newOwner);
-        // solhint-disable-next-line no-inline-assembly
+
         assembly {
             sstore(_OWNERSHIP_TRANSFER_SLOT, 0)
             sstore(_OWNER_SLOT, newOwner)

@@ -6,10 +6,8 @@ import { Create3 } from './Create3.sol';
 
 /**
  * @title Create3Deployer Contract
- * @author Kiryl Yermakou
- * @notice This contract is responsible for deploying and initializing new contracts using the CREATE3 method
- * which ensures that the contract bytecode and constructor arguments of the contract being deployed do not affect
- * its deployed address.
+ * @notice This contract is responsible for deploying and initializing new contracts using the CREATE3 technique
+ * which ensures that only the sender address and salt influence the deployed address, not the contract bytecode.
  */
 contract Create3Deployer {
     error FailedInit();
@@ -56,9 +54,10 @@ contract Create3Deployer {
         bytes32 deploySalt = keccak256(abi.encode(msg.sender, salt));
         deployedAddress_ = Create3.deploy(deploySalt, bytecode);
 
-        // solhint-disable-next-line avoid-low-level-calls
         (bool success, ) = deployedAddress_.call(init);
         if (!success) revert FailedInit();
+
+        emit Deployed(keccak256(bytecode), salt, deployedAddress_);
     }
 
     /**
@@ -67,6 +66,6 @@ contract Create3Deployer {
      */
     function deployedAddress(address sender, bytes32 salt) external view returns (address) {
         bytes32 deploySalt = keccak256(abi.encode(sender, salt));
-        return Create3.deployedAddress(deploySalt, address(this));
+        return Create3.deployedAddress(address(this), deploySalt);
     }
 }

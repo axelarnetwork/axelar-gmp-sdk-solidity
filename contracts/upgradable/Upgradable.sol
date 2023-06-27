@@ -7,9 +7,7 @@ import { Ownable } from '../utils/Ownable.sol';
 
 /**
  * @title Upgradable Contract
- * @author Kiryl Yermakou
  * @notice This contract provides an interface for upgradable smart contracts and includes the functionality to perform upgrades.
- * @dev Other contracts should inherit this contract for upgradable functionality.
  */
 abstract contract Upgradable is Ownable, IUpgradable {
     // bytes32(uint256(keccak256('eip1967.proxy.implementation')) - 1)
@@ -39,7 +37,6 @@ abstract contract Upgradable is Ownable, IUpgradable {
      * @return implementation_ Address of the current implementation
      */
     function implementation() public view returns (address implementation_) {
-        // solhint-disable-next-line no-inline-assembly
         assembly {
             implementation_ := sload(_IMPLEMENTATION_SLOT)
         }
@@ -62,14 +59,13 @@ abstract contract Upgradable is Ownable, IUpgradable {
         if (newImplementationCodeHash != newImplementation.codehash) revert InvalidCodeHash();
 
         if (params.length > 0) {
-            // solhint-disable-next-line avoid-low-level-calls
             (bool success, ) = newImplementation.delegatecall(abi.encodeWithSelector(this.setup.selector, params));
 
             if (!success) revert SetupFailed();
         }
 
         emit Upgraded(newImplementation);
-        // solhint-disable-next-line no-inline-assembly
+
         assembly {
             sstore(_IMPLEMENTATION_SLOT, newImplementation)
         }
@@ -89,6 +85,5 @@ abstract contract Upgradable is Ownable, IUpgradable {
      * @param data Initialization data for the contract
      * @dev This function should be implemented in derived contracts.
      */
-    // solhint-disable-next-line no-empty-blocks
     function _setup(bytes calldata data) internal virtual {}
 }

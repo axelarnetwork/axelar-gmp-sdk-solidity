@@ -39,7 +39,7 @@ contract TimeLockTest is TimeLock {
     function setNum(uint256 _num) external {
         bytes32 hash = keccak256(abi.encodePacked(_num));
 
-        _executeTimeLock(hash);
+        _finalizeTimeLock(hash);
 
         num = _num;
 
@@ -47,7 +47,7 @@ contract TimeLockTest is TimeLock {
     }
 
     function setNumByHash(bytes32 _hash, uint256 _num) external {
-        _executeTimeLock(_hash);
+        _finalizeTimeLock(_hash);
 
         num = _num;
 

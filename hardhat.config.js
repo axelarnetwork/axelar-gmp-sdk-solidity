@@ -12,12 +12,12 @@ module.exports = {
         enabled: true,
         runs: 1000,
         details: {
-          peephole: true,
-          inliner: true,
+          peephole: process.env.COVERAGE === undefined,
+          inliner: process.env.COVERAGE === undefined,
           jumpdestRemover: true,
           orderLiterals: true,
           deduplicate: true,
-          cse: true,
+          cse: process.env.COVERAGE === undefined,
           constantOptimizer: true,
           yul: true,
           yulDetails: {

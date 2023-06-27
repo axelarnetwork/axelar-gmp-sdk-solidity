@@ -1,18 +1,15 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.0;
 
 import { IOperators } from '../interfaces/IOperators.sol';
 import { Ownable } from './Ownable.sol';
 
 /**
  * @title Operators
- * @dev Contract module which provides an access control mechanism, where
- * there is an account (an owner) that can be granted exclusive access to
- * specific functions, and an operator that can execute arbitrary functions
- * on any smart contract.
- *
- * The owner account is initially set as the deployer address.
+ * @notice This contract provides an access control mechanism, where an owner can register
+ * operator accounts that can call arbitrary contracts on behalf of this contract.
+ * @dev The owner account is initially set as the deployer address.
  */
 contract Operators is Ownable, IOperators {
     mapping(address => bool) public operators;
@@ -29,8 +26,8 @@ contract Operators is Ownable, IOperators {
     }
 
     /**
-     * @dev Modifier that requires the "msg.sender" to be an operator.
-     * Emits a NotOperator error if the condition is not met.
+     * @dev Modifier that requires the `msg.sender` to be an operator.
+     * Reverts with a NotOperator error if the condition is not met.
      */
     modifier onlyOperator() {
         if (!operators[msg.sender]) revert NotOperator();
@@ -77,13 +74,12 @@ contract Operators is Ownable, IOperators {
     /**
      * @dev Allows an operator to execute arbitrary functions on any smart contract.
      * Can only be called by an operator.
-     * @param target address of the contract to execute the function on
+     * @param target address of the contract to execute the function on. Existence is not checked.
      * @param callData ABI encoded function call to execute on target
      * @return data return data from executed function call
      */
-    function execute(address target, bytes calldata callData) external onlyOperator returns (bytes memory) {
-        // solhint-disable-next-line avoid-low-level-calls
-        (bool success, bytes memory data) = target.call(callData);
+    function execute(address target, bytes calldata callData) external payable onlyOperator returns (bytes memory) {
+        (bool success, bytes memory data) = target.call{ value: msg.value }(callData);
         if (!success) {
             revert ExecutionFailed();
         }

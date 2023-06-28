@@ -76,7 +76,7 @@ contract Operators is Ownable, IOperators {
      * Can only be called by an operator.
      * @param target address of the contract to execute the function on. Existence is not checked.
      * @param callData ABI encoded function call to execute on target
-     * @param nativeValue The amount of native asset to send with the call
+     * @param nativeValue The amount of native asset to send with the call. If `nativeValue` is set to `0`, then `msg.value` is forwarded instead.
      * @return data return data from executed function call
      */
     function execute(

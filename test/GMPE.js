@@ -11,6 +11,8 @@ const { deployCreate3Upgradable } = require('../index');
 
 const ExpressProxy = require('../artifacts/contracts/express/ExpressProxy.sol/ExpressProxy.json');
 const ExpressRegistry = require('../artifacts/contracts/express/ExpressRegistry.sol/ExpressRegistry.json');
+const ExpressService = require('../artifacts/contracts/express/ExpressService.sol/ExpressService.json');
+const ExpressServiceProxy = require('../artifacts/contracts/express/ExpressServiceProxy.sol/ExpressServiceProxy.json');
 const DestinationChainSwapExpress = require('../artifacts/contracts/test/gmp/DestinationChainSwapExpress.sol/DestinationChainSwapExpress.json');
 const DestinationChainSwapExpressDisabled = require('../artifacts/contracts/test/gmp/DestinationChainSwapExpressDisabled.sol/DestinationChainSwapExpressDisabled.json');
 const ExecutableSample = require('../artifacts/contracts/test/gmp/ExecutableSample.sol/ExecutableSample.json');
@@ -20,7 +22,6 @@ const getRandomID = () => id(Math.floor(Math.random() * 1e10).toString());
 
 describe('GMPE', async () => {
   let gatewayFactory;
-  let gmpExpressServiceFactory;
   let sourceChainSwapCallerFactory;
   let destinationChainTokenSwapperFactory;
   let tokenFactory;
@@ -41,7 +42,7 @@ describe('GMPE', async () => {
   let tokenB;
   let expressProxyDeployer;
   let create3Deployer;
-  let gmpExpressService;
+  let expressService;
   let destinationChainTokenSwapper;
   let destinationChainSwapExpressDisabled;
 
@@ -62,10 +63,6 @@ describe('GMPE', async () => {
 
     gatewayFactory = await ethers.getContractFactory(
       'MockGateway',
-      ownerWallet,
-    );
-    gmpExpressServiceFactory = await ethers.getContractFactory(
-      'MockGMPExpressService',
       ownerWallet,
     );
     sourceChainSwapCallerFactory = await ethers.getContractFactory(
@@ -127,13 +124,17 @@ describe('GMPE', async () => {
       .deploy(destinationChainGateway.address)
       .then((d) => d.deployed());
 
-    gmpExpressService = await gmpExpressServiceFactory
-      .deploy(
+    expressService = await deployCreate3Upgradable(
+      create3Deployer.address,
+      ownerWallet,
+      ExpressService,
+      ExpressServiceProxy,
+      [
         destinationChainGateway.address,
-        ownerWallet.address,
         expressProxyDeployer.address,
-      )
-      .then((d) => d.deployed());
+        ownerWallet.address,
+      ],
+    );
 
     tokenA = await tokenFactory
       .deploy(nameA, symbolA, decimals)
@@ -255,9 +256,9 @@ describe('GMPE', async () => {
         );
       await tokenA
         .connect(userWallet)
-        .transfer(gmpExpressService.address, swapAmount);
+        .transfer(expressService.address, swapAmount);
       await expect(
-        gmpExpressService
+        expressService
           .connect(ownerWallet)
           .callWithToken(
             getRandomID(),
@@ -271,7 +272,7 @@ describe('GMPE', async () => {
       )
         .to.emit(tokenA, 'Transfer')
         .withArgs(
-          gmpExpressService.address,
+          expressService.address,
           destinationChainSwapExpress.address,
           swapAmount,
         )
@@ -362,7 +363,7 @@ describe('GMPE', async () => {
         .and.to.emit(tokenA, 'Transfer')
         .withArgs(
           destinationChainSwapExpress.address,
-          gmpExpressService.address,
+          expressService.address,
           swapAmount,
         );
     });
@@ -479,10 +480,10 @@ describe('GMPE', async () => {
 
       await tokenA
         .connect(userWallet)
-        .transfer(gmpExpressService.address, swapAmount);
+        .transfer(expressService.address, swapAmount);
 
       await expect(
-        gmpExpressService
+        expressService
           .connect(ownerWallet)
           .callWithToken(
             getRandomID(),
@@ -609,10 +610,10 @@ describe('GMPE', async () => {
 
       await tokenA
         .connect(userWallet)
-        .transfer(gmpExpressService.address, swapAmount);
+        .transfer(expressService.address, swapAmount);
 
       await expect(
-        gmpExpressService
+        expressService
           .connect(ownerWallet)
           .callWithToken(
             getRandomID(),
@@ -626,7 +627,7 @@ describe('GMPE', async () => {
       )
         .to.emit(tokenA, 'Transfer')
         .withArgs(
-          gmpExpressService.address,
+          expressService.address,
           destinationChainSwapExpress.address,
           swapAmount,
         )
@@ -716,10 +717,10 @@ describe('GMPE', async () => {
 
       await tokenA
         .connect(userWallet)
-        .transfer(gmpExpressService.address, swapAmount);
+        .transfer(expressService.address, swapAmount);
 
       await expect(
-        gmpExpressService
+        expressService
           .connect(ownerWallet)
           .callWithToken(
             getRandomID(),
@@ -733,7 +734,7 @@ describe('GMPE', async () => {
       )
         .to.emit(tokenA, 'Transfer')
         .withArgs(
-          gmpExpressService.address,
+          expressService.address,
           destinationChainSwapExpress.address,
           swapAmount,
         )
@@ -817,7 +818,7 @@ describe('GMPE', async () => {
         destinationChainSwapExpressProxy
           .connect(ownerWallet)
           .completeExecuteWithToken(
-            gmpExpressService.address.toString(),
+            expressService.address.toString(),
             approveCommandId,
             sourceChain,
             sourceChainSwapCaller.address.toString(),
@@ -996,10 +997,10 @@ describe('GMPE', async () => {
 
       await tokenA
         .connect(userWallet)
-        .transfer(gmpExpressService.address, swapAmount);
+        .transfer(expressService.address, swapAmount);
 
       await expect(
-        gmpExpressService
+        expressService
           .connect(ownerWallet)
           .callWithToken(
             getRandomID(),
@@ -1013,7 +1014,7 @@ describe('GMPE', async () => {
       )
         .to.emit(tokenA, 'Transfer')
         .withArgs(
-          gmpExpressService.address,
+          expressService.address,
           destinationChainSwapExpress.address,
           swapAmount,
         )
@@ -1110,7 +1111,7 @@ describe('GMPE', async () => {
         .and.to.emit(tokenA, 'Transfer')
         .withArgs(
           destinationChainSwapExpress.address,
-          gmpExpressService.address,
+          expressService.address,
           swapAmount,
         );
 
@@ -1168,9 +1169,9 @@ describe('GMPE', async () => {
         );
       await tokenA
         .connect(userWallet)
-        .transfer(gmpExpressService.address, swapAmount);
+        .transfer(expressService.address, swapAmount);
       await expect(
-        gmpExpressService
+        expressService
           .connect(ownerWallet)
           .callWithToken(
             getRandomID(),
@@ -1184,7 +1185,7 @@ describe('GMPE', async () => {
       )
         .to.emit(tokenA, 'Transfer')
         .withArgs(
-          gmpExpressService.address,
+          expressService.address,
           destinationChainSwapExpress.address,
           swapAmount,
         )
@@ -1262,7 +1263,7 @@ describe('GMPE', async () => {
         destinationChainSwapExpressRegistry
           .connect(ownerWallet)
           .registerExpressCallWithToken(
-            gmpExpressService.address,
+            expressService.address,
             sourceChain,
             sourceChainSwapCaller.address.toString(),
             payloadHash,

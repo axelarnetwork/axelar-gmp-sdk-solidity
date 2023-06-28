@@ -1,8 +1,9 @@
 'use strict';
 
+const { config, ethers } = require('hardhat');
 const {
   utils: { defaultAbiCoder, id, arrayify, keccak256 },
-} = require('ethers');
+} = ethers;
 const { sortBy } = require('lodash');
 
 const getRandomInt = (max) => {

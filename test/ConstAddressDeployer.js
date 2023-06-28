@@ -3,7 +3,9 @@
 const chai = require('chai');
 const { ethers } = require('hardhat');
 const { expect } = chai;
-const { utils: { keccak256 } } = ethers;
+const {
+  utils: { keccak256 },
+} = ethers;
 const {
   deployContractConstant,
   deployAndInitContractConstant,
@@ -145,14 +147,15 @@ describe('ConstAddressDeployer', () => {
 
   describe('should preserve the bytecode [ @skip-on-coverage ]', () => {
     it('should preserve the deployer bytecode', async () => {
-        const deployerBytecode = deployerFactory.bytecode;
-        const deployerBytecodeHash = keccak256(deployerBytecode);
+      const deployerBytecode = deployerFactory.bytecode;
+      const deployerBytecodeHash = keccak256(deployerBytecode);
 
-        const expected = {
-            london: '0x317d5e58b16094d40f4c87c1c61c487be071e4db23084b8d527dd3386ac62dd5',
-        }[getEVMVersion()];
+      const expected = {
+        london:
+          '0x317d5e58b16094d40f4c87c1c61c487be071e4db23084b8d527dd3386ac62dd5',
+      }[getEVMVersion()];
 
-        expect(deployerBytecodeHash).to.be.equal(expected);
+      expect(deployerBytecodeHash).to.be.equal(expected);
     });
   });
 });

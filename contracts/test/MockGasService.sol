@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.9;
+pragma solidity ^0.8.0;
 
 import { IAxelarGasService } from '../interfaces/IAxelarGasService.sol';
 import { IERC20 } from '../interfaces/IERC20.sol';

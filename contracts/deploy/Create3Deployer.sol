@@ -4,6 +4,11 @@ pragma solidity ^0.8.0;
 
 import { Create3 } from './Create3.sol';
 
+/**
+ * @title Create3Deployer Contract
+ * @notice This contract is responsible for deploying and initializing new contracts using the CREATE3 technique
+ * which ensures that only the sender address and salt influence the deployed address, not the contract bytecode.
+ */
 contract Create3Deployer {
     error FailedInit();
 
@@ -49,17 +54,18 @@ contract Create3Deployer {
         bytes32 deploySalt = keccak256(abi.encode(msg.sender, salt));
         deployedAddress_ = Create3.deploy(deploySalt, bytecode);
 
-        // solhint-disable-next-line avoid-low-level-calls
         (bool success, ) = deployedAddress_.call(init);
         if (!success) revert FailedInit();
+
+        emit Deployed(keccak256(bytecode), salt, deployedAddress_);
     }
 
     /**
      * @dev Returns the address where a contract will be stored if deployed via {deploy} or {deployAndInit} by `sender`.
-     * Any change in `salt` or `sender` will result in a new destination address.
+     * Any change in `sender` or `salt` will result in a new destination address.
      */
     function deployedAddress(address sender, bytes32 salt) external view returns (address) {
         bytes32 deploySalt = keccak256(abi.encode(sender, salt));
-        return Create3.deployedAddress(deploySalt, address(this));
+        return Create3.deployedAddress(address(this), deploySalt);
     }
 }

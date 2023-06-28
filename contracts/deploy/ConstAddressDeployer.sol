@@ -2,11 +2,6 @@
 
 pragma solidity ^0.8.0;
 
-/**
- * @title ConstAddressDeployer Contract
- * @notice This contract can deploy another contract with a predictable deterministic address.
- * @dev Uses the `CREATE2` opcode to create contracts. This allows the address of the deployed contract to be known in advance.
- */
 contract ConstAddressDeployer {
     error EmptyBytecode();
     error FailedDeploy();
@@ -51,6 +46,7 @@ contract ConstAddressDeployer {
     ) external returns (address deployedAddress_) {
         deployedAddress_ = _deploy(bytecode, keccak256(abi.encode(msg.sender, salt)));
 
+        // solhint-disable-next-line avoid-low-level-calls
         (bool success, ) = deployedAddress_.call(init);
         if (!success) revert FailedInit();
     }
@@ -84,6 +80,7 @@ contract ConstAddressDeployer {
     function _deploy(bytes memory bytecode, bytes32 salt) internal returns (address deployedAddress_) {
         if (bytecode.length == 0) revert EmptyBytecode();
 
+        // solhint-disable-next-line no-inline-assembly
         assembly {
             deployedAddress_ := create2(0, add(bytecode, 32), mload(bytecode), salt)
         }

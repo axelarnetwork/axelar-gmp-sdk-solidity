@@ -62,7 +62,7 @@ contract Create3Deployer {
 
     /**
      * @dev Returns the address where a contract will be stored if deployed via {deploy} or {deployAndInit} by `sender`.
-     * Any change in `salt` or `sender` will result in a new destination address.
+     * Any change in `sender` or `salt` will result in a new destination address.
      */
     function deployedAddress(address sender, bytes32 salt) external view returns (address) {
         bytes32 deploySalt = keccak256(abi.encode(sender, salt));

@@ -9,8 +9,14 @@ const getRandomInt = (max) => {
   return Math.floor(Math.random() * max);
 };
 
+const getEVMVersion = () => {
+  return config.solidity.compilers[0].settings.evmVersion;
+};
+
 module.exports = {
   bigNumberToNumber: (bigNumber) => bigNumber.toNumber(),
+
+  getEVMVersion,
 
   getSignedExecuteInput: (data, wallet) =>
     wallet

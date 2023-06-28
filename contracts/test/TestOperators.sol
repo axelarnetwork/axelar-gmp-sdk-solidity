@@ -7,7 +7,7 @@ contract TestOperators {
 
     event NumAdded(uint256 num);
 
-    function setNum(uint256 _num) external returns (bool) {
+    function setNum(uint256 _num) external payable returns (bool) {
         num = _num;
 
         emit NumAdded(_num);

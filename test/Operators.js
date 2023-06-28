@@ -119,6 +119,7 @@ describe('Operators', () => {
       await operators.connect(ownerWallet).addOperator(operatorWallet.address);
 
       const target = test.address;
+      const nativeValue = 0;
       const num = 10;
 
       const iface = new ethers.utils.Interface([
@@ -128,7 +129,7 @@ describe('Operators', () => {
       const callData = iface.encodeFunctionData('setNum', [num]);
 
       await expect(
-        operators.connect(ownerWallet).execute(target, callData),
+        operators.connect(ownerWallet).execute(target, callData, nativeValue),
       ).to.be.revertedWithCustomError(operators, 'NotOperator');
     });
 
@@ -136,6 +137,7 @@ describe('Operators', () => {
       await operators.connect(ownerWallet).addOperator(operatorWallet.address);
 
       const target = test.address;
+      const nativeValue = 0;
       const num = 10;
 
       // create typo in function name so execution fails
@@ -146,14 +148,17 @@ describe('Operators', () => {
       const callData = iface.encodeFunctionData('set', [num]);
 
       await expect(
-        operators.connect(operatorWallet).execute(target, callData),
+        operators
+          .connect(operatorWallet)
+          .execute(target, callData, nativeValue),
       ).to.be.revertedWithCustomError(operators, 'ExecutionFailed');
     });
 
-    it('should call arbitrary function on another smart contract and return correct data', async () => {
+    it('should execute and return correct data', async () => {
       await operators.connect(ownerWallet).addOperator(operatorWallet.address);
 
       const target = test.address;
+      const nativeValue = 0;
       const num = 10;
 
       const iface = new ethers.utils.Interface([
@@ -162,9 +167,65 @@ describe('Operators', () => {
 
       const callData = iface.encodeFunctionData('setNum', [num]);
 
-      await expect(operators.connect(operatorWallet).execute(target, callData))
+      await expect(
+        operators
+          .connect(operatorWallet)
+          .execute(target, callData, nativeValue),
+      )
         .to.emit(test, 'NumAdded')
         .withArgs(num);
+    });
+
+    it('should execute with native value', async () => {
+      await operators.connect(ownerWallet).addOperator(operatorWallet.address);
+
+      const target = test.address;
+      const nativeValue = 1000;
+      const num = 10;
+
+      const iface = new ethers.utils.Interface([
+        'function setNum(uint256 _num) external returns (bool)',
+      ]);
+
+      const callData = iface.encodeFunctionData('setNum', [num]);
+
+      await expect(
+        operators
+          .connect(operatorWallet)
+          .execute(target, callData, nativeValue, { value: nativeValue }),
+      )
+        .to.emit(test, 'NumAdded')
+        .withArgs(num);
+
+      const targetBalance = await ethers.provider.getBalance(target);
+
+      expect(targetBalance).to.equal(nativeValue);
+    });
+
+    it('should execute with msg.value if nativeValue is zero', async () => {
+      await operators.connect(ownerWallet).addOperator(operatorWallet.address);
+
+      const target = test.address;
+      const nativeValue = 0;
+      const num = 10;
+
+      const iface = new ethers.utils.Interface([
+        'function setNum(uint256 _num) external returns (bool)',
+      ]);
+
+      const callData = iface.encodeFunctionData('setNum', [num]);
+
+      await expect(
+        operators
+          .connect(operatorWallet)
+          .execute(target, callData, nativeValue, { value: 1000 }),
+      )
+        .to.emit(test, 'NumAdded')
+        .withArgs(num);
+
+      const targetBalance = await ethers.provider.getBalance(target);
+
+      expect(targetBalance).to.equal(1000);
     });
   });
 });

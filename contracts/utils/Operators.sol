@@ -76,10 +76,15 @@ contract Operators is Ownable, IOperators {
      * Can only be called by an operator.
      * @param target address of the contract to execute the function on. Existence is not checked.
      * @param callData ABI encoded function call to execute on target
+     * @param nativeValue The amount of native asset to send with the call
      * @return data return data from executed function call
      */
-    function execute(address target, bytes calldata callData) external payable onlyOperator returns (bytes memory) {
-        (bool success, bytes memory data) = target.call{ value: msg.value }(callData);
+    function execute(
+        address target,
+        bytes calldata callData,
+        uint256 nativeValue
+    ) external payable onlyOperator returns (bytes memory) {
+        (bool success, bytes memory data) = target.call{ value: nativeValue == 0 ? msg.value : nativeValue }(callData);
         if (!success) {
             revert ExecutionFailed();
         }

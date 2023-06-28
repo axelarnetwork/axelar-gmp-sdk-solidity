@@ -4,8 +4,8 @@ pragma solidity ^0.8.0;
 
 /**
  * @title IOperators Interface
- * @notice Interface for an access control mechanism with operators that can be given
- * exlcusive permissions to execute functions.
+ * @notice Interface for an access control mechanism where operators have exclusive
+ * permissions to execute functions.
  */
 interface IOperators {
     error NotOperator();
@@ -41,7 +41,12 @@ interface IOperators {
      * @dev Execution logic is left up to the implementation.
      * @param target The contract to call
      * @param callData The data to call the target contract with
+     * @param nativeValue The amount of native asset to send with the call
      * @return bytes The data returned from the contract call
      */
-    function execute(address target, bytes calldata callData) external payable returns (bytes memory);
+    function execute(
+        address target,
+        bytes calldata callData,
+        uint256 nativeValue
+    ) external payable returns (bytes memory);
 }

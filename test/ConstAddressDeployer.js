@@ -151,6 +151,10 @@ describe('ConstAddressDeployer', () => {
       const deployerBytecodeHash = keccak256(deployerBytecode);
 
       const expected = {
+        istanbul:
+          '0x7065836fcdbaf46f54702537873b306f48c09ac71dc0929c1da5f5e3ab94ad23',
+        berlin:
+          '0x7b03c0b643dbff3b29c7634a454c03734dc1d7cfe74fa24818809bc694352fcf',
         london:
           '0x317d5e58b16094d40f4c87c1c61c487be071e4db23084b8d527dd3386ac62dd5',
       }[getEVMVersion()];

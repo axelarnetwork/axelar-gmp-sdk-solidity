@@ -7,8 +7,8 @@ import { IERC20 } from '../../interfaces/IERC20.sol';
 contract DestinationChainTokenSwapper {
     error WrongTokenPair();
 
-    address tokenA;
-    address tokenB;
+    address public tokenA;
+    address public tokenB;
 
     constructor(address tokenA_, address tokenB_) {
         tokenA = tokenA_;

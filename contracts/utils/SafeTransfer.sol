@@ -9,7 +9,6 @@ error NativeTransferFailed();
 
 library SafeTokenCall {
     function safeCall(IERC20 token, bytes memory callData) internal {
-        // solhint-disable-next-line avoid-low-level-calls
         (bool success, bytes memory returnData) = address(token).call(callData);
         bool transferred = success && (returnData.length == uint256(0) || abi.decode(returnData, (bool)));
 
@@ -42,7 +41,6 @@ library SafeNativeTransfer {
     function safeNativeTransfer(address receiver, uint256 amount) internal {
         bool success;
 
-        // solhint-disable-next-line no-inline-assembly
         assembly {
             success := call(gas(), receiver, amount, 0, 0, 0, 0)
         }

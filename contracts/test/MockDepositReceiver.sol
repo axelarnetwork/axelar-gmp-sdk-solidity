@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.9;
+pragma solidity ^0.8.0;
 
 // Simple contract that self-destructs in constructor
 contract MockDepositReceiver {
@@ -11,6 +11,5 @@ contract MockDepositReceiver {
     }
 
     // @dev This function is for receiving Ether from unwrapping WETH9
-    // solhint-disable-next-line no-empty-blocks
     receive() external payable {}
 }

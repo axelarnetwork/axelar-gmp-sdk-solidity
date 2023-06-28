@@ -26,7 +26,6 @@ library Bytes32ToString {
         uint256 length = 0xff & uint256(stringData);
 
         // restoring the string with the correct length
-        // solhint-disable-next-line no-inline-assembly
         assembly {
             converted := mload(0x40)
             // new "memory end" including padding (the string isn't larger than 32 bytes)

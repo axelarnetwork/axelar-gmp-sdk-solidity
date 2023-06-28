@@ -61,7 +61,7 @@ contract ExpressProxy is FinalProxy, IExpressProxy {
     function registry() public view returns (IExpressRegistry) {
         // Computing address is cheaper than using storage
         // Can't use immutable storage as it will alter the codehash for each proxy instance
-        return IExpressRegistry(Create3.deployedAddress(REGISTRY_SALT, address(this)));
+        return IExpressRegistry(Create3.deployedAddress(address(this), REGISTRY_SALT));
     }
 
     /**
@@ -213,14 +213,12 @@ contract ExpressProxy is FinalProxy, IExpressProxy {
         string calldata sourceAddress,
         bytes calldata payload
     ) internal {
-        // solhint-disable-next-line avoid-low-level-calls
         (bool success, ) = implementation().delegatecall(
             abi.encodeWithSelector(ExpressProxy.execute.selector, bytes32(0), sourceChain, sourceAddress, payload)
         );
 
         // if not success revert with the original revert data
         if (!success) {
-            // solhint-disable-next-line no-inline-assembly
             assembly {
                 let ptr := mload(0x40)
                 let size := returndatasize()
@@ -238,7 +236,6 @@ contract ExpressProxy is FinalProxy, IExpressProxy {
         string calldata tokenSymbol,
         uint256 amount
     ) internal {
-        // solhint-disable-next-line avoid-low-level-calls
         (bool success, ) = implementation().delegatecall(
             abi.encodeWithSelector(
                 ExpressProxy.executeWithToken.selector,
@@ -253,7 +250,6 @@ contract ExpressProxy is FinalProxy, IExpressProxy {
 
         // if not success revert with the original revert data
         if (!success) {
-            // solhint-disable-next-line no-inline-assembly
             assembly {
                 let ptr := mload(0x40)
                 let size := returndatasize()

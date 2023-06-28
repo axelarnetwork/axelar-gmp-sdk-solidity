@@ -55,7 +55,7 @@ contract ExpressProxyDeployer is IExpressProxyDeployer {
         address host
     ) external pure returns (address) {
         bytes32 deploySalt = keccak256(abi.encode(sender, salt));
-        return Create3.deployedAddress(deploySalt, host);
+        return Create3.deployedAddress(host, deploySalt);
     }
 
     /**

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.9;
+pragma solidity ^0.8.0;
 
 import { StringToAddress, AddressToString } from '../utils/AddressString.sol';
 import { Bytes32ToString, StringToBytes32 } from '../utils/Bytes32String.sol';

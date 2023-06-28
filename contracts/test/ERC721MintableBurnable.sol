@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.9;
+pragma solidity ^0.8.0;
 
-import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
+import { ERC721} from '@openzeppelin/contracts/token/ERC721/ERC721.sol';
 
 //A simple ERC721 that allows users to mint NFTs as they please.
 contract ERC721MintableBurnable is ERC721 {

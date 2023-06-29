@@ -65,7 +65,7 @@ interface IExpressExecutable is IAxelarExecutable {
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
-    ) external view returns (uint256 value);
+    ) external view returns (address tokenAddress, uint256 value);
 
     // Returns the amount of token that that this call is worth. If `native` is true then native token is used, otherwise the token specified by `symbol` is used.
     function contractCallWithTokenValue(
@@ -74,7 +74,7 @@ interface IExpressExecutable is IAxelarExecutable {
         bytes calldata payload,
         string calldata symbol,
         uint256 amount
-    ) external view returns (uint256 value, bool useNative);
+    ) external view returns (address tokenAddress, uint256 value);
 
     function expressExecute(
         bytes32 commandId,

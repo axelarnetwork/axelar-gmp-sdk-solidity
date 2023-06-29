@@ -10,7 +10,7 @@ contract ExecutableSample is ExpressExecutableTest {
     string public sourceChain;
     string public sourceAddress;
 
-    constructor(address gateway_) ExpressExecutableTest(gateway_, 123, 0, true) {}
+    constructor(address gateway_) ExpressExecutableTest(gateway_, address(0), 123, 0) {}
 
     // Call this function to update the value of this contract along with all its siblings'.
     function setRemoteValue(

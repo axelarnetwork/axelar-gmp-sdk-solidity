@@ -11,7 +11,9 @@ contract DestinationChainSwapExpress is ExpressExecutableTest {
 
     event Executed(string sourceChain, string sourceAddress, bytes payload);
 
-    constructor(address gatewayAddress, address swapperAddress) ExpressExecutableTest(gatewayAddress, address(0), 123, 0) {
+    constructor(address gatewayAddress, address swapperAddress)
+        ExpressExecutableTest(gatewayAddress, address(0), 123, 0)
+    {
         swapper = DestinationChainTokenSwapper(swapperAddress);
     }
 

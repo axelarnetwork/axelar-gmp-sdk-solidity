@@ -50,12 +50,20 @@ abstract contract ExpressExecutable is IExpressExecutable {
         address expressCaller = _popExpressCaller(commandId, sourceChain, sourceAddress, payload);
         if (expressCaller != address(0)) {
             (address tokenAddress, uint256 value) = contractCallValue(sourceChain, sourceAddress, payload);
-            if(tokenAddress == address(0)) {
+            if (tokenAddress == address(0)) {
                 payable(expressCaller).safeNativeTransfer(value);
             } else {
                 IERC20(tokenAddress).safeTransfer(expressCaller, value);
             }
-            emit ExpressExecutionFulfilled(commandId, sourceChain, sourceAddress, payload, expressCaller);
+            emit ExpressExecutionFulfilled(
+                commandId,
+                sourceChain,
+                sourceAddress,
+                payload,
+                expressCaller,
+                tokenAddress,
+                value
+            );
         } else {
             _execute(sourceChain, sourceAddress, payload);
         }
@@ -69,41 +77,41 @@ abstract contract ExpressExecutable is IExpressExecutable {
         string calldata tokenSymbol,
         uint256 amount
     ) external {
-        bytes32 payloadHash = keccak256(payload);
-
-        if (
-            !gateway.validateContractCallAndMint(
-                commandId,
-                sourceChain,
-                sourceAddress,
-                payloadHash,
-                tokenSymbol,
-                amount
-            )
-        ) revert NotApprovedByGateway();
+        {
+            bytes32 payloadHash = keccak256(payload);
+            if (
+                !gateway.validateContractCallAndMint(
+                    commandId,
+                    sourceChain,
+                    sourceAddress,
+                    payloadHash,
+                    tokenSymbol,
+                    amount
+                )
+            ) revert NotApprovedByGateway();
+        }
 
         address expressCaller = _popExpressCaller(commandId, sourceChain, sourceAddress, payload);
         if (expressCaller != address(0)) {
+            (address tokenAddress, uint256 value) = contractCallWithTokenValue(
+                sourceChain,
+                sourceAddress,
+                payload,
+                tokenSymbol,
+                amount
+            );
             {
-                (address tokenAddress, uint256 value) = contractCallWithTokenValue(
-                    sourceChain,
-                    sourceAddress,
-                    payload,
-                    tokenSymbol,
-                    amount
-                );
                 address gatewayToken = gateway.tokenAddresses(tokenSymbol);
-                if(tokenAddress == gatewayToken) {
+                if (tokenAddress == gatewayToken) {
                     IERC20(gatewayToken).safeTransfer(expressCaller, value + amount);
                 } else {
                     IERC20(gatewayToken).safeTransfer(expressCaller, amount);
-                    if(tokenAddress == address(0)) {
+                    if (tokenAddress == address(0)) {
                         payable(expressCaller).safeNativeTransfer(value);
                     } else {
                         IERC20(tokenAddress).safeTransfer(expressCaller, value);
                     }
                 }
-
             }
             emit ExpressExecutionWithTokenFulfilled(
                 commandId,
@@ -112,7 +120,9 @@ abstract contract ExpressExecutable is IExpressExecutable {
                 payload,
                 tokenSymbol,
                 amount,
-                expressCaller
+                expressCaller,
+                tokenAddress,
+                value
             );
         } else {
             _executeWithToken(sourceChain, sourceAddress, payload, tokenSymbol, amount);
@@ -129,14 +139,14 @@ abstract contract ExpressExecutable is IExpressExecutable {
 
         (address tokenAddress, uint256 value) = contractCallValue(sourceChain, sourceAddress, payload);
         address expressCaller = msg.sender;
-        if(tokenAddress == address(0)) {
+        if (tokenAddress == address(0)) {
             if (value != msg.value) revert InsufficientValue();
         } else {
             IERC20(tokenAddress).safeTransferFrom(expressCaller, address(this), value);
         }
         _setExpressCaller(commandId, sourceChain, sourceAddress, payload, expressCaller);
         _execute(sourceChain, sourceAddress, payload);
-        emit ExpressExecuted(commandId, sourceChain, sourceAddress, payload, expressCaller);
+        emit ExpressExecuted(commandId, sourceChain, sourceAddress, payload, expressCaller, tokenAddress, value);
     }
 
     function expressExecuteWithToken(
@@ -149,20 +159,20 @@ abstract contract ExpressExecutable is IExpressExecutable {
     ) external payable {
         if (gateway.isCommandExecuted(commandId)) revert AlreadyExecuted();
         address expressCaller = msg.sender;
+        (address tokenAddress, uint256 value) = contractCallWithTokenValue(
+            sourceChain,
+            sourceAddress,
+            payload,
+            symbol,
+            amount
+        );
         {
-            (address tokenAddress, uint256 value) = contractCallWithTokenValue(
-                sourceChain,
-                sourceAddress,
-                payload,
-                symbol,
-                amount
-            );       
             address gatewayToken = gateway.tokenAddresses(symbol);
-            if(tokenAddress == gatewayToken) {
+            if (tokenAddress == gatewayToken) {
                 IERC20(gatewayToken).safeTransferFrom(expressCaller, address(this), amount + value);
             } else {
                 IERC20(gatewayToken).safeTransferFrom(expressCaller, address(this), amount);
-                if(tokenAddress == address(0)) {
+                if (tokenAddress == address(0)) {
                     if (value != msg.value) revert InsufficientValue();
                 } else {
                     IERC20(tokenAddress).safeTransferFrom(expressCaller, address(this), value);
@@ -171,7 +181,17 @@ abstract contract ExpressExecutable is IExpressExecutable {
         }
         _setExpressCallerWithToken(commandId, sourceChain, sourceAddress, payload, symbol, amount, expressCaller);
         _executeWithToken(sourceChain, sourceAddress, payload, symbol, amount);
-        emit ExpressExecutedWithToken(commandId, sourceChain, sourceAddress, payload, symbol, amount, expressCaller);
+        emit ExpressExecutedWithToken(
+            commandId,
+            sourceChain,
+            sourceAddress,
+            payload,
+            symbol,
+            amount,
+            expressCaller,
+            tokenAddress,
+            value
+        );
     }
 
     function _expressExecutionSlot(

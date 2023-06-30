@@ -12,13 +12,7 @@ contract DifferentProxyImplementation is IUpgradable {
         return address(0);
     }
 
-    function pendingOwner() external pure override returns (address) {
-        return address(0);
-    }
-
     function transferOwnership(address) external override {}
-
-    function acceptOwnership() external override {}
 
     function implementation() external pure override returns (address) {
         return address(0);

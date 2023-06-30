@@ -57,8 +57,6 @@ describe('Upgradable', () => {
   it('should transfer ownership', async () => {
     await upgradable.connect(ownerWallet).transferOwnership(userWallet.address);
 
-    await upgradable.connect(userWallet).acceptOwnership();
-
     expect(await upgradable.owner()).to.be.equal(userWallet.address);
   });
 

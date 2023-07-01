@@ -11,6 +11,14 @@ contract InvalidProxyImplementation is IUpgradable {
 
     function transferOwnership(address) external override {}
 
+    function pendingOwner() external pure returns (address) {
+        return address(0);
+    }
+
+    function proposeOwnership(address newOwner) external {}
+
+    function acceptOwnership() external {}
+
     function implementation() external pure override returns (address) {
         return address(0);
     }

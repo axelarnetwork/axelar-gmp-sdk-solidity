@@ -21,6 +21,22 @@ abstract contract ExpressExecutable is IExpressExecutable {
         gateway = IAxelarGateway(gateway_);
     }
 
+    // Returns the amount of native token that that this call is worth.
+    function contractCallValue(
+        string calldata sourceChain,
+        string calldata sourceAddress,
+        bytes calldata payload
+    ) public view virtual returns (address tokenAddress, uint256 value);
+
+    // Returns the amount of token that that this call is worth. If `native` is true then native token is used, otherwise the token specified by `symbol` is used.
+    function contractCallWithTokenValue(
+        string calldata sourceChain,
+        string calldata sourceAddress,
+        bytes calldata payload,
+        string calldata symbol,
+        uint256 amount
+    ) public view virtual returns (address tokenAddress, uint256 value);
+
     function execute(
         bytes32 commandId,
         string calldata sourceChain,
@@ -33,6 +49,12 @@ abstract contract ExpressExecutable is IExpressExecutable {
             revert NotApprovedByGateway();
         address expressCaller = _popExpressCaller(commandId, sourceChain, sourceAddress, payload);
         if (expressCaller != address(0)) {
+            (address tokenAddress, uint256 value) = contractCallValue(sourceChain, sourceAddress, payload);
+            if (tokenAddress == address(0)) {
+                payable(expressCaller).safeNativeTransfer(value);
+            } else {
+                IERC20(tokenAddress).safeTransfer(expressCaller, value);
+            }
             emit ExpressExecutionFulfilled(
                 commandId,
                 sourceChain,
@@ -69,9 +91,25 @@ abstract contract ExpressExecutable is IExpressExecutable {
 
         address expressCaller = _popExpressCaller(commandId, sourceChain, sourceAddress, payload);
         if (expressCaller != address(0)) {
+            (address tokenAddress, uint256 value) = contractCallWithTokenValue(
+                sourceChain,
+                sourceAddress,
+                payload,
+                tokenSymbol,
+                amount
+            );
             {
                 address gatewayToken = gateway.tokenAddresses(tokenSymbol);
-                IERC20(gatewayToken).safeTransfer(expressCaller, amount);
+                if (tokenAddress == gatewayToken) {
+                    IERC20(gatewayToken).safeTransfer(expressCaller, value + amount);
+                } else {
+                    IERC20(gatewayToken).safeTransfer(expressCaller, amount);
+                    if (tokenAddress == address(0)) {
+                        payable(expressCaller).safeNativeTransfer(value);
+                    } else {
+                        IERC20(tokenAddress).safeTransfer(expressCaller, value);
+                    }
+                }
             }
             emit ExpressExecutionWithTokenFulfilled(
                 commandId,
@@ -95,8 +133,13 @@ abstract contract ExpressExecutable is IExpressExecutable {
     ) external payable {
         if (gateway.isCommandExecuted(commandId)) revert AlreadyExecuted();
 
+        (address tokenAddress, uint256 value) = contractCallValue(sourceChain, sourceAddress, payload);
         address expressCaller = msg.sender;
-
+        if (tokenAddress == address(0)) {
+            if (value != msg.value) revert InsufficientValue();
+        } else {
+            IERC20(tokenAddress).safeTransferFrom(expressCaller, address(this), value);
+        }
         _setExpressCaller(commandId, sourceChain, sourceAddress, payload, expressCaller);
         _execute(sourceChain, sourceAddress, payload);
         emit ExpressExecuted(commandId, sourceChain, sourceAddress, payload, expressCaller);
@@ -112,9 +155,25 @@ abstract contract ExpressExecutable is IExpressExecutable {
     ) external payable {
         if (gateway.isCommandExecuted(commandId)) revert AlreadyExecuted();
         address expressCaller = msg.sender;
+        (address tokenAddress, uint256 value) = contractCallWithTokenValue(
+            sourceChain,
+            sourceAddress,
+            payload,
+            symbol,
+            amount
+        );
         {
             address gatewayToken = gateway.tokenAddresses(symbol);
-            IERC20(gatewayToken).safeTransferFrom(expressCaller, address(this), amount);
+            if (tokenAddress == gatewayToken) {
+                IERC20(gatewayToken).safeTransferFrom(expressCaller, address(this), amount + value);
+            } else {
+                IERC20(gatewayToken).safeTransferFrom(expressCaller, address(this), amount);
+                if (tokenAddress == address(0)) {
+                    if (value != msg.value) revert InsufficientValue();
+                } else {
+                    IERC20(tokenAddress).safeTransferFrom(expressCaller, address(this), value);
+                }
+            }
         }
         _setExpressCallerWithToken(commandId, sourceChain, sourceAddress, payload, symbol, amount, expressCaller);
         _executeWithToken(sourceChain, sourceAddress, payload, symbol, amount);

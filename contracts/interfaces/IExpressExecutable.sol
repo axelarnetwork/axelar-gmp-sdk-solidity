@@ -13,9 +13,7 @@ interface IExpressExecutable is IAxelarExecutable {
         string sourceChain,
         string sourceAddress,
         bytes payload,
-        address indexed expressCaller,
-        address tokenAddress,
-        uint256 value
+        address indexed expressCaller
     );
 
     event ExpressExecutedWithToken(
@@ -25,9 +23,7 @@ interface IExpressExecutable is IAxelarExecutable {
         bytes payload,
         string symbol,
         uint256 indexed amount,
-        address indexed expressCaller,
-        address tokenAddress,
-        uint256 value
+        address indexed expressCaller
     );
 
     event ExpressExecutionFulfilled(
@@ -35,9 +31,7 @@ interface IExpressExecutable is IAxelarExecutable {
         string sourceChain,
         string sourceAddress,
         bytes payload,
-        address indexed expressCaller,
-        address tokenAddress,
-        uint256 value
+        address indexed expressCaller
     );
 
     event ExpressExecutionWithTokenFulfilled(
@@ -47,9 +41,7 @@ interface IExpressExecutable is IAxelarExecutable {
         bytes payload,
         string symbol,
         uint256 indexed amount,
-        address indexed expressCaller,
-        address tokenAddress,
-        uint256 value
+        address indexed expressCaller
     );
 
     function getExpressCaller(

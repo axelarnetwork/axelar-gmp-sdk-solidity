@@ -121,4 +121,24 @@ describe('Ownable', () => {
 
     expect(currentOwner).to.equal(userWallet.address);
   });
+
+  it('should revert on accept ownership if transfer ownership is called', async () => {
+    const newOwner = userWallet.address;
+
+    await expect(ownableTest.proposeOwnership(newOwner))
+      .to.emit(ownableTest, 'OwnershipTransferStarted')
+      .withArgs(newOwner);
+
+    await expect(ownableTest.transferOwnership(newOwner))
+      .to.emit(ownableTest, 'OwnershipTransferred')
+      .withArgs(newOwner);
+
+    const currentOwner = await ownableTest.owner();
+
+    expect(currentOwner).to.equal(userWallet.address);
+
+    await expect(
+      ownableTest.connect(newOwner).acceptOwnership(),
+    ).to.be.revertedWithCustomError(ownableTest, 'InvalidOwner');
+  });
 });

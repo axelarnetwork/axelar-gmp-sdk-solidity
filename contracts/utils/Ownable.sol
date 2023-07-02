@@ -61,6 +61,7 @@ abstract contract Ownable is IOwnable {
 
         assembly {
             sstore(_OWNER_SLOT, newOwner)
+            sstore(_OWNERSHIP_TRANSFER_SLOT, 0)
         }
     }
 

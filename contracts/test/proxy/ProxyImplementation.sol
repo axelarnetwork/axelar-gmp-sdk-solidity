@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.9;
+pragma solidity ^0.8.0;
 
 import { IUpgradable } from '../../interfaces/IUpgradable.sol';
 
@@ -12,13 +12,15 @@ contract ProxyImplementation is IUpgradable {
         return address(0);
     }
 
-    function pendingOwner() external pure override returns (address) {
+    function transferOwnership(address) external override {}
+
+    function pendingOwner() external pure returns (address) {
         return address(0);
     }
 
-    function transferOwnership(address) external override {}
+    function proposeOwnership(address newOwner) external {}
 
-    function acceptOwnership() external override {}
+    function acceptOwnership() external {}
 
     function implementation() external pure override returns (address) {
         return address(0);

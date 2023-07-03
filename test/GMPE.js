@@ -18,7 +18,7 @@ describe('GMPE', async () => {
   let sourceChainSwapCallerFactory;
   let destinationChainTokenSwapperFactory;
   let expressExecutableTestFactory;
-  let valuedExpressExecutableTestFactory;
+  let valuedAxelarExpressExecutableTestFactory;
   let tokenFactory;
 
   let sourceChainGateway;
@@ -29,7 +29,7 @@ describe('GMPE', async () => {
   let tokenB;
   let destinationChainTokenSwapper;
   let expressExecutableTest;
-  let valuedExpressExecutableTest;
+  let valuedAxelarExpressExecutableTest;
 
   let ownerWallet;
   let userWallet;
@@ -63,11 +63,11 @@ describe('GMPE', async () => {
       ownerWallet,
     );
     expressExecutableTestFactory = await ethers.getContractFactory(
-      'ExpressExecutableTest',
+      'AxelarExpressExecutableTest',
       ownerWallet,
     );
-    valuedExpressExecutableTestFactory = await ethers.getContractFactory(
-      'ValuedExpressExecutableTest',
+    valuedAxelarExpressExecutableTestFactory = await ethers.getContractFactory(
+      'AxelarValuedExpressExecutableTest',
       ownerWallet,
     );
   });
@@ -131,7 +131,7 @@ describe('GMPE', async () => {
     expressExecutableTest = await expressExecutableTestFactory
       .deploy(destinationChainGateway.address)
       .then((d) => d.deployed());
-    valuedExpressExecutableTest = await valuedExpressExecutableTestFactory
+    valuedAxelarExpressExecutableTest = await valuedAxelarExpressExecutableTestFactory
       .deploy(destinationChainGateway.address)
       .then((d) => d.deployed());
 
@@ -161,7 +161,7 @@ describe('GMPE', async () => {
     ).wait();
   });
 
-  describe('ExpressExecutable', () => {
+  describe('AxelarExpressExecutable', () => {
     it('should expressCallWithToken a swap on remote chain', async () => {
       const swapAmount = 1e6;
       const convertedAmount = 2 * swapAmount;
@@ -311,7 +311,7 @@ describe('GMPE', async () => {
     });
   });
 
-  describe('ExpressExecutableTest Execute', () => {
+  describe('AxelarExpressExecutableTest Execute', () => {
     let commandId;
     let contract;
     const sourceTxHash = keccak256('0x123abc123abc');
@@ -442,7 +442,7 @@ describe('GMPE', async () => {
     });
   });
 
-  describe('ExpressExecutableTest Execute With Token', () => {
+  describe('AxelarExpressExecutableTest Execute With Token', () => {
     let commandId;
     let contract;
     const sourceTxHash = keccak256('0x123abc123abc');
@@ -610,7 +610,7 @@ describe('GMPE', async () => {
     });
   });
 
-  describe('ValuedExpressExecutableTest Execute (native token)', () => {
+  describe('AxelarValuedExpressExecutableTest Execute (native token)', () => {
     let commandId;
     let contract;
     const sourceTxHash = keccak256('0x123abc123abc');
@@ -733,9 +733,9 @@ describe('GMPE', async () => {
 
     beforeEach(async () => {
       commandId = getRandomID();
-      contract = valuedExpressExecutableTest;
-      await valuedExpressExecutableTest.setCallValue(value);
-      await valuedExpressExecutableTest.setExpressToken(AddressZero);
+      contract = valuedAxelarExpressExecutableTest;
+      await valuedAxelarExpressExecutableTest.setCallValue(value);
+      await valuedAxelarExpressExecutableTest.setExpressToken(AddressZero);
     });
 
     it('Should Execute without express', async () => {
@@ -765,7 +765,7 @@ describe('GMPE', async () => {
     });
   });
 
-  describe('ValuedExpressExecutableTest Execute (ERC20)', () => {
+  describe('AxelarValuedExpressExecutableTest Execute (ERC20)', () => {
     let commandId;
     let contract;
     const sourceTxHash = keccak256('0x123abc123abc');
@@ -885,9 +885,9 @@ describe('GMPE', async () => {
 
     beforeEach(async () => {
       commandId = getRandomID();
-      contract = valuedExpressExecutableTest;
-      await valuedExpressExecutableTest.setCallValue(value);
-      await valuedExpressExecutableTest.setExpressToken(tokenB.address);
+      contract = valuedAxelarExpressExecutableTest;
+      await valuedAxelarExpressExecutableTest.setCallValue(value);
+      await valuedAxelarExpressExecutableTest.setExpressToken(tokenB.address);
     });
 
     it('Should Execute without express', async () => {
@@ -918,7 +918,7 @@ describe('GMPE', async () => {
     });
   });
 
-  describe('ValuedExpressExecutableTest Execute With Token (native token)', () => {
+  describe('AxelarValuedExpressExecutableTest Execute With Token (native token)', () => {
     let commandId;
     let contract;
     const sourceTxHash = keccak256('0x123abc123abc');
@@ -1087,9 +1087,9 @@ describe('GMPE', async () => {
 
     beforeEach(async () => {
       commandId = getRandomID();
-      contract = valuedExpressExecutableTest;
-      await valuedExpressExecutableTest.setCallValue(value);
-      await valuedExpressExecutableTest.setExpressToken(AddressZero);
+      contract = valuedAxelarExpressExecutableTest;
+      await valuedAxelarExpressExecutableTest.setCallValue(value);
+      await valuedAxelarExpressExecutableTest.setExpressToken(AddressZero);
     });
 
     it('Should Execute without express', async () => {
@@ -1120,7 +1120,7 @@ describe('GMPE', async () => {
     });
   });
 
-  describe('ValuedExpressExecutableTest Execute With Token (different ERC20)', () => {
+  describe('AxelarValuedExpressExecutableTest Execute With Token (different ERC20)', () => {
     let commandId;
     let contract;
     const sourceTxHash = keccak256('0x123abc123abc');
@@ -1288,9 +1288,9 @@ describe('GMPE', async () => {
 
     beforeEach(async () => {
       commandId = getRandomID();
-      contract = valuedExpressExecutableTest;
-      await valuedExpressExecutableTest.setCallValue(value);
-      await valuedExpressExecutableTest.setExpressToken(tokenB.address);
+      contract = valuedAxelarExpressExecutableTest;
+      await valuedAxelarExpressExecutableTest.setCallValue(value);
+      await valuedAxelarExpressExecutableTest.setExpressToken(tokenB.address);
     });
 
     it('Should Execute without express', async () => {
@@ -1321,7 +1321,7 @@ describe('GMPE', async () => {
     });
   });
 
-  describe('ValuedExpressExecutableTest Execute With Token (different ERC20)', () => {
+  describe('AxelarValuedExpressExecutableTest Execute With Token (different ERC20)', () => {
     let commandId;
     let contract;
     const sourceTxHash = keccak256('0x123abc123abc');
@@ -1484,9 +1484,9 @@ describe('GMPE', async () => {
 
     beforeEach(async () => {
       commandId = getRandomID();
-      contract = valuedExpressExecutableTest;
-      await valuedExpressExecutableTest.setCallValue(value);
-      await valuedExpressExecutableTest.setExpressToken(tokenA.address);
+      contract = valuedAxelarExpressExecutableTest;
+      await valuedAxelarExpressExecutableTest.setCallValue(value);
+      await valuedAxelarExpressExecutableTest.setExpressToken(tokenA.address);
     });
 
     it('Should Execute without express', async () => {

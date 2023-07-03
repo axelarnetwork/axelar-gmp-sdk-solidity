@@ -2,15 +2,15 @@
 
 pragma solidity 0.8.9;
 
-import { ExpressExecutable } from '../../express/ExpressExecutable.sol';
+import { AxelarExpressExecutable } from '../../express/AxelarExpressExecutable.sol';
 import { IAxelarGateway } from '../../interfaces/IAxelarGateway.sol';
 
-contract ExecutableSample is ExpressExecutable {
+contract ExecutableSample is AxelarExpressExecutable {
     string public value;
     string public sourceChain;
     string public sourceAddress;
 
-    constructor(address gateway_) ExpressExecutable(gateway_) {}
+    constructor(address gateway_) AxelarExpressExecutable(gateway_) {}
 
     // Call this function to update the value of this contract along with all its siblings'.
     function setRemoteValue(

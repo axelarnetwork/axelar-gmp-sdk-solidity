@@ -23,7 +23,7 @@ interface IExpressProxy is IAxelarExecutable {
     ) external;
 
     function completeExecuteWithToken(
-        address expressCaller,
+        address expressExecutor,
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.0;
 
-import { ValuedExpressExecutable } from '../../express/ValuedExpressExecutable.sol';
+import { AxelarValuedExpressExecutable } from '../../express/AxelarValuedExpressExecutable.sol';
 
 // This should be owned by the microservice that is paying for gas.
-contract ValuedExpressExecutableTest is ValuedExpressExecutable {
+contract AxelarValuedExpressExecutableTest is AxelarValuedExpressExecutable {
     event Executed(string sourceChain, string sourceAddress, bytes payload);
     event ExecutedWithToken(string sourceChain, string sourceAddress, bytes payload, string symbol, uint256 amount);
 
@@ -13,7 +13,7 @@ contract ValuedExpressExecutableTest is ValuedExpressExecutable {
     uint256 public callWithTokenValue;
     address public expressToken;
 
-    constructor(address gateway_) ValuedExpressExecutable(gateway_) {}
+    constructor(address gateway_) AxelarValuedExpressExecutable(gateway_) {}
 
     function setExpressToken(address expressToken_) external {
         expressToken = expressToken_;

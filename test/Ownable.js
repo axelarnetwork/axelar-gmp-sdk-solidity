@@ -122,7 +122,7 @@ describe('Ownable', () => {
     expect(currentOwner).to.equal(userWallet.address);
   });
 
-  it('should revert on accept ownership if transfer ownership is called', async () => {
+  it('should revert on accept ownership if transfer ownership is called first', async () => {
     const newOwner = userWallet.address;
 
     await expect(ownableTest.proposeOwnership(newOwner))
@@ -138,7 +138,7 @@ describe('Ownable', () => {
     expect(currentOwner).to.equal(userWallet.address);
 
     await expect(
-      ownableTest.connect(newOwner).acceptOwnership(),
+      ownableTest.connect(userWallet).acceptOwnership(),
     ).to.be.revertedWithCustomError(ownableTest, 'InvalidOwner');
   });
 });

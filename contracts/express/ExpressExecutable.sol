@@ -33,13 +33,7 @@ abstract contract ExpressExecutable is IExpressExecutable {
             revert NotApprovedByGateway();
         address expressCaller = _popExpressCaller(commandId, sourceChain, sourceAddress, payload);
         if (expressCaller != address(0)) {
-            emit ExpressExecutionFulfilled(
-                commandId,
-                sourceChain,
-                sourceAddress,
-                payload,
-                expressCaller
-            );
+            emit ExpressExecutionFulfilled(commandId, sourceChain, sourceAddress, payload, expressCaller);
         } else {
             _execute(sourceChain, sourceAddress, payload);
         }
@@ -66,8 +60,14 @@ abstract contract ExpressExecutable is IExpressExecutable {
                 )
             ) revert NotApprovedByGateway();
         }
-
-        address expressCaller = _popExpressCaller(commandId, sourceChain, sourceAddress, payload);
+        address expressCaller = _popExpressCallerWithToken(
+            commandId,
+            sourceChain,
+            sourceAddress,
+            payload,
+            tokenSymbol,
+            amount
+        );
         if (expressCaller != address(0)) {
             {
                 address gatewayToken = gateway.tokenAddresses(tokenSymbol);
@@ -118,15 +118,7 @@ abstract contract ExpressExecutable is IExpressExecutable {
         }
         _setExpressCallerWithToken(commandId, sourceChain, sourceAddress, payload, symbol, amount, expressCaller);
         _executeWithToken(sourceChain, sourceAddress, payload, symbol, amount);
-        emit ExpressExecutedWithToken(
-            commandId,
-            sourceChain,
-            sourceAddress,
-            payload,
-            symbol,
-            amount,
-            expressCaller
-        );
+        emit ExpressExecutedWithToken(commandId, sourceChain, sourceAddress, payload, symbol, amount, expressCaller);
     }
 
     function _expressExecutionSlot(

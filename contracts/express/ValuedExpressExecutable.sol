@@ -3,12 +3,12 @@
 pragma solidity ^0.8.0;
 
 import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
-import { IExpressExecutable } from '../interfaces/IExpressExecutable.sol';
+import { IValuedExpressExecutable } from '../interfaces/IValuedExpressExecutable.sol';
 
 import { SafeTokenTransferFrom, SafeTokenTransfer, SafeNativeTransfer } from '../utils/SafeTransfer.sol';
 import { IERC20 } from '../interfaces/IERC20.sol';
 
-abstract contract ExpressExecutable is IExpressExecutable {
+abstract contract ValuedExpressExecutable is IValuedExpressExecutable {
     using SafeTokenTransfer for IERC20;
     using SafeTokenTransferFrom for IERC20;
     using SafeNativeTransfer for address payable;
@@ -55,13 +55,7 @@ abstract contract ExpressExecutable is IExpressExecutable {
             } else {
                 IERC20(tokenAddress).safeTransfer(expressCaller, value);
             }
-            emit ExpressExecutionFulfilled(
-                commandId,
-                sourceChain,
-                sourceAddress,
-                payload,
-                expressCaller
-            );
+            emit ExpressExecutionFulfilled(commandId, sourceChain, sourceAddress, payload, expressCaller);
         } else {
             _execute(sourceChain, sourceAddress, payload);
         }
@@ -89,7 +83,14 @@ abstract contract ExpressExecutable is IExpressExecutable {
             ) revert NotApprovedByGateway();
         }
 
-        address expressCaller = _popExpressCaller(commandId, sourceChain, sourceAddress, payload);
+        address expressCaller = _popExpressCallerWithToken(
+            commandId,
+            sourceChain,
+            sourceAddress,
+            payload,
+            tokenSymbol,
+            amount
+        );
         if (expressCaller != address(0)) {
             (address tokenAddress, uint256 value) = contractCallWithTokenValue(
                 sourceChain,
@@ -137,7 +138,7 @@ abstract contract ExpressExecutable is IExpressExecutable {
         address expressCaller = msg.sender;
         if (tokenAddress == address(0)) {
             if (value != msg.value) revert InsufficientValue();
-        } else {
+        } else if (value > 0) {
             IERC20(tokenAddress).safeTransferFrom(expressCaller, address(this), value);
         }
         _setExpressCaller(commandId, sourceChain, sourceAddress, payload, expressCaller);
@@ -170,22 +171,14 @@ abstract contract ExpressExecutable is IExpressExecutable {
                 IERC20(gatewayToken).safeTransferFrom(expressCaller, address(this), amount);
                 if (tokenAddress == address(0)) {
                     if (value != msg.value) revert InsufficientValue();
-                } else {
+                } else if (value > 0) {
                     IERC20(tokenAddress).safeTransferFrom(expressCaller, address(this), value);
                 }
             }
         }
         _setExpressCallerWithToken(commandId, sourceChain, sourceAddress, payload, symbol, amount, expressCaller);
         _executeWithToken(sourceChain, sourceAddress, payload, symbol, amount);
-        emit ExpressExecutedWithToken(
-            commandId,
-            sourceChain,
-            sourceAddress,
-            payload,
-            symbol,
-            amount,
-            expressCaller
-        );
+        emit ExpressExecutedWithToken(commandId, sourceChain, sourceAddress, payload, symbol, amount, expressCaller);
     }
 
     function _expressExecutionSlot(

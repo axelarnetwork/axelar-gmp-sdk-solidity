@@ -222,7 +222,7 @@ describe('GMP', () => {
           sourceEventIndex,
         );
 
-      const swap = await destinationChainSwapExecutable.executeWithToken(
+      const swap = destinationChainSwapExecutable.executeWithToken(
         approveCommandId,
         sourceChain,
         sourceChainSwapCaller.address.toString(),
@@ -230,7 +230,6 @@ describe('GMP', () => {
         symbolA,
         swapAmount,
       );
-
       await expect(swap)
         .to.emit(tokenA, 'Transfer')
         .withArgs(

@@ -2,15 +2,15 @@
 
 pragma solidity 0.8.9;
 
-import { ExpressExecutableTest } from '../ExpressExecutableTest.sol';
+import { ExpressExecutable } from '../../express/ExpressExecutable.sol';
 import { IAxelarGateway } from '../../interfaces/IAxelarGateway.sol';
 
-contract ExecutableSample is ExpressExecutableTest {
+contract ExecutableSample is ExpressExecutable {
     string public value;
     string public sourceChain;
     string public sourceAddress;
 
-    constructor(address gateway_) ExpressExecutableTest(gateway_, address(0), 123, 0) {}
+    constructor(address gateway_) ExpressExecutable(gateway_) {}
 
     // Call this function to update the value of this contract along with all its siblings'.
     function setRemoteValue(

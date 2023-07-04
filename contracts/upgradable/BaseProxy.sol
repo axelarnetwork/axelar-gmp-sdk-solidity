@@ -44,7 +44,6 @@ abstract contract BaseProxy is IProxy {
     /**
      * @dev Fallback function. Delegates the call to the current implementation contract.
      */
-    // solhint-disable-next-line no-complex-fallback
     fallback() external payable virtual {
         address implementation_ = implementation();
         assembly {

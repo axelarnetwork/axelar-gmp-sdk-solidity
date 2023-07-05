@@ -9,7 +9,6 @@ contract TimeLockTest is TimeLock {
 
     event NumUpdated(uint256 newNum);
 
-    // solhint-disable-next-line no-empty-blocks
     constructor(uint256 _minimumTimeDelay) TimeLock(_minimumTimeDelay) {}
 
     function getNum() external view returns (uint256) {

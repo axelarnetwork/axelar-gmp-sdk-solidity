@@ -19,7 +19,7 @@ contract Operators is Ownable, IOperators {
      */
     constructor() {
         address initialOwner = msg.sender;
-        // solhint-disable-next-line no-inline-assembly
+
         assembly {
             sstore(_OWNER_SLOT, initialOwner)
         }

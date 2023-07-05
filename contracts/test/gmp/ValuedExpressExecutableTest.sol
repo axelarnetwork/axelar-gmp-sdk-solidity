@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 
 import { AxelarValuedExpressExecutable } from '../../express/AxelarValuedExpressExecutable.sol';
 
-// This should be owned by the microservice that is paying for gas.
 contract AxelarValuedExpressExecutableTest is AxelarValuedExpressExecutable {
     event Executed(string sourceChain, string sourceAddress, bytes payload);
     event ExecutedWithToken(string sourceChain, string sourceAddress, bytes payload, string symbol, uint256 amount);

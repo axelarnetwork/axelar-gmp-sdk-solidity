@@ -4,9 +4,10 @@ pragma solidity ^0.8.0;
 
 import { IAxelarExecutable } from './IAxelarExecutable.sol';
 
-interface IExpressExecutable is IAxelarExecutable {
+interface IAxelarExpressExecutable is IAxelarExecutable {
     error AlreadyExecuted();
     error InsufficientValue();
+    error ExpressExecutorAlreadySet();
 
     event ExpressExecuted(
         bytes32 indexed commandId,

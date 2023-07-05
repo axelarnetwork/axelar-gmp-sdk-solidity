@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.0;
 
-import { IExpressExecutable } from './IExpressExecutable.sol';
+import { IAxelarExpressExecutable } from './IAxelarExpressExecutable.sol';
 
-interface IValuedExpressExecutable is IExpressExecutable {
+interface IAxelarValuedExpressExecutable is IAxelarExpressExecutable {
     function contractCallValue(
         string calldata sourceChain,
         string calldata sourceAddress,

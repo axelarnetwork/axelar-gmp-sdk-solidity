@@ -131,9 +131,10 @@ describe('GMPE', async () => {
     expressExecutableTest = await expressExecutableTestFactory
       .deploy(destinationChainGateway.address)
       .then((d) => d.deployed());
-    valuedAxelarExpressExecutableTest = await valuedAxelarExpressExecutableTestFactory
-      .deploy(destinationChainGateway.address)
-      .then((d) => d.deployed());
+    valuedAxelarExpressExecutableTest =
+      await valuedAxelarExpressExecutableTestFactory
+        .deploy(destinationChainGateway.address)
+        .then((d) => d.deployed());
 
     sourceChainSwapCaller = await sourceChainSwapCallerFactory
       .deploy(

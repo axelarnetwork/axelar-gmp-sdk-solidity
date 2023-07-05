@@ -2,23 +2,24 @@
 
 pragma solidity ^0.8.0;
 
-import { IExpressExecutable } from '../interfaces/IExpressExecutable.sol';
+import { IAxelarExpressExecutable } from '../interfaces/IAxelarExpressExecutable.sol';
 
-abstract contract AxelarExpressExecutableStorage is IExpressExecutable {
-    uint256 private constant PREFIX_EXPRESS_EXECUTION = uint256(keccak256('prefix-express-execution'));
-    uint256 private constant PREFIX_EXPRESS_EXECUTION_WTIH_TOKEN = uint256(keccak256('prefix-express-execution-with-token'));
-    
-    function _expressExecutionSlot(
+abstract contract AxelarExpressExecutableStorage is IAxelarExpressExecutable {
+    uint256 private constant PREFIX_EXPRESS_EXECUTE = uint256(keccak256('express-execute'));
+    uint256 private constant PREFIX_EXPRESS_EXECUTE_WTIH_TOKEN = uint256(keccak256('express-execute-with-token'));
+
+    function _expressExecuteSlot(
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
     ) internal pure returns (uint256 slot) {
-        // TODO: maybe add some salt although i doubt it will be an issue.
-        slot = uint256(keccak256(abi.encode(PREFIX_EXPRESS_EXECUTION, commandId, sourceChain, sourceAddress, payload))) - 1;
+        slot =
+            uint256(keccak256(abi.encode(PREFIX_EXPRESS_EXECUTE, commandId, sourceChain, sourceAddress, payload))) -
+            1;
     }
 
-    function _expressExecutedWithTokenSlot(
+    function _expressExecuteWithTokenSlot(
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
@@ -26,8 +27,21 @@ abstract contract AxelarExpressExecutableStorage is IExpressExecutable {
         string calldata symbol,
         uint256 amount
     ) internal pure returns (uint256 slot) {
-        // TODO: maybe add some salt although i doubt it will be an issue.
-        slot = uint256(keccak256(abi.encode(PREFIX_EXPRESS_EXECUTION_WTIH_TOKEN, commandId, sourceChain, sourceAddress, payload, symbol, amount))) - 1;
+        slot =
+            uint256(
+                keccak256(
+                    abi.encode(
+                        PREFIX_EXPRESS_EXECUTE_WTIH_TOKEN,
+                        commandId,
+                        sourceChain,
+                        sourceAddress,
+                        payload,
+                        symbol,
+                        amount
+                    )
+                )
+            ) -
+            1;
     }
 
     function getExpressCaller(
@@ -36,8 +50,8 @@ abstract contract AxelarExpressExecutableStorage is IExpressExecutable {
         string calldata sourceAddress,
         bytes calldata payload
     ) external view returns (address expressExecutor) {
-        uint256 slot = _expressExecutionSlot(commandId, sourceChain, sourceAddress, payload);
-        // solhint-disable-next-line no-inline-assembly
+        uint256 slot = _expressExecuteSlot(commandId, sourceChain, sourceAddress, payload);
+
         assembly {
             expressExecutor := sload(slot)
         }
@@ -51,8 +65,8 @@ abstract contract AxelarExpressExecutableStorage is IExpressExecutable {
         string calldata symbol,
         uint256 amount
     ) external view returns (address expressExecutor) {
-        uint256 slot = _expressExecutedWithTokenSlot(commandId, sourceChain, sourceAddress, payload, symbol, amount);
-        // solhint-disable-next-line no-inline-assembly
+        uint256 slot = _expressExecuteWithTokenSlot(commandId, sourceChain, sourceAddress, payload, symbol, amount);
+
         assembly {
             expressExecutor := sload(slot)
         }
@@ -65,8 +79,15 @@ abstract contract AxelarExpressExecutableStorage is IExpressExecutable {
         bytes calldata payload,
         address expressExecutor
     ) internal {
-        uint256 slot = _expressExecutionSlot(commandId, sourceChain, sourceAddress, payload);
-        // solhint-disable-next-line no-inline-assembly
+        uint256 slot = _expressExecuteSlot(commandId, sourceChain, sourceAddress, payload);
+        address currentExecutor;
+
+        assembly {
+            currentExecutor := sload(slot)
+        }
+
+        if (currentExecutor != address(0)) revert ExpressExecutorAlreadySet();
+
         assembly {
             sstore(slot, expressExecutor)
         }
@@ -81,8 +102,15 @@ abstract contract AxelarExpressExecutableStorage is IExpressExecutable {
         uint256 amount,
         address expressExecutor
     ) internal {
-        uint256 slot = _expressExecutedWithTokenSlot(commandId, sourceChain, sourceAddress, payload, symbol, amount);
-        // solhint-disable-next-line no-inline-assembly
+        uint256 slot = _expressExecuteWithTokenSlot(commandId, sourceChain, sourceAddress, payload, symbol, amount);
+        address currentExecutor;
+
+        assembly {
+            currentExecutor := sload(slot)
+        }
+
+        if (currentExecutor != address(0)) revert ExpressExecutorAlreadySet();
+
         assembly {
             sstore(slot, expressExecutor)
         }
@@ -94,8 +122,8 @@ abstract contract AxelarExpressExecutableStorage is IExpressExecutable {
         string calldata sourceAddress,
         bytes calldata payload
     ) internal returns (address expressExecutor) {
-        uint256 slot = _expressExecutionSlot(commandId, sourceChain, sourceAddress, payload);
-        // solhint-disable-next-line no-inline-assembly
+        uint256 slot = _expressExecuteSlot(commandId, sourceChain, sourceAddress, payload);
+
         assembly {
             expressExecutor := sload(slot)
             if expressExecutor {
@@ -112,8 +140,8 @@ abstract contract AxelarExpressExecutableStorage is IExpressExecutable {
         string calldata symbol,
         uint256 amount
     ) internal returns (address expressExecutor) {
-        uint256 slot = _expressExecutedWithTokenSlot(commandId, sourceChain, sourceAddress, payload, symbol, amount);
-        // solhint-disable-next-line no-inline-assembly
+        uint256 slot = _expressExecuteWithTokenSlot(commandId, sourceChain, sourceAddress, payload, symbol, amount);
+
         assembly {
             expressExecutor := sload(slot)
             if expressExecutor {

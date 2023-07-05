@@ -26,5 +26,8 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Copy artifacts
+        run: npm run copy:artifacts
+
       - name: Test
         run: npm run test-evm-versions

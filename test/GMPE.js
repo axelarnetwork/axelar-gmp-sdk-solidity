@@ -351,7 +351,7 @@ describe('GMPE', async () => {
     }
 
     async function expressSuccess() {
-      const expressTx = contract.expressExecute(
+      let expressTx = contract.expressExecute(
         commandId,
         sourceChain,
         sourceAddress,
@@ -368,6 +368,17 @@ describe('GMPE', async () => {
         )
         .and.to.emit(contract, 'Executed')
         .withArgs(sourceChain, sourceAddress, payload);
+
+      expressTx = contract.expressExecute(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+      );
+      await expect(expressTx).to.be.revertedWithCustomError(
+        contract,
+        'ExpressExecutorAlreadySet',
+      );
     }
 
     async function expressFailure() {
@@ -497,11 +508,23 @@ describe('GMPE', async () => {
         );
     }
 
+    async function expressNotPayed() {
+      let expressTx = contract.expressExecuteWithToken(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+        tokenSymbol,
+        amount,
+      );
+      await expect(expressTx).to.be.revertedWithCustomError(contract, 'TokenTransferFailed');
+    }
+
     async function expressSuccess() {
       await (
         await tokenA.connect(ownerWallet).approve(contract.address, amount)
       ).wait();
-      const expressTx = contract.expressExecuteWithToken(
+      let expressTx = contract.expressExecuteWithToken(
         commandId,
         sourceChain,
         sourceAddress,
@@ -524,6 +547,27 @@ describe('GMPE', async () => {
         )
         .and.to.emit(contract, 'ExecutedWithToken')
         .withArgs(sourceChain, sourceAddress, payload, tokenSymbol, amount);
+
+      await (
+        await tokenA.connect(ownerWallet).approve(contract.address, amount)
+      ).wait();
+
+      expressTx = contract.expressExecuteWithToken(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+        tokenSymbol,
+        amount,
+      );
+      await expect(expressTx).to.be.revertedWithCustomError(
+        contract,
+        'ExpressExecutorAlreadySet',
+      );
+
+      await (
+        await tokenA.connect(ownerWallet).approve(contract.address, 0)
+      ).wait();
     }
 
     async function expressFailure() {
@@ -598,6 +642,10 @@ describe('GMPE', async () => {
       await expressFullfill();
     });
 
+    it('Should not Execute with express before approval without proper payment', async () => {
+      await expressNotPayed();
+    });
+
     it('Should not Execute with express after approval', async () => {
       await approve();
       await expressFailure();
@@ -664,7 +712,7 @@ describe('GMPE', async () => {
     }
 
     async function expressSuccess() {
-      const expressTx = contract.expressExecute(
+      let expressTx = contract.expressExecute(
         commandId,
         sourceChain,
         sourceAddress,
@@ -682,6 +730,18 @@ describe('GMPE', async () => {
         )
         .and.to.emit(contract, 'Executed')
         .withArgs(sourceChain, sourceAddress, payload);
+
+      expressTx = contract.expressExecute(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+        { value },
+      );
+      await expect(expressTx).to.be.revertedWithCustomError(
+        contract,
+        'ExpressExecutorAlreadySet',
+      );
     }
 
     async function expressFailure() {
@@ -820,7 +880,7 @@ describe('GMPE', async () => {
 
     async function expressSuccess() {
       await (await tokenB.approve(contract.address, value)).wait();
-      const expressTx = contract.expressExecute(
+      let expressTx = contract.expressExecute(
         commandId,
         sourceChain,
         sourceAddress,
@@ -839,6 +899,22 @@ describe('GMPE', async () => {
         )
         .and.to.emit(contract, 'Executed')
         .withArgs(sourceChain, sourceAddress, payload);
+
+      await (await tokenB.approve(contract.address, value)).wait();
+
+      expressTx = contract.expressExecute(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+      );
+
+      await expect(expressTx).to.be.revertedWithCustomError(
+        contract,
+        'ExpressExecutorAlreadySet',
+      );
+
+      await (await tokenB.approve(contract.address, 0)).wait();
     }
 
     async function expressFailure() {
@@ -978,7 +1054,7 @@ describe('GMPE', async () => {
       await (
         await tokenA.connect(ownerWallet).approve(contract.address, amount)
       ).wait();
-      const expressTx = contract.expressExecuteWithToken(
+      let expressTx = contract.expressExecuteWithToken(
         commandId,
         sourceChain,
         sourceAddress,
@@ -1002,6 +1078,28 @@ describe('GMPE', async () => {
         )
         .and.to.emit(contract, 'ExecutedWithToken')
         .withArgs(sourceChain, sourceAddress, payload, tokenSymbol, amount);
+
+      await (
+        await tokenA.connect(ownerWallet).approve(contract.address, amount)
+      ).wait();
+
+      expressTx = contract.expressExecuteWithToken(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+        tokenSymbol,
+        amount,
+        { value },
+      );
+      await expect(expressTx).to.be.revertedWithCustomError(
+        contract,
+        'ExpressExecutorAlreadySet',
+      );
+
+      await (
+        await tokenA.connect(ownerWallet).approve(contract.address, 0)
+      ).wait();
     }
 
     async function expressNotPayed() {
@@ -1183,7 +1281,7 @@ describe('GMPE', async () => {
       await (
         await tokenB.connect(ownerWallet).approve(contract.address, value)
       ).wait();
-      const expressTx = contract.expressExecuteWithToken(
+      let expressTx = contract.expressExecuteWithToken(
         commandId,
         sourceChain,
         sourceAddress,
@@ -1208,6 +1306,33 @@ describe('GMPE', async () => {
         )
         .and.to.emit(contract, 'ExecutedWithToken')
         .withArgs(sourceChain, sourceAddress, payload, tokenSymbol, amount);
+
+      await (
+        await tokenA.connect(ownerWallet).approve(contract.address, amount)
+      ).wait();
+      await (
+        await tokenB.connect(ownerWallet).approve(contract.address, value)
+      ).wait();
+
+      expressTx = contract.expressExecuteWithToken(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+        tokenSymbol,
+        amount,
+      );
+      await expect(expressTx).to.be.revertedWithCustomError(
+        contract,
+        'ExpressExecutorAlreadySet',
+      );
+
+      await (
+        await tokenA.connect(ownerWallet).approve(contract.address, 0)
+      ).wait();
+      await (
+        await tokenB.connect(ownerWallet).approve(contract.address, 0)
+      ).wait();
     }
 
     async function expressNotPayed() {
@@ -1383,7 +1508,7 @@ describe('GMPE', async () => {
           .connect(ownerWallet)
           .approve(contract.address, amount + value)
       ).wait();
-      const expressTx = contract.expressExecuteWithToken(
+      let expressTx = contract.expressExecuteWithToken(
         commandId,
         sourceChain,
         sourceAddress,
@@ -1406,6 +1531,27 @@ describe('GMPE', async () => {
         )
         .and.to.emit(contract, 'ExecutedWithToken')
         .withArgs(sourceChain, sourceAddress, payload, tokenSymbol, amount);
+
+      await (
+        await tokenA
+          .connect(ownerWallet)
+          .approve(contract.address, amount + value)
+      ).wait();
+      expressTx = contract.expressExecuteWithToken(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+        tokenSymbol,
+        amount,
+      );
+      await expect(expressTx).to.be.revertedWithCustomError(
+        contract,
+        'ExpressExecutorAlreadySet',
+      );
+      await (
+        await tokenA.connect(ownerWallet).approve(contract.address, 0)
+      ).wait();
     }
 
     async function expressNotPayed() {

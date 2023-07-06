@@ -138,7 +138,7 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker {
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
-    ) external virtual payable {
+    ) external payable virtual {
         if (gateway.isCommandExecuted(commandId)) revert AlreadyExecuted();
 
         (address tokenAddress, uint256 value) = contractCallValue(sourceChain, sourceAddress, payload);
@@ -162,7 +162,7 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker {
         bytes calldata payload,
         string calldata symbol,
         uint256 amount
-    ) external virtual payable {
+    ) external payable virtual {
         if (gateway.isCommandExecuted(commandId)) revert AlreadyExecuted();
         address expressExecutor = msg.sender;
         (address tokenAddress, uint256 value) = contractCallWithTokenValue(
@@ -186,7 +186,15 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker {
                 }
             }
         }
-        _setExpressExecutorWithToken(commandId, sourceChain, sourceAddress, keccak256(payload), symbol, amount, expressExecutor);
+        _setExpressExecutorWithToken(
+            commandId,
+            sourceChain,
+            sourceAddress,
+            keccak256(payload),
+            symbol,
+            amount,
+            expressExecutor
+        );
         _executeWithToken(sourceChain, sourceAddress, payload, symbol, amount);
         emit ExpressExecutedWithToken(commandId, sourceChain, sourceAddress, payload, symbol, amount, expressExecutor);
     }

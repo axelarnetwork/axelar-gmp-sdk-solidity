@@ -14,8 +14,9 @@ abstract contract ExpressExecutorTracker is IAxelarExpressExecutable {
         string calldata sourceAddress,
         bytes32 payloadHash
     ) internal pure returns (uint256 slot) {
-        slot =
-            uint256(keccak256(abi.encode(PREFIX_EXPRESS_EXECUTE, commandId, sourceChain, sourceAddress, payloadHash)));
+        slot = uint256(
+            keccak256(abi.encode(PREFIX_EXPRESS_EXECUTE, commandId, sourceChain, sourceAddress, payloadHash))
+        );
     }
 
     function _expressExecuteWithTokenSlot(
@@ -26,20 +27,19 @@ abstract contract ExpressExecutorTracker is IAxelarExpressExecutable {
         string calldata symbol,
         uint256 amount
     ) internal pure returns (uint256 slot) {
-        slot =
-            uint256(
-                keccak256(
-                    abi.encode(
-                        PREFIX_EXPRESS_EXECUTE_WTIH_TOKEN,
-                        commandId,
-                        sourceChain,
-                        sourceAddress,
-                        payloadHash,
-                        symbol,
-                        amount
-                    )
+        slot = uint256(
+            keccak256(
+                abi.encode(
+                    PREFIX_EXPRESS_EXECUTE_WTIH_TOKEN,
+                    commandId,
+                    sourceChain,
+                    sourceAddress,
+                    payloadHash,
+                    symbol,
+                    amount
                 )
-            );
+            )
+        );
     }
 
     function getExpressExecutor(

@@ -509,7 +509,7 @@ describe('GMPE', async () => {
     }
 
     async function expressNotPayed() {
-      let expressTx = contract.expressExecuteWithToken(
+      const expressTx = contract.expressExecuteWithToken(
         commandId,
         sourceChain,
         sourceAddress,
@@ -517,7 +517,10 @@ describe('GMPE', async () => {
         tokenSymbol,
         amount,
       );
-      await expect(expressTx).to.be.revertedWithCustomError(contract, 'TokenTransferFailed');
+      await expect(expressTx).to.be.revertedWithCustomError(
+        contract,
+        'TokenTransferFailed',
+      );
     }
 
     async function expressSuccess() {

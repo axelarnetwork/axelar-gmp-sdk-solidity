@@ -138,7 +138,7 @@ abstract contract AxelarValuedExpressExecutable is AxelarExpressExecutableStorag
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
-    ) external payable {
+    ) external virtual payable {
         if (gateway.isCommandExecuted(commandId)) revert AlreadyExecuted();
 
         (address tokenAddress, uint256 value) = contractCallValue(sourceChain, sourceAddress, payload);
@@ -162,7 +162,7 @@ abstract contract AxelarValuedExpressExecutable is AxelarExpressExecutableStorag
         bytes calldata payload,
         string calldata symbol,
         uint256 amount
-    ) external payable {
+    ) external virtual payable {
         if (gateway.isCommandExecuted(commandId)) revert AlreadyExecuted();
         address expressExecutor = msg.sender;
         (address tokenAddress, uint256 value) = contractCallWithTokenValue(

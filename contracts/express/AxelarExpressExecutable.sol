@@ -92,7 +92,7 @@ abstract contract AxelarExpressExecutable is AxelarExpressExecutableStorage {
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
-    ) external payable {
+    ) external virtual payable {
         if (gateway.isCommandExecuted(commandId)) revert AlreadyExecuted();
 
         address expressExecutor = msg.sender;
@@ -111,7 +111,7 @@ abstract contract AxelarExpressExecutable is AxelarExpressExecutableStorage {
         bytes calldata payload,
         string calldata symbol,
         uint256 amount
-    ) external payable {
+    ) external virtual payable {
         if (gateway.isCommandExecuted(commandId)) revert AlreadyExecuted();
 
         address expressExecutor = msg.sender;

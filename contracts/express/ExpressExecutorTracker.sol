@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import { IAxelarExpressExecutable } from '../interfaces/IAxelarExpressExecutable.sol';
 
-abstract contract AxelarExpressExecutableStorage is IAxelarExpressExecutable {
+abstract contract ExpressExecutorTracker is IAxelarExpressExecutable {
     uint256 private constant PREFIX_EXPRESS_EXECUTE = uint256(keccak256('express-execute'));
     uint256 private constant PREFIX_EXPRESS_EXECUTE_WTIH_TOKEN = uint256(keccak256('express-execute-with-token'));
 

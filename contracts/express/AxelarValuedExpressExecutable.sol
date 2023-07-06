@@ -48,7 +48,7 @@ abstract contract AxelarValuedExpressExecutable is AxelarExpressExecutableStorag
         if (!gateway.validateContractCall(commandId, sourceChain, sourceAddress, payloadHash))
             revert NotApprovedByGateway();
 
-        address expressExecutor = _popExpressCaller(commandId, sourceChain, sourceAddress, payload);
+        address expressExecutor = _popExpressExecutor(commandId, sourceChain, sourceAddress, payload);
 
         if (expressExecutor == address(0)) {
             _execute(sourceChain, sourceAddress, payload);
@@ -86,7 +86,7 @@ abstract contract AxelarValuedExpressExecutable is AxelarExpressExecutableStorag
             ) revert NotApprovedByGateway();
         }
 
-        address expressExecutor = _popExpressCallerWithToken(
+        address expressExecutor = _popExpressExecutorWithToken(
             commandId,
             sourceChain,
             sourceAddress,
@@ -149,7 +149,7 @@ abstract contract AxelarValuedExpressExecutable is AxelarExpressExecutableStorag
             IERC20(tokenAddress).safeTransferFrom(expressExecutor, address(this), value);
         }
 
-        _setExpressCaller(commandId, sourceChain, sourceAddress, payload, expressExecutor);
+        _setExpressExecutor(commandId, sourceChain, sourceAddress, payload, expressExecutor);
         _execute(sourceChain, sourceAddress, payload);
         emit ExpressExecuted(commandId, sourceChain, sourceAddress, payload, expressExecutor);
     }
@@ -185,7 +185,7 @@ abstract contract AxelarValuedExpressExecutable is AxelarExpressExecutableStorag
                 }
             }
         }
-        _setExpressCallerWithToken(commandId, sourceChain, sourceAddress, payload, symbol, amount, expressExecutor);
+        _setExpressExecutorWithToken(commandId, sourceChain, sourceAddress, payload, symbol, amount, expressExecutor);
         _executeWithToken(sourceChain, sourceAddress, payload, symbol, amount);
         emit ExpressExecutedWithToken(commandId, sourceChain, sourceAddress, payload, symbol, amount, expressExecutor);
     }

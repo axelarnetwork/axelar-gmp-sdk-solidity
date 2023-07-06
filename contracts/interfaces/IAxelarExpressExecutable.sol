@@ -45,14 +45,14 @@ interface IAxelarExpressExecutable is IAxelarExecutable {
         address indexed expressExecutor
     );
 
-    function getExpressCaller(
+    function getExpressExecutor(
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
     ) external view returns (address expressExecutor);
 
-    function getExpressCallerWithToken(
+    function getExpressExecutorWithToken(
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,

@@ -44,7 +44,7 @@ abstract contract AxelarExpressExecutableStorage is IAxelarExpressExecutable {
             1;
     }
 
-    function getExpressCaller(
+    function getExpressExecutor(
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
@@ -57,7 +57,7 @@ abstract contract AxelarExpressExecutableStorage is IAxelarExpressExecutable {
         }
     }
 
-    function getExpressCallerWithToken(
+    function getExpressExecutorWithToken(
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
@@ -72,7 +72,7 @@ abstract contract AxelarExpressExecutableStorage is IAxelarExpressExecutable {
         }
     }
 
-    function _setExpressCaller(
+    function _setExpressExecutor(
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
@@ -93,7 +93,7 @@ abstract contract AxelarExpressExecutableStorage is IAxelarExpressExecutable {
         }
     }
 
-    function _setExpressCallerWithToken(
+    function _setExpressExecutorWithToken(
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
@@ -116,7 +116,7 @@ abstract contract AxelarExpressExecutableStorage is IAxelarExpressExecutable {
         }
     }
 
-    function _popExpressCaller(
+    function _popExpressExecutor(
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
@@ -132,7 +132,7 @@ abstract contract AxelarExpressExecutableStorage is IAxelarExpressExecutable {
         }
     }
 
-    function _popExpressCallerWithToken(
+    function _popExpressExecutorWithToken(
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,

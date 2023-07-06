@@ -31,7 +31,7 @@ abstract contract AxelarExpressExecutable is AxelarExpressExecutableStorage {
         if (!gateway.validateContractCall(commandId, sourceChain, sourceAddress, payloadHash))
             revert NotApprovedByGateway();
 
-        address expressExecutor = _popExpressCaller(commandId, sourceChain, sourceAddress, payload);
+        address expressExecutor = _popExpressExecutor(commandId, sourceChain, sourceAddress, payload);
 
         if (expressExecutor != address(0)) {
             emit ExpressExecutionFulfilled(commandId, sourceChain, sourceAddress, payload, expressExecutor);
@@ -60,7 +60,7 @@ abstract contract AxelarExpressExecutable is AxelarExpressExecutableStorage {
             )
         ) revert NotApprovedByGateway();
 
-        address expressExecutor = _popExpressCallerWithToken(
+        address expressExecutor = _popExpressExecutorWithToken(
             commandId,
             sourceChain,
             sourceAddress,
@@ -97,7 +97,7 @@ abstract contract AxelarExpressExecutable is AxelarExpressExecutableStorage {
 
         address expressExecutor = msg.sender;
 
-        _setExpressCaller(commandId, sourceChain, sourceAddress, payload, expressExecutor);
+        _setExpressExecutor(commandId, sourceChain, sourceAddress, payload, expressExecutor);
 
         _execute(sourceChain, sourceAddress, payload);
 
@@ -119,7 +119,7 @@ abstract contract AxelarExpressExecutable is AxelarExpressExecutableStorage {
 
         IERC20(gatewayToken).safeTransferFrom(expressExecutor, address(this), amount);
 
-        _setExpressCallerWithToken(commandId, sourceChain, sourceAddress, payload, symbol, amount, expressExecutor);
+        _setExpressExecutorWithToken(commandId, sourceChain, sourceAddress, payload, symbol, amount, expressExecutor);
 
         _executeWithToken(sourceChain, sourceAddress, payload, symbol, amount);
 

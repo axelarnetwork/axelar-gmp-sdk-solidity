@@ -49,14 +49,14 @@ interface IAxelarExpressExecutable is IAxelarExecutable {
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
-        bytes calldata payload
+        bytes32 payloadHash
     ) external view returns (address expressExecutor);
 
     function getExpressExecutorWithToken(
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
-        bytes calldata payload,
+        bytes32 payloadHash,
         string calldata symbol,
         uint256 amount
     ) external view returns (address expressExecutor);

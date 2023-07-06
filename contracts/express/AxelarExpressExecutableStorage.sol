@@ -12,18 +12,17 @@ abstract contract AxelarExpressExecutableStorage is IAxelarExpressExecutable {
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
-        bytes calldata payload
+        bytes32 payloadHash
     ) internal pure returns (uint256 slot) {
         slot =
-            uint256(keccak256(abi.encode(PREFIX_EXPRESS_EXECUTE, commandId, sourceChain, sourceAddress, payload))) -
-            1;
+            uint256(keccak256(abi.encode(PREFIX_EXPRESS_EXECUTE, commandId, sourceChain, sourceAddress, payloadHash)));
     }
 
     function _expressExecuteWithTokenSlot(
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
-        bytes calldata payload,
+        bytes32 payloadHash,
         string calldata symbol,
         uint256 amount
     ) internal pure returns (uint256 slot) {
@@ -35,22 +34,21 @@ abstract contract AxelarExpressExecutableStorage is IAxelarExpressExecutable {
                         commandId,
                         sourceChain,
                         sourceAddress,
-                        payload,
+                        payloadHash,
                         symbol,
                         amount
                     )
                 )
-            ) -
-            1;
+            );
     }
 
     function getExpressExecutor(
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
-        bytes calldata payload
+        bytes32 payloadHash
     ) external view returns (address expressExecutor) {
-        uint256 slot = _expressExecuteSlot(commandId, sourceChain, sourceAddress, payload);
+        uint256 slot = _expressExecuteSlot(commandId, sourceChain, sourceAddress, payloadHash);
 
         assembly {
             expressExecutor := sload(slot)
@@ -61,11 +59,11 @@ abstract contract AxelarExpressExecutableStorage is IAxelarExpressExecutable {
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
-        bytes calldata payload,
+        bytes32 payloadHash,
         string calldata symbol,
         uint256 amount
     ) external view returns (address expressExecutor) {
-        uint256 slot = _expressExecuteWithTokenSlot(commandId, sourceChain, sourceAddress, payload, symbol, amount);
+        uint256 slot = _expressExecuteWithTokenSlot(commandId, sourceChain, sourceAddress, payloadHash, symbol, amount);
 
         assembly {
             expressExecutor := sload(slot)
@@ -76,10 +74,10 @@ abstract contract AxelarExpressExecutableStorage is IAxelarExpressExecutable {
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
-        bytes calldata payload,
+        bytes32 payloadHash,
         address expressExecutor
     ) internal {
-        uint256 slot = _expressExecuteSlot(commandId, sourceChain, sourceAddress, payload);
+        uint256 slot = _expressExecuteSlot(commandId, sourceChain, sourceAddress, payloadHash);
         address currentExecutor;
 
         assembly {
@@ -97,12 +95,12 @@ abstract contract AxelarExpressExecutableStorage is IAxelarExpressExecutable {
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
-        bytes calldata payload,
+        bytes32 payloadHash,
         string calldata symbol,
         uint256 amount,
         address expressExecutor
     ) internal {
-        uint256 slot = _expressExecuteWithTokenSlot(commandId, sourceChain, sourceAddress, payload, symbol, amount);
+        uint256 slot = _expressExecuteWithTokenSlot(commandId, sourceChain, sourceAddress, payloadHash, symbol, amount);
         address currentExecutor;
 
         assembly {
@@ -120,9 +118,9 @@ abstract contract AxelarExpressExecutableStorage is IAxelarExpressExecutable {
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
-        bytes calldata payload
+        bytes32 payloadHash
     ) internal returns (address expressExecutor) {
-        uint256 slot = _expressExecuteSlot(commandId, sourceChain, sourceAddress, payload);
+        uint256 slot = _expressExecuteSlot(commandId, sourceChain, sourceAddress, payloadHash);
 
         assembly {
             expressExecutor := sload(slot)
@@ -136,11 +134,11 @@ abstract contract AxelarExpressExecutableStorage is IAxelarExpressExecutable {
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
-        bytes calldata payload,
+        bytes32 payloadHash,
         string calldata symbol,
         uint256 amount
     ) internal returns (address expressExecutor) {
-        uint256 slot = _expressExecuteWithTokenSlot(commandId, sourceChain, sourceAddress, payload, symbol, amount);
+        uint256 slot = _expressExecuteWithTokenSlot(commandId, sourceChain, sourceAddress, payloadHash, symbol, amount);
 
         assembly {
             expressExecutor := sload(slot)

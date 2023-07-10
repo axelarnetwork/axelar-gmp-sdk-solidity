@@ -1,29 +1,18 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.9;
+pragma solidity ^0.8.0;
 
-import { ExpressExecutable } from '../../express/ExpressExecutable.sol';
+import { AxelarExecutable } from '../../executable/AxelarExecutable.sol';
 import { IERC20 } from '../../interfaces/IERC20.sol';
 import { DestinationChainTokenSwapper } from './DestinationChainTokenSwapper.sol';
 
-contract DestinationChainSwapExpressDisabled is ExpressExecutable {
+contract DestinationChainSwapExpressDisabled is AxelarExecutable {
     DestinationChainTokenSwapper public immutable swapper;
 
     event Executed(string sourceChain, string sourceAddress, bytes payload);
 
-    constructor(address gatewayAddress, address swapperAddress) ExpressExecutable(gatewayAddress) {
+    constructor(address gatewayAddress, address swapperAddress) AxelarExecutable(gatewayAddress) {
         swapper = DestinationChainTokenSwapper(swapperAddress);
-    }
-
-    function acceptExpressCallWithToken(
-        address, /*caller*/
-        string calldata, /*sourceChain*/
-        string calldata, /*sourceAddress*/
-        bytes32, /*payloadHash*/
-        string calldata, /*tokenSymbol*/
-        uint256 /*amount*/
-    ) external pure override returns (bool) {
-        return false;
     }
 
     function _execute(

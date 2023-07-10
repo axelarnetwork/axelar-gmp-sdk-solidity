@@ -200,7 +200,8 @@ contract MockGateway is IAxelarGateway {
     |* Self Functions *|
     \******************/
 
-    function deployToken(bytes calldata params, bytes32) external {
+    function deployToken(bytes calldata params, bytes32 commandId) external {
+        _setCommandExecuted(commandId, true);
         (
             string memory name,
             string memory symbol,
@@ -234,13 +235,15 @@ contract MockGateway is IAxelarGateway {
         emit TokenDeployed(symbol, tokenAddress);
     }
 
-    function mintToken(bytes calldata params, bytes32) external {
+    function mintToken(bytes calldata params, bytes32 commandId) external {
+        _setCommandExecuted(commandId, true);
         (string memory symbol, address account, uint256 amount) = abi.decode(params, (string, address, uint256));
 
         _mintToken(symbol, account, amount);
     }
 
-    function burnToken(bytes calldata params, bytes32) external {
+    function burnToken(bytes calldata params, bytes32 commandId) external {
+        _setCommandExecuted(commandId, true);
         (string memory symbol, address account, uint256 amount) = abi.decode(params, (string, address, uint256));
 
         address tokenAddress = tokenAddresses(symbol);
@@ -255,6 +258,7 @@ contract MockGateway is IAxelarGateway {
     }
 
     function approveContractCall(bytes calldata params, bytes32 commandId) external {
+        _setCommandExecuted(commandId, true);
         (
             string memory sourceChain,
             string memory sourceAddress,
@@ -277,6 +281,7 @@ contract MockGateway is IAxelarGateway {
     }
 
     function approveContractCallWithMint(bytes calldata params, bytes32 commandId) external {
+        _setCommandExecuted(commandId, true);
         (
             string memory sourceChain,
             string memory sourceAddress,

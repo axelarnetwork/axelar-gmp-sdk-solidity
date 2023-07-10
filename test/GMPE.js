@@ -2,21 +2,14 @@
 
 const chai = require('chai');
 const {
-  utils: { defaultAbiCoder, keccak256, id, formatBytes32String },
+  utils: { defaultAbiCoder, keccak256, id },
+  constants: { AddressZero },
 } = require('ethers');
 const { expect } = chai;
 const { ethers } = require('hardhat');
 
-const { deployCreate3Upgradable } = require('../index');
-
-const ExpressProxy = require('../artifacts/contracts/express/ExpressProxy.sol/ExpressProxy.json');
-const ExpressRegistry = require('../artifacts/contracts/express/ExpressRegistry.sol/ExpressRegistry.json');
-const ExpressService = require('../artifacts/contracts/express/ExpressService.sol/ExpressService.json');
-const ExpressServiceProxy = require('../artifacts/contracts/express/ExpressServiceProxy.sol/ExpressServiceProxy.json');
 const DestinationChainSwapExpress = require('../artifacts/contracts/test/gmp/DestinationChainSwapExpress.sol/DestinationChainSwapExpress.json');
-const DestinationChainSwapExpressDisabled = require('../artifacts/contracts/test/gmp/DestinationChainSwapExpressDisabled.sol/DestinationChainSwapExpressDisabled.json');
-const ExecutableSample = require('../artifacts/contracts/test/gmp/ExecutableSample.sol/ExecutableSample.json');
-const InvalidExpressRegistry = require('../artifacts/contracts/test/gmp/InvalidExpressRegistry.sol/InvalidExpressRegistry.json');
+const { deployContract } = require('../scripts/utils');
 
 const getRandomID = () => id(Math.floor(Math.random() * 1e10).toString());
 
@@ -24,27 +17,19 @@ describe('GMPE', async () => {
   let gatewayFactory;
   let sourceChainSwapCallerFactory;
   let destinationChainTokenSwapperFactory;
+  let expressExecutableTestFactory;
+  let valuedAxelarExpressExecutableTestFactory;
   let tokenFactory;
-  let create3DeployerFactory;
-  let expressProxyDeployerFactory;
-  let executableSampleFactory;
-  let expressProxyFactory;
-  let expressRegistryFactory;
-  let destinationChainSwapExpressFactory;
-  let destinationChainSwapExpressDisabledFactory;
 
   let sourceChainGateway;
   let sourceChainSwapCaller;
   let destinationChainGateway;
   let destinationChainSwapExpress;
-  let destinationChainSwapExpressProxy;
   let tokenA;
   let tokenB;
-  let expressProxyDeployer;
-  let create3Deployer;
-  let expressService;
   let destinationChainTokenSwapper;
-  let destinationChainSwapExpressDisabled;
+  let expressExecutableTest;
+  let valuedAxelarExpressExecutableTest;
 
   let ownerWallet;
   let userWallet;
@@ -77,64 +62,23 @@ describe('GMPE', async () => {
       'ERC20MintableBurnable',
       ownerWallet,
     );
-    create3DeployerFactory = await ethers.getContractFactory(
-      'Create3Deployer',
+    expressExecutableTestFactory = await ethers.getContractFactory(
+      'AxelarExpressExecutableTest',
       ownerWallet,
     );
-    expressProxyDeployerFactory = await ethers.getContractFactory(
-      'ExpressProxyDeployer',
+    valuedAxelarExpressExecutableTestFactory = await ethers.getContractFactory(
+      'AxelarValuedExpressExecutableTest',
       ownerWallet,
     );
-    executableSampleFactory = await ethers.getContractFactory(
-      'ExecutableSample',
-      ownerWallet,
-    );
-    expressProxyFactory = await ethers.getContractFactory(
-      'ExpressProxy',
-      ownerWallet,
-    );
-    expressRegistryFactory = await ethers.getContractFactory(
-      'ExpressRegistry',
-      ownerWallet,
-    );
-    destinationChainSwapExpressFactory = await ethers.getContractFactory(
-      'DestinationChainSwapExpress',
-      ownerWallet,
-    );
-    destinationChainSwapExpressDisabledFactory =
-      await ethers.getContractFactory(
-        'DestinationChainSwapExpressDisabled',
-        ownerWallet,
-      );
   });
 
   beforeEach(async () => {
-    create3Deployer = await create3DeployerFactory
-      .deploy()
-      .then((d) => d.deployed());
-
     sourceChainGateway = await gatewayFactory
       .deploy()
       .then((d) => d.deployed());
     destinationChainGateway = await gatewayFactory
       .deploy()
       .then((d) => d.deployed());
-
-    expressProxyDeployer = await expressProxyDeployerFactory
-      .deploy(destinationChainGateway.address)
-      .then((d) => d.deployed());
-
-    expressService = await deployCreate3Upgradable(
-      create3Deployer.address,
-      ownerWallet,
-      ExpressService,
-      ExpressServiceProxy,
-      [
-        destinationChainGateway.address,
-        expressProxyDeployer.address,
-        ownerWallet.address,
-      ],
-    );
 
     tokenA = await tokenFactory
       .deploy(nameA, symbolA, decimals)
@@ -178,21 +122,19 @@ describe('GMPE', async () => {
       .deploy(tokenA.address.toString(), tokenB.address.toString())
       .then((d) => d.deployed());
 
-    destinationChainSwapExpress = await deployCreate3Upgradable(
-      create3Deployer.address,
+    destinationChainSwapExpress = await deployContract(
       ownerWallet,
       DestinationChainSwapExpress,
-      ExpressProxy,
       [destinationChainGateway.address, destinationChainTokenSwapper.address],
-      [destinationChainGateway.address],
     );
 
-    destinationChainSwapExpressProxy = await expressProxyFactory.attach(
-      destinationChainSwapExpress.address,
-    );
-    await destinationChainSwapExpressProxy.deployRegistry(
-      ExpressRegistry.bytecode,
-    );
+    expressExecutableTest = await expressExecutableTestFactory
+      .deploy(destinationChainGateway.address)
+      .then((d) => d.deployed());
+    valuedAxelarExpressExecutableTest =
+      await valuedAxelarExpressExecutableTestFactory
+        .deploy(destinationChainGateway.address)
+        .then((d) => d.deployed());
 
     sourceChainSwapCaller = await sourceChainSwapCallerFactory
       .deploy(
@@ -203,7 +145,9 @@ describe('GMPE', async () => {
       .then((d) => d.deployed());
 
     await tokenA.mint(destinationChainGateway.address, 1e9);
+    await tokenA.mint(ownerWallet.address, 1e9);
     await tokenB.mint(destinationChainTokenSwapper.address, 1e9);
+    await tokenB.mint(ownerWallet.address, 1e9);
 
     await sourceChainGateway.mintToken(
       defaultAbiCoder.encode(
@@ -218,7 +162,7 @@ describe('GMPE', async () => {
     ).wait();
   });
 
-  describe('ExpressExecutable', () => {
+  describe('AxelarExpressExecutable', () => {
     it('should expressCallWithToken a swap on remote chain', async () => {
       const swapAmount = 1e6;
       const convertedAmount = 2 * swapAmount;
@@ -256,624 +200,54 @@ describe('GMPE', async () => {
         );
       await tokenA
         .connect(userWallet)
-        .transfer(expressService.address, swapAmount);
-      await expect(
-        expressService
-          .connect(ownerWallet)
-          .callWithToken(
-            getRandomID(),
-            sourceChain,
-            sourceChainSwapCaller.address,
-            destinationChainSwapExpress.address,
-            payload,
-            symbolA,
-            swapAmount,
-          ),
-      )
-        .to.emit(tokenA, 'Transfer')
-        .withArgs(
-          expressService.address,
-          destinationChainSwapExpress.address,
-          swapAmount,
-        )
-        .and.to.emit(tokenA, 'Transfer')
-        .withArgs(
-          destinationChainSwapExpress.address,
-          destinationChainTokenSwapper.address,
-          swapAmount,
-        )
-        .and.to.emit(tokenB, 'Transfer')
-        .withArgs(
-          destinationChainTokenSwapper.address,
-          destinationChainSwapExpress.address,
-          convertedAmount,
-        )
-        .and.to.emit(tokenB, 'Transfer')
-        .withArgs(
-          destinationChainSwapExpress.address,
-          destinationChainGateway.address,
-          convertedAmount,
-        )
-        .and.to.emit(destinationChainGateway, 'TokenSent')
-        .withArgs(
-          destinationChainSwapExpress.address,
-          sourceChain,
-          userWallet.address.toString(),
-          symbolB,
-          convertedAmount,
-        );
+        .approve(destinationChainSwapExpress.address, swapAmount);
       const approveCommandId = getRandomID();
-      const sourceTxHash = keccak256('0x123abc123abc');
-      const sourceEventIndex = 17;
-      const approveWithMintData = defaultAbiCoder.encode(
-        [
-          'string',
-          'string',
-          'address',
-          'bytes32',
-          'string',
-          'uint256',
-          'bytes32',
-          'uint256',
-        ],
-        [
-          sourceChain,
-          sourceChainSwapCaller.address.toString(),
-          destinationChainSwapExpress.address,
-          payloadHash,
-          symbolA,
-          swapAmount,
-          sourceTxHash,
-          sourceEventIndex,
-        ],
-      );
-      const approveExecute =
-        await destinationChainGateway.approveContractCallWithMint(
-          approveWithMintData,
-          approveCommandId,
-        );
-      await expect(approveExecute)
-        .to.emit(destinationChainGateway, 'ContractCallApprovedWithMint')
-        .withArgs(
-          approveCommandId,
-          sourceChain,
-          sourceChainSwapCaller.address.toString(),
-          destinationChainSwapExpress.address,
-          payloadHash,
-          symbolA,
-          swapAmount,
-          sourceTxHash,
-          sourceEventIndex,
-        );
-      const execute = await destinationChainSwapExpress.executeWithToken(
-        approveCommandId,
-        sourceChain,
-        sourceChainSwapCaller.address.toString(),
-        payload,
-        symbolA,
-        swapAmount,
-      );
-      await expect(execute)
-        .to.emit(tokenA, 'Transfer')
-        .withArgs(
-          destinationChainGateway.address,
-          destinationChainSwapExpress.address,
-          swapAmount,
-        )
-        .and.to.emit(tokenA, 'Transfer')
-        .withArgs(
-          destinationChainSwapExpress.address,
-          expressService.address,
-          swapAmount,
-        );
-    });
-  });
-
-  describe('ExpressProxy', () => {
-    it('should fail upgrade if it is the final implementation', async () => {
-      // Check that current implementation is not final
-      expect(
-        await destinationChainSwapExpressProxy.connect(ownerWallet).isFinal(),
-      ).to.be.false;
-
-      const implementationAddress = await destinationChainSwapExpressProxy
-        .connect(ownerWallet)
-        .implementation();
-
-      let bytecode =
-        await destinationChainSwapExpressDisabledFactory.getDeployTransaction(
-          destinationChainGateway.address,
-          destinationChainTokenSwapper.address,
-        ).data;
-
-      await destinationChainSwapExpressProxy
-        .connect(ownerWallet)
-        .finalUpgrade(bytecode, '0x');
-
-      const updatedImplementationAddress =
-        await destinationChainSwapExpressProxy
-          .connect(ownerWallet)
-          .implementation();
-
-      // Sanity check to make sure update occured
-      expect(implementationAddress).to.not.equal(updatedImplementationAddress);
-
-      bytecode = await destinationChainSwapExpressFactory.getDeployTransaction(
-        destinationChainGateway.address,
-        destinationChainTokenSwapper.address,
-      ).data;
-
-      // Attempt final upgrade again, should fail
       await expect(
-        destinationChainSwapExpressProxy
-          .connect(ownerWallet)
-          .finalUpgrade(bytecode, '0x'),
-      ).to.be.revertedWithCustomError(
-        destinationChainSwapExpressProxy,
-        'AlreadyDeployed',
-      );
-    });
-
-    it('should revert if expressCallWithToken is disabled', async () => {
-      // Deploy swap express executable with express call disabled
-      destinationChainSwapExpressDisabled = await deployCreate3Upgradable(
-        create3Deployer.address,
-        ownerWallet,
-        DestinationChainSwapExpressDisabled,
-        ExpressProxy,
-        [destinationChainGateway.address, destinationChainTokenSwapper.address],
-        [destinationChainGateway.address],
-      );
-
-      const destinationChainSwapExpressProxy = await expressProxyFactory.attach(
-        destinationChainSwapExpressDisabled.address,
-      );
-
-      await destinationChainSwapExpressProxy.deployRegistry(
-        ExpressRegistry.bytecode,
-      );
-
-      sourceChainSwapCaller = await sourceChainSwapCallerFactory
-        .deploy(
-          sourceChainGateway.address,
-          destinationChain,
-          destinationChainSwapExpressDisabled.address.toString(),
-        )
-        .then((d) => d.deployed());
-
-      // Attempt to perform interchain token swap
-      const swapAmount = 1e6;
-      const payload = defaultAbiCoder.encode(
-        ['string', 'string'],
-        [symbolB, userWallet.address.toString()],
-      );
-      const payloadHash = keccak256(payload);
-
-      const sourceChainTokenA = tokenFactory
-        .connect(userWallet)
-        .attach(await sourceChainGateway.tokenAddresses(symbolA));
-      await sourceChainTokenA.approve(
-        sourceChainSwapCaller.address,
-        swapAmount,
-      );
-
-      await expect(
-        sourceChainSwapCaller
+        destinationChainSwapExpress
           .connect(userWallet)
-          .swapToken(
-            symbolA,
-            symbolB,
-            swapAmount,
-            userWallet.address.toString(),
-          ),
-      )
-        .to.emit(sourceChainGateway, 'ContractCallWithToken')
-        .withArgs(
-          sourceChainSwapCaller.address.toString(),
-          destinationChain,
-          destinationChainSwapExpressDisabled.address.toString(),
-          payloadHash,
-          payload,
-          symbolA,
-          swapAmount,
-        );
-
-      await tokenA
-        .connect(userWallet)
-        .transfer(expressService.address, swapAmount);
-
-      await expect(
-        expressService
-          .connect(ownerWallet)
-          .callWithToken(
-            getRandomID(),
-            sourceChain,
-            sourceChainSwapCaller.address,
-            destinationChainSwapExpressDisabled.address,
-            payload,
-            symbolA,
-            swapAmount,
-            { gasLimit: 250000 },
-          ),
-      ).to.be.revertedWithCustomError(
-        destinationChainSwapExpressProxy,
-        'ExpressCallNotAccepted',
-      );
-    });
-
-    it('should revert if registry is deployed twice', async () => {
-      await expect(
-        destinationChainSwapExpressProxy
-          .connect(ownerWallet)
-          .deployRegistry(ExpressRegistry.bytecode, { gasLimit: 250000 }),
-      ).to.be.revertedWithCustomError(create3Deployer, 'AlreadyDeployed');
-    });
-
-    it('should not execute if not approved by gateway', async () => {
-      const value = 'test';
-      const payload = defaultAbiCoder.encode(['string'], [value]);
-      const payloadHash = keccak256(payload);
-
-      const executableSampleSource = await executableSampleFactory
-        .deploy(sourceChainGateway.address)
-        .then((d) => d.deployed());
-
-      const executableSampleDest = await deployCreate3Upgradable(
-        create3Deployer.address,
-        ownerWallet,
-        ExecutableSample,
-        ExpressProxy,
-        [destinationChainGateway.address],
-        [destinationChainGateway.address],
-      );
-
-      const destinationChainSampleExpressProxy =
-        await expressProxyFactory.attach(executableSampleDest.address);
-      await destinationChainSampleExpressProxy.deployRegistry(
-        ExpressRegistry.bytecode,
-      );
-
-      await expect(
-        executableSampleSource
-          .connect(ownerWallet)
-          .setRemoteValue(
-            destinationChain,
-            executableSampleDest.address.toString(),
-            value,
-          ),
-      )
-        .to.emit(sourceChainGateway, 'ContractCall')
-        .withArgs(
-          executableSampleSource.address,
-          destinationChain,
-          executableSampleDest.address,
-          payloadHash,
-          payload,
-        );
-
-      // skip gateway approval
-
-      const commandId = getRandomID();
-
-      await expect(
-        executableSampleDest
-          .connect(ownerWallet)
-          .execute(
-            commandId,
-            sourceChain,
-            executableSampleSource.address.toString(),
-            payload,
-          ),
-      ).to.be.revertedWithCustomError(
-        destinationChainSampleExpressProxy,
-        'NotApprovedByGateway',
-      );
-    });
-
-    it('should not execute with token if not approved by gateway', async () => {
-      const swapAmount = 1e6;
-      const convertedAmount = 2 * swapAmount;
-      const payload = defaultAbiCoder.encode(
-        ['string', 'string'],
-        [symbolB, userWallet.address.toString()],
-      );
-      const payloadHash = keccak256(payload);
-
-      const sourceChainTokenA = tokenFactory
-        .connect(userWallet)
-        .attach(await sourceChainGateway.tokenAddresses(symbolA));
-      await sourceChainTokenA.approve(
-        sourceChainSwapCaller.address,
-        swapAmount,
-      );
-
-      await expect(
-        sourceChainSwapCaller
-          .connect(userWallet)
-          .swapToken(
-            symbolA,
-            symbolB,
-            swapAmount,
-            userWallet.address.toString(),
-          ),
-      )
-        .to.emit(sourceChainGateway, 'ContractCallWithToken')
-        .withArgs(
-          sourceChainSwapCaller.address.toString(),
-          destinationChain,
-          destinationChainSwapExpress.address.toString(),
-          payloadHash,
-          payload,
-          symbolA,
-          swapAmount,
-        );
-
-      await tokenA
-        .connect(userWallet)
-        .transfer(expressService.address, swapAmount);
-
-      await expect(
-        expressService
-          .connect(ownerWallet)
-          .callWithToken(
-            getRandomID(),
-            sourceChain,
-            sourceChainSwapCaller.address,
-            destinationChainSwapExpress.address,
-            payload,
-            symbolA,
-            swapAmount,
-          ),
-      )
-        .to.emit(tokenA, 'Transfer')
-        .withArgs(
-          expressService.address,
-          destinationChainSwapExpress.address,
-          swapAmount,
-        )
-        .and.to.emit(tokenA, 'Transfer')
-        .withArgs(
-          destinationChainSwapExpress.address,
-          destinationChainTokenSwapper.address,
-          swapAmount,
-        )
-        .and.to.emit(tokenB, 'Transfer')
-        .withArgs(
-          destinationChainTokenSwapper.address,
-          destinationChainSwapExpress.address,
-          convertedAmount,
-        )
-        .and.to.emit(tokenB, 'Transfer')
-        .withArgs(
-          destinationChainSwapExpress.address,
-          destinationChainGateway.address,
-          convertedAmount,
-        )
-        .and.to.emit(destinationChainGateway, 'TokenSent')
-        .withArgs(
-          destinationChainSwapExpress.address,
-          sourceChain,
-          userWallet.address.toString(),
-          symbolB,
-          convertedAmount,
-        );
-
-      const approveCommandId = getRandomID();
-
-      // skip gateway approval
-
-      await expect(
-        destinationChainSwapExpress.executeWithToken(
-          approveCommandId,
-          sourceChain,
-          sourceChainSwapCaller.address.toString(),
-          payload,
-          symbolA,
-          swapAmount,
-        ),
-      ).to.be.revertedWithCustomError(
-        destinationChainSwapExpressProxy,
-        'NotApprovedByGateway',
-      );
-    });
-
-    it('should only complete execute with token if called by registry', async () => {
-      const swapAmount = 1e6;
-      const convertedAmount = 2 * swapAmount;
-      const payload = defaultAbiCoder.encode(
-        ['string', 'string'],
-        [symbolB, userWallet.address.toString()],
-      );
-      const payloadHash = keccak256(payload);
-
-      const sourceChainTokenA = tokenFactory
-        .connect(userWallet)
-        .attach(await sourceChainGateway.tokenAddresses(symbolA));
-      await sourceChainTokenA.approve(
-        sourceChainSwapCaller.address,
-        swapAmount,
-      );
-
-      await expect(
-        sourceChainSwapCaller
-          .connect(userWallet)
-          .swapToken(
-            symbolA,
-            symbolB,
-            swapAmount,
-            userWallet.address.toString(),
-          ),
-      )
-        .to.emit(sourceChainGateway, 'ContractCallWithToken')
-        .withArgs(
-          sourceChainSwapCaller.address.toString(),
-          destinationChain,
-          destinationChainSwapExpress.address.toString(),
-          payloadHash,
-          payload,
-          symbolA,
-          swapAmount,
-        );
-
-      await tokenA
-        .connect(userWallet)
-        .transfer(expressService.address, swapAmount);
-
-      await expect(
-        expressService
-          .connect(ownerWallet)
-          .callWithToken(
-            getRandomID(),
-            sourceChain,
-            sourceChainSwapCaller.address,
-            destinationChainSwapExpress.address,
-            payload,
-            symbolA,
-            swapAmount,
-          ),
-      )
-        .to.emit(tokenA, 'Transfer')
-        .withArgs(
-          expressService.address,
-          destinationChainSwapExpress.address,
-          swapAmount,
-        )
-        .and.to.emit(tokenA, 'Transfer')
-        .withArgs(
-          destinationChainSwapExpress.address,
-          destinationChainTokenSwapper.address,
-          swapAmount,
-        )
-        .and.to.emit(tokenB, 'Transfer')
-        .withArgs(
-          destinationChainTokenSwapper.address,
-          destinationChainSwapExpress.address,
-          convertedAmount,
-        )
-        .and.to.emit(tokenB, 'Transfer')
-        .withArgs(
-          destinationChainSwapExpress.address,
-          destinationChainGateway.address,
-          convertedAmount,
-        )
-        .and.to.emit(destinationChainGateway, 'TokenSent')
-        .withArgs(
-          destinationChainSwapExpress.address,
-          sourceChain,
-          userWallet.address.toString(),
-          symbolB,
-          convertedAmount,
-        );
-
-      const approveCommandId = getRandomID();
-      const sourceTxHash = keccak256('0x123abc123abc');
-      const sourceEventIndex = 17;
-
-      const approveWithMintData = defaultAbiCoder.encode(
-        [
-          'string',
-          'string',
-          'address',
-          'bytes32',
-          'string',
-          'uint256',
-          'bytes32',
-          'uint256',
-        ],
-        [
-          sourceChain,
-          sourceChainSwapCaller.address.toString(),
-          destinationChainSwapExpress.address,
-          payloadHash,
-          symbolA,
-          swapAmount,
-          sourceTxHash,
-          sourceEventIndex,
-        ],
-      );
-
-      const approveExecute =
-        await destinationChainGateway.approveContractCallWithMint(
-          approveWithMintData,
-          approveCommandId,
-        );
-
-      await expect(approveExecute)
-        .to.emit(destinationChainGateway, 'ContractCallApprovedWithMint')
-        .withArgs(
-          approveCommandId,
-          sourceChain,
-          sourceChainSwapCaller.address.toString(),
-          destinationChainSwapExpress.address,
-          payloadHash,
-          symbolA,
-          swapAmount,
-          sourceTxHash,
-          sourceEventIndex,
-        );
-
-      // Jump to completeExecuteWithToken, call from owner address
-
-      await expect(
-        destinationChainSwapExpressProxy
-          .connect(ownerWallet)
-          .completeExecuteWithToken(
-            expressService.address.toString(),
+          .expressExecuteWithToken(
             approveCommandId,
             sourceChain,
-            sourceChainSwapCaller.address.toString(),
+            sourceChainSwapCaller.address,
             payload,
             symbolA,
             swapAmount,
           ),
-      ).to.be.revertedWithCustomError(
-        destinationChainSwapExpressProxy,
-        'NotExpressRegistry',
-      );
-    });
-
-    it('should execute non-express token transfer normally', async () => {
-      const swapAmount = 1e6;
-      const convertedAmount = 2 * swapAmount;
-      const payload = defaultAbiCoder.encode(
-        ['string', 'string'],
-        [symbolB, userWallet.address.toString()],
-      );
-      const payloadHash = keccak256(payload);
-
-      const sourceChainTokenA = tokenFactory
-        .connect(userWallet)
-        .attach(await sourceChainGateway.tokenAddresses(symbolA));
-      await sourceChainTokenA.approve(
-        sourceChainSwapCaller.address,
-        swapAmount,
-      );
-
-      await expect(
-        sourceChainSwapCaller
-          .connect(userWallet)
-          .swapToken(
-            symbolA,
-            symbolB,
-            swapAmount,
-            userWallet.address.toString(),
-          ),
       )
-        .to.emit(sourceChainGateway, 'ContractCallWithToken')
+        .to.emit(tokenA, 'Transfer')
         .withArgs(
-          sourceChainSwapCaller.address.toString(),
-          destinationChain,
-          destinationChainSwapExpress.address.toString(),
-          payloadHash,
-          payload,
-          symbolA,
+          userWallet.address,
+          destinationChainSwapExpress.address,
           swapAmount,
+        )
+        .and.to.emit(tokenA, 'Transfer')
+        .withArgs(
+          destinationChainSwapExpress.address,
+          destinationChainTokenSwapper.address,
+          swapAmount,
+        )
+        .and.to.emit(tokenB, 'Transfer')
+        .withArgs(
+          destinationChainTokenSwapper.address,
+          destinationChainSwapExpress.address,
+          convertedAmount,
+        )
+        .and.to.emit(tokenB, 'Transfer')
+        .withArgs(
+          destinationChainSwapExpress.address,
+          destinationChainGateway.address,
+          convertedAmount,
+        )
+        .and.to.emit(destinationChainGateway, 'TokenSent')
+        .withArgs(
+          destinationChainSwapExpress.address,
+          sourceChain,
+          userWallet.address.toString(),
+          symbolB,
+          convertedAmount,
         );
-
-      const approveCommandId = getRandomID();
       const sourceTxHash = keccak256('0x123abc123abc');
       const sourceEventIndex = 17;
-
       const approveWithMintData = defaultAbiCoder.encode(
         [
           'string',
@@ -896,13 +270,11 @@ describe('GMPE', async () => {
           sourceEventIndex,
         ],
       );
-
       const approveExecute =
         await destinationChainGateway.approveContractCallWithMint(
           approveWithMintData,
           approveCommandId,
         );
-
       await expect(approveExecute)
         .to.emit(destinationChainGateway, 'ContractCallApprovedWithMint')
         .withArgs(
@@ -916,7 +288,6 @@ describe('GMPE', async () => {
           sourceTxHash,
           sourceEventIndex,
         );
-
       const execute = await destinationChainSwapExpress.executeWithToken(
         approveCommandId,
         sourceChain,
@@ -925,7 +296,6 @@ describe('GMPE', async () => {
         symbolA,
         swapAmount,
       );
-
       await expect(execute)
         .to.emit(tokenA, 'Transfer')
         .withArgs(
@@ -933,122 +303,169 @@ describe('GMPE', async () => {
           destinationChainSwapExpress.address,
           swapAmount,
         )
-        .and.to.emit(tokenB, 'Transfer')
-        .withArgs(
-          destinationChainTokenSwapper.address,
-          destinationChainSwapExpress.address,
-          convertedAmount,
-        )
-        .and.to.emit(tokenB, 'Transfer')
+        .and.to.emit(tokenA, 'Transfer')
         .withArgs(
           destinationChainSwapExpress.address,
-          destinationChainGateway.address,
-          convertedAmount,
-        )
-        .and.to.emit(destinationChainGateway, 'TokenSent')
-        .withArgs(
-          destinationChainSwapExpress.address,
-          sourceChain,
-          userWallet.address.toString(),
-          symbolB,
-          convertedAmount,
+          userWallet.address,
+          swapAmount,
         );
     });
   });
 
-  describe('Registry', () => {
-    it('should only pay back token amount once', async () => {
-      const swapAmount = 1e6;
-      const convertedAmount = 2 * swapAmount;
-      const payload = defaultAbiCoder.encode(
-        ['string', 'string'],
-        [symbolB, userWallet.address.toString()],
-      );
-      const payloadHash = keccak256(payload);
+  describe('AxelarExpressExecutableTest Execute', () => {
+    let commandId;
+    let contract;
+    const sourceTxHash = keccak256('0x123abc123abc');
+    const sourceEventIndex = 17;
+    const payload = '0x1234';
+    const payloadHash = keccak256(payload);
+    const sourceAddress = '0x5678';
 
-      const sourceChainTokenA = tokenFactory
-        .connect(userWallet)
-        .attach(await sourceChainGateway.tokenAddresses(symbolA));
-      await sourceChainTokenA.approve(
-        sourceChainSwapCaller.address,
-        swapAmount,
-      );
-
-      await expect(
-        sourceChainSwapCaller
-          .connect(userWallet)
-          .swapToken(
-            symbolA,
-            symbolB,
-            swapAmount,
-            userWallet.address.toString(),
-          ),
-      )
-        .to.emit(sourceChainGateway, 'ContractCallWithToken')
-        .withArgs(
-          sourceChainSwapCaller.address.toString(),
-          destinationChain,
-          destinationChainSwapExpress.address.toString(),
-          payloadHash,
-          payload,
-          symbolA,
-          swapAmount,
-        );
-
-      await tokenA
-        .connect(userWallet)
-        .transfer(expressService.address, swapAmount);
-
-      await expect(
-        expressService
-          .connect(ownerWallet)
-          .callWithToken(
-            getRandomID(),
-            sourceChain,
-            sourceChainSwapCaller.address,
-            destinationChainSwapExpress.address,
-            payload,
-            symbolA,
-            swapAmount,
-          ),
-      )
-        .to.emit(tokenA, 'Transfer')
-        .withArgs(
-          expressService.address,
-          destinationChainSwapExpress.address,
-          swapAmount,
-        )
-        .and.to.emit(tokenA, 'Transfer')
-        .withArgs(
-          destinationChainSwapExpress.address,
-          destinationChainTokenSwapper.address,
-          swapAmount,
-        )
-        .and.to.emit(tokenB, 'Transfer')
-        .withArgs(
-          destinationChainTokenSwapper.address,
-          destinationChainSwapExpress.address,
-          convertedAmount,
-        )
-        .and.to.emit(tokenB, 'Transfer')
-        .withArgs(
-          destinationChainSwapExpress.address,
-          destinationChainGateway.address,
-          convertedAmount,
-        )
-        .and.to.emit(destinationChainGateway, 'TokenSent')
-        .withArgs(
-          destinationChainSwapExpress.address,
+    async function approve() {
+      const approveWithMintData = defaultAbiCoder.encode(
+        ['string', 'string', 'address', 'bytes32', 'bytes32', 'uint256'],
+        [
           sourceChain,
-          userWallet.address.toString(),
-          symbolB,
-          convertedAmount,
+          sourceAddress,
+          contract.address,
+          payloadHash,
+          sourceTxHash,
+          sourceEventIndex,
+        ],
+      );
+      const approveExecute = destinationChainGateway.approveContractCall(
+        approveWithMintData,
+        commandId,
+      );
+      await expect(approveExecute)
+        .to.emit(destinationChainGateway, 'ContractCallApproved')
+        .withArgs(
+          commandId,
+          sourceChain,
+          sourceAddress,
+          contract.address,
+          payloadHash,
+          sourceTxHash,
+          sourceEventIndex,
         );
+    }
 
-      const approveCommandId = getRandomID();
-      const sourceTxHash = keccak256('0x123abc123abc');
-      const sourceEventIndex = 17;
+    async function expressSuccess() {
+      let expressTx = contract.expressExecute(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+      );
+      await expect(expressTx)
+        .to.emit(contract, 'ExpressExecuted')
+        .withArgs(
+          commandId,
+          sourceChain,
+          sourceAddress,
+          payloadHash,
+          ownerWallet.address,
+        )
+        .and.to.emit(contract, 'Executed')
+        .withArgs(sourceChain, sourceAddress, payload);
 
+      expressTx = contract.expressExecute(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+      );
+      await expect(expressTx).to.be.revertedWithCustomError(
+        contract,
+        'ExpressExecutorAlreadySet',
+      );
+    }
+
+    async function expressFailure() {
+      const expressTx = contract.expressExecute(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+      );
+      await expect(expressTx).to.be.revertedWithCustomError(
+        contract,
+        'AlreadyExecuted',
+      );
+    }
+
+    async function execution() {
+      const executeTx = contract.execute(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+      );
+      await expect(executeTx)
+        .to.emit(contract, 'Executed')
+        .withArgs(sourceChain, sourceAddress, payload);
+    }
+
+    async function expressFullfill() {
+      const executeTx = contract.execute(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+      );
+      await expect(executeTx)
+        .to.emit(contract, 'ExpressExecutionFulfilled')
+        .withArgs(
+          commandId,
+          sourceChain,
+          sourceAddress,
+          payloadHash,
+          ownerWallet.address,
+        )
+        .and.to.not.emit(contract, 'Executed');
+    }
+
+    beforeEach(() => {
+      commandId = getRandomID();
+      contract = expressExecutableTest;
+    });
+
+    it('Should Execute without express', async () => {
+      await approve();
+      await execution();
+    });
+
+    it('Should Execute with express before approval', async () => {
+      await expressSuccess();
+      await approve();
+      await expressFullfill();
+    });
+
+    it('Should not Execute with express after approval', async () => {
+      await approve();
+      await expressFailure();
+      await execution();
+    });
+
+    it('Should not Execute with express after execution', async () => {
+      await approve();
+      await execution();
+      await expressFailure();
+    });
+  });
+
+  describe('AxelarExpressExecutableTest Execute With Token', () => {
+    let commandId;
+    let contract;
+    const sourceTxHash = keccak256('0x123abc123abc');
+    const sourceEventIndex = 17;
+    const payload = '0x1234';
+    const payloadHash = keccak256(payload);
+    const sourceAddress = '0x5678';
+    const tokenSymbol = symbolA;
+    const amount = 1234;
+
+    async function approve() {
       const approveWithMintData = defaultAbiCoder.encode(
         [
           'string',
@@ -1062,333 +479,1196 @@ describe('GMPE', async () => {
         ],
         [
           sourceChain,
-          sourceChainSwapCaller.address.toString(),
-          destinationChainSwapExpress.address,
+          sourceAddress,
+          contract.address,
           payloadHash,
-          symbolA,
-          swapAmount,
+          tokenSymbol,
+          amount,
           sourceTxHash,
           sourceEventIndex,
         ],
       );
-
       const approveExecute =
-        await destinationChainGateway.approveContractCallWithMint(
+        destinationChainGateway.approveContractCallWithMint(
           approveWithMintData,
-          approveCommandId,
+          commandId,
         );
-
       await expect(approveExecute)
         .to.emit(destinationChainGateway, 'ContractCallApprovedWithMint')
         .withArgs(
-          approveCommandId,
+          commandId,
           sourceChain,
-          sourceChainSwapCaller.address.toString(),
-          destinationChainSwapExpress.address,
+          sourceAddress,
+          contract.address,
           payloadHash,
-          symbolA,
-          swapAmount,
+          tokenSymbol,
+          amount,
           sourceTxHash,
           sourceEventIndex,
         );
+    }
 
-      const execute = await destinationChainSwapExpress.executeWithToken(
-        approveCommandId,
+    async function expressNotPayed() {
+      const expressTx = contract.expressExecuteWithToken(
+        commandId,
         sourceChain,
-        sourceChainSwapCaller.address.toString(),
+        sourceAddress,
         payload,
-        symbolA,
-        swapAmount,
+        tokenSymbol,
+        amount,
       );
+      await expect(expressTx).to.be.revertedWithCustomError(
+        contract,
+        'TokenTransferFailed',
+      );
+    }
 
-      await expect(execute)
+    async function expressSuccess() {
+      await (
+        await tokenA.connect(ownerWallet).approve(contract.address, amount)
+      ).wait();
+      let expressTx = contract.expressExecuteWithToken(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+        tokenSymbol,
+        amount,
+      );
+      await expect(expressTx)
         .to.emit(tokenA, 'Transfer')
+        .withArgs(ownerWallet.address, contract.address, amount)
+        .and.to.emit(contract, 'ExpressExecutedWithToken')
         .withArgs(
-          destinationChainGateway.address,
-          destinationChainSwapExpress.address,
-          swapAmount,
-        )
-        .and.to.emit(tokenA, 'Transfer')
-        .withArgs(
-          destinationChainSwapExpress.address,
-          expressService.address,
-          swapAmount,
-        );
-
-      // Call execute again and ensure that it reverts
-
-      await expect(
-        destinationChainSwapExpress.executeWithToken(
-          approveCommandId,
+          commandId,
           sourceChain,
-          sourceChainSwapCaller.address.toString(),
-          payload,
-          symbolA,
-          swapAmount,
-        ),
-      ).to.be.revertedWithCustomError(
-        destinationChainSwapExpressProxy,
-        'NotApprovedByGateway',
-      );
-    });
-
-    it('should not register concurrent identical express calls', async () => {
-      const swapAmount = 1e6;
-      const convertedAmount = 2 * swapAmount;
-      const payload = defaultAbiCoder.encode(
-        ['string', 'string'],
-        [symbolB, userWallet.address.toString()],
-      );
-      const payloadHash = keccak256(payload);
-      const sourceChainTokenA = tokenFactory
-        .connect(userWallet)
-        .attach(await sourceChainGateway.tokenAddresses(symbolA));
-      await sourceChainTokenA.approve(
-        sourceChainSwapCaller.address,
-        swapAmount,
-      );
-      await expect(
-        sourceChainSwapCaller
-          .connect(userWallet)
-          .swapToken(
-            symbolA,
-            symbolB,
-            swapAmount,
-            userWallet.address.toString(),
-          ),
-      )
-        .to.emit(sourceChainGateway, 'ContractCallWithToken')
-        .withArgs(
-          sourceChainSwapCaller.address.toString(),
-          destinationChain,
-          destinationChainSwapExpress.address.toString(),
+          sourceAddress,
           payloadHash,
-          payload,
-          symbolA,
-          swapAmount,
-        );
-      await tokenA
-        .connect(userWallet)
-        .transfer(expressService.address, swapAmount);
-      await expect(
-        expressService
-          .connect(ownerWallet)
-          .callWithToken(
-            getRandomID(),
-            sourceChain,
-            sourceChainSwapCaller.address,
-            destinationChainSwapExpress.address,
-            payload,
-            symbolA,
-            swapAmount,
-          ),
-      )
-        .to.emit(tokenA, 'Transfer')
-        .withArgs(
-          expressService.address,
-          destinationChainSwapExpress.address,
-          swapAmount,
+          tokenSymbol,
+          amount,
+          ownerWallet.address,
         )
-        .and.to.emit(tokenA, 'Transfer')
-        .withArgs(
-          destinationChainSwapExpress.address,
-          destinationChainTokenSwapper.address,
-          swapAmount,
-        )
-        .and.to.emit(tokenB, 'Transfer')
-        .withArgs(
-          destinationChainTokenSwapper.address,
-          destinationChainSwapExpress.address,
-          convertedAmount,
-        )
-        .and.to.emit(tokenB, 'Transfer')
-        .withArgs(
-          destinationChainSwapExpress.address,
-          destinationChainGateway.address,
-          convertedAmount,
-        )
-        .and.to.emit(destinationChainGateway, 'TokenSent')
-        .withArgs(
-          destinationChainSwapExpress.address,
-          sourceChain,
-          userWallet.address.toString(),
-          symbolB,
-          convertedAmount,
-        );
+        .and.to.emit(contract, 'ExecutedWithToken')
+        .withArgs(sourceChain, sourceAddress, payload, tokenSymbol, amount);
 
-      const destinationChainSwapExpressRegistryAddress =
-        await destinationChainSwapExpressProxy.connect(ownerWallet).registry();
+      await (
+        await tokenA.connect(ownerWallet).approve(contract.address, amount)
+      ).wait();
 
-      const destinationChainSwapExpressRegistry =
-        await expressRegistryFactory.attach(
-          destinationChainSwapExpressRegistryAddress,
-        );
-
-      // Directly call expressExecuteWithToken on ExpressProxy with identical parameters
-      await expect(
-        destinationChainSwapExpressProxy
-          .connect(ownerWallet)
-          .expressExecuteWithToken(
-            sourceChain,
-            sourceChainSwapCaller.address,
-            payload,
-            symbolA,
-            swapAmount,
-          ),
-      ).to.be.revertedWithCustomError(
-        destinationChainSwapExpressRegistry,
-        'AlreadyExpressCalled',
+      expressTx = contract.expressExecuteWithToken(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+        tokenSymbol,
+        amount,
       );
+      await expect(expressTx).to.be.revertedWithCustomError(
+        contract,
+        'ExpressExecutorAlreadySet',
+      );
+
+      await (
+        await tokenA.connect(ownerWallet).approve(contract.address, 0)
+      ).wait();
+    }
+
+    async function expressFailure() {
+      const expressTx = contract.expressExecuteWithToken(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+        tokenSymbol,
+        amount,
+      );
+      await expect(expressTx).to.be.revertedWithCustomError(
+        contract,
+        'AlreadyExecuted',
+      );
+    }
+
+    async function execution() {
+      const executeTx = contract.executeWithToken(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+        tokenSymbol,
+        amount,
+      );
+      await expect(executeTx)
+        .to.emit(tokenA, 'Transfer')
+        .withArgs(destinationChainGateway.address, contract.address, amount)
+        .and.to.emit(contract, 'ExecutedWithToken')
+        .withArgs(sourceChain, sourceAddress, payload, tokenSymbol, amount);
+    }
+
+    async function expressFullfill() {
+      const executeTx = contract.executeWithToken(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+        tokenSymbol,
+        amount,
+      );
+      await expect(executeTx)
+        .to.emit(tokenA, 'Transfer')
+        .withArgs(contract.address, ownerWallet.address, amount)
+        .and.to.emit(contract, 'ExpressExecutionWithTokenFulfilled')
+        .withArgs(
+          commandId,
+          sourceChain,
+          sourceAddress,
+          payloadHash,
+          tokenSymbol,
+          amount,
+          ownerWallet.address,
+        )
+        .and.to.not.emit(contract, 'ExecutedWithToken');
+    }
+
+    beforeEach(() => {
+      commandId = getRandomID();
+      contract = expressExecutableTest;
     });
 
-    it('should only execute calls from the proxy', async () => {
-      const swapAmount = 1e6;
-      const payload = defaultAbiCoder.encode(
-        ['string', 'string'],
-        [symbolB, userWallet.address.toString()],
-      );
-      const payloadHash = keccak256(payload);
+    it('Should Execute without express', async () => {
+      await approve();
+      await execution();
+    });
 
-      const destinationChainSwapExpressRegistryAddress =
-        await destinationChainSwapExpressProxy.connect(ownerWallet).registry();
+    it('Should Execute with express before approval', async () => {
+      await expressSuccess();
+      await approve();
+      await expressFullfill();
+    });
 
-      const destinationChainSwapExpressRegistry =
-        await expressRegistryFactory.attach(
-          destinationChainSwapExpressRegistryAddress,
-        );
+    it('Should not Execute with express before approval without proper payment', async () => {
+      await expressNotPayed();
+    });
 
-      // Should revert if called directly by an EOA with no custom error (Line 91 of ExpressRegistry)
+    it('Should not Execute with express after approval', async () => {
+      await approve();
+      await expressFailure();
+      await execution();
+    });
 
-      await expect(
-        destinationChainSwapExpressRegistry
-          .connect(ownerWallet)
-          .registerExpressCallWithToken(
-            expressService.address,
-            sourceChain,
-            sourceChainSwapCaller.address.toString(),
-            payloadHash,
-            tokenA,
-            swapAmount,
-          ),
-      ).to.be.reverted;
+    it('Should not Execute with express after execution', async () => {
+      await approve();
+      await execution();
+      await expressFailure();
     });
   });
 
-  describe('ExpressProxyDeployer', () => {
-    it('should deploy proxy and registry correctly', async () => {
-      const salt = formatBytes32String(1);
-      const deploySaltBytes = defaultAbiCoder.encode(
-        ['address', 'bytes32'],
-        [ownerWallet.address, salt],
-      );
-      const deploySalt = keccak256(deploySaltBytes);
+  describe('AxelarValuedExpressExecutableTest Execute (native token)', () => {
+    let commandId;
+    let contract;
+    const sourceTxHash = keccak256('0x123abc123abc');
+    const sourceEventIndex = 17;
+    const payload = '0x1234';
+    const payloadHash = keccak256(payload);
+    const sourceAddress = '0x5678';
+    const value = 5678;
 
-      const setupParams = defaultAbiCoder.encode(
-        ['address', 'address', 'bytes', 'address'],
+    async function approve() {
+      const approveWithMintData = defaultAbiCoder.encode(
+        ['string', 'string', 'address', 'bytes32', 'bytes32', 'uint256'],
         [
-          destinationChainSwapExpress.address,
-          ownerWallet.address,
-          [],
-          destinationChainGateway.address,
+          sourceChain,
+          sourceAddress,
+          contract.address,
+          payloadHash,
+          sourceTxHash,
+          sourceEventIndex,
         ],
       );
-
-      await expressProxyDeployer
-        .connect(ownerWallet)
-        .deployExpressProxy(
-          deploySalt,
-          destinationChainSwapExpress.address,
-          ownerWallet.address,
-          setupParams,
-        );
-
-      const destinationChainSwapExpressProxyAddress = await expressProxyDeployer
-        .connect(ownerWallet)
-        .deployedProxyAddress(
-          salt,
-          ownerWallet.address,
-          expressProxyDeployer.address,
-        );
-
-      const sampleProxy = await expressProxyFactory.attach(
-        destinationChainSwapExpressProxyAddress,
+      const approveExecute = destinationChainGateway.approveContractCall(
+        approveWithMintData,
+        commandId,
       );
+      await expect(approveExecute)
+        .to.emit(destinationChainGateway, 'ContractCallApproved')
+        .withArgs(
+          commandId,
+          sourceChain,
+          sourceAddress,
+          contract.address,
+          payloadHash,
+          sourceTxHash,
+          sourceEventIndex,
+        );
+    }
 
-      // Should return true if address is correct and proxy & registry are deployed correctly
-      expect(await expressProxyDeployer.isExpressProxy(sampleProxy.address)).to
-        .be.true;
+    async function expressNotPayed() {
+      const expressTx = contract.expressExecute(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+      );
+      await expect(expressTx).to.be.revertedWithCustomError(
+        contract,
+        'InsufficientValue',
+      );
+    }
+
+    async function expressSuccess() {
+      let expressTx = contract.expressExecute(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+        { value },
+      );
+      await expect(expressTx)
+        .to.emit(contract, 'ExpressExecuted')
+        .withArgs(
+          commandId,
+          sourceChain,
+          sourceAddress,
+          payloadHash,
+          ownerWallet.address,
+        )
+        .and.to.emit(contract, 'Executed')
+        .withArgs(sourceChain, sourceAddress, payload);
+
+      expressTx = contract.expressExecute(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+        { value },
+      );
+      await expect(expressTx).to.be.revertedWithCustomError(
+        contract,
+        'ExpressExecutorAlreadySet',
+      );
+    }
+
+    async function expressFailure() {
+      const expressTx = contract.expressExecute(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+      );
+      await expect(expressTx).to.be.revertedWithCustomError(
+        contract,
+        'AlreadyExecuted',
+      );
+    }
+
+    async function execution() {
+      const executeTx = contract.execute(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+      );
+      await expect(executeTx)
+        .to.emit(contract, 'Executed')
+        .withArgs(sourceChain, sourceAddress, payload);
+    }
+
+    async function expressFullfill() {
+      const balance = BigInt(
+        await ownerWallet.provider.getBalance(ownerWallet.address),
+      );
+      const executeTx = contract
+        .connect(userWallet)
+        .execute(commandId, sourceChain, sourceAddress, payload);
+      await expect(executeTx)
+        .to.emit(contract, 'ExpressExecutionFulfilled')
+        .withArgs(
+          commandId,
+          sourceChain,
+          sourceAddress,
+          payloadHash,
+          ownerWallet.address,
+        )
+        .and.to.not.emit(contract, 'Executed');
+      const newBalance = BigInt(
+        await ownerWallet.provider.getBalance(ownerWallet.address),
+      );
+      expect(newBalance - balance).to.equal(value);
+    }
+
+    beforeEach(async () => {
+      commandId = getRandomID();
+      contract = valuedAxelarExpressExecutableTest;
+      await valuedAxelarExpressExecutableTest.setCallValue(value);
+      await valuedAxelarExpressExecutableTest.setExpressToken(AddressZero);
     });
 
-    it('should revert on proxy or registry bytecode mismatch', async () => {
-      const expressProxyDeployer2 = await expressProxyDeployerFactory
-        .deploy(destinationChainGateway.address)
-        .then((d) => d.deployed());
+    it('Should Execute without express', async () => {
+      await approve();
+      await execution();
+    });
+    it('Should Execute with express before approval', async () => {
+      await expressSuccess();
+      await approve();
+      await expressFullfill();
+    });
 
-      const destinationChainSwapExpress2 = await deployCreate3Upgradable(
-        create3Deployer.address,
-        ownerWallet,
-        DestinationChainSwapExpress,
-        ExpressProxy,
-        [destinationChainGateway.address, destinationChainTokenSwapper.address],
-        [destinationChainGateway.address],
+    it('Should not Execute with express before approval without proper payment', async () => {
+      await expressNotPayed();
+    });
+
+    it('Should not Execute with express after approval', async () => {
+      await approve();
+      await expressFailure();
+      await execution();
+    });
+
+    it('Should not Execute with express after execution', async () => {
+      await approve();
+      await execution();
+      await expressFailure();
+    });
+  });
+
+  describe('AxelarValuedExpressExecutableTest Execute (ERC20)', () => {
+    let commandId;
+    let contract;
+    const sourceTxHash = keccak256('0x123abc123abc');
+    const sourceEventIndex = 17;
+    const payload = '0x1234';
+    const payloadHash = keccak256(payload);
+    const sourceAddress = '0x5678';
+    const value = 5678;
+
+    async function approve() {
+      const approveWithMintData = defaultAbiCoder.encode(
+        ['string', 'string', 'address', 'bytes32', 'bytes32', 'uint256'],
+        [
+          sourceChain,
+          sourceAddress,
+          contract.address,
+          payloadHash,
+          sourceTxHash,
+          sourceEventIndex,
+        ],
+      );
+      const approveExecute = destinationChainGateway.approveContractCall(
+        approveWithMintData,
+        commandId,
+      );
+      await expect(approveExecute)
+        .to.emit(destinationChainGateway, 'ContractCallApproved')
+        .withArgs(
+          commandId,
+          sourceChain,
+          sourceAddress,
+          contract.address,
+          payloadHash,
+          sourceTxHash,
+          sourceEventIndex,
+        );
+    }
+
+    async function expressNotPayed() {
+      const expressTx = contract.expressExecute(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+      );
+      await expect(expressTx).to.be.revertedWithCustomError(
+        contract,
+        'TokenTransferFailed',
+      );
+    }
+
+    async function expressSuccess() {
+      await (await tokenB.approve(contract.address, value)).wait();
+      let expressTx = contract.expressExecute(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+      );
+      await expect(expressTx)
+        .to.emit(tokenB, 'Transfer')
+        .withArgs(ownerWallet.address, contract.address, value)
+        .and.to.emit(contract, 'ExpressExecuted')
+        .withArgs(
+          commandId,
+          sourceChain,
+          sourceAddress,
+          payloadHash,
+          ownerWallet.address,
+        )
+        .and.to.emit(contract, 'Executed')
+        .withArgs(sourceChain, sourceAddress, payload);
+
+      await (await tokenB.approve(contract.address, value)).wait();
+
+      expressTx = contract.expressExecute(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
       );
 
-      const destinationChainSwapExpressProxy2 =
-        await expressProxyFactory.attach(destinationChainSwapExpress2.address);
-
-      const invalidExpressProxyFactory = await ethers.getContractFactory(
-        'InvalidExpressProxy',
-        ownerWallet,
+      await expect(expressTx).to.be.revertedWithCustomError(
+        contract,
+        'ExpressExecutorAlreadySet',
       );
 
-      const invalidExpressProxy = await invalidExpressProxyFactory
-        .deploy()
-        .then((d) => d.deployed());
+      await (await tokenB.approve(contract.address, 0)).wait();
+    }
 
-      // should fail first condition (line 31 of ExpressProxyDeployer)
-      expect(
-        await expressProxyDeployer2
+    async function expressFailure() {
+      const expressTx = contract.expressExecute(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+      );
+      await expect(expressTx).to.be.revertedWithCustomError(
+        contract,
+        'AlreadyExecuted',
+      );
+    }
+
+    async function execution() {
+      const executeTx = contract.execute(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+      );
+      await expect(executeTx)
+        .to.emit(contract, 'Executed')
+        .withArgs(sourceChain, sourceAddress, payload);
+    }
+
+    async function expressFullfill() {
+      const executeTx = contract
+        .connect(userWallet)
+        .execute(commandId, sourceChain, sourceAddress, payload);
+      await expect(executeTx)
+        .to.emit(tokenB, 'Transfer')
+        .withArgs(contract.address, ownerWallet.address, value)
+        .and.to.emit(contract, 'ExpressExecutionFulfilled')
+        .withArgs(
+          commandId,
+          sourceChain,
+          sourceAddress,
+          payloadHash,
+          ownerWallet.address,
+        )
+        .and.to.not.emit(contract, 'Executed');
+    }
+
+    beforeEach(async () => {
+      commandId = getRandomID();
+      contract = valuedAxelarExpressExecutableTest;
+      await valuedAxelarExpressExecutableTest.setCallValue(value);
+      await valuedAxelarExpressExecutableTest.setExpressToken(tokenB.address);
+    });
+
+    it('Should Execute without express', async () => {
+      await approve();
+      await execution();
+    });
+
+    it('Should Execute with express before approval', async () => {
+      await expressSuccess();
+      await approve();
+      await expressFullfill();
+    });
+
+    it('Should not Execute with express before approval without proper payment', async () => {
+      await expressNotPayed();
+    });
+
+    it('Should not Execute with express after approval', async () => {
+      await approve();
+      await expressFailure();
+      await execution();
+    });
+
+    it('Should not Execute with express after execution', async () => {
+      await approve();
+      await execution();
+      await expressFailure();
+    });
+  });
+
+  describe('AxelarValuedExpressExecutableTest Execute With Token (native token)', () => {
+    let commandId;
+    let contract;
+    const sourceTxHash = keccak256('0x123abc123abc');
+    const sourceEventIndex = 17;
+    const payload = '0x1234';
+    const payloadHash = keccak256(payload);
+    const sourceAddress = '0x5678';
+    const tokenSymbol = symbolA;
+    const amount = 1234;
+    const value = 5678;
+
+    async function approve() {
+      const approveWithMintData = defaultAbiCoder.encode(
+        [
+          'string',
+          'string',
+          'address',
+          'bytes32',
+          'string',
+          'uint256',
+          'bytes32',
+          'uint256',
+        ],
+        [
+          sourceChain,
+          sourceAddress,
+          contract.address,
+          payloadHash,
+          tokenSymbol,
+          amount,
+          sourceTxHash,
+          sourceEventIndex,
+        ],
+      );
+      const approveExecute =
+        destinationChainGateway.approveContractCallWithMint(
+          approveWithMintData,
+          commandId,
+        );
+      await expect(approveExecute)
+        .to.emit(destinationChainGateway, 'ContractCallApprovedWithMint')
+        .withArgs(
+          commandId,
+          sourceChain,
+          sourceAddress,
+          contract.address,
+          payloadHash,
+          tokenSymbol,
+          amount,
+          sourceTxHash,
+          sourceEventIndex,
+        );
+    }
+
+    async function expressSuccess() {
+      await (
+        await tokenA.connect(ownerWallet).approve(contract.address, amount)
+      ).wait();
+      let expressTx = contract.expressExecuteWithToken(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+        tokenSymbol,
+        amount,
+        { value },
+      );
+      await expect(expressTx)
+        .to.emit(tokenA, 'Transfer')
+        .withArgs(ownerWallet.address, contract.address, amount)
+        .and.to.emit(contract, 'ExpressExecutedWithToken')
+        .withArgs(
+          commandId,
+          sourceChain,
+          sourceAddress,
+          payloadHash,
+          tokenSymbol,
+          amount,
+          ownerWallet.address,
+        )
+        .and.to.emit(contract, 'ExecutedWithToken')
+        .withArgs(sourceChain, sourceAddress, payload, tokenSymbol, amount);
+
+      await (
+        await tokenA.connect(ownerWallet).approve(contract.address, amount)
+      ).wait();
+
+      expressTx = contract.expressExecuteWithToken(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+        tokenSymbol,
+        amount,
+        { value },
+      );
+      await expect(expressTx).to.be.revertedWithCustomError(
+        contract,
+        'ExpressExecutorAlreadySet',
+      );
+
+      await (
+        await tokenA.connect(ownerWallet).approve(contract.address, 0)
+      ).wait();
+    }
+
+    async function expressNotPayed() {
+      await (await tokenA.approve(contract.address, amount)).wait();
+      const expressTx = contract.expressExecuteWithToken(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+        tokenSymbol,
+        amount,
+      );
+      await expect(expressTx).to.be.revertedWithCustomError(
+        contract,
+        'InsufficientValue',
+      );
+      await (await tokenA.approve(contract.address, 0)).wait();
+    }
+
+    async function expressFailure() {
+      const expressTx = contract.expressExecuteWithToken(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+        tokenSymbol,
+        amount,
+      );
+      await expect(expressTx).to.be.revertedWithCustomError(
+        contract,
+        'AlreadyExecuted',
+      );
+    }
+
+    async function execution() {
+      const executeTx = contract.executeWithToken(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+        tokenSymbol,
+        amount,
+      );
+      await expect(executeTx)
+        .to.emit(tokenA, 'Transfer')
+        .withArgs(destinationChainGateway.address, contract.address, amount)
+        .and.to.emit(contract, 'ExecutedWithToken')
+        .withArgs(sourceChain, sourceAddress, payload, tokenSymbol, amount);
+    }
+
+    async function expressFullfill() {
+      const balance = BigInt(
+        await ownerWallet.provider.getBalance(ownerWallet.address),
+      );
+      const executeTx = contract
+        .connect(userWallet)
+        .executeWithToken(
+          commandId,
+          sourceChain,
+          sourceAddress,
+          payload,
+          tokenSymbol,
+          amount,
+        );
+      await expect(executeTx)
+        .to.emit(tokenA, 'Transfer')
+        .withArgs(contract.address, ownerWallet.address, amount)
+        .and.to.emit(contract, 'ExpressExecutionWithTokenFulfilled')
+        .withArgs(
+          commandId,
+          sourceChain,
+          sourceAddress,
+          payloadHash,
+          tokenSymbol,
+          amount,
+          ownerWallet.address,
+        )
+        .and.to.not.emit(contract, 'ExecutedWithToken');
+      const newBalance = BigInt(
+        await ownerWallet.provider.getBalance(ownerWallet.address),
+      );
+      expect(newBalance - balance).to.equal(value);
+    }
+
+    beforeEach(async () => {
+      commandId = getRandomID();
+      contract = valuedAxelarExpressExecutableTest;
+      await valuedAxelarExpressExecutableTest.setCallValue(value);
+      await valuedAxelarExpressExecutableTest.setExpressToken(AddressZero);
+    });
+
+    it('Should Execute without express', async () => {
+      await approve();
+      await execution();
+    });
+
+    it('Should Execute with express before approval', async () => {
+      await expressSuccess();
+      await approve();
+      await expressFullfill();
+    });
+
+    it('Should not Execute with express before approval without proper payment', async () => {
+      await expressNotPayed();
+    });
+
+    it('Should not Execute with express after approval', async () => {
+      await approve();
+      await expressFailure();
+      await execution();
+    });
+
+    it('Should not Execute with express after execution', async () => {
+      await approve();
+      await execution();
+      await expressFailure();
+    });
+  });
+
+  describe('AxelarValuedExpressExecutableTest Execute With Token (different ERC20)', () => {
+    let commandId;
+    let contract;
+    const sourceTxHash = keccak256('0x123abc123abc');
+    const sourceEventIndex = 17;
+    const payload = '0x1234';
+    const payloadHash = keccak256(payload);
+    const sourceAddress = '0x5678';
+    const tokenSymbol = symbolA;
+    const amount = 1234;
+    const value = 5678;
+
+    async function approve() {
+      const approveWithMintData = defaultAbiCoder.encode(
+        [
+          'string',
+          'string',
+          'address',
+          'bytes32',
+          'string',
+          'uint256',
+          'bytes32',
+          'uint256',
+        ],
+        [
+          sourceChain,
+          sourceAddress,
+          contract.address,
+          payloadHash,
+          tokenSymbol,
+          amount,
+          sourceTxHash,
+          sourceEventIndex,
+        ],
+      );
+      const approveExecute =
+        destinationChainGateway.approveContractCallWithMint(
+          approveWithMintData,
+          commandId,
+        );
+      await expect(approveExecute)
+        .to.emit(destinationChainGateway, 'ContractCallApprovedWithMint')
+        .withArgs(
+          commandId,
+          sourceChain,
+          sourceAddress,
+          contract.address,
+          payloadHash,
+          tokenSymbol,
+          amount,
+          sourceTxHash,
+          sourceEventIndex,
+        );
+    }
+
+    async function expressSuccess() {
+      await (
+        await tokenA.connect(ownerWallet).approve(contract.address, amount)
+      ).wait();
+      await (
+        await tokenB.connect(ownerWallet).approve(contract.address, value)
+      ).wait();
+      let expressTx = contract.expressExecuteWithToken(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+        tokenSymbol,
+        amount,
+      );
+      await expect(expressTx)
+        .to.emit(tokenA, 'Transfer')
+        .withArgs(ownerWallet.address, contract.address, amount)
+        .and.to.emit(tokenB, 'Transfer')
+        .withArgs(ownerWallet.address, contract.address, value)
+        .and.to.emit(contract, 'ExpressExecutedWithToken')
+        .withArgs(
+          commandId,
+          sourceChain,
+          sourceAddress,
+          payloadHash,
+          tokenSymbol,
+          amount,
+          ownerWallet.address,
+        )
+        .and.to.emit(contract, 'ExecutedWithToken')
+        .withArgs(sourceChain, sourceAddress, payload, tokenSymbol, amount);
+
+      await (
+        await tokenA.connect(ownerWallet).approve(contract.address, amount)
+      ).wait();
+      await (
+        await tokenB.connect(ownerWallet).approve(contract.address, value)
+      ).wait();
+
+      expressTx = contract.expressExecuteWithToken(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+        tokenSymbol,
+        amount,
+      );
+      await expect(expressTx).to.be.revertedWithCustomError(
+        contract,
+        'ExpressExecutorAlreadySet',
+      );
+
+      await (
+        await tokenA.connect(ownerWallet).approve(contract.address, 0)
+      ).wait();
+      await (
+        await tokenB.connect(ownerWallet).approve(contract.address, 0)
+      ).wait();
+    }
+
+    async function expressNotPayed() {
+      await (await tokenA.approve(contract.address, amount)).wait();
+      const expressTx = contract.expressExecuteWithToken(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+        tokenSymbol,
+        amount,
+      );
+      await expect(expressTx).to.be.revertedWithCustomError(
+        contract,
+        'TokenTransferFailed',
+      );
+      await (await tokenA.approve(contract.address, 0)).wait();
+    }
+
+    async function expressFailure() {
+      const expressTx = contract.expressExecuteWithToken(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+        tokenSymbol,
+        amount,
+      );
+      await expect(expressTx).to.be.revertedWithCustomError(
+        contract,
+        'AlreadyExecuted',
+      );
+    }
+
+    async function execution() {
+      const executeTx = contract.executeWithToken(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+        tokenSymbol,
+        amount,
+      );
+      await expect(executeTx)
+        .to.emit(tokenA, 'Transfer')
+        .withArgs(destinationChainGateway.address, contract.address, amount)
+        .and.to.emit(contract, 'ExecutedWithToken')
+        .withArgs(sourceChain, sourceAddress, payload, tokenSymbol, amount);
+    }
+
+    async function expressFullfill() {
+      const executeTx = contract
+        .connect(userWallet)
+        .executeWithToken(
+          commandId,
+          sourceChain,
+          sourceAddress,
+          payload,
+          tokenSymbol,
+          amount,
+        );
+      await expect(executeTx)
+        .to.emit(tokenA, 'Transfer')
+        .withArgs(contract.address, ownerWallet.address, amount)
+        .and.to.emit(tokenB, 'Transfer')
+        .withArgs(contract.address, ownerWallet.address, value)
+        .and.to.emit(contract, 'ExpressExecutionWithTokenFulfilled')
+        .withArgs(
+          commandId,
+          sourceChain,
+          sourceAddress,
+          payloadHash,
+          tokenSymbol,
+          amount,
+          ownerWallet.address,
+        )
+        .and.to.not.emit(contract, 'ExecutedWithToken');
+    }
+
+    beforeEach(async () => {
+      commandId = getRandomID();
+      contract = valuedAxelarExpressExecutableTest;
+      await valuedAxelarExpressExecutableTest.setCallValue(value);
+      await valuedAxelarExpressExecutableTest.setExpressToken(tokenB.address);
+    });
+
+    it('Should Execute without express', async () => {
+      await approve();
+      await execution();
+    });
+
+    it('Should Execute with express before approval', async () => {
+      await expressSuccess();
+      await approve();
+      await expressFullfill();
+    });
+
+    it('Should not Execute with express before approval without proper payment', async () => {
+      await expressNotPayed();
+    });
+
+    it('Should not Execute with express after approval', async () => {
+      await approve();
+      await expressFailure();
+      await execution();
+    });
+
+    it('Should not Execute with express after execution', async () => {
+      await approve();
+      await execution();
+      await expressFailure();
+    });
+  });
+
+  describe('AxelarValuedExpressExecutableTest Execute With Token (different ERC20)', () => {
+    let commandId;
+    let contract;
+    const sourceTxHash = keccak256('0x123abc123abc');
+    const sourceEventIndex = 17;
+    const payload = '0x1234';
+    const payloadHash = keccak256(payload);
+    const sourceAddress = '0x5678';
+    const tokenSymbol = symbolA;
+    const amount = 1234;
+    const value = 5678;
+
+    async function approve() {
+      const approveWithMintData = defaultAbiCoder.encode(
+        [
+          'string',
+          'string',
+          'address',
+          'bytes32',
+          'string',
+          'uint256',
+          'bytes32',
+          'uint256',
+        ],
+        [
+          sourceChain,
+          sourceAddress,
+          contract.address,
+          payloadHash,
+          tokenSymbol,
+          amount,
+          sourceTxHash,
+          sourceEventIndex,
+        ],
+      );
+      const approveExecute =
+        destinationChainGateway.approveContractCallWithMint(
+          approveWithMintData,
+          commandId,
+        );
+      await expect(approveExecute)
+        .to.emit(destinationChainGateway, 'ContractCallApprovedWithMint')
+        .withArgs(
+          commandId,
+          sourceChain,
+          sourceAddress,
+          contract.address,
+          payloadHash,
+          tokenSymbol,
+          amount,
+          sourceTxHash,
+          sourceEventIndex,
+        );
+    }
+
+    async function expressSuccess() {
+      await (
+        await tokenA
           .connect(ownerWallet)
-          .isExpressProxy(invalidExpressProxy.address),
-      ).to.be.false;
-
-      // should fail second condition (line 31 of ExpressProxyDeployer)
-      expect(
-        await expressProxyDeployer2
-          .connect(ownerWallet)
-          .isExpressProxy(destinationChainSwapExpressProxy2.address),
-      ).to.be.false;
-
-      // add case for wrong registry bytecode, should fail second condition
-      await destinationChainSwapExpressProxy2.deployRegistry(
-        InvalidExpressRegistry.bytecode,
+          .approve(contract.address, amount + value)
+      ).wait();
+      let expressTx = contract.expressExecuteWithToken(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+        tokenSymbol,
+        amount,
       );
-      expect(
-        await expressProxyDeployer2
-          .connect(ownerWallet)
-          .isExpressProxy(destinationChainSwapExpressProxy2.address),
-      ).to.be.false;
+      await expect(expressTx)
+        .to.emit(tokenA, 'Transfer')
+        .withArgs(ownerWallet.address, contract.address, amount)
+        .to.emit(tokenA, 'Transfer')
+        .withArgs(ownerWallet.address, contract.address, value)
+        .and.to.emit(contract, 'ExpressExecutedWithToken')
+        .withArgs(
+          commandId,
+          sourceChain,
+          sourceAddress,
+          payloadHash,
+          tokenSymbol,
+          amount,
+          ownerWallet.address,
+        )
+        .and.to.emit(contract, 'ExecutedWithToken')
+        .withArgs(sourceChain, sourceAddress, payload, tokenSymbol, amount);
 
-      // should pass second condition once correct proxy & corresponding registry are deployed
-      const destinationChainSwapExpress3 = await deployCreate3Upgradable(
-        create3Deployer.address,
-        ownerWallet,
-        DestinationChainSwapExpress,
-        ExpressProxy,
-        [destinationChainGateway.address, destinationChainTokenSwapper.address],
-        [destinationChainGateway.address],
-      );
-
-      const destinationChainSwapExpressProxy3 =
-        await expressProxyFactory.attach(destinationChainSwapExpress3.address);
-      await destinationChainSwapExpressProxy3.deployRegistry(
-        ExpressRegistry.bytecode,
-      );
-      expect(
-        await expressProxyDeployer2
+      await (
+        await tokenA
           .connect(ownerWallet)
-          .isExpressProxy(destinationChainSwapExpressProxy3.address),
-      ).to.be.true;
+          .approve(contract.address, amount + value)
+      ).wait();
+
+      expressTx = contract.expressExecuteWithToken(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+        tokenSymbol,
+        amount,
+      );
+      await expect(expressTx).to.be.revertedWithCustomError(
+        contract,
+        'ExpressExecutorAlreadySet',
+      );
+      await (
+        await tokenA.connect(ownerWallet).approve(contract.address, 0)
+      ).wait();
+    }
+
+    async function expressNotPayed() {
+      await (await tokenA.approve(contract.address, amount)).wait();
+      const expressTx = contract.expressExecuteWithToken(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+        tokenSymbol,
+        amount,
+      );
+      await expect(expressTx).to.be.revertedWithCustomError(
+        contract,
+        'TokenTransferFailed',
+      );
+      await (await tokenA.approve(contract.address, 0)).wait();
+    }
+
+    async function expressFailure() {
+      const expressTx = contract.expressExecuteWithToken(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+        tokenSymbol,
+        amount,
+      );
+      await expect(expressTx).to.be.revertedWithCustomError(
+        contract,
+        'AlreadyExecuted',
+      );
+    }
+
+    async function execution() {
+      const executeTx = contract.executeWithToken(
+        commandId,
+        sourceChain,
+        sourceAddress,
+        payload,
+        tokenSymbol,
+        amount,
+      );
+      await expect(executeTx)
+        .to.emit(tokenA, 'Transfer')
+        .withArgs(destinationChainGateway.address, contract.address, amount)
+        .and.to.emit(contract, 'ExecutedWithToken')
+        .withArgs(sourceChain, sourceAddress, payload, tokenSymbol, amount);
+    }
+
+    async function expressFullfill() {
+      const executeTx = contract
+        .connect(userWallet)
+        .executeWithToken(
+          commandId,
+          sourceChain,
+          sourceAddress,
+          payload,
+          tokenSymbol,
+          amount,
+        );
+      await expect(executeTx)
+        .to.emit(tokenA, 'Transfer')
+        .withArgs(contract.address, ownerWallet.address, amount)
+        .to.emit(tokenA, 'Transfer')
+        .withArgs(contract.address, ownerWallet.address, value)
+        .and.to.emit(contract, 'ExpressExecutionWithTokenFulfilled')
+        .withArgs(
+          commandId,
+          sourceChain,
+          sourceAddress,
+          payloadHash,
+          tokenSymbol,
+          amount,
+          ownerWallet.address,
+        )
+        .and.to.not.emit(contract, 'ExecutedWithToken');
+    }
+
+    beforeEach(async () => {
+      commandId = getRandomID();
+      contract = valuedAxelarExpressExecutableTest;
+      await valuedAxelarExpressExecutableTest.setCallValue(value);
+      await valuedAxelarExpressExecutableTest.setExpressToken(tokenA.address);
+    });
+
+    it('Should Execute without express', async () => {
+      await approve();
+      await execution();
+    });
+
+    it('Should Execute with express before approval', async () => {
+      await expressSuccess();
+      await approve();
+      await expressFullfill();
+    });
+
+    it('Should not Execute with express before approval without proper payment', async () => {
+      await expressNotPayed();
+    });
+
+    it('Should not Execute with express after approval', async () => {
+      await approve();
+      await expressFailure();
+      await execution();
+    });
+
+    it('Should not Execute with express after execution', async () => {
+      await approve();
+      await execution();
+      await expressFailure();
     });
   });
 });

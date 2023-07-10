@@ -31,7 +31,7 @@ for file in $(find "$SOURCE" -name '*.sol' -print); do
 
     echo "// Source: $SOURCE/$path\n\n" >"$OUTPUT/$path"
     echo "// SPDX-License-Identifier: MIT\n\n" >>"$OUTPUT/$path"
-    echo "pragma solidity $version;\n\n" >>"$OUTPUT/$path"
+    echo "pragma solidity ^0.8.0;\n\n" >>"$OUTPUT/$path"
     printf "%s" "$text" >>"$OUTPUT/$path"
 
     # Prettify source (in particular, remove extra newlines)

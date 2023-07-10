@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.9;
+pragma solidity ^0.8.0;
 
-import { ExpressExecutable } from '../../express/ExpressExecutable.sol';
+import { AxelarExpressExecutable } from '../../express/AxelarExpressExecutable.sol';
 import { IERC20 } from '../../interfaces/IERC20.sol';
 import { DestinationChainTokenSwapper } from './DestinationChainTokenSwapper.sol';
 
-contract DestinationChainSwapExpress is ExpressExecutable {
+contract DestinationChainSwapExpress is AxelarExpressExecutable {
     DestinationChainTokenSwapper public immutable swapper;
 
     event Executed(string sourceChain, string sourceAddress, bytes payload);
 
-    constructor(address gatewayAddress, address swapperAddress) ExpressExecutable(gatewayAddress) {
+    constructor(address gatewayAddress, address swapperAddress) AxelarExpressExecutable(gatewayAddress) {
         swapper = DestinationChainTokenSwapper(swapperAddress);
     }
 

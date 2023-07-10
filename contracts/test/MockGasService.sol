@@ -6,7 +6,6 @@ import { IAxelarGasService } from '../interfaces/IAxelarGasService.sol';
 import { IERC20 } from '../interfaces/IERC20.sol';
 import { SafeTokenTransfer, SafeTokenTransferFrom, SafeNativeTransfer } from '../utils/SafeTransfer.sol';
 
-// This should be owned by the microservice that is paying for gas.
 contract MockGasService is IAxelarGasService {
     using SafeTokenTransfer for IERC20;
     using SafeTokenTransferFrom for IERC20;

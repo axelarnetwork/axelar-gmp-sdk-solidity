@@ -317,7 +317,7 @@ describe('GMPE', async () => {
     let contract;
     const sourceTxHash = keccak256('0x123abc123abc');
     const sourceEventIndex = 17;
-    const payload = '0x' + '1'.repeat(128);
+    const payload = '0x1234';
     const payloadHash = keccak256(payload);
     const sourceAddress = '0x5678';
 
@@ -435,7 +435,7 @@ describe('GMPE', async () => {
       await execution();
     });
 
-    it.only('Should Execute with express before approval', async () => {
+    it('Should Execute with express before approval', async () => {
       await expressSuccess();
       await approve();
       await expressFullfill();
@@ -621,7 +621,7 @@ describe('GMPE', async () => {
           commandId,
           sourceChain,
           sourceAddress,
-          payload,
+          payloadHash,
           tokenSymbol,
           amount,
           ownerWallet.address,
@@ -785,7 +785,7 @@ describe('GMPE', async () => {
           commandId,
           sourceChain,
           sourceAddress,
-          payload,
+          payloadHash,
           ownerWallet.address,
         )
         .and.to.not.emit(contract, 'Executed');
@@ -957,7 +957,7 @@ describe('GMPE', async () => {
           commandId,
           sourceChain,
           sourceAddress,
-          payload,
+          payloadHash,
           ownerWallet.address,
         )
         .and.to.not.emit(contract, 'Executed');
@@ -1175,7 +1175,7 @@ describe('GMPE', async () => {
           commandId,
           sourceChain,
           sourceAddress,
-          payload,
+          payloadHash,
           tokenSymbol,
           amount,
           ownerWallet.address,
@@ -1407,7 +1407,7 @@ describe('GMPE', async () => {
           commandId,
           sourceChain,
           sourceAddress,
-          payload,
+          payloadHash,
           tokenSymbol,
           amount,
           ownerWallet.address,
@@ -1521,7 +1521,9 @@ describe('GMPE', async () => {
       );
       await expect(expressTx)
         .to.emit(tokenA, 'Transfer')
-        .withArgs(ownerWallet.address, contract.address, amount + value)
+        .withArgs(ownerWallet.address, contract.address, amount)
+        .to.emit(tokenA, 'Transfer')
+        .withArgs(ownerWallet.address, contract.address, value)
         .and.to.emit(contract, 'ExpressExecutedWithToken')
         .withArgs(
           commandId,
@@ -1540,6 +1542,7 @@ describe('GMPE', async () => {
           .connect(ownerWallet)
           .approve(contract.address, amount + value)
       ).wait();
+
       expressTx = contract.expressExecuteWithToken(
         commandId,
         sourceChain,
@@ -1618,13 +1621,15 @@ describe('GMPE', async () => {
         );
       await expect(executeTx)
         .to.emit(tokenA, 'Transfer')
-        .withArgs(contract.address, ownerWallet.address, amount + value)
+        .withArgs(contract.address, ownerWallet.address, amount)
+        .to.emit(tokenA, 'Transfer')
+        .withArgs(contract.address, ownerWallet.address, value)
         .and.to.emit(contract, 'ExpressExecutionWithTokenFulfilled')
         .withArgs(
           commandId,
           sourceChain,
           sourceAddress,
-          payload,
+          payloadHash,
           tokenSymbol,
           amount,
           ownerWallet.address,

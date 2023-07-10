@@ -1,4 +1,4 @@
-name: 'publish to npm'
+name: 'Publish to npm'
 
 on:
   workflow_dispatch:
@@ -15,9 +15,19 @@ jobs:
         with:
           node-version: '18.x'
           registry-url: 'https://registry.npmjs.org'
-      - run: npm install
-      - run: npm run build
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Flatten
+        run: npm run flatten
+
       - run: cp -r artifacts/contracts/interfaces .
-      - run: npm publish
+
+      - name: Publish
+        run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

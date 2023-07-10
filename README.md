@@ -20,8 +20,8 @@ $ npm install @axelar-network/axelar-gmp-sdk-solidity
 ### AxelarExecutable
 Base interface for validating and executing GMP contract calls.
 
-### ExpressProxy and AxelarExpressExecutable
-Interface that allows to expedite GMP calls by lending assets and performing execution 
+### AxelarExpressExecutable
+Interface that allows expediting GMP calls by lending assets and performing execution 
 before it fully propagates through the Axelar network.
 
 ### Create3Deployer and ConstAddressDeployer

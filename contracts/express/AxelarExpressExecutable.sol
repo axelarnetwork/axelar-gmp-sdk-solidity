@@ -133,7 +133,15 @@ abstract contract AxelarExpressExecutable is ExpressExecutorTracker {
 
         _executeWithToken(sourceChain, sourceAddress, payload, symbol, amount);
 
-        emit ExpressExecutedWithToken(commandId, sourceChain, sourceAddress, payloadHash, symbol, amount, expressExecutor);
+        emit ExpressExecutedWithToken(
+            commandId,
+            sourceChain,
+            sourceAddress,
+            payloadHash,
+            symbol,
+            amount,
+            expressExecutor
+        );
     }
 
     function _execute(

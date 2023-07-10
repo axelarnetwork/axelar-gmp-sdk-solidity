@@ -21,14 +21,15 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker {
         gateway = IAxelarGateway(gateway_);
     }
 
-    // Returns the amount of native token that that this call is worth.
+    // Returns the amount of token that this call is worth. If `tokenAddress` is `0`, then value is in terms of the native token, otherwise it's in terms of the token address.
     function contractCallValue(
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
     ) public view virtual returns (address tokenAddress, uint256 value);
 
-    // Returns the amount of token that that this call is worth. If `native` is true then native token is used, otherwise the token specified by `symbol` is used.
+    // Returns the amount of token that this call is worth. If `tokenAddress` is `0`, then value is in terms of the native token, otherwise it's in terms of the token address.
+    // The returned call value is in addition to the `amount` of token `symbol` being transferred with the call.
     function contractCallWithTokenValue(
         string calldata sourceChain,
         string calldata sourceAddress,
@@ -55,13 +56,12 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker {
             return;
         }
 
-        (address tokenAddress, uint256 value) = contractCallValue(sourceChain, sourceAddress, payload);
-        if (tokenAddress == address(0)) {
-            payable(expressExecutor).safeNativeTransfer(value);
-        } else {
-            IERC20(tokenAddress).safeTransfer(expressExecutor, value);
+        {
+            (address tokenAddress, uint256 value) = contractCallValue(sourceChain, sourceAddress, payload);
+            _transferToExecutor(expressExecutor, tokenAddress, value);
         }
-        emit ExpressExecutionFulfilled(commandId, sourceChain, sourceAddress, payload, expressExecutor);
+
+        emit ExpressExecutionFulfilled(commandId, sourceChain, sourceAddress, payloadHash, expressExecutor);
     }
 
     function executeWithToken(
@@ -72,61 +72,53 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker {
         string calldata tokenSymbol,
         uint256 amount
     ) external {
-        address expressExecutor;
-        {
-            bytes32 payloadHash = keccak256(payload);
-            if (
-                !gateway.validateContractCallAndMint(
-                    commandId,
-                    sourceChain,
-                    sourceAddress,
-                    payloadHash,
-                    tokenSymbol,
-                    amount
-                )
-            ) revert NotApprovedByGateway();
-
-            expressExecutor = _popExpressExecutorWithToken(
+        bytes32 payloadHash = keccak256(payload);
+        if (
+            !gateway.validateContractCallAndMint(
                 commandId,
                 sourceChain,
                 sourceAddress,
                 payloadHash,
                 tokenSymbol,
                 amount
-            );
-        }
+            )
+        ) revert NotApprovedByGateway();
+
+        address expressExecutor = _popExpressExecutorWithToken(
+            commandId,
+            sourceChain,
+            sourceAddress,
+            payloadHash,
+            tokenSymbol,
+            amount
+        );
 
         if (expressExecutor == address(0)) {
             _executeWithToken(sourceChain, sourceAddress, payload, tokenSymbol, amount);
             return;
         }
 
-        (address tokenAddress, uint256 value) = contractCallWithTokenValue(
-            sourceChain,
-            sourceAddress,
-            payload,
-            tokenSymbol,
-            amount
-        );
+        {
+            (address tokenAddress, uint256 value) = contractCallWithTokenValue(
+                sourceChain,
+                sourceAddress,
+                payload,
+                tokenSymbol,
+                amount
+            );
+            _transferToExecutor(expressExecutor, tokenAddress, value);
+        }
+
         {
             address gatewayToken = gateway.tokenAddresses(tokenSymbol);
-
-            if (tokenAddress == gatewayToken) {
-                IERC20(gatewayToken).safeTransfer(expressExecutor, value + amount);
-            } else {
-                IERC20(gatewayToken).safeTransfer(expressExecutor, amount);
-                if (tokenAddress == address(0)) {
-                    payable(expressExecutor).safeNativeTransfer(value);
-                } else {
-                    IERC20(tokenAddress).safeTransfer(expressExecutor, value);
-                }
-            }
+            IERC20(gatewayToken).safeTransfer(expressExecutor, amount);
         }
+
         emit ExpressExecutionWithTokenFulfilled(
             commandId,
             sourceChain,
             sourceAddress,
-            payload,
+            payloadHash,
             tokenSymbol,
             amount,
             expressExecutor
@@ -141,18 +133,19 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker {
     ) external payable virtual {
         if (gateway.isCommandExecuted(commandId)) revert AlreadyExecuted();
 
-        (address tokenAddress, uint256 value) = contractCallValue(sourceChain, sourceAddress, payload);
         address expressExecutor = msg.sender;
+        bytes32 payloadHash = keccak256(payload);
 
-        if (tokenAddress == address(0)) {
-            if (value != msg.value) revert InsufficientValue();
-        } else if (value > 0) {
-            IERC20(tokenAddress).safeTransferFrom(expressExecutor, address(this), value);
+        {
+            (address tokenAddress, uint256 value) = contractCallValue(sourceChain, sourceAddress, payload);
+            _transferFromExecutor(expressExecutor, tokenAddress, value);
         }
 
-        _setExpressExecutor(commandId, sourceChain, sourceAddress, keccak256(payload), expressExecutor);
+        _setExpressExecutor(commandId, sourceChain, sourceAddress, payloadHash, expressExecutor);
+
         _execute(sourceChain, sourceAddress, payload);
-        emit ExpressExecuted(commandId, sourceChain, sourceAddress, payload, expressExecutor);
+
+        emit ExpressExecuted(commandId, sourceChain, sourceAddress, payloadHash, expressExecutor);
     }
 
     function expressExecuteWithToken(
@@ -164,45 +157,82 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker {
         uint256 amount
     ) external payable virtual {
         if (gateway.isCommandExecuted(commandId)) revert AlreadyExecuted();
+
         address expressExecutor = msg.sender;
-        (address tokenAddress, uint256 value) = contractCallWithTokenValue(
-            sourceChain,
-            sourceAddress,
-            payload,
-            symbol,
-            amount
-        );
+
+        {
+            (address tokenAddress, uint256 value) = contractCallWithTokenValue(
+                sourceChain,
+                sourceAddress,
+                payload,
+                symbol,
+                amount
+            );
+            _transferFromExecutor(expressExecutor, tokenAddress, value);
+        }
+
         {
             address gatewayToken = gateway.tokenAddresses(symbol);
-
-            if (tokenAddress == gatewayToken) {
-                IERC20(gatewayToken).safeTransferFrom(expressExecutor, address(this), amount + value);
-            } else {
-                IERC20(gatewayToken).safeTransferFrom(expressExecutor, address(this), amount);
-                if (tokenAddress == address(0)) {
-                    if (value != msg.value) revert InsufficientValue();
-                } else if (value > 0) {
-                    IERC20(tokenAddress).safeTransferFrom(expressExecutor, address(this), value);
-                }
-            }
+            IERC20(gatewayToken).safeTransferFrom(expressExecutor, address(this), amount);
         }
+
+        bytes32 payloadHash = keccak256(payload);
+
         _setExpressExecutorWithToken(
             commandId,
             sourceChain,
             sourceAddress,
-            keccak256(payload),
+            payloadHash,
             symbol,
             amount,
             expressExecutor
         );
+
         _executeWithToken(sourceChain, sourceAddress, payload, symbol, amount);
-        emit ExpressExecutedWithToken(commandId, sourceChain, sourceAddress, payload, symbol, amount, expressExecutor);
+
+        emit ExpressExecutedWithToken(
+            commandId,
+            sourceChain,
+            sourceAddress,
+            payloadHash,
+            symbol,
+            amount,
+            expressExecutor
+        );
+    }
+
+    function _transferToExecutor(
+        address expressExecutor,
+        address tokenAddress,
+        uint256 value
+    ) internal {
+        if (value == 0) return;
+
+        if (tokenAddress == address(0)) {
+            payable(expressExecutor).safeNativeTransfer(value);
+        } else {
+            IERC20(tokenAddress).safeTransfer(expressExecutor, value);
+        }
+    }
+
+    function _transferFromExecutor(
+        address expressExecutor,
+        address tokenAddress,
+        uint256 value
+    ) internal {
+        if (value == 0) return;
+
+        if (tokenAddress == address(0)) {
+            if (value != msg.value) revert InsufficientValue();
+        } else if (value > 0) {
+            IERC20(tokenAddress).safeTransferFrom(expressExecutor, address(this), value);
+        }
     }
 
     function _execute(
         string calldata sourceChain,
         string calldata sourceAddress,
-        bytes calldata payload // solhint-disable-next-line no-empty-blocks
+        bytes calldata payload
     ) internal virtual {}
 
     function _executeWithToken(
@@ -210,6 +240,6 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker {
         string calldata sourceAddress,
         bytes calldata payload,
         string calldata tokenSymbol,
-        uint256 amount // solhint-disable-next-line no-empty-blocks
+        uint256 amount
     ) internal virtual {}
 }

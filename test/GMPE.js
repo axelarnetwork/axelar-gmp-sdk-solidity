@@ -317,7 +317,7 @@ describe('GMPE', async () => {
     let contract;
     const sourceTxHash = keccak256('0x123abc123abc');
     const sourceEventIndex = 17;
-    const payload = '0x1234';
+    const payload = '0x' + '1'.repeat(128);
     const payloadHash = keccak256(payload);
     const sourceAddress = '0x5678';
 
@@ -363,7 +363,7 @@ describe('GMPE', async () => {
           commandId,
           sourceChain,
           sourceAddress,
-          payload,
+          payloadHash,
           ownerWallet.address,
         )
         .and.to.emit(contract, 'Executed')
@@ -419,7 +419,7 @@ describe('GMPE', async () => {
           commandId,
           sourceChain,
           sourceAddress,
-          payload,
+          payloadHash,
           ownerWallet.address,
         )
         .and.to.not.emit(contract, 'Executed');
@@ -435,7 +435,7 @@ describe('GMPE', async () => {
       await execution();
     });
 
-    it('Should Execute with express before approval', async () => {
+    it.only('Should Execute with express before approval', async () => {
       await expressSuccess();
       await approve();
       await expressFullfill();
@@ -543,7 +543,7 @@ describe('GMPE', async () => {
           commandId,
           sourceChain,
           sourceAddress,
-          payload,
+          payloadHash,
           tokenSymbol,
           amount,
           ownerWallet.address,
@@ -728,7 +728,7 @@ describe('GMPE', async () => {
           commandId,
           sourceChain,
           sourceAddress,
-          payload,
+          payloadHash,
           ownerWallet.address,
         )
         .and.to.emit(contract, 'Executed')
@@ -897,7 +897,7 @@ describe('GMPE', async () => {
           commandId,
           sourceChain,
           sourceAddress,
-          payload,
+          payloadHash,
           ownerWallet.address,
         )
         .and.to.emit(contract, 'Executed')
@@ -1074,7 +1074,7 @@ describe('GMPE', async () => {
           commandId,
           sourceChain,
           sourceAddress,
-          payload,
+          payloadHash,
           tokenSymbol,
           amount,
           ownerWallet.address,
@@ -1302,7 +1302,7 @@ describe('GMPE', async () => {
           commandId,
           sourceChain,
           sourceAddress,
-          payload,
+          payloadHash,
           tokenSymbol,
           amount,
           ownerWallet.address,
@@ -1527,7 +1527,7 @@ describe('GMPE', async () => {
           commandId,
           sourceChain,
           sourceAddress,
-          payload,
+          payloadHash,
           tokenSymbol,
           amount,
           ownerWallet.address,

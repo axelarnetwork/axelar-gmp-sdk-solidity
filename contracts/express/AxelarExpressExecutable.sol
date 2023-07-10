@@ -34,7 +34,7 @@ abstract contract AxelarExpressExecutable is ExpressExecutorTracker {
         address expressExecutor = _popExpressExecutor(commandId, sourceChain, sourceAddress, payloadHash);
 
         if (expressExecutor != address(0)) {
-            emit ExpressExecutionFulfilled(commandId, sourceChain, sourceAddress, payload, expressExecutor);
+            emit ExpressExecutionFulfilled(commandId, sourceChain, sourceAddress, payloadHash, expressExecutor);
         } else {
             _execute(sourceChain, sourceAddress, payload);
         }
@@ -77,7 +77,7 @@ abstract contract AxelarExpressExecutable is ExpressExecutorTracker {
                 commandId,
                 sourceChain,
                 sourceAddress,
-                payload,
+                payloadHash,
                 tokenSymbol,
                 amount,
                 expressExecutor
@@ -96,12 +96,13 @@ abstract contract AxelarExpressExecutable is ExpressExecutorTracker {
         if (gateway.isCommandExecuted(commandId)) revert AlreadyExecuted();
 
         address expressExecutor = msg.sender;
+        bytes32 payloadHash = keccak256(payload);
 
-        _setExpressExecutor(commandId, sourceChain, sourceAddress, keccak256(payload), expressExecutor);
+        _setExpressExecutor(commandId, sourceChain, sourceAddress, payloadHash, expressExecutor);
 
         _execute(sourceChain, sourceAddress, payload);
 
-        emit ExpressExecuted(commandId, sourceChain, sourceAddress, payload, expressExecutor);
+        emit ExpressExecuted(commandId, sourceChain, sourceAddress, payloadHash, expressExecutor);
     }
 
     function expressExecuteWithToken(
@@ -116,6 +117,7 @@ abstract contract AxelarExpressExecutable is ExpressExecutorTracker {
 
         address expressExecutor = msg.sender;
         address gatewayToken = gateway.tokenAddresses(symbol);
+        bytes32 payloadHash = keccak256(payload);
 
         IERC20(gatewayToken).safeTransferFrom(expressExecutor, address(this), amount);
 
@@ -123,7 +125,7 @@ abstract contract AxelarExpressExecutable is ExpressExecutorTracker {
             commandId,
             sourceChain,
             sourceAddress,
-            keccak256(payload),
+            payloadHash,
             symbol,
             amount,
             expressExecutor
@@ -131,7 +133,7 @@ abstract contract AxelarExpressExecutable is ExpressExecutorTracker {
 
         _executeWithToken(sourceChain, sourceAddress, payload, symbol, amount);
 
-        emit ExpressExecutedWithToken(commandId, sourceChain, sourceAddress, payload, symbol, amount, expressExecutor);
+        emit ExpressExecutedWithToken(commandId, sourceChain, sourceAddress, payloadHash, symbol, amount, expressExecutor);
     }
 
     function _execute(

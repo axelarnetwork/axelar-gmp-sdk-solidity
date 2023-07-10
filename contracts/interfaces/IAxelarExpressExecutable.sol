@@ -13,7 +13,7 @@ interface IAxelarExpressExecutable is IAxelarExecutable {
         bytes32 indexed commandId,
         string sourceChain,
         string sourceAddress,
-        bytes payload,
+        bytes32 payloadHash,
         address indexed expressExecutor
     );
 
@@ -21,7 +21,7 @@ interface IAxelarExpressExecutable is IAxelarExecutable {
         bytes32 indexed commandId,
         string sourceChain,
         string sourceAddress,
-        bytes payload,
+        bytes32 payloadHash,
         string symbol,
         uint256 indexed amount,
         address indexed expressExecutor
@@ -31,7 +31,7 @@ interface IAxelarExpressExecutable is IAxelarExecutable {
         bytes32 indexed commandId,
         string sourceChain,
         string sourceAddress,
-        bytes payload,
+        bytes32 payloadHash,
         address indexed expressExecutor
     );
 
@@ -39,7 +39,7 @@ interface IAxelarExpressExecutable is IAxelarExecutable {
         bytes32 indexed commandId,
         string sourceChain,
         string sourceAddress,
-        bytes payload,
+        bytes32 payloadHash,
         string symbol,
         uint256 indexed amount,
         address indexed expressExecutor

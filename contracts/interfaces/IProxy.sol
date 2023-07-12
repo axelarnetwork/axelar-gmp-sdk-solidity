@@ -10,7 +10,7 @@ interface IProxy {
     error NotOwner();
     error AlreadyInitialized();
 
-    function implementation() external view returns (address implementation_);
+    function implementation() external view returns (address);
 
     function setup(bytes calldata setupParams) external;
 }

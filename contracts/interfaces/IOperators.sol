@@ -2,12 +2,14 @@
 
 pragma solidity ^0.8.0;
 
+import { IOwnable } from './IOwnable.sol';
+
 /**
  * @title IOperators Interface
  * @notice Interface for an access control mechanism where operators have exclusive
  * permissions to execute functions.
  */
-interface IOperators {
+interface IOperators is IOwnable {
     error NotOperator();
     error InvalidOperator();
     error OperatorAlreadyAdded();

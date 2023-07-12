@@ -84,7 +84,11 @@ contract Operators is Ownable, IOperators {
         bytes calldata callData,
         uint256 nativeValue
     ) external payable onlyOperator returns (bytes memory) {
-        (bool success, bytes memory data) = target.call{ value: nativeValue == 0 ? msg.value : nativeValue }(callData);
+        if (nativeValue == 0) {
+            nativeValue = msg.value;
+        }
+
+        (bool success, bytes memory data) = target.call{ value: nativeValue }(callData);
         if (!success) {
             revert ExecutionFailed();
         }

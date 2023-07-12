@@ -36,7 +36,7 @@ library AddressToString {
         stringBytes[0] = '0';
         stringBytes[1] = 'x';
 
-        for (uint256 i = 0; i < length; ++i) {
+        for (uint256 i; i < length; ++i) {
             stringBytes[2 + i * 2] = characters[uint8(addressBytes[i] >> 4)];
             stringBytes[3 + i * 2] = characters[uint8(addressBytes[i] & 0x0f)];
         }

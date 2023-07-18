@@ -50,15 +50,13 @@ const deployCreate3Contract = async (
   contractJson,
   key,
   args = [],
-  gasLimit = null,
+  txOptions = null,
 ) => {
   const deployer = new Contract(deployerAddress, Create3Deployer.abi, wallet);
   const salt = getSaltFromKey(key);
   const factory = new ContractFactory(contractJson.abi, contractJson.bytecode);
   const bytecode = factory.getDeployTransaction(...args).data;
-  const tx = await deployer
-    .connect(wallet)
-    .deploy(bytecode, salt, { gasLimit });
+  const tx = await deployer.connect(wallet).deploy(bytecode, salt, txOptions);
   await tx.wait();
   const address = await deployer.deployedAddress(wallet.address, salt);
   return new Contract(address, contractJson.abi, wallet);
@@ -71,7 +69,7 @@ const deployCreate3AndInitContract = async (
   key,
   args = [],
   initArgs = [],
-  gasLimit = null,
+  txOptions = null,
 ) => {
   const deployer = new Contract(deployerAddress, Create3Deployer.abi, wallet);
   const salt = getSaltFromKey(key);
@@ -82,9 +80,7 @@ const deployCreate3AndInitContract = async (
   const initData = (await contract.populateTransaction.init(...initArgs)).data;
   const tx = await deployer
     .connect(wallet)
-    .deployAndInit(bytecode, salt, initData, {
-      gasLimit,
-    });
+    .deployAndInit(bytecode, salt, initData, txOptions);
   await tx.wait();
   return contract;
 };

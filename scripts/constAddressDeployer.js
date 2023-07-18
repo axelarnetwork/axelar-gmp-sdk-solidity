@@ -46,7 +46,7 @@ const deployContractConstant = async (
   contractJson,
   key,
   args = [],
-  gasLimit = null,
+  txOptions = null,
 ) => {
   const deployer = new Contract(
     deployerAddress,
@@ -56,9 +56,7 @@ const deployContractConstant = async (
   const salt = getSaltFromKey(key);
   const factory = new ContractFactory(contractJson.abi, contractJson.bytecode);
   const bytecode = factory.getDeployTransaction(...args).data;
-  const tx = await deployer
-    .connect(wallet)
-    .deploy(bytecode, salt, { gasLimit });
+  const tx = await deployer.connect(wallet).deploy(bytecode, salt, txOptions);
   await tx.wait();
   const address = await deployer.deployedAddress(
     bytecode,
@@ -75,7 +73,7 @@ const deployAndInitContractConstant = async (
   key,
   args = [],
   initArgs = [],
-  gasLimit = null,
+  txOptions = null,
 ) => {
   const deployer = new Contract(
     deployerAddress,
@@ -94,9 +92,7 @@ const deployAndInitContractConstant = async (
   const initData = (await contract.populateTransaction.init(...initArgs)).data;
   const tx = await deployer
     .connect(wallet)
-    .deployAndInit(bytecode, salt, initData, {
-      gasLimit,
-    });
+    .deployAndInit(bytecode, salt, initData, txOptions);
   await tx.wait();
   return contract;
 };

@@ -48,6 +48,11 @@ const deployContractConstant = async (
   args = [],
   txOptions = null,
 ) => {
+  if(txOptions && !Number.isNaN(Number(txOptions))) {
+    txOptions = {
+      gasLimit: txOptions,
+    }
+  }
   const deployer = new Contract(
     deployerAddress,
     ConstAddressDeployer.abi,
@@ -75,6 +80,11 @@ const deployAndInitContractConstant = async (
   initArgs = [],
   txOptions = null,
 ) => {
+  if(txOptions && !Number.isNaN(Number(txOptions))) {
+    txOptions = {
+      gasLimit: txOptions,
+    }
+  }
   const deployer = new Contract(
     deployerAddress,
     ConstAddressDeployer.abi,

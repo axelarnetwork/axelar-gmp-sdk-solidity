@@ -52,6 +52,11 @@ const deployCreate3Contract = async (
   args = [],
   txOptions = null,
 ) => {
+  if(txOptions && !Number.isNaN(Number(txOptions))) {
+    txOptions = {
+      gasLimit: txOptions,
+    }
+  }
   const deployer = new Contract(deployerAddress, Create3Deployer.abi, wallet);
   const salt = getSaltFromKey(key);
   const factory = new ContractFactory(contractJson.abi, contractJson.bytecode);
@@ -71,6 +76,11 @@ const deployCreate3AndInitContract = async (
   initArgs = [],
   txOptions = null,
 ) => {
+  if(txOptions && !Number.isNaN(Number(txOptions))) {
+    txOptions = {
+      gasLimit: txOptions,
+    }
+  }
   const deployer = new Contract(deployerAddress, Create3Deployer.abi, wallet);
   const salt = getSaltFromKey(key);
   const factory = new ContractFactory(contractJson.abi, contractJson.bytecode);

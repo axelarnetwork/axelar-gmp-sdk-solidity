@@ -1,6 +1,6 @@
 {
   "name": "@axelar-network/axelar-gmp-sdk-solidity",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "Solidity GMP SDK and utilities provided by Axelar for cross-chain development",
   "main": "index.js",
   "scripts": {
@@ -31,5 +31,14 @@
   },
   "engines": {
     "node": ">=16"
-  }
+  },
+  "files": [
+    "artifacts",
+    "contracts",
+    "dist",
+    "interfaces",
+    "scripts",
+    "README.md",
+    "hardhat.config.js"
+  ]
 }

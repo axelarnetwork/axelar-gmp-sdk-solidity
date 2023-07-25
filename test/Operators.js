@@ -122,7 +122,7 @@ describe('Operators', () => {
       await ownerWallet.sendTransaction({
         to: operators.address,
         value: sendValue,
-      });
+      }).then((tx) => tx.wait());
 
       const finalBalance = await ethers.provider.getBalance(operators.address);
       expect(finalBalance).to.equal(sendValue);

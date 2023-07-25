@@ -15,7 +15,7 @@ contract Operators is Ownable, IOperators {
     mapping(address => bool) public operators;
 
     /**
-     * @dev Sets the deployer as the initial owner.
+     * @notice Sets the deployer as the initial owner.
      */
     constructor() {
         address initialOwner = msg.sender;
@@ -26,8 +26,8 @@ contract Operators is Ownable, IOperators {
     }
 
     /**
-     * @dev Modifier that requires the `msg.sender` to be an operator.
-     * Reverts with a NotOperator error if the condition is not met.
+     * @notice Modifier that requires the `msg.sender` to be an operator.
+     * @dev Reverts with a NotOperator error if the condition is not met.
      */
     modifier onlyOperator() {
         if (!operators[msg.sender]) revert NotOperator();
@@ -35,7 +35,7 @@ contract Operators is Ownable, IOperators {
     }
 
     /**
-     * @dev Returns whether an address is an operator.
+     * @notice Returns whether an address is an operator.
      * @param account Address to check
      * @return boolean whether the address is an operator
      */
@@ -44,8 +44,8 @@ contract Operators is Ownable, IOperators {
     }
 
     /**
-     * @dev Adds an address as an operator.
-     * Can only be called by the current owner.
+     * @notice Adds an address as an operator.
+     * @dev Can only be called by the current owner.
      * @param operator address to be added as operator
      */
     function addOperator(address operator) external onlyOwner {
@@ -58,8 +58,8 @@ contract Operators is Ownable, IOperators {
     }
 
     /**
-     * @dev Removes an address as an operator.
-     * Can only be called by the current owner.
+     * @notice Removes an address as an operator.
+     * @dev Can only be called by the current owner.
      * @param operator address to be removed as operator
      */
     function removeOperator(address operator) external onlyOwner {
@@ -72,8 +72,8 @@ contract Operators is Ownable, IOperators {
     }
 
     /**
-     * @dev Allows an operator to execute arbitrary functions on any smart contract.
-     * Can only be called by an operator.
+     * @notice Allows an operator to execute arbitrary functions on any smart contract.
+     * @dev Can only be called by an operator.
      * @param target address of the contract to execute the function on. Existence is not checked.
      * @param callData ABI encoded function call to execute on target
      * @param nativeValue The amount of native asset to send with the call. If `nativeValue` is set to `0`, then `msg.value` is forwarded instead.
@@ -95,4 +95,9 @@ contract Operators is Ownable, IOperators {
 
         return data;
     }
+
+    /**
+     * @notice This function enables the contract to accept native value transfers.
+     */
+    receive() external payable {}
 }

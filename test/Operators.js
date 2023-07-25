@@ -119,10 +119,12 @@ describe('Operators', () => {
       const initBalance = await ethers.provider.getBalance(operators.address);
       expect(initBalance).to.equal(0);
 
-      await ownerWallet.sendTransaction({
-        to: operators.address,
-        value: sendValue,
-      }).then((tx) => tx.wait());
+      await ownerWallet
+        .sendTransaction({
+          to: operators.address,
+          value: sendValue,
+        })
+        .then((tx) => tx.wait());
 
       const finalBalance = await ethers.provider.getBalance(operators.address);
       expect(finalBalance).to.equal(sendValue);
@@ -207,7 +209,9 @@ describe('Operators', () => {
       await expect(
         operators
           .connect(operatorWallet)
-          .execute(target, callData, nativeValue, { value: nativeValue }),
+          .execute(target, callData, nativeValue, {
+            value: nativeValue,
+          }),
       )
         .to.emit(test, 'NumAdded')
         .withArgs(num);

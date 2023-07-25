@@ -86,7 +86,7 @@ const deployAndInitContractConstant = async (
       gasLimit: txOptions,
     };
   }
-  
+
   const deployer = new Contract(
     deployerAddress,
     ConstAddressDeployer.abi,

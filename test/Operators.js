@@ -112,6 +112,21 @@ describe('Operators', () => {
         operators.connect(ownerWallet).removeOperator(userWallet.address),
       ).to.be.revertedWithCustomError(operators, 'NotAnOperator');
     });
+
+    it('should receive ether', async () => {
+      const sendValue = 100;
+
+      const initBalance = await ethers.provider.getBalance(operators.address);
+      expect(initBalance).to.equal(0);
+
+      await ownerWallet.sendTransaction({
+        to: operators.address,
+        value: sendValue,
+      });
+
+      const finalBalance = await ethers.provider.getBalance(operators.address);
+      expect(finalBalance).to.equal(sendValue);
+    });
   });
 
   describe('operator actions', () => {

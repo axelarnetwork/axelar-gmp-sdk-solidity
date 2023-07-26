@@ -1,15 +1,13 @@
 require('@nomicfoundation/hardhat-toolbox');
 require('solidity-coverage');
 
-const fs = require('fs');
 const env = process.env.ENV || 'testnet';
 const {
   importNetworks,
+  readJSON,
 } = require('@axelar-network/axelar-contract-deployments/evm/utils');
 const chains = require(`@axelar-network/axelar-contract-deployments/info/${env}.json`);
-const keys = fs.existsSync(`${__dirname}/info/keys.json`)
-  ? require(`${__dirname}/info/keys.json`)
-  : undefined; // Load keys if they exist
+const keys = readJSON(`${__dirname}/info/keys.json`);
 const { networks, etherscan } = importNetworks(chains, keys);
 
 /**

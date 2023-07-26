@@ -1,6 +1,6 @@
 'use strict';
 
-const { config, ethers } = require('hardhat');
+const { config, ethers, network } = require('hardhat');
 const {
   utils: { defaultAbiCoder, id, arrayify, keccak256 },
 } = ethers;
@@ -14,10 +14,18 @@ const getEVMVersion = () => {
   return config.solidity.compilers[0].settings.evmVersion;
 };
 
+const getGasOptions = () => {
+  return network.config.blockGasLimit
+    ? { gasLimit: network.config.blockGasLimit.toString() }
+    : {};
+};
+
 module.exports = {
   bigNumberToNumber: (bigNumber) => bigNumber.toNumber(),
 
   getEVMVersion,
+
+  getGasOptions,
 
   getSignedExecuteInput: (data, wallet) =>
     wallet

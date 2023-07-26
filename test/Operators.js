@@ -2,7 +2,7 @@
 
 const chai = require('chai');
 const { ethers } = require('hardhat');
-
+const { getGasOptions } = require('./utils');
 const { expect } = chai;
 
 describe('Operators', () => {
@@ -46,20 +46,26 @@ describe('Operators', () => {
 
     it('should revert if non owner adds operator', async () => {
       await expect(
-        operators.connect(userWallet).addOperator(operatorWallet.address),
+        operators
+          .connect(userWallet)
+          .addOperator(operatorWallet.address, getGasOptions()),
       ).to.be.revertedWithCustomError(operators, 'NotOwner');
     });
 
     it('should add an operator', async () => {
       await expect(
-        operators.connect(ownerWallet).addOperator(operatorWallet.address),
+        operators
+          .connect(ownerWallet)
+          .addOperator(operatorWallet.address, getGasOptions()),
       )
         .to.emit(operators, 'OperatorAdded')
         .withArgs(operatorWallet.address);
     });
 
     it('should return true from isOperator for operator address', async () => {
-      await operators.connect(ownerWallet).addOperator(operatorWallet.address);
+      await operators
+        .connect(ownerWallet)
+        .addOperator(operatorWallet.address, getGasOptions());
       expect(
         await operators.connect(ownerWallet).isOperator(operatorWallet.address),
       ).to.be.true;
@@ -69,29 +75,40 @@ describe('Operators', () => {
       await expect(
         operators
           .connect(ownerWallet)
-          .addOperator(ethers.constants.AddressZero),
+          .addOperator(ethers.constants.AddressZero, getGasOptions()),
       ).to.be.revertedWithCustomError(operators, 'InvalidOperator');
     });
 
     it('should not add same operator twice', async () => {
-      await operators.connect(ownerWallet).addOperator(operatorWallet.address);
+      await operators
+        .connect(ownerWallet)
+        .addOperator(operatorWallet.address, getGasOptions());
 
       await expect(
-        operators.connect(ownerWallet).addOperator(operatorWallet.address),
+        operators
+          .connect(ownerWallet)
+          .addOperator(operatorWallet.address, getGasOptions()),
       ).to.be.revertedWithCustomError(operators, 'OperatorAlreadyAdded');
     });
 
     it('should revert if non owner removes operator', async () => {
       await expect(
-        operators.connect(userWallet).removeOperator(operatorWallet.address),
+        operators
+          .connect(userWallet)
+          .removeOperator(operatorWallet.address, getGasOptions()),
       ).to.be.revertedWithCustomError(operators, 'NotOwner');
     });
 
     it('should remove operator', async () => {
-      await operators.connect(ownerWallet).addOperator(operatorWallet.address);
+      console.log(JSON.stringify(getGasOptions()));
+      await operators
+        .connect(ownerWallet)
+        .addOperator(operatorWallet.address, getGasOptions());
 
       await expect(
-        operators.connect(ownerWallet).removeOperator(operatorWallet.address),
+        operators
+          .connect(ownerWallet)
+          .removeOperator(operatorWallet.address, getGasOptions()),
       )
         .to.emit(operators, 'OperatorRemoved')
         .withArgs(operatorWallet.address);
@@ -101,15 +118,19 @@ describe('Operators', () => {
       await expect(
         operators
           .connect(ownerWallet)
-          .removeOperator(ethers.constants.AddressZero),
+          .removeOperator(ethers.constants.AddressZero, getGasOptions()),
       ).to.be.revertedWithCustomError(operators, 'InvalidOperator');
     });
 
     it('should revert when trying to remove non operator address', async () => {
-      await operators.connect(ownerWallet).addOperator(operatorWallet.address);
+      await operators
+        .connect(ownerWallet)
+        .addOperator(operatorWallet.address, getGasOptions());
 
       await expect(
-        operators.connect(ownerWallet).removeOperator(userWallet.address),
+        operators
+          .connect(ownerWallet)
+          .removeOperator(userWallet.address, getGasOptions()),
       ).to.be.revertedWithCustomError(operators, 'NotAnOperator');
     });
 
@@ -146,7 +167,9 @@ describe('Operators', () => {
       const callData = iface.encodeFunctionData('setNum', [num]);
 
       await expect(
-        operators.connect(ownerWallet).execute(target, callData, nativeValue),
+        operators
+          .connect(ownerWallet)
+          .execute(target, callData, nativeValue, getGasOptions()),
       ).to.be.revertedWithCustomError(operators, 'NotOperator');
     });
 
@@ -167,7 +190,7 @@ describe('Operators', () => {
       await expect(
         operators
           .connect(operatorWallet)
-          .execute(target, callData, nativeValue),
+          .execute(target, callData, nativeValue, getGasOptions()),
       ).to.be.revertedWithCustomError(operators, 'ExecutionFailed');
     });
 
@@ -187,7 +210,7 @@ describe('Operators', () => {
       await expect(
         operators
           .connect(operatorWallet)
-          .execute(target, callData, nativeValue),
+          .execute(target, callData, nativeValue, getGasOptions()),
       )
         .to.emit(test, 'NumAdded')
         .withArgs(num);
@@ -205,12 +228,14 @@ describe('Operators', () => {
       ]);
 
       const callData = iface.encodeFunctionData('setNum', [num]);
+      const gasOptions = getGasOptions();
 
       await expect(
         operators
           .connect(operatorWallet)
           .execute(target, callData, nativeValue, {
             value: nativeValue,
+            ...gasOptions,
           }),
       )
         .to.emit(test, 'NumAdded')
@@ -233,11 +258,15 @@ describe('Operators', () => {
       ]);
 
       const callData = iface.encodeFunctionData('setNum', [num]);
+      const gasOptions = getGasOptions();
 
       await expect(
         operators
           .connect(operatorWallet)
-          .execute(target, callData, nativeValue, { value: 1000 }),
+          .execute(target, callData, nativeValue, {
+            value: 1000,
+            ...gasOptions,
+          }),
       )
         .to.emit(test, 'NumAdded')
         .withArgs(num);

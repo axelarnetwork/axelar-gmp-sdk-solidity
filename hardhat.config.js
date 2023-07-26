@@ -7,7 +7,7 @@ const {
   readJSON,
 } = require('@axelar-network/axelar-contract-deployments/evm/utils');
 const chains = require(`@axelar-network/axelar-contract-deployments/info/${env}.json`);
-const keys = readJSON(`${__dirname}/info/keys.json`);
+const keys = readJSON(`${__dirname}/keys.json`);
 const { networks, etherscan } = importNetworks(chains, keys);
 
 /**

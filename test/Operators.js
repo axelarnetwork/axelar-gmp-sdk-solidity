@@ -100,7 +100,6 @@ describe('Operators', () => {
     });
 
     it('should remove operator', async () => {
-      console.log(JSON.stringify(getGasOptions()));
       await operators
         .connect(ownerWallet)
         .addOperator(operatorWallet.address, getGasOptions());

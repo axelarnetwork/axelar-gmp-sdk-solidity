@@ -2,7 +2,6 @@
 
 const chai = require('chai');
 const { ethers } = require('hardhat');
-const { getGasOptions } = require('./utils');
 const { expect } = chai;
 
 describe('Operators', () => {
@@ -38,15 +37,13 @@ describe('Operators', () => {
       expect(await operators.isOperator(operatorWallet.address)).to.be.false;
 
       await expect(
-        operators
-          .connect(operatorWallet)
-          .addOperator(operatorWallet.address, getGasOptions()),
+        operators.connect(operatorWallet).addOperator(operatorWallet.address),
       ).to.be.revertedWithCustomError(operators, 'NotOwner');
 
       await expect(
         operators
           .connect(operatorWallet)
-          .removeOperator(operatorWallet.address, getGasOptions()),
+          .removeOperator(operatorWallet.address),
       ).to.be.revertedWithCustomError(operators, 'NotOwner');
     });
 
@@ -72,13 +69,13 @@ describe('Operators', () => {
       await expect(
         operators
           .connect(ownerWallet)
-          .addOperator(ethers.constants.AddressZero, getGasOptions()),
+          .addOperator(ethers.constants.AddressZero),
       ).to.be.revertedWithCustomError(operators, 'InvalidOperator');
 
       await expect(
         operators
           .connect(ownerWallet)
-          .removeOperator(ethers.constants.AddressZero, getGasOptions()),
+          .removeOperator(ethers.constants.AddressZero),
       ).to.be.revertedWithCustomError(operators, 'InvalidOperator');
     });
 
@@ -89,17 +86,13 @@ describe('Operators', () => {
         .then((tx) => tx.wait());
 
       await expect(
-        operators
-          .connect(ownerWallet)
-          .addOperator(operatorWallet.address, getGasOptions()),
+        operators.connect(ownerWallet).addOperator(operatorWallet.address),
       ).to.be.revertedWithCustomError(operators, 'OperatorAlreadyAdded');
     });
 
     it('should revert when trying to remove non operator address', async () => {
       await expect(
-        operators
-          .connect(ownerWallet)
-          .removeOperator(operatorWallet.address, getGasOptions()),
+        operators.connect(ownerWallet).removeOperator(operatorWallet.address),
       ).to.be.revertedWithCustomError(operators, 'NotAnOperator');
     });
 
@@ -156,9 +149,7 @@ describe('Operators', () => {
       const nativeValue = 0;
 
       await expect(
-        operators
-          .connect(ownerWallet)
-          .execute(target, callData, nativeValue, getGasOptions()),
+        operators.connect(ownerWallet).execute(target, callData, nativeValue),
       ).to.be.revertedWithCustomError(operators, 'NotOperator');
     });
 
@@ -175,7 +166,7 @@ describe('Operators', () => {
       await expect(
         operators
           .connect(operatorWallet)
-          .execute(target, invalidCallData, nativeValue, getGasOptions()),
+          .execute(target, invalidCallData, nativeValue),
       ).to.be.revertedWithCustomError(operators, 'ExecutionFailed');
     });
 
@@ -185,7 +176,7 @@ describe('Operators', () => {
       await expect(
         operators
           .connect(operatorWallet)
-          .execute(target, callData, nativeValue, getGasOptions()),
+          .execute(target, callData, nativeValue),
       )
         .to.emit(test, 'NumAdded')
         .withArgs(num);
@@ -199,7 +190,6 @@ describe('Operators', () => {
           .connect(operatorWallet)
           .execute(target, callData, nativeValue, {
             value: nativeValue,
-            ...getGasOptions(),
           }),
       )
         .to.emit(test, 'NumAdded')
@@ -219,7 +209,6 @@ describe('Operators', () => {
           .connect(operatorWallet)
           .execute(target, callData, nativeValue, {
             value: msgValue,
-            ...getGasOptions(),
           }),
       )
         .to.emit(test, 'NumAdded')

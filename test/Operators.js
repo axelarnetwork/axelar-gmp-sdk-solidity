@@ -7,82 +7,86 @@ const { expect } = chai;
 
 describe('Operators', () => {
   let ownerWallet;
-  let userWallet;
   let operatorWallet;
 
   let operatorsFactory;
   let operators;
 
   let testFactory;
-  let test;
 
   before(async () => {
-    [ownerWallet, userWallet, operatorWallet] = await ethers.getSigners();
+    [ownerWallet, operatorWallet] = await ethers.getSigners();
 
     operatorsFactory = await ethers.getContractFactory(
       'Operators',
       ownerWallet,
     );
+
     testFactory = await ethers.getContractFactory('TestOperators', ownerWallet);
   });
 
   beforeEach(async () => {
     operators = await operatorsFactory.deploy().then((d) => d.deployed());
-    test = await testFactory.deploy().then((d) => d.deployed());
   });
 
   describe('owner actions', () => {
     it('should set deployer address as owner', async () => {
-      expect(await operators.connect(ownerWallet).owner()).to.equal(
-        ownerWallet.address,
-      );
+      expect(await operators.owner()).to.equal(ownerWallet.address);
     });
 
-    it('should return false from isOperator for non operator address', async () => {
-      expect(
-        await operators.connect(ownerWallet).isOperator(operatorWallet.address),
-      ).to.be.false;
-    });
+    it('should revert if non owner adds or removes an operator', async () => {
+      expect(await operators.isOperator(operatorWallet.address)).to.be.false;
 
-    it('should revert if non owner adds operator', async () => {
       await expect(
         operators
-          .connect(userWallet)
+          .connect(operatorWallet)
           .addOperator(operatorWallet.address, getGasOptions()),
+      ).to.be.revertedWithCustomError(operators, 'NotOwner');
+
+      await expect(
+        operators
+          .connect(operatorWallet)
+          .removeOperator(operatorWallet.address, getGasOptions()),
       ).to.be.revertedWithCustomError(operators, 'NotOwner');
     });
 
-    it('should add an operator', async () => {
+    it('should be able to add and remove an operator', async () => {
       await expect(
-        operators
-          .connect(ownerWallet)
-          .addOperator(operatorWallet.address, getGasOptions()),
+        operators.connect(ownerWallet).addOperator(operatorWallet.address),
       )
         .to.emit(operators, 'OperatorAdded')
         .withArgs(operatorWallet.address);
-    });
 
-    it('should return true from isOperator for operator address', async () => {
-      await operators
-        .connect(ownerWallet)
-        .addOperator(operatorWallet.address, getGasOptions());
       expect(
         await operators.connect(ownerWallet).isOperator(operatorWallet.address),
       ).to.be.true;
+
+      await expect(
+        operators.connect(ownerWallet).removeOperator(operatorWallet.address),
+      )
+        .to.emit(operators, 'OperatorRemoved')
+        .withArgs(operatorWallet.address);
     });
 
-    it('should revert when adding invalid operator address', async () => {
+    it('should revert when adding or removing invalid operator address', async () => {
       await expect(
         operators
           .connect(ownerWallet)
           .addOperator(ethers.constants.AddressZero, getGasOptions()),
+      ).to.be.revertedWithCustomError(operators, 'InvalidOperator');
+
+      await expect(
+        operators
+          .connect(ownerWallet)
+          .removeOperator(ethers.constants.AddressZero, getGasOptions()),
       ).to.be.revertedWithCustomError(operators, 'InvalidOperator');
     });
 
     it('should not add same operator twice', async () => {
       await operators
         .connect(ownerWallet)
-        .addOperator(operatorWallet.address, getGasOptions());
+        .addOperator(operatorWallet.address)
+        .then((tx) => tx.wait());
 
       await expect(
         operators
@@ -91,50 +95,26 @@ describe('Operators', () => {
       ).to.be.revertedWithCustomError(operators, 'OperatorAlreadyAdded');
     });
 
-    it('should revert if non owner removes operator', async () => {
-      await expect(
-        operators
-          .connect(userWallet)
-          .removeOperator(operatorWallet.address, getGasOptions()),
-      ).to.be.revertedWithCustomError(operators, 'NotOwner');
-    });
-
-    it('should remove operator', async () => {
-      await operators
-        .connect(ownerWallet)
-        .addOperator(operatorWallet.address, getGasOptions());
-
-      await expect(
-        operators
-          .connect(ownerWallet)
-          .removeOperator(operatorWallet.address, getGasOptions()),
-      )
-        .to.emit(operators, 'OperatorRemoved')
-        .withArgs(operatorWallet.address);
-    });
-
-    it('should revert on remove operator with invalid address', async () => {
-      await expect(
-        operators
-          .connect(ownerWallet)
-          .removeOperator(ethers.constants.AddressZero, getGasOptions()),
-      ).to.be.revertedWithCustomError(operators, 'InvalidOperator');
-    });
-
     it('should revert when trying to remove non operator address', async () => {
-      await operators
-        .connect(ownerWallet)
-        .addOperator(operatorWallet.address, getGasOptions());
-
       await expect(
         operators
           .connect(ownerWallet)
-          .removeOperator(userWallet.address, getGasOptions()),
+          .removeOperator(operatorWallet.address, getGasOptions()),
       ).to.be.revertedWithCustomError(operators, 'NotAnOperator');
     });
 
+    it('should be able to transfer owner', async () => {
+      await expect(
+        operators
+          .connect(ownerWallet)
+          .transferOwnership(operatorWallet.address),
+      )
+        .to.emit(operators, 'OwnershipTransferred')
+        .withArgs(operatorWallet.address);
+    });
+
     it('should receive ether', async () => {
-      const sendValue = 100;
+      const sendValue = 10;
 
       const initBalance = await ethers.provider.getBalance(operators.address);
       expect(initBalance).to.equal(0);
@@ -152,18 +132,28 @@ describe('Operators', () => {
   });
 
   describe('operator actions', () => {
+    let test;
+    let testI;
+    let target;
+    let callData;
+    let num;
+
+    beforeEach(async () => {
+      test = await testFactory.deploy().then((d) => d.deployed());
+      testI = new ethers.utils.Interface(test.interface.fragments);
+
+      await operators
+        .connect(ownerWallet)
+        .addOperator(operatorWallet.address)
+        .then((tx) => tx.wait());
+
+      target = test.address;
+      num = 10;
+      callData = testI.encodeFunctionData('setNum', [num]);
+    });
+
     it('should revert when non operator calls execute', async () => {
-      await operators.connect(ownerWallet).addOperator(operatorWallet.address);
-
-      const target = test.address;
       const nativeValue = 0;
-      const num = 10;
-
-      const iface = new ethers.utils.Interface([
-        'function setNum(uint256 _num) external returns (bool)',
-      ]);
-
-      const callData = iface.encodeFunctionData('setNum', [num]);
 
       await expect(
         operators
@@ -173,38 +163,24 @@ describe('Operators', () => {
     });
 
     it('should revert when execute fails', async () => {
-      await operators.connect(ownerWallet).addOperator(operatorWallet.address);
-
-      const target = test.address;
       const nativeValue = 0;
-      const num = 10;
 
       // create typo in function name so execution fails
       const iface = new ethers.utils.Interface([
-        'function set(uint256 _num) external returns (bool)',
+        'function set(uint256 num) external returns (bool)',
       ]);
 
-      const callData = iface.encodeFunctionData('set', [num]);
+      const invalidCallData = iface.encodeFunctionData('set', [num]);
 
       await expect(
         operators
           .connect(operatorWallet)
-          .execute(target, callData, nativeValue, getGasOptions()),
+          .execute(target, invalidCallData, nativeValue, getGasOptions()),
       ).to.be.revertedWithCustomError(operators, 'ExecutionFailed');
     });
 
     it('should execute and return correct data', async () => {
-      await operators.connect(ownerWallet).addOperator(operatorWallet.address);
-
-      const target = test.address;
       const nativeValue = 0;
-      const num = 10;
-
-      const iface = new ethers.utils.Interface([
-        'function setNum(uint256 _num) external returns (bool)',
-      ]);
-
-      const callData = iface.encodeFunctionData('setNum', [num]);
 
       await expect(
         operators
@@ -216,25 +192,14 @@ describe('Operators', () => {
     });
 
     it('should execute with native value', async () => {
-      await operators.connect(ownerWallet).addOperator(operatorWallet.address);
-
-      const target = test.address;
-      const nativeValue = 1000;
-      const num = 10;
-
-      const iface = new ethers.utils.Interface([
-        'function setNum(uint256 _num) external returns (bool)',
-      ]);
-
-      const callData = iface.encodeFunctionData('setNum', [num]);
-      const gasOptions = getGasOptions();
+      const nativeValue = 10;
 
       await expect(
         operators
           .connect(operatorWallet)
           .execute(target, callData, nativeValue, {
             value: nativeValue,
-            ...gasOptions,
+            ...getGasOptions(),
           }),
       )
         .to.emit(test, 'NumAdded')
@@ -246,25 +211,15 @@ describe('Operators', () => {
     });
 
     it('should execute with msg.value if nativeValue is zero', async () => {
-      await operators.connect(ownerWallet).addOperator(operatorWallet.address);
-
-      const target = test.address;
       const nativeValue = 0;
-      const num = 10;
-
-      const iface = new ethers.utils.Interface([
-        'function setNum(uint256 _num) external returns (bool)',
-      ]);
-
-      const callData = iface.encodeFunctionData('setNum', [num]);
-      const gasOptions = getGasOptions();
+      const msgValue = 10;
 
       await expect(
         operators
           .connect(operatorWallet)
           .execute(target, callData, nativeValue, {
-            value: 1000,
-            ...gasOptions,
+            value: msgValue,
+            ...getGasOptions(),
           }),
       )
         .to.emit(test, 'NumAdded')
@@ -272,7 +227,7 @@ describe('Operators', () => {
 
       const targetBalance = await ethers.provider.getBalance(target);
 
-      expect(targetBalance).to.equal(1000);
+      expect(targetBalance).to.equal(msgValue);
     });
   });
 });

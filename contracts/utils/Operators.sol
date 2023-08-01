@@ -15,11 +15,9 @@ contract Operators is Ownable, IOperators {
     mapping(address => bool) public operators;
 
     /**
-     * @notice Sets the deployer as the initial owner.
+     * @notice Sets the initial owner of the contract.
      */
-    constructor() {
-        address initialOwner = msg.sender;
-
+    constructor(address initialOwner) {
         assembly {
             sstore(_OWNER_SLOT, initialOwner)
         }

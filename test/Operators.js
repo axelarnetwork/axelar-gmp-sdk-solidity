@@ -3,6 +3,8 @@
 const chai = require('chai');
 const { ethers } = require('hardhat');
 const { expect } = chai;
+const { deployContractConstant } = require('../scripts/constAddressDeployer');
+const Operators = require('../artifacts/contracts/utils/Operators.sol/Operators.json');
 
 describe('Operators', () => {
   let ownerWallet;
@@ -13,6 +15,9 @@ describe('Operators', () => {
 
   let testFactory;
 
+  let deployerFactory;
+  let deployer;
+
   before(async () => {
     [ownerWallet, operatorWallet] = await ethers.getSigners();
 
@@ -22,14 +27,24 @@ describe('Operators', () => {
     );
 
     testFactory = await ethers.getContractFactory('TestOperators', ownerWallet);
-  });
 
-  beforeEach(async () => {
-    operators = await operatorsFactory.deploy().then((d) => d.deployed());
+    deployerFactory = await ethers.getContractFactory(
+      'ConstAddressDeployer',
+      ownerWallet,
+    );
+
+    deployer = (await deployerFactory.deploy().then((d) => d.deployed()))
+      .address;
   });
 
   describe('owner actions', () => {
-    it('should set deployer address as owner', async () => {
+    beforeEach(async () => {
+      operators = await operatorsFactory
+        .deploy(ownerWallet.address)
+        .then((d) => d.deployed());
+    });
+
+    it('should set owner to correct address', async () => {
       expect(await operators.owner()).to.equal(ownerWallet.address);
     });
 
@@ -132,6 +147,9 @@ describe('Operators', () => {
     let num;
 
     beforeEach(async () => {
+      operators = await operatorsFactory
+        .deploy(ownerWallet.address)
+        .then((d) => d.deployed());
       test = await testFactory.deploy().then((d) => d.deployed());
       testI = new ethers.utils.Interface(test.interface.fragments);
 
@@ -217,6 +235,46 @@ describe('Operators', () => {
       const targetBalance = await ethers.provider.getBalance(target);
 
       expect(targetBalance).to.equal(msgValue);
+    });
+  });
+
+  describe('custom deployer', () => {
+    before(async () => {
+      const key = 'Operators';
+
+      operators = await deployContractConstant(
+        deployer,
+        ownerWallet,
+        Operators,
+        key,
+        [ownerWallet.address],
+      );
+    });
+
+    it('should set owner to correct address', async () => {
+      expect(await operators.owner()).to.equal(ownerWallet.address);
+    });
+
+    it('should be able to add an operator', async () => {
+      await expect(
+        operators.connect(ownerWallet).addOperator(operatorWallet.address),
+      )
+        .to.emit(operators, 'OperatorAdded')
+        .withArgs(operatorWallet.address);
+
+      expect(
+        await operators.connect(ownerWallet).isOperator(operatorWallet.address),
+      ).to.be.true;
+    });
+
+    it('should be able to transfer owner', async () => {
+      await expect(
+        operators
+          .connect(ownerWallet)
+          .transferOwnership(operatorWallet.address),
+      )
+        .to.emit(operators, 'OwnershipTransferred')
+        .withArgs(operatorWallet.address);
     });
   });
 });

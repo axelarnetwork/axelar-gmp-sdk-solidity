@@ -20,6 +20,48 @@ const getGasOptions = () => {
     : {};
 };
 
+const isHardhat = network.name === 'hardhat';
+
+const getPayloadAndProposalHash = async (
+  commandID,
+  target,
+  nativeValue,
+  calldata,
+  timeDelay,
+) => {
+  let eta;
+
+  if (timeDelay) {
+    const block = await ethers.provider.getBlock('latest');
+    eta = block.timestamp + timeDelay;
+  } else {
+    eta = 0;
+  }
+
+  const proposalHash = keccak256(
+    defaultAbiCoder.encode(
+      ['address', 'bytes', 'uint256'],
+      [target, calldata, nativeValue],
+    ),
+  );
+
+  const payload = defaultAbiCoder.encode(
+    ['uint256', 'address', 'bytes', 'uint256', 'uint256'],
+    [commandID, target, calldata, nativeValue, eta],
+  );
+
+  return [payload, proposalHash, eta];
+};
+
+const waitFor = async (timeDelay) => {
+  if (isHardhat) {
+    await network.provider.send('evm_increaseTime', [timeDelay]);
+    await network.provider.send('evm_mine');
+  } else {
+    await new Promise((resolve) => setTimeout(resolve, timeDelay * 1000));
+  }
+};
+
 module.exports = {
   bigNumberToNumber: (bigNumber) => bigNumber.toNumber(),
 
@@ -49,4 +91,10 @@ module.exports = {
 
   tickBlockTime: (provider, seconds) =>
     provider.send('evm_increaseTime', [seconds]),
+
+  isHardhat,
+
+  getPayloadAndProposalHash,
+
+  waitFor,
 };

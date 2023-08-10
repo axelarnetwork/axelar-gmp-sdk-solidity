@@ -59,13 +59,14 @@ abstract contract Upgradable is Ownable, IUpgradable {
 
         if (newImplementationCodeHash != newImplementation.codehash) revert InvalidCodeHash();
 
+        emit Upgraded(newImplementation);
+
         if (params.length > 0) {
+            // slither-disable-next-line controlled-delegatecall
             (bool success, ) = newImplementation.delegatecall(abi.encodeWithSelector(this.setup.selector, params));
 
             if (!success) revert SetupFailed();
         }
-
-        emit Upgraded(newImplementation);
 
         assembly {
             sstore(_IMPLEMENTATION_SLOT, newImplementation)

@@ -12,6 +12,7 @@ import { ITimeLock } from '../interfaces/ITimeLock.sol';
 contract TimeLock is ITimeLock {
     bytes32 internal constant PREFIX_TIME_LOCK = keccak256('time-lock');
 
+    // slither-disable-next-line naming-convention
     uint256 internal immutable _minimumTimeLockDelay;
 
     /**

@@ -38,6 +38,7 @@ contract CreateDeployer {
 library Create3 {
     using ContractAddress for address;
 
+    // slither-disable-next-line too-many-digits
     bytes32 internal constant DEPLOYER_BYTECODE_HASH = keccak256(type(CreateDeployer).creationCode);
 
     /**

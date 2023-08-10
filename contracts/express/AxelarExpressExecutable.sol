@@ -34,6 +34,7 @@ abstract contract AxelarExpressExecutable is ExpressExecutorTracker {
         address expressExecutor = _popExpressExecutor(commandId, sourceChain, sourceAddress, payloadHash);
 
         if (expressExecutor != address(0)) {
+            // slither-disable-next-line reentrancy-events
             emit ExpressExecutionFulfilled(commandId, sourceChain, sourceAddress, payloadHash, expressExecutor);
         } else {
             _execute(sourceChain, sourceAddress, payload);
@@ -70,9 +71,7 @@ abstract contract AxelarExpressExecutable is ExpressExecutorTracker {
         );
 
         if (expressExecutor != address(0)) {
-            address gatewayToken = gateway.tokenAddresses(tokenSymbol);
-            IERC20(gatewayToken).safeTransfer(expressExecutor, amount);
-
+            // slither-disable-next-line reentrancy-events
             emit ExpressExecutionWithTokenFulfilled(
                 commandId,
                 sourceChain,
@@ -82,6 +81,9 @@ abstract contract AxelarExpressExecutable is ExpressExecutorTracker {
                 amount,
                 expressExecutor
             );
+
+            address gatewayToken = gateway.tokenAddresses(tokenSymbol);
+            IERC20(gatewayToken).safeTransfer(expressExecutor, amount);
         } else {
             _executeWithToken(sourceChain, sourceAddress, payload, tokenSymbol, amount);
         }
@@ -119,7 +121,15 @@ abstract contract AxelarExpressExecutable is ExpressExecutorTracker {
         address gatewayToken = gateway.tokenAddresses(symbol);
         bytes32 payloadHash = keccak256(payload);
 
-        IERC20(gatewayToken).safeTransferFrom(expressExecutor, address(this), amount);
+        emit ExpressExecutedWithToken(
+            commandId,
+            sourceChain,
+            sourceAddress,
+            payloadHash,
+            symbol,
+            amount,
+            expressExecutor
+        );
 
         _setExpressExecutorWithToken(
             commandId,
@@ -131,19 +141,12 @@ abstract contract AxelarExpressExecutable is ExpressExecutorTracker {
             expressExecutor
         );
 
-        _executeWithToken(sourceChain, sourceAddress, payload, symbol, amount);
+        IERC20(gatewayToken).safeTransferFrom(expressExecutor, address(this), amount);
 
-        emit ExpressExecutedWithToken(
-            commandId,
-            sourceChain,
-            sourceAddress,
-            payloadHash,
-            symbol,
-            amount,
-            expressExecutor
-        );
+        _executeWithToken(sourceChain, sourceAddress, payload, symbol, amount);
     }
 
+    // slither-disable-next-line dead-code
     function _execute(
         string calldata sourceChain,
         string calldata sourceAddress,

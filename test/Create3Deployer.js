@@ -154,7 +154,7 @@ describe('Create3Deployer', () => {
       expect(await contract.decimals()).to.equal(decimals);
     });
 
-    it('should deploy with passing native value to the contact', async () => {
+    it('should deploy with native value to the contract', async () => {
       const key = 'a test key';
       // Send 1 eth to address
       const amount = ethers.utils.parseEther('1');

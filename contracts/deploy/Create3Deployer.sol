@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import { Create3 } from './Create3.sol';
+import { SafeNativeTransfer } from '../utils/SafeTransfer.sol';
 
 /**
  * @title Create3Deployer Contract
@@ -10,6 +11,8 @@ import { Create3 } from './Create3.sol';
  * which ensures that only the sender address and salt influence the deployed address, not the contract bytecode.
  */
 contract Create3Deployer {
+    using SafeNativeTransfer for address;
+
     error FailedInit();
 
     event Deployed(bytes32 indexed bytecodeHash, bytes32 indexed salt, address indexed deployedAddress);
@@ -26,8 +29,13 @@ contract Create3Deployer {
      * - `bytecode` must not be empty.
      * - `salt` must not have been used already by the same `msg.sender`.
      */
-    function deploy(bytes calldata bytecode, bytes32 salt) external returns (address deployedAddress_) {
+    function deploy(bytes calldata bytecode, bytes32 salt) external payable returns (address deployedAddress_) {
         bytes32 deploySalt = keccak256(abi.encode(msg.sender, salt));
+
+        if (msg.value > 0) {
+            deployedAddress(msg.sender, salt).safeNativeTransfer(msg.value);
+        }
+
         deployedAddress_ = Create3.deploy(deploySalt, bytecode);
 
         emit Deployed(keccak256(bytecode), salt, deployedAddress_);
@@ -50,8 +58,13 @@ contract Create3Deployer {
         bytes memory bytecode,
         bytes32 salt,
         bytes calldata init
-    ) external returns (address deployedAddress_) {
+    ) external payable returns (address deployedAddress_) {
         bytes32 deploySalt = keccak256(abi.encode(msg.sender, salt));
+
+        if (msg.value > 0) {
+            deployedAddress(msg.sender, salt).safeNativeTransfer(msg.value);
+        }
+
         deployedAddress_ = Create3.deploy(deploySalt, bytecode);
 
         (bool success, ) = deployedAddress_.call(init);
@@ -64,7 +77,7 @@ contract Create3Deployer {
      * @dev Returns the address where a contract will be stored if deployed via {deploy} or {deployAndInit} by `sender`.
      * Any change in `sender` or `salt` will result in a new destination address.
      */
-    function deployedAddress(address sender, bytes32 salt) external view returns (address) {
+    function deployedAddress(address sender, bytes32 salt) public view returns (address) {
         bytes32 deploySalt = keccak256(abi.encode(sender, salt));
         return Create3.deployedAddress(address(this), deploySalt);
     }

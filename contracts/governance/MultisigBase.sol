@@ -43,6 +43,7 @@ contract MultisigBase is IMultisigBase {
      */
     modifier onlySigners() {
         if (!_isFinalSignerVote()) return;
+
         _;
     }
 

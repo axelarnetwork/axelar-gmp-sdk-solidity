@@ -22,6 +22,10 @@ abstract contract Ownable is IOwnable {
     bytes32 internal constant _OWNERSHIP_TRANSFER_SLOT =
         0x9855384122b55936fbfb8ca5120e63c6537a1ac40caf6ae33502b3c5da8c87d1;
 
+    constructor(address _owner) {
+        _transferOwnership(_owner);
+    }
+
     /**
      * @notice Modifier that throws an error if called by any account other than the owner.
      */
@@ -57,12 +61,7 @@ abstract contract Ownable is IOwnable {
      * @param newOwner The address to transfer ownership to
      */
     function transferOwnership(address newOwner) external virtual onlyOwner {
-        emit OwnershipTransferred(newOwner);
-
-        assembly {
-            sstore(_OWNER_SLOT, newOwner)
-            sstore(_OWNERSHIP_TRANSFER_SLOT, 0)
-        }
+        _transferOwnership(newOwner);
     }
 
     /**
@@ -92,6 +91,22 @@ abstract contract Ownable is IOwnable {
         assembly {
             sstore(_OWNERSHIP_TRANSFER_SLOT, 0)
             sstore(_OWNER_SLOT, newOwner)
+        }
+    }
+
+    /**
+     * @notice Internal function to transfer ownership of the contract to a new account `newOwner`.
+     * @dev Called in the constructor to set the initial owner.
+     * @param newOwner The address to transfer ownership to
+     */
+    function _transferOwnership(address newOwner) internal virtual {
+        if (newOwner == address(0)) revert ZeroAddress();
+
+        emit OwnershipTransferred(newOwner);
+
+        assembly {
+            sstore(_OWNER_SLOT, newOwner)
+            sstore(_OWNERSHIP_TRANSFER_SLOT, 0)
         }
     }
 }

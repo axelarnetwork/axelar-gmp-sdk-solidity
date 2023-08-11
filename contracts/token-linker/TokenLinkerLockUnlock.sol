@@ -15,8 +15,9 @@ contract TokenLinkerLockUnlock is TokenLinkerBase {
     constructor(
         address gatewayAddress_,
         address gasServiceAddress_,
-        address tokenAddress_
-    ) TokenLinkerBase(gatewayAddress_, gasServiceAddress_) {
+        address tokenAddress_,
+        address owner_
+    ) TokenLinkerBase(gatewayAddress_, gasServiceAddress_, owner_) {
         if (tokenAddress_ == address(0)) revert InvalidAddress();
 
         tokenAddress = tokenAddress_;

@@ -19,7 +19,7 @@ abstract contract Upgradable is Ownable, IUpgradable {
      * @dev This is used in the onlyProxy modifier to prevent certain functions from being called directly
      * on the implementation contract itself
      */
-    constructor() {
+    constructor(address _owner) Ownable(_owner) {
         implementationAddress = address(this);
     }
 

@@ -156,8 +156,8 @@ describe('Create3Deployer', () => {
 
     it('should deploy with native value to the contract', async () => {
       const key = 'a test key';
-      // Send 1 eth to address
-      const amount = ethers.utils.parseEther('1');
+      // Send eth to address
+      const amount = ethers.utils.parseEther('0.00000001');
 
       const contract = await deployCreate3Contract(
         deployer,

@@ -42,7 +42,8 @@ contract Multisig is Caller, MultisigBase, IMultisig {
     }
 
     /**
-     * @notice Withdraws native token from the contract
+     * @notice Withdraws native token from the contract.
+     * @notice This function is protected by the onlySigners modifier.
      * @param recipient The address to send the native token to
      * @param amount The amount of native token to send
      * @dev This function is only callable by the contract itself after passing according proposal

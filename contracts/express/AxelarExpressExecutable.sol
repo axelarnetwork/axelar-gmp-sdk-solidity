@@ -146,6 +146,7 @@ abstract contract AxelarExpressExecutable is ExpressExecutorTracker {
         _executeWithToken(sourceChain, sourceAddress, payload, symbol, amount);
     }
 
+    // false detection from slither
     // slither-disable-next-line dead-code
     function _execute(
         string calldata sourceChain,

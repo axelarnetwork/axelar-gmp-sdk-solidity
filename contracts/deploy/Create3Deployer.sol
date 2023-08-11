@@ -31,6 +31,7 @@ contract Create3Deployer {
      */
     function deploy(bytes calldata bytecode, bytes32 salt) external payable returns (address deployedAddress_) {
         emit Deployed(keccak256(bytecode), salt, deployedAddress_);
+
         bytes32 deploySalt = keccak256(abi.encode(msg.sender, salt));
 
         if (msg.value > 0) {

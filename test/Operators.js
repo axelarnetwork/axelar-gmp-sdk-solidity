@@ -167,7 +167,9 @@ describe('Operators', () => {
       const nativeValue = 0;
 
       await expect(
-        operators.connect(ownerWallet).execute(target, callData, nativeValue),
+        operators
+          .connect(ownerWallet)
+          .executeContract(target, callData, nativeValue),
       ).to.be.revertedWithCustomError(operators, 'NotOperator');
     });
 
@@ -184,7 +186,7 @@ describe('Operators', () => {
       await expect(
         operators
           .connect(operatorWallet)
-          .execute(target, invalidCallData, nativeValue),
+          .executeContract(target, invalidCallData, nativeValue),
       ).to.be.revertedWithCustomError(operators, 'ExecutionFailed');
     });
 
@@ -194,7 +196,7 @@ describe('Operators', () => {
       await expect(
         operators
           .connect(operatorWallet)
-          .execute(target, callData, nativeValue),
+          .executeContract(target, callData, nativeValue),
       )
         .to.emit(test, 'NumAdded')
         .withArgs(num);
@@ -206,7 +208,7 @@ describe('Operators', () => {
       await expect(
         operators
           .connect(operatorWallet)
-          .execute(target, callData, nativeValue, {
+          .executeContract(target, callData, nativeValue, {
             value: nativeValue,
           }),
       )
@@ -225,7 +227,7 @@ describe('Operators', () => {
       await expect(
         operators
           .connect(operatorWallet)
-          .execute(target, callData, nativeValue, {
+          .executeContract(target, callData, nativeValue, {
             value: msgValue,
           }),
       )

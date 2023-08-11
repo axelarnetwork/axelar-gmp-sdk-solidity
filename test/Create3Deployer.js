@@ -212,7 +212,6 @@ describe('Create3Deployer', () => {
       expect(await contract.decimals()).to.equal(decimals);
     });
 
-
     it('should deploy and init with native value passed to the constructor', async () => {
       const key = 'a test key';
       // Send eth to address

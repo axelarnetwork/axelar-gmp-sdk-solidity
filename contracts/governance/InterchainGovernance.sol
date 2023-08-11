@@ -28,17 +28,17 @@ contract InterchainGovernance is AxelarExecutable, TimeLock, Caller, IInterchain
 
     /**
      * @notice Initializes the contract
-     * @param gateway The address of the Axelar gateway contract
+     * @param gateway_ The address of the Axelar gateway contract
      * @param governanceChain_ The name of the governance chain
      * @param governanceAddress_ The address of the governance contract
      * @param minimumTimeDelay The minimum time delay for timelock operations
      */
     constructor(
-        address gateway,
+        address gateway_,
         string memory governanceChain_,
         string memory governanceAddress_,
         uint256 minimumTimeDelay
-    ) AxelarExecutable(gateway) TimeLock(minimumTimeDelay) {
+    ) AxelarExecutable(gateway_) TimeLock(minimumTimeDelay) {
         if (bytes(governanceChain_).length == 0 || bytes(governanceAddress_).length == 0) {
             revert InvalidAddress();
         }
@@ -103,9 +103,10 @@ contract InterchainGovernance is AxelarExecutable, TimeLock, Caller, IInterchain
         bytes32 proposalHash = _getProposalHash(target, callData, nativeValue);
 
         _finalizeTimeLock(proposalHash);
-        _call(target, callData, nativeValue);
 
         emit ProposalExecuted(proposalHash, target, callData, nativeValue, block.timestamp);
+
+        _call(target, callData, nativeValue);
     }
 
     /**

@@ -23,22 +23,22 @@ contract AxelarServiceGovernance is InterchainGovernance, MultisigBase, IAxelarS
 
     /**
      * @notice Initializes the contract.
-     * @param gateway The address of the Axelar gateway contract
-     * @param governanceChain The name of the governance chain
-     * @param governanceAddress The address of the governance contract
+     * @param gateway_ The address of the Axelar gateway contract
+     * @param governanceChain_ The name of the governance chain
+     * @param governanceAddress_ The address of the governance contract
      * @param minimumTimeDelay The minimum time delay for timelock operations
      * @param cosigners The list of initial signers
      * @param threshold The number of required signers to validate a transaction
      */
     constructor(
-        address gateway,
-        string memory governanceChain,
-        string memory governanceAddress,
+        address gateway_,
+        string memory governanceChain_,
+        string memory governanceAddress_,
         uint256 minimumTimeDelay,
         address[] memory cosigners,
         uint256 threshold
     )
-        InterchainGovernance(gateway, governanceChain, governanceAddress, minimumTimeDelay)
+        InterchainGovernance(gateway_, governanceChain_, governanceAddress_, minimumTimeDelay)
         MultisigBase(cosigners, threshold)
     {}
 
@@ -59,9 +59,9 @@ contract AxelarServiceGovernance is InterchainGovernance, MultisigBase, IAxelarS
 
         multisigApprovals[proposalHash] = false;
 
-        _call(target, callData, nativeValue);
-
         emit MultisigExecuted(proposalHash, target, callData, nativeValue);
+
+        _call(target, callData, nativeValue);
     }
 
     /**

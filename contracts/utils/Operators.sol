@@ -77,7 +77,7 @@ contract Operators is Ownable, IOperators {
      * @param nativeValue The amount of native asset to send with the call. If `nativeValue` is set to `0`, then `msg.value` is forwarded instead.
      * @return data return data from executed function call
      */
-    function execute(
+    function executeContract(
         address target,
         bytes calldata callData,
         uint256 nativeValue

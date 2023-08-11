@@ -23,6 +23,7 @@ contract FixedProxy is IProxy {
      */
     constructor(address implementationAddress) {
         bytes32 id = contractId();
+        // Skipping the check if contractId() is not set by an inheriting proxy contract
         if (id != bytes32(0) && IUpgradable(implementationAddress).contractId() != id) revert InvalidImplementation();
 
         implementation = implementationAddress;
@@ -35,8 +36,8 @@ contract FixedProxy is IProxy {
     function setup(bytes calldata setupParams) external {}
 
     /**
-     * @dev Returns the contract ID. It can be used as a check during upgrades.
-     * @notice Meant to be overridden in derived contracts.
+     * @notice Returns the contract ID. It can be used as a check during upgrades.
+     * @dev Meant to be overridden in derived contracts.
      * @return bytes32 The contract ID
      */
     function contractId() internal pure virtual returns (bytes32) {

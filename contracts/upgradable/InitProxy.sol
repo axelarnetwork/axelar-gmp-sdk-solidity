@@ -47,6 +47,7 @@ contract InitProxy is BaseProxy, IInitProxy {
         if (implementation() != address(0)) revert AlreadyInitialized();
 
         bytes32 id = contractId();
+        // Skipping the check if contractId() is not set by an inheriting proxy contract
         if (id != bytes32(0) && IUpgradable(implementationAddress).contractId() != id) revert InvalidImplementation();
 
         assembly {

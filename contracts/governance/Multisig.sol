@@ -24,8 +24,8 @@ contract Multisig is Caller, MultisigBase, IMultisig {
 
     /**
      * @notice Executes an external contract call.
-     * @dev Calls a target address with specified calldata and optionally sends value.
      * @notice This function is protected by the onlySigners modifier.
+     * @dev Calls a target address with specified calldata and passing provided native value.
      * @param target The address of the contract to call
      * @param callData The data encoding the function and arguments to call
      * @param nativeValue The amount of native currency (e.g., ETH) to send along with the call
@@ -35,7 +35,9 @@ contract Multisig is Caller, MultisigBase, IMultisig {
         address target,
         bytes calldata callData,
         uint256 nativeValue
-    ) external payable onlySigners returns (bytes memory) {
+    ) external payable returns (bytes memory) {
+        if (!_isFinalSignerVote()) return bytes('');
+
         return _call(target, callData, nativeValue);
     }
 

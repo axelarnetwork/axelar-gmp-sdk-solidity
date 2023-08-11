@@ -131,7 +131,7 @@ describe('Create3Deployer', () => {
       const address = await getCreate3Address(deployer, userWallet, key);
 
       // Send 1 eth to address
-      const amount = ethers.utils.parseEther('1');
+      const amount = ethers.utils.parseEther('0.00000001');
 
       await userWallet.sendTransaction({
         to: address,
@@ -152,6 +152,25 @@ describe('Create3Deployer', () => {
       expect(await contract.name()).to.equal(name);
       expect(await contract.symbol()).to.equal(symbol);
       expect(await contract.decimals()).to.equal(decimals);
+    });
+
+    it('should deploy with native value passed to the constructor', async () => {
+      const key = 'a test key';
+      // Send eth to address
+      const amount = ethers.utils.parseEther('0.00000001');
+
+      const contract = await deployCreate3Contract(
+        deployer,
+        userWallet,
+        BurnableMintableCappedERC20,
+        key,
+        [name, symbol, decimals],
+        { value: amount },
+      );
+
+      expect(await ethers.provider.getBalance(contract.address)).to.equal(
+        amount,
+      );
     });
 
     it('should revert if a contract that self-destructs is deployed a second time', async () => {
@@ -191,6 +210,27 @@ describe('Create3Deployer', () => {
       expect(await contract.name()).to.equal(name);
       expect(await contract.symbol()).to.equal(symbol);
       expect(await contract.decimals()).to.equal(decimals);
+    });
+
+
+    it('should deploy and init with native value passed to the constructor', async () => {
+      const key = 'a test key';
+      // Send eth to address
+      const amount = ethers.utils.parseEther('0.00000001');
+
+      const contract = await deployCreate3AndInitContract(
+        deployer,
+        userWallet,
+        BurnableMintableCappedERC20Init,
+        key,
+        [decimals],
+        [name, symbol],
+        { value: amount },
+      );
+
+      expect(await ethers.provider.getBalance(contract.address)).to.equal(
+        amount,
+      );
     });
   });
 });

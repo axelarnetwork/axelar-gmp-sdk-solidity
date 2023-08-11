@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import { IProxy } from '../interfaces/IProxy.sol';
+import { IUpgradable } from '../interfaces/IUpgradable.sol';
 
 /**
  * @title FixedProxy Contract
@@ -21,6 +22,9 @@ contract FixedProxy is IProxy {
      * @param implementationAddress The address of the implementation contract
      */
     constructor(address implementationAddress) {
+        bytes32 id = contractId();
+        if (id != bytes32(0) && IUpgradable(implementationAddress).contractId() != id) revert InvalidImplementation();
+
         implementation = implementationAddress;
     }
 
@@ -29,6 +33,15 @@ contract FixedProxy is IProxy {
      * @param setupParams The setup parameters for the implementation contract.
      */
     function setup(bytes calldata setupParams) external {}
+
+    /**
+     * @dev Returns the contract ID. It can be used as a check during upgrades.
+     * @notice Meant to be overridden in derived contracts.
+     * @return bytes32 The contract ID
+     */
+    function contractId() internal pure virtual returns (bytes32) {
+        return bytes32(0);
+    }
 
     /**
      * @dev Fallback function that delegates all calls to the implementation contract.

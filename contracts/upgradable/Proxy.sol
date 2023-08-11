@@ -14,7 +14,7 @@ import { BaseProxy } from './BaseProxy.sol';
  */
 contract Proxy is BaseProxy {
     /**
-     * @notice Constructs the proxy contract with a the implementation address, owner address, and optional setup parameters.
+     * @notice Constructs the proxy contract with the implementation address, owner address, and optional setup parameters.
      * @param implementationAddress The address of the implementation contract
      * @param owner The owner address
      * @param setupParams Optional parameters to setup the implementation contract

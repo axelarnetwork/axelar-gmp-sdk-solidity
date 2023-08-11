@@ -33,7 +33,7 @@ abstract contract BaseProxy is IProxy {
 
     /**
      * @dev Returns the contract ID. It can be used as a check during upgrades.
-     * Meant to be overridden in derived contracts.
+     * @notice Meant to be overridden in derived contracts.
      * @return bytes32 The contract ID
      */
     function contractId() internal pure virtual returns (bytes32) {

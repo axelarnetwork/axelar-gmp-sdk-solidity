@@ -24,7 +24,7 @@ contract Multisig is Caller, MultisigBase, IMultisig {
 
     /**
      * @notice Executes an external contract call.
-     * @notice This function is protected by the onlySigners modifier.
+     * @notice This function is protected by the onlySigners requirement.
      * @dev Calls a target address with specified calldata and passing provided native value.
      * @param target The address of the contract to call
      * @param callData The data encoding the function and arguments to call

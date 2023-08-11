@@ -3,13 +3,14 @@
 pragma solidity ^0.8.0;
 
 import { IOwnable } from './IOwnable.sol';
+import { IContractExecutor } from './IContractExecutor.sol';
 
 /**
  * @title IOperators Interface
  * @notice Interface for an access control mechanism where operators have exclusive
  * permissions to execute functions.
  */
-interface IOperators is IOwnable {
+interface IOperators is IOwnable, IContractExecutor {
     error NotOperator();
     error InvalidOperator();
     error OperatorAlreadyAdded();
@@ -46,7 +47,7 @@ interface IOperators is IOwnable {
      * @param nativeValue The amount of native asset to send with the call
      * @return bytes The data returned from the contract call
      */
-    function execute(
+    function executeContract(
         address target,
         bytes calldata callData,
         uint256 nativeValue

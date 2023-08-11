@@ -3,10 +3,10 @@
 pragma solidity ^0.8.0;
 
 /**
- * @title IExecute Interface
+ * @title IContractExecutor Interface
  * @notice This interface defines the execute function used to interact with external contracts.
  */
-interface IExecute {
+interface IContractExecutor {
     /**
      * @notice Executes a call to an external contract.
      * @dev Execution logic is left up to the implementation.
@@ -15,7 +15,7 @@ interface IExecute {
      * @param nativeValue The amount of native token (e.g., Ether) to be sent along with the call
      * @return bytes The data returned from the executed call
      */
-    function execute(
+    function executeContract(
         address target,
         bytes calldata callData,
         uint256 nativeValue

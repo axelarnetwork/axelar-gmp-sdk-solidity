@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import { IMultisig } from '../interfaces/IMultisig.sol';
 import { MultisigBase } from './MultisigBase.sol';
+import { SafeNativeTransfer } from '../utils/SafeTransfer.sol';
 import { Caller } from '../utils/Caller.sol';
 
 /**
@@ -11,6 +12,8 @@ import { Caller } from '../utils/Caller.sol';
  * @notice An extension of MultisigBase that can call functions on any contract.
  */
 contract Multisig is Caller, MultisigBase, IMultisig {
+    using SafeNativeTransfer for address;
+
     /**
      * @notice Contract constructor
      * @dev Sets the initial list of signers and corresponding threshold.
@@ -33,6 +36,16 @@ contract Multisig is Caller, MultisigBase, IMultisig {
         uint256 nativeValue
     ) external payable onlySigners {
         _call(target, callData, nativeValue);
+    }
+
+    /**
+     * @notice Withdraws native token from the contract
+     * @param recipient The address to send the native token to
+     * @param amount The amount of native token to send
+     * @dev This function is only callable by the contract itself after passing according proposal
+     */
+    function withdraw(address recipient, uint256 amount) external onlySigners {
+        recipient.safeNativeTransfer(amount);
     }
 
     /**

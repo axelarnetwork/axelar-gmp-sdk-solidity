@@ -215,4 +215,26 @@ describe('Multisig', () => {
         }),
     ).to.emit(targetContract, 'TargetCalled');
   });
+
+  it('should withdraw native value', async () => {
+    const recipient = signer3.address;
+    const nativeValue = 100;
+
+    await signer1
+      .sendTransaction({
+        to: multisig.address,
+        value: nativeValue,
+      })
+      .then((tx) => tx.wait());
+
+    await multisig
+      .connect(signer1)
+      .withdraw(recipient, nativeValue)
+      .then((tx) => tx.wait());
+
+    await expect(
+      await multisig.connect(signer2).withdraw(recipient, nativeValue),
+    )
+      .to.changeEtherBalance(recipient, nativeValue);
+  });
 });

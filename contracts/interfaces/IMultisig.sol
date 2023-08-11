@@ -21,4 +21,12 @@ interface IMultisig is ICaller, IMultisigBase {
         bytes calldata callData,
         uint256 nativeValue
     ) external payable;
+
+    /**
+     * @notice Withdraws native token from the contract
+     * @param recipient The address to send the native token to
+     * @param amount The amount of native token to send
+     * @dev This function is only callable by the contract itself after passing according proposal
+     */
+    function withdraw(address recipient, uint256 amount) external;
 }

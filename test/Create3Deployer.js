@@ -154,6 +154,25 @@ describe('Create3Deployer', () => {
       expect(await contract.decimals()).to.equal(decimals);
     });
 
+    it('should deploy with passing native value to the contact', async () => {
+      const key = 'a test key';
+      // Send 1 eth to address
+      const amount = ethers.utils.parseEther('1');
+
+      const contract = await deployCreate3Contract(
+        deployer,
+        userWallet,
+        BurnableMintableCappedERC20,
+        key,
+        [name, symbol, decimals],
+        { value: amount },
+      );
+
+      expect(await ethers.provider.getBalance(contract.address)).to.equal(
+        amount,
+      );
+    });
+
     it('should revert if a contract that self-destructs is deployed a second time', async () => {
       const key = 'a test key';
 

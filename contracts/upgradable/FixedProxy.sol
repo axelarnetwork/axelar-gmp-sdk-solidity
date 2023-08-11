@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import { IProxy } from '../interfaces/IProxy.sol';
-import { IUpgradable } from '../interfaces/IUpgradable.sol';
+import { IContractIdentifier } from '../interfaces/IContractIdentifier.sol';
 
 /**
  * @title FixedProxy Contract
@@ -24,7 +24,7 @@ contract FixedProxy is IProxy {
     constructor(address implementationAddress) {
         bytes32 id = contractId();
         // Skipping the check if contractId() is not set by an inheriting proxy contract
-        if (id != bytes32(0) && IUpgradable(implementationAddress).contractId() != id) revert InvalidImplementation();
+        if (id != bytes32(0) && IContractIdentifier(implementationAddress).contractId() != id) revert InvalidImplementation();
 
         implementation = implementationAddress;
     }

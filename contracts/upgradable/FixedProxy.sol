@@ -34,6 +34,7 @@ contract FixedProxy is IProxy {
      * @dev Fallback function that delegates all calls to the implementation contract.
      * If the call fails, it reverts with the returned error data. If it succeeds, it returns the data from the call.
      */
+    // slither-disable-next-line locked-ether
     fallback() external payable virtual {
         address implementation_ = implementation;
 
@@ -56,5 +57,6 @@ contract FixedProxy is IProxy {
     /**
      * @dev Payable fallback function. Can be overridden in derived contracts.
      */
+    // slither-disable-next-line locked-ether
     receive() external payable virtual {}
 }

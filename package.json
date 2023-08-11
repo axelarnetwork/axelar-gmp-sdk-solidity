@@ -1,13 +1,14 @@
 {
   "name": "@axelar-network/axelar-gmp-sdk-solidity",
-  "version": "4.0.3",
+  "version": "5.0.0",
   "description": "Solidity GMP SDK and utilities provided by Axelar for cross-chain development",
   "main": "index.js",
   "scripts": {
-    "build": "npx hardhat clean && npx hardhat compile && npm run copy:artifacts",
+    "build": "npx hardhat clean && npx hardhat compile && npm run copy:artifacts && npm run copy:interfaces",
     "test": "npx hardhat test",
     "test-evm-versions": "bash scripts/test-evm-versions.sh",
     "copy:artifacts": "rm -rf dist && mkdir dist && cp artifacts/contracts/*/*/*Deployer.json artifacts/contracts/interfaces/IUpgradable.sol/IUpgradable.json dist/",
+    "copy:interfaces": "rm -rf interfaces && mkdir interfaces && cp artifacts/contracts/interfaces/*/*.json interfaces/ && rm interfaces/*.dbg.json",
     "lint": "solhint 'contracts/**/*.sol' && eslint 'scripts/**/*.js' 'test/**/*.js'",
     "prettier": "prettier --write 'contracts/**/*.sol' 'test/**/*.js' 'scripts/**/*.js' '*.js'",
     "flatten": "sh scripts/flatten-contracts.sh",

@@ -25,17 +25,18 @@ contract Multisig is Caller, MultisigBase, IMultisig {
     /**
      * @notice Executes an external contract call.
      * @dev Calls a target address with specified calldata and optionally sends value.
-     * This function is protected by the onlySigners modifier.
+     * @notice This function is protected by the onlySigners modifier.
      * @param target The address of the contract to call
      * @param callData The data encoding the function and arguments to call
      * @param nativeValue The amount of native currency (e.g., ETH) to send along with the call
+     * @return data return data from executed function call
      */
-    function execute(
+    function executeContract(
         address target,
         bytes calldata callData,
         uint256 nativeValue
-    ) external payable onlySigners {
-        _call(target, callData, nativeValue);
+    ) external payable onlySigners returns (bytes memory) {
+        return _call(target, callData, nativeValue);
     }
 
     /**

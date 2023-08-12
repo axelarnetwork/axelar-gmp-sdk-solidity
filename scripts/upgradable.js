@@ -9,7 +9,7 @@ const { deployAndInitContractConstant } = require('./constAddressDeployer');
 const { deployCreate3Contract } = require('./create3Deployer');
 const { verifyContract } = require('./utils');
 
-const IUpgradable = require('../dist/IUpgradable.json');
+const IUpgradable = require('../interfaces/IUpgradable.json');
 
 async function deployUpgradable(
   constAddressDeployerAddress,

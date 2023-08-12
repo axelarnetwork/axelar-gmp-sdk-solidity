@@ -6,7 +6,7 @@ const {
   utils: { keccak256, defaultAbiCoder },
 } = require('ethers');
 
-const ConstAddressDeployer = require('../dist/ConstAddressDeployer.json');
+const ConstAddressDeployer = require('../artifacts/contracts/deploy/ConstAddressDeployer.sol/ConstAddressDeployer.json');
 
 const getSaltFromKey = (key) => {
   return keccak256(defaultAbiCoder.encode(['string'], [key.toString()]));

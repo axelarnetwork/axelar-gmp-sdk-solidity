@@ -44,13 +44,13 @@ describe('Multisig', () => {
 
     await multisig
       .connect(signer1)
-      .execute(targetContract.address, calldata, nativeValue)
+      .executeContract(targetContract.address, calldata, nativeValue)
       .then((tx) => tx.wait());
 
     await expect(
       multisig
         .connect(signer2)
-        .execute(targetContract.address, calldata, nativeValue),
+        .executeContract(targetContract.address, calldata, nativeValue),
     ).to.be.revertedWithCustomError(multisig, 'InsufficientBalance');
   });
 
@@ -62,13 +62,13 @@ describe('Multisig', () => {
 
     await multisig
       .connect(signer1)
-      .execute(targetContract.address, calldata, nativeValue)
+      .executeContract(targetContract.address, calldata, nativeValue)
       .then((tx) => tx.wait());
 
     await expect(
       multisig
         .connect(signer2)
-        .execute(targetContract.address, calldata, nativeValue, {
+        .executeContract(targetContract.address, calldata, nativeValue, {
           value: nativeValue,
         }),
     ).to.be.revertedWithCustomError(multisig, 'ExecutionFailed');
@@ -80,18 +80,17 @@ describe('Multisig', () => {
     const nativeValue = 1000;
 
     const multiSigInterface = new Interface([
-      'function execute(address target, bytes calldata callData, uint256 nativeValue) external payable',
+      'function executeContract(address target, bytes calldata callData, uint256 nativeValue) external payable returns (bytes memory)',
     ]);
-    const calldataMultiSig = multiSigInterface.encodeFunctionData('execute', [
-      targetContract.address,
-      calldata,
-      nativeValue,
-    ]);
+    const calldataMultiSig = multiSigInterface.encodeFunctionData(
+      'executeContract',
+      [targetContract.address, calldata, nativeValue],
+    );
     const calldataMultiSigHash = keccak256(calldataMultiSig);
 
     await multisig
       .connect(signer1)
-      .execute(targetContract.address, calldata, nativeValue)
+      .executeContract(targetContract.address, calldata, nativeValue)
       .then((tx) => tx.wait());
 
     expect(
@@ -105,18 +104,17 @@ describe('Multisig', () => {
     const nativeValue = 1000;
 
     const multiSigInterface = new Interface([
-      'function execute(address target, bytes calldata callData, uint256 nativeValue) external payable',
+      'function executeContract(address target, bytes calldata callData, uint256 nativeValue) external payable returns (bytes memory)',
     ]);
-    const calldataMultiSig = multiSigInterface.encodeFunctionData('execute', [
-      targetContract.address,
-      calldata,
-      nativeValue,
-    ]);
+    const calldataMultiSig = multiSigInterface.encodeFunctionData(
+      'executeContract',
+      [targetContract.address, calldata, nativeValue],
+    );
     const calldataMultiSigHash = keccak256(calldataMultiSig);
 
     await multisig
       .connect(signer1)
-      .execute(targetContract.address, calldata, nativeValue)
+      .executeContract(targetContract.address, calldata, nativeValue)
       .then((tx) => tx.wait());
 
     expect(
@@ -130,13 +128,12 @@ describe('Multisig', () => {
     const nativeValue = 1000;
 
     const multiSigInterface = new Interface([
-      'function execute(address target, bytes calldata callData, uint256 nativeValue) external payable',
+      'function executeContract(address target, bytes calldata callData, uint256 nativeValue) external payable returns (bytes memory)',
     ]);
-    const calldataMultiSig = multiSigInterface.encodeFunctionData('execute', [
-      targetContract.address,
-      calldata,
-      nativeValue,
-    ]);
+    const calldataMultiSig = multiSigInterface.encodeFunctionData(
+      'executeContract',
+      [targetContract.address, calldata, nativeValue],
+    );
     const calldataMultiSigHash = keccak256(calldataMultiSig);
 
     expect(await multisig.getSignerVotesCount(calldataMultiSigHash)).to.equal(
@@ -145,7 +142,7 @@ describe('Multisig', () => {
 
     await multisig
       .connect(signer1)
-      .execute(targetContract.address, calldata, nativeValue)
+      .executeContract(targetContract.address, calldata, nativeValue)
       .then((tx) => tx.wait());
 
     expect(await multisig.getSignerVotesCount(calldataMultiSigHash)).to.equal(
@@ -155,7 +152,7 @@ describe('Multisig', () => {
     await expect(
       multisig
         .connect(signer2)
-        .execute(targetContract.address, calldata, nativeValue, {
+        .executeContract(targetContract.address, calldata, nativeValue, {
           value: nativeValue,
         }),
     ).to.emit(targetContract, 'TargetCalled');
@@ -172,13 +169,13 @@ describe('Multisig', () => {
 
     await multisig
       .connect(signer1)
-      .execute(targetContract.address, calldata, nativeValue)
+      .executeContract(targetContract.address, calldata, nativeValue)
       .then((tx) => tx.wait());
 
     await expect(
       multisig
         .connect(signer2)
-        .execute(targetContract.address, calldata, nativeValue, {
+        .executeContract(targetContract.address, calldata, nativeValue, {
           value: nativeValue,
         }),
     ).to.emit(targetContract, 'TargetCalled');
@@ -191,28 +188,49 @@ describe('Multisig', () => {
 
     await multisig
       .connect(signer1)
-      .execute(targetContract.address, calldata, nativeValue)
+      .executeContract(targetContract.address, calldata, nativeValue)
       .then((tx) => tx.wait());
 
     await expect(
       multisig
         .connect(signer2)
-        .execute(targetContract.address, calldata, nativeValue, {
+        .executeContract(targetContract.address, calldata, nativeValue, {
           value: nativeValue,
         }),
     ).to.emit(targetContract, 'TargetCalled');
 
     await multisig
       .connect(signer1)
-      .execute(targetContract.address, calldata, nativeValue)
+      .executeContract(targetContract.address, calldata, nativeValue)
       .then((tx) => tx.wait());
 
     await expect(
       multisig
         .connect(signer2)
-        .execute(targetContract.address, calldata, nativeValue, {
+        .executeContract(targetContract.address, calldata, nativeValue, {
           value: nativeValue,
         }),
     ).to.emit(targetContract, 'TargetCalled');
+  });
+
+  it('should withdraw native value', async () => {
+    const recipient = signer3.address;
+    const nativeValue = 100;
+
+    await signer1
+      .sendTransaction({
+        to: multisig.address,
+        value: nativeValue,
+      })
+      .then((tx) => tx.wait());
+
+    await multisig
+      .connect(signer1)
+      .withdraw(recipient, nativeValue)
+      .then((tx) => tx.wait());
+
+    await expect(
+      await multisig.connect(signer2).withdraw(recipient, nativeValue),
+    ).to.changeEtherBalance(recipient, nativeValue);
   });
 });

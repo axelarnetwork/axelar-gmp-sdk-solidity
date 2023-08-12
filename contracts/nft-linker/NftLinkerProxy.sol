@@ -13,6 +13,7 @@ contract NftLinkerProxy is Proxy {
         bytes memory setupParams
     ) Proxy(implementationAddress, owner, setupParams) {}
 
+    // slither-disable-next-line dead-code
     function contractId() internal pure override returns (bytes32) {
         return CONTRACT_ID;
     }

@@ -56,12 +56,13 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker {
             return;
         }
 
+        // slither-disable-next-line reentrancy-events
+        emit ExpressExecutionFulfilled(commandId, sourceChain, sourceAddress, payloadHash, expressExecutor);
+
         {
             (address tokenAddress, uint256 value) = contractCallValue(sourceChain, sourceAddress, payload);
             _transferToExecutor(expressExecutor, tokenAddress, value);
         }
-
-        emit ExpressExecutionFulfilled(commandId, sourceChain, sourceAddress, payloadHash, expressExecutor);
     }
 
     function executeWithToken(
@@ -98,6 +99,17 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker {
             return;
         }
 
+        // slither-disable-next-line reentrancy-events
+        emit ExpressExecutionWithTokenFulfilled(
+            commandId,
+            sourceChain,
+            sourceAddress,
+            payloadHash,
+            tokenSymbol,
+            amount,
+            expressExecutor
+        );
+
         {
             (address tokenAddress, uint256 value) = contractCallWithTokenValue(
                 sourceChain,
@@ -113,16 +125,6 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker {
             address gatewayToken = gateway.tokenAddresses(tokenSymbol);
             IERC20(gatewayToken).safeTransfer(expressExecutor, amount);
         }
-
-        emit ExpressExecutionWithTokenFulfilled(
-            commandId,
-            sourceChain,
-            sourceAddress,
-            payloadHash,
-            tokenSymbol,
-            amount,
-            expressExecutor
-        );
     }
 
     function expressExecute(
@@ -136,16 +138,16 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker {
         address expressExecutor = msg.sender;
         bytes32 payloadHash = keccak256(payload);
 
+        emit ExpressExecuted(commandId, sourceChain, sourceAddress, payloadHash, expressExecutor);
+
+        _setExpressExecutor(commandId, sourceChain, sourceAddress, payloadHash, expressExecutor);
+
         {
             (address tokenAddress, uint256 value) = contractCallValue(sourceChain, sourceAddress, payload);
             _transferFromExecutor(expressExecutor, tokenAddress, value);
         }
 
-        _setExpressExecutor(commandId, sourceChain, sourceAddress, payloadHash, expressExecutor);
-
         _execute(sourceChain, sourceAddress, payload);
-
-        emit ExpressExecuted(commandId, sourceChain, sourceAddress, payloadHash, expressExecutor);
     }
 
     function expressExecuteWithToken(
@@ -159,6 +161,27 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker {
         if (gateway.isCommandExecuted(commandId)) revert AlreadyExecuted();
 
         address expressExecutor = msg.sender;
+        bytes32 payloadHash = keccak256(payload);
+
+        emit ExpressExecutedWithToken(
+            commandId,
+            sourceChain,
+            sourceAddress,
+            payloadHash,
+            symbol,
+            amount,
+            expressExecutor
+        );
+
+        _setExpressExecutorWithToken(
+            commandId,
+            sourceChain,
+            sourceAddress,
+            payloadHash,
+            symbol,
+            amount,
+            expressExecutor
+        );
 
         {
             (address tokenAddress, uint256 value) = contractCallWithTokenValue(
@@ -176,29 +199,7 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker {
             IERC20(gatewayToken).safeTransferFrom(expressExecutor, address(this), amount);
         }
 
-        bytes32 payloadHash = keccak256(payload);
-
-        _setExpressExecutorWithToken(
-            commandId,
-            sourceChain,
-            sourceAddress,
-            payloadHash,
-            symbol,
-            amount,
-            expressExecutor
-        );
-
         _executeWithToken(sourceChain, sourceAddress, payload, symbol, amount);
-
-        emit ExpressExecutedWithToken(
-            commandId,
-            sourceChain,
-            sourceAddress,
-            payloadHash,
-            symbol,
-            amount,
-            expressExecutor
-        );
     }
 
     function _transferToExecutor(
@@ -229,12 +230,14 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker {
         }
     }
 
+    // slither-disable-next-line dead-code
     function _execute(
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
     ) internal virtual {}
 
+    // slither-disable-next-line dead-code
     function _executeWithToken(
         string calldata sourceChain,
         string calldata sourceAddress,

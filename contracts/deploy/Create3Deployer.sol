@@ -30,6 +30,8 @@ contract Create3Deployer {
      * - `salt` must not have been used already by the same `msg.sender`.
      */
     function deploy(bytes calldata bytecode, bytes32 salt) external payable returns (address deployedAddress_) {
+        emit Deployed(keccak256(bytecode), salt, deployedAddress_);
+
         bytes32 deploySalt = keccak256(abi.encode(msg.sender, salt));
 
         if (msg.value > 0) {
@@ -37,8 +39,6 @@ contract Create3Deployer {
         }
 
         deployedAddress_ = Create3.deploy(deploySalt, bytecode);
-
-        emit Deployed(keccak256(bytecode), salt, deployedAddress_);
     }
 
     /**
@@ -59,6 +59,8 @@ contract Create3Deployer {
         bytes32 salt,
         bytes calldata init
     ) external payable returns (address deployedAddress_) {
+        emit Deployed(keccak256(bytecode), salt, deployedAddress_);
+
         bytes32 deploySalt = keccak256(abi.encode(msg.sender, salt));
 
         if (msg.value > 0) {
@@ -69,8 +71,6 @@ contract Create3Deployer {
 
         (bool success, ) = deployedAddress_.call(init);
         if (!success) revert FailedInit();
-
-        emit Deployed(keccak256(bytecode), salt, deployedAddress_);
     }
 
     /**

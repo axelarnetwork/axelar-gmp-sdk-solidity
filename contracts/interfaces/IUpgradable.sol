@@ -3,9 +3,10 @@
 pragma solidity ^0.8.0;
 
 import { IOwnable } from './IOwnable.sol';
+import { IContractIdentifier } from './IContractIdentifier.sol';
 
 // General interface for upgradable contracts
-interface IUpgradable is IOwnable {
+interface IUpgradable is IOwnable, IContractIdentifier {
     error InvalidCodeHash();
     error InvalidImplementation();
     error SetupFailed();
@@ -22,6 +23,4 @@ interface IUpgradable is IOwnable {
     ) external;
 
     function setup(bytes calldata data) external;
-
-    function contractId() external pure returns (bytes32);
 }

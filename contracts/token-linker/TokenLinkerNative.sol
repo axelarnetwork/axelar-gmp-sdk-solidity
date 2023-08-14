@@ -11,9 +11,11 @@ contract TokenLinkerNative is TokenLinkerBase {
     error InsufficientBalance();
     error TranferFromNativeFailed();
 
-    constructor(address gatewayAddress_, address gasServiceAddress_)
-        TokenLinkerBase(gatewayAddress_, gasServiceAddress_)
-    {}
+    constructor(
+        address gatewayAddress_,
+        address gasServiceAddress_,
+        address owner_
+    ) TokenLinkerBase(gatewayAddress_, gasServiceAddress_, owner_) {}
 
     //keccak256('native_balance')
     uint256 public constant NATIVE_BALANCE_SLOT = 0x2b1b2f0e2e6377507cc7f28638bed85633f644ec5614112adcc88f3c5e87903a;

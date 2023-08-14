@@ -17,11 +17,7 @@ contract Operators is Ownable, IOperators {
     /**
      * @notice Sets the initial owner of the contract.
      */
-    constructor(address initialOwner) {
-        assembly {
-            sstore(_OWNER_SLOT, initialOwner)
-        }
-    }
+    constructor(address initialOwner) Ownable(initialOwner) {}
 
     /**
      * @notice Modifier that requires the `msg.sender` to be an operator.

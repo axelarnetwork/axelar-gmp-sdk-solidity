@@ -15,7 +15,11 @@ abstract contract TokenLinkerBase is AxelarExecutable, Upgradable {
     bytes32 internal constant CONTRACT_ID = keccak256('token-linker');
     IAxelarGasService public immutable gasService;
 
-    constructor(address gatewayAddress_, address gasServiceAddress_) AxelarExecutable(gatewayAddress_) {
+    constructor(
+        address gatewayAddress_,
+        address gasServiceAddress_,
+        address owner_
+    ) AxelarExecutable(gatewayAddress_) Upgradable(owner_) {
         if (gasServiceAddress_ == address(0)) revert InvalidAddress();
 
         gasService = IAxelarGasService(gasServiceAddress_);

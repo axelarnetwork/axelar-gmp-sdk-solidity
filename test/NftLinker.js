@@ -93,7 +93,12 @@ describe('NftLinker', () => {
         ownerWallet,
         NftLinkerLockUnlock,
         NftLinkerProxy,
-        [gateway.address, gasService.address, token.address],
+        [
+          gateway.address,
+          gasService.address,
+          token.address,
+          ownerWallet.address,
+        ],
       );
     });
     it('should lock nft', async () => {
@@ -170,7 +175,12 @@ describe('NftLinker', () => {
         ownerWallet,
         NftLinkerMintBurn,
         NftLinkerProxy,
-        [gateway.address, gasService.address, token.address],
+        [
+          gateway.address,
+          gasService.address,
+          token.address,
+          ownerWallet.address,
+        ],
       );
     });
     it('should burn nft', async () => {

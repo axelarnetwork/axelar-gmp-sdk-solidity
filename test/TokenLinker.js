@@ -96,7 +96,12 @@ describe('TokenLinker', () => {
         ownerWallet,
         TokenLinkerLockUnlock,
         TokenLinkerProxy,
-        [gateway.address, gasService.address, token.address],
+        [
+          gateway.address,
+          gasService.address,
+          token.address,
+          ownerWallet.address,
+        ],
       );
     });
     it('should lock token', async () => {
@@ -173,7 +178,12 @@ describe('TokenLinker', () => {
         ownerWallet,
         TokenLinkerMintBurn,
         TokenLinkerProxy,
-        [gateway.address, gasService.address, token.address],
+        [
+          gateway.address,
+          gasService.address,
+          token.address,
+          ownerWallet.address,
+        ],
       );
     });
     it('should burn token', async () => {
@@ -246,7 +256,7 @@ describe('TokenLinker', () => {
         ownerWallet,
         TokenLinkerNative,
         TokenLinkerProxy,
-        [gateway.address, gasService.address],
+        [gateway.address, gasService.address, ownerWallet.address],
       );
     });
     it('should lock native token', async () => {

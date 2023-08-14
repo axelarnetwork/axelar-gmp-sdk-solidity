@@ -84,7 +84,8 @@ contract FinalProxy is Proxy, IFinalProxy {
         finalImplementation_ = Create3.deploy(FINAL_IMPLEMENTATION_SALT, bytecode);
 
         // Skipping the check if contractId() is not set by an inheriting proxy contract
-        if (id != bytes32(0) && IContractIdentifier(finalImplementation_).contractId() != id) revert InvalidImplementation();
+        if (id != bytes32(0) && IContractIdentifier(finalImplementation_).contractId() != id)
+            revert InvalidImplementation();
 
         if (setupParams.length != 0) {
             (bool success, ) = finalImplementation_.delegatecall(

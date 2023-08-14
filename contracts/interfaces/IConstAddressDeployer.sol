@@ -7,6 +7,7 @@ pragma solidity ^0.8.0;
  * @notice This interface defines the contract responsible for deploying and optionally initializing new contracts
  * using the `CREATE2` method.
  */
+// slither-disable-next-line missing-inheritance
 interface IConstAddressDeployer {
     error EmptyBytecode();
     error FailedDeploy();

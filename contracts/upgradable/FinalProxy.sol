@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import { IProxy } from '../interfaces/IProxy.sol';
 import { IFinalProxy } from '../interfaces/IFinalProxy.sol';
+import { IContractIdentifier } from '../interfaces/IContractIdentifier.sol';
 import { Create3 } from '../deploy/Create3.sol';
 import { BaseProxy } from './BaseProxy.sol';
 import { Proxy } from './Proxy.sol';
@@ -79,7 +80,13 @@ contract FinalProxy is Proxy, IFinalProxy {
         }
         if (msg.sender != owner) revert NotOwner();
 
+        bytes32 id = contractId();
         finalImplementation_ = Create3.deploy(FINAL_IMPLEMENTATION_SALT, bytecode);
+
+        // Skipping the check if contractId() is not set by an inheriting proxy contract
+        if (id != bytes32(0) && IContractIdentifier(finalImplementation_).contractId() != id)
+            revert InvalidImplementation();
+
         if (setupParams.length != 0) {
             (bool success, ) = finalImplementation_.delegatecall(
                 abi.encodeWithSelector(BaseProxy.setup.selector, setupParams)

@@ -19,7 +19,7 @@ abstract contract Upgradable is Ownable, IUpgradable {
      * @dev This is used in the onlyProxy modifier to prevent certain functions from being called directly
      * on the implementation contract itself
      */
-    constructor() {
+    constructor(address _owner) Ownable(_owner) {
         implementationAddress = address(this);
     }
 
@@ -59,13 +59,14 @@ abstract contract Upgradable is Ownable, IUpgradable {
 
         if (newImplementationCodeHash != newImplementation.codehash) revert InvalidCodeHash();
 
+        emit Upgraded(newImplementation);
+
         if (params.length > 0) {
+            // slither-disable-next-line controlled-delegatecall
             (bool success, ) = newImplementation.delegatecall(abi.encodeWithSelector(this.setup.selector, params));
 
             if (!success) revert SetupFailed();
         }
-
-        emit Upgraded(newImplementation);
 
         assembly {
             sstore(_IMPLEMENTATION_SLOT, newImplementation)

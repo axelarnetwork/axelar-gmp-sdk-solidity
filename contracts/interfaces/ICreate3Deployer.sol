@@ -18,7 +18,7 @@ interface ICreate3Deployer {
      * @param salt A salt to further randomize the contract address
      * @return deployedAddress_ The address of the deployed contract
      */
-    function deploy(bytes calldata bytecode, bytes32 salt) external returns (address deployedAddress_);
+    function deploy(bytes calldata bytecode, bytes32 salt) external payable returns (address deployedAddress_);
 
     /**
      * @notice Deploys a contract using `CREATE3` and initializes it.
@@ -31,7 +31,7 @@ interface ICreate3Deployer {
         bytes memory bytecode,
         bytes32 salt,
         bytes calldata init
-    ) external returns (address deployedAddress_);
+    ) external payable returns (address deployedAddress_);
 
     /**
      * @notice Returns the address where a contract will be stored if deployed via {deploy} or {deployAndInit} by `sender`.

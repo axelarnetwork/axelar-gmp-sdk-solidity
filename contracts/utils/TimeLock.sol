@@ -12,22 +12,14 @@ import { ITimeLock } from '../interfaces/ITimeLock.sol';
 contract TimeLock is ITimeLock {
     bytes32 internal constant PREFIX_TIME_LOCK = keccak256('time-lock');
 
-    uint256 internal immutable _minimumTimeLockDelay;
+    uint256 public immutable minimumTimeLockDelay;
 
     /**
      * @notice The constructor for the TimeLock.
      * @param minimumTimeDelay The minimum time delay (in secs) that must pass for the TimeLock to be executed
      */
     constructor(uint256 minimumTimeDelay) {
-        _minimumTimeLockDelay = minimumTimeDelay;
-    }
-
-    /**
-     * @notice Returns a minimum time delay at which the TimeLock may be scheduled.
-     * @return uint Minimum scheduling delay time (in secs) from the current block timestamp
-     */
-    function minimumTimeLockDelay() external view override returns (uint256) {
-        return _minimumTimeLockDelay;
+        minimumTimeLockDelay = minimumTimeDelay;
     }
 
     /**
@@ -51,7 +43,7 @@ contract TimeLock is ITimeLock {
         if (hash == 0) revert InvalidTimeLockHash();
         if (_getTimeLockEta(hash) != 0) revert TimeLockAlreadyScheduled();
 
-        uint256 minimumEta = block.timestamp + _minimumTimeLockDelay;
+        uint256 minimumEta = block.timestamp + minimumTimeLockDelay;
 
         if (eta < minimumEta) eta = minimumEta;
 

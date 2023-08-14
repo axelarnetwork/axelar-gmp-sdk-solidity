@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import { IInitProxy } from '../interfaces/IInitProxy.sol';
-import { IUpgradable } from '../interfaces/IUpgradable.sol';
+import { IContractIdentifier } from '../interfaces/IContractIdentifier.sol';
 import { BaseProxy } from './BaseProxy.sol';
 
 /**
@@ -47,7 +47,9 @@ contract InitProxy is BaseProxy, IInitProxy {
         if (implementation() != address(0)) revert AlreadyInitialized();
 
         bytes32 id = contractId();
-        if (id != bytes32(0) && IUpgradable(implementationAddress).contractId() != id) revert InvalidImplementation();
+        // Skipping the check if contractId() is not set by an inheriting proxy contract
+        if (id != bytes32(0) && IContractIdentifier(implementationAddress).contractId() != id)
+            revert InvalidImplementation();
 
         assembly {
             sstore(_IMPLEMENTATION_SLOT, implementationAddress)
@@ -56,7 +58,7 @@ contract InitProxy is BaseProxy, IInitProxy {
 
         if (params.length != 0) {
             (bool success, ) = implementationAddress.delegatecall(
-                abi.encodeWithSelector(IUpgradable.setup.selector, params)
+                abi.encodeWithSelector(BaseProxy.setup.selector, params)
             );
             if (!success) revert SetupFailed();
         }

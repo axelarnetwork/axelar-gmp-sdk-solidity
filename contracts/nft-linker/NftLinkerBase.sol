@@ -15,7 +15,11 @@ abstract contract NftLinkerBase is AxelarExecutable, Upgradable {
     bytes32 internal constant CONTRACT_ID = keccak256('nft-linker');
     IAxelarGasService public immutable gasService;
 
-    constructor(address gatewayAddress, address gasServiceAddress_) AxelarExecutable(gatewayAddress) {
+    constructor(
+        address gatewayAddress,
+        address gasServiceAddress_,
+        address owner_
+    ) AxelarExecutable(gatewayAddress) Upgradable(owner_) {
         gasService = IAxelarGasService(gasServiceAddress_);
     }
 

@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import { IProxy } from '../interfaces/IProxy.sol';
+import { IContractIdentifier } from '../interfaces/IContractIdentifier.sol';
 
 /**
  * @title FixedProxy Contract
@@ -21,6 +22,11 @@ contract FixedProxy is IProxy {
      * @param implementationAddress The address of the implementation contract
      */
     constructor(address implementationAddress) {
+        bytes32 id = contractId();
+        // Skipping the check if contractId() is not set by an inheriting proxy contract
+        if (id != bytes32(0) && IContractIdentifier(implementationAddress).contractId() != id)
+            revert InvalidImplementation();
+
         implementation = implementationAddress;
     }
 
@@ -31,9 +37,19 @@ contract FixedProxy is IProxy {
     function setup(bytes calldata setupParams) external {}
 
     /**
+     * @notice Returns the contract ID. It can be used as a check during upgrades.
+     * @dev Meant to be overridden in derived contracts.
+     * @return bytes32 The contract ID
+     */
+    function contractId() internal pure virtual returns (bytes32) {
+        return bytes32(0);
+    }
+
+    /**
      * @dev Fallback function that delegates all calls to the implementation contract.
      * If the call fails, it reverts with the returned error data. If it succeeds, it returns the data from the call.
      */
+    // slither-disable-next-line locked-ether
     fallback() external payable virtual {
         address implementation_ = implementation;
 
@@ -56,5 +72,6 @@ contract FixedProxy is IProxy {
     /**
      * @dev Payable fallback function. Can be overridden in derived contracts.
      */
+    // slither-disable-next-line locked-ether
     receive() external payable virtual {}
 }

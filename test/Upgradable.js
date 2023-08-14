@@ -40,14 +40,16 @@ describe('Upgradable', () => {
       ownerWallet,
       Upgradable,
       Proxy,
-      [],
+      [ownerWallet.address],
     );
   });
 
   it('should upgrade to a new implementation', async () => {
     const oldImplementation = await upgradable.implementation();
 
-    await upgradeUpgradable(upgradable.address, ownerWallet, Upgradable, []);
+    await upgradeUpgradable(upgradable.address, ownerWallet, Upgradable, [
+      ownerWallet.address,
+    ]);
 
     const newImplementation = await upgradable.implementation();
 

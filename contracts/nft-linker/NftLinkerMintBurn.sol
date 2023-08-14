@@ -14,8 +14,9 @@ contract NftLinkerMintBurn is NftLinkerBase {
     constructor(
         address gatewayAddress_,
         address gasServiceAddress_,
-        address operatorAddress_
-    ) NftLinkerBase(gatewayAddress_, gasServiceAddress_) {
+        address operatorAddress_,
+        address owner_
+    ) NftLinkerBase(gatewayAddress_, gasServiceAddress_, owner_) {
         operatorAddress = operatorAddress_;
     }
 

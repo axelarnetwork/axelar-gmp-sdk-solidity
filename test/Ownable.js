@@ -64,7 +64,7 @@ describe('Ownable', () => {
 
     await expect(
       ownableTest.connect(ownerWallet).transferOwnership(newOwner),
-    ).to.be.revertedWithCustomError(ownableTest, 'ZeroAddress');
+    ).to.be.revertedWithCustomError(ownableTest, 'InvalidOwnerAddress');
   });
 
   it('should transfer ownership in one step', async () => {

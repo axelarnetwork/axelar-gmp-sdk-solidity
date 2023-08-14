@@ -100,7 +100,7 @@ abstract contract Ownable is IOwnable {
      * @param newOwner The address to transfer ownership to
      */
     function _transferOwnership(address newOwner) internal virtual {
-        if (newOwner == address(0)) revert ZeroAddress();
+        if (newOwner == address(0)) revert InvalidOwnerAddress();
 
         emit OwnershipTransferred(newOwner);
 

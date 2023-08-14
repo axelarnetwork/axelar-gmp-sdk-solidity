@@ -12,7 +12,7 @@ pragma solidity ^0.8.0;
 interface IOwnable {
     error NotOwner();
     error InvalidOwner();
-    error ZeroAddress();
+    error InvalidOwnerAddress();
 
     event OwnershipTransferStarted(address indexed newOwner);
     event OwnershipTransferred(address indexed newOwner);

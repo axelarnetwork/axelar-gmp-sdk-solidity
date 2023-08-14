@@ -6,7 +6,7 @@ const {
   utils: { keccak256, defaultAbiCoder },
 } = require('ethers');
 
-const Create3Deployer = require('../dist/Create3Deployer.json');
+const Create3Deployer = require('../artifacts/contracts/deploy/Create3Deployer.sol/Create3Deployer.json');
 
 const getSaltFromKey = (key) => {
   return keccak256(defaultAbiCoder.encode(['string'], [key.toString()]));

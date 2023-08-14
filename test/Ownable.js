@@ -3,6 +3,9 @@
 const chai = require('chai');
 const { expect } = chai;
 const { ethers } = require('hardhat');
+const {
+  constants: { AddressZero },
+} = require('ethers');
 
 describe('Ownable', () => {
   let ownableTestFactory;
@@ -21,10 +24,12 @@ describe('Ownable', () => {
   });
 
   beforeEach(async () => {
-    ownableTest = await ownableTestFactory.deploy().then((d) => d.deployed());
+    ownableTest = await ownableTestFactory
+      .deploy(ownerWallet.address)
+      .then((d) => d.deployed());
   });
 
-  it('should set the deployer as the initial owner and return the current owner', async () => {
+  it('should set the initial owner and return the current owner address', async () => {
     const currentOwner = await ownableTest.owner();
 
     expect(currentOwner).to.equal(ownerWallet.address);
@@ -52,6 +57,14 @@ describe('Ownable', () => {
     await expect(
       ownableTest.connect(userWallet).transferOwnership(newOwner),
     ).to.be.revertedWithCustomError(ownableTest, 'NotOwner');
+  });
+
+  it('should revert on transfer owner if new owner address is invalid', async () => {
+    const newOwner = AddressZero;
+
+    await expect(
+      ownableTest.connect(ownerWallet).transferOwnership(newOwner),
+    ).to.be.revertedWithCustomError(ownableTest, 'InvalidOwnerAddress');
   });
 
   it('should transfer ownership in one step', async () => {

@@ -120,4 +120,4 @@ dist
 
 # Build
 artifacts
-interfaces
+/interfaces

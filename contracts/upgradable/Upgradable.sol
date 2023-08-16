@@ -18,7 +18,7 @@ abstract contract Upgradable is Ownable, IUpgradable {
      * @notice Constructor sets the implementation address to the address of the contract itself
      * @dev This is used in the onlyProxy modifier to prevent certain functions from being called directly
      * on the implementation contract itself.
-     * @dev The owner is initially set as address(1) because the actual owner is set within the proxy's init function. It is not
+     * @dev The owner is initially set as address(1) because the actual owner is set within the proxy. It is not
      * set as the zero address because Ownable is designed to throw an error for ownership transfers to the zero address.
      */
     constructor() Ownable(address(1)) {

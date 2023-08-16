@@ -22,6 +22,10 @@ abstract contract Ownable is IOwnable {
     bytes32 internal constant _OWNERSHIP_TRANSFER_SLOT =
         0x9855384122b55936fbfb8ca5120e63c6537a1ac40caf6ae33502b3c5da8c87d1;
 
+    /**
+     * @notice Initializes the contract by transferring ownership to the owner parameter.
+     * @param _owner Address to set as the initial owner of the contract
+     */
     constructor(address _owner) {
         _transferOwnership(_owner);
     }

@@ -31,7 +31,7 @@ contract Create2Deployer is ICreate2Deployer {
      * @return deployedAddress_ The address of the deployed contract
      */
     function deploy(bytes memory bytecode, bytes32 salt) external payable returns (address deployedAddress_) {
-        deployedAddress_ = _deploy(bytecode, keccak256(abi.encode(msg.sender, salt)));
+        deployedAddress_ = _deploy(bytecode, salt);
     }
 
     /**
@@ -59,7 +59,7 @@ contract Create2Deployer is ICreate2Deployer {
         bytes32 salt,
         bytes calldata init
     ) external payable returns (address deployedAddress_) {
-        deployedAddress_ = _deploy(bytecode, keccak256(abi.encode(msg.sender, salt)));
+        deployedAddress_ = _deploy(bytecode, salt);
 
         // solhint-disable-next-line avoid-low-level-calls
         (bool success, ) = deployedAddress_.call(init);
@@ -97,7 +97,7 @@ contract Create2Deployer is ICreate2Deployer {
     }
 
     /**
-     * @dev Internal function that deploys a contract with the provided bytecode and deployment salt using
+     * @dev Internal function that deploys a contract with the provided bytecode and salt using
      * the `CREATE2` opcode.
      */
     function _deploy(bytes memory bytecode, bytes32 salt) internal returns (address deployedAddress_) {
@@ -107,13 +107,15 @@ contract Create2Deployer is ICreate2Deployer {
             deployedAddress(bytecode, msg.sender, salt).safeNativeTransfer(msg.value);
         }
 
+        bytes32 deploySalt = keccak256(abi.encode(msg.sender, salt));
+
         // solhint-disable-next-line no-inline-assembly
         assembly {
-            deployedAddress_ := create2(0, add(bytecode, 32), mload(bytecode), salt)
+            deployedAddress_ := create2(0, add(bytecode, 32), mload(bytecode), deploySalt)
         }
 
         if (deployedAddress_ == address(0)) revert Create2FailedDeploy();
 
-        emit Deployed(keccak256(bytecode), salt, deployedAddress_);
+        emit Deployed(keccak256(bytecode), deploySalt, deployedAddress_);
     }
 }

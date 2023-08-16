@@ -11,6 +11,7 @@ const {
   create3DeployAndInitContract,
   getCreate3Address,
 } = require('../index.js');
+const { getSaltFromKey } = require('../scripts/utils');
 const BurnableMintableCappedERC20 = require('../artifacts/contracts/test/ERC20MintableBurnable.sol/ERC20MintableBurnable.json');
 const BurnableMintableCappedERC20Init = require('../artifacts/contracts/test/ERC20MintableBurnableInit.sol/ERC20MintableBurnableInit.json');
 const MockDepositReceiver = require('../artifacts/contracts/test/MockDepositReceiver.sol/MockDepositReceiver.json');
@@ -42,6 +43,17 @@ describe('Create3Deployer', () => {
   });
 
   describe('deploy', () => {
+    it('should revert on deploy with empty bytecode', async () => {
+      const key = 'a test key';
+      const salt = getSaltFromKey(key);
+      const bytecode = '0x';
+      const deployerContract = deployerFactory.attach(deployer);
+
+      await expect(
+        deployerContract.connect(userWallet).deploy(bytecode, salt),
+      ).to.be.revertedWithCustomError(deployerContract, 'Create3DeployFailed');
+    });
+
     it('should deploy to the predicted address', async () => {
       const key = 'a test key';
       const address = await getCreate3Address(deployer, userWallet, key);

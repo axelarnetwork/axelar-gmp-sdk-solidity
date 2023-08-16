@@ -1,16 +1,9 @@
 'use strict';
 
-const {
-  Contract,
-  ContractFactory,
-  utils: { keccak256, defaultAbiCoder },
-} = require('ethers');
+const { Contract, ContractFactory } = require('ethers');
+const { getSaltFromKey } = require('./utils');
 
 const Create3Deployer = require('../artifacts/contracts/deploy/Create3Deployer.sol/Create3Deployer.json');
-
-const getSaltFromKey = (key) => {
-  return keccak256(defaultAbiCoder.encode(['string'], [key.toString()]));
-};
 
 const estimateGasForCreate3Deploy = async (
   deployer,

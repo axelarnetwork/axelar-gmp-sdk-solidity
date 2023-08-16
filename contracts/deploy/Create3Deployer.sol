@@ -12,7 +12,7 @@ import { SafeNativeTransfer } from '../utils/SafeTransfer.sol';
  * which ensures that only the sender address and salt influence the deployed address, not the contract bytecode.
  */
 
-contract Create3Deployer is ICreate3Deployer {
+contract Create3Deployer is Create3, ICreate3Deployer {
     using SafeNativeTransfer for address;
 
     /**
@@ -40,7 +40,7 @@ contract Create3Deployer is ICreate3Deployer {
             deployedAddress(msg.sender, salt).safeNativeTransfer(msg.value);
         }
 
-        deployedAddress_ = Create3.deploy(deploySalt, bytecode);
+        deployedAddress_ = create3Deploy(deploySalt, bytecode);
     }
 
     /**
@@ -74,10 +74,10 @@ contract Create3Deployer is ICreate3Deployer {
             deployedAddress(msg.sender, salt).safeNativeTransfer(msg.value);
         }
 
-        deployedAddress_ = Create3.deploy(deploySalt, bytecode);
+        deployedAddress_ = create3Deploy(deploySalt, bytecode);
 
         (bool success, ) = deployedAddress_.call(init);
-        if (!success) revert FailedInit();
+        if (!success) revert Create3FailedInit();
     }
 
     /**
@@ -89,6 +89,6 @@ contract Create3Deployer is ICreate3Deployer {
      */
     function deployedAddress(address sender, bytes32 salt) public view returns (address) {
         bytes32 deploySalt = keccak256(abi.encode(sender, salt));
-        return Create3.deployedAddress(address(this), deploySalt);
+        return create3Address(address(this), deploySalt);
     }
 }

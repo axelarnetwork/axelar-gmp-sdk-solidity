@@ -4,13 +4,17 @@ const chai = require('chai');
 const { expect } = chai;
 const { ethers } = require('hardhat');
 const {
-  deployCreate3Contract,
-  deployCreate3AndInitContract,
+  utils: { keccak256 },
+} = ethers;
+const {
+  create3DeployContract,
+  create3DeployAndInitContract,
   getCreate3Address,
 } = require('../index.js');
 const BurnableMintableCappedERC20 = require('../artifacts/contracts/test/ERC20MintableBurnable.sol/ERC20MintableBurnable.json');
 const BurnableMintableCappedERC20Init = require('../artifacts/contracts/test/ERC20MintableBurnableInit.sol/ERC20MintableBurnableInit.json');
 const MockDepositReceiver = require('../artifacts/contracts/test/MockDepositReceiver.sol/MockDepositReceiver.json');
+const { getEVMVersion } = require('./utils');
 
 describe('Create3Deployer', () => {
   let deployerWallet;
@@ -41,7 +45,7 @@ describe('Create3Deployer', () => {
     it('should deploy to the predicted address', async () => {
       const key = 'a test key';
       const address = await getCreate3Address(deployer, userWallet, key);
-      const contract = await deployCreate3Contract(
+      const contract = await create3DeployContract(
         deployer,
         userWallet,
         BurnableMintableCappedERC20,
@@ -57,7 +61,7 @@ describe('Create3Deployer', () => {
     it('should deploy to the predicted address even with a different nonce', async () => {
       const key = 'a test key';
       const address = await getCreate3Address(deployer, userWallet, key);
-      const contract = await deployCreate3Contract(
+      const contract = await create3DeployContract(
         deployer,
         userWallet,
         BurnableMintableCappedERC20,
@@ -82,7 +86,7 @@ describe('Create3Deployer', () => {
       for (const key of keys) {
         const address = await getCreate3Address(deployer, userWallet, key);
         addresses.push(address);
-        const contract = await deployCreate3Contract(
+        const contract = await create3DeployContract(
           deployer,
           userWallet,
           BurnableMintableCappedERC20,
@@ -101,7 +105,7 @@ describe('Create3Deployer', () => {
     it('should revert if contract is deployed to an address where a contract already exists', async () => {
       const key = 'a test key';
       const address = await getCreate3Address(deployer, userWallet, key);
-      const contract = await deployCreate3Contract(
+      const contract = await create3DeployContract(
         deployer,
         userWallet,
         BurnableMintableCappedERC20,
@@ -116,14 +120,17 @@ describe('Create3Deployer', () => {
       const deployerContract = await deployerFactory.attach(deployer);
 
       await expect(
-        deployCreate3Contract(
+        create3DeployContract(
           deployer,
           userWallet,
           BurnableMintableCappedERC20,
           key,
           [name, symbol, decimals],
         ),
-      ).to.be.revertedWithCustomError(deployerContract, 'AlreadyDeployed');
+      ).to.be.revertedWithCustomError(
+        deployerContract,
+        'Create3AlreadyDeployed',
+      );
     });
 
     it('should not revert if contract is deployed to address with preexisting ether balance', async () => {
@@ -141,7 +148,7 @@ describe('Create3Deployer', () => {
       const balance = await ethers.provider.getBalance(address);
       expect(balance).to.equal(amount);
 
-      const contract = await deployCreate3Contract(
+      const contract = await create3DeployContract(
         deployer,
         userWallet,
         BurnableMintableCappedERC20,
@@ -159,7 +166,7 @@ describe('Create3Deployer', () => {
       // Send eth to address
       const amount = ethers.utils.parseEther('0.00000001');
 
-      const contract = await deployCreate3Contract(
+      const contract = await create3DeployContract(
         deployer,
         userWallet,
         BurnableMintableCappedERC20,
@@ -177,7 +184,7 @@ describe('Create3Deployer', () => {
       const key = 'a test key';
 
       // Deploy contract that self-destructs in its constructor
-      await deployCreate3Contract(
+      await create3DeployContract(
         deployer,
         userWallet,
         MockDepositReceiver,
@@ -187,7 +194,7 @@ describe('Create3Deployer', () => {
 
       // Attempt to deploy MockDepositReceiver again, should fail
       await expect(
-        deployCreate3Contract(deployer, userWallet, MockDepositReceiver, key, [
+        create3DeployContract(deployer, userWallet, MockDepositReceiver, key, [
           receiverWallet.address,
         ]),
       ).to.be.reverted;
@@ -198,7 +205,7 @@ describe('Create3Deployer', () => {
     it('should deploy to the predicted address regardless of init data', async () => {
       const key = 'a test key';
       const address = await getCreate3Address(deployer, userWallet, key);
-      const contract = await deployCreate3AndInitContract(
+      const contract = await create3DeployAndInitContract(
         deployer,
         userWallet,
         BurnableMintableCappedERC20Init,
@@ -217,7 +224,7 @@ describe('Create3Deployer', () => {
       // Send eth to address
       const amount = ethers.utils.parseEther('0.00000001');
 
-      const contract = await deployCreate3AndInitContract(
+      const contract = await create3DeployAndInitContract(
         deployer,
         userWallet,
         BurnableMintableCappedERC20Init,
@@ -230,6 +237,24 @@ describe('Create3Deployer', () => {
       expect(await ethers.provider.getBalance(contract.address)).to.equal(
         amount,
       );
+    });
+  });
+
+  describe('should preserve the bytecode [ @skip-on-coverage ]', () => {
+    it('should preserve the deployer bytecode', async () => {
+      const deployerBytecode = deployerFactory.bytecode;
+      const deployerBytecodeHash = keccak256(deployerBytecode);
+
+      const expected = {
+        istanbul:
+          '0xc1e5019bff7914321bc18542ef091d400eba0638861728e31d8c3ea2935c2899',
+        berlin:
+          '0x8a7c988a893da618b17fa40739a5f2805bbbf83bf691c4cd4b217cfb086a5de6',
+        london:
+          '0x57cb97a38c1bbe3831abcd97aca5bca8f1723cd98ce95815451b3e675a75406a',
+      }[getEVMVersion()];
+
+      expect(deployerBytecodeHash).to.be.equal(expected);
     });
   });
 });

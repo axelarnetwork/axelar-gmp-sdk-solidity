@@ -2,13 +2,15 @@
 
 pragma solidity ^0.8.0;
 
+import { ICreate3 } from './ICreate3.sol';
+
 /**
  * @title ICreate3Deployer Interface
  * @notice This interface represents the contract responsible for deploying and initializing new contracts
  * using the `CREATE3` technique.
  */
-interface ICreate3Deployer {
-    error FailedInit();
+interface ICreate3Deployer is ICreate3 {
+    error Create3FailedInit();
 
     event Deployed(bytes32 indexed bytecodeHash, bytes32 indexed salt, address indexed deployedAddress);
 

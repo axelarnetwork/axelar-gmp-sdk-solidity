@@ -2,45 +2,42 @@
 
 pragma solidity ^0.8.0;
 
+import { ICreate3 } from '../interfaces/ICreate3.sol';
 import { ContractAddress } from '../utils/ContractAddress.sol';
-import { CreateDeployer } from './CreateDeployer.sol';
-
-error AlreadyDeployed();
-error EmptyBytecode();
-error DeployFailed();
+import { Create } from './Create.sol';
 
 /**
- * @title Create3 Library
- * @notice This library can be used to deploy a contract with a deterministic address that only
- * depends on the sender and salt, not the contract bytecode.
+ * @title Create3 contract
+ * @notice This contract can be used to deploy a contract with a deterministic address that only
+ * depends on the sender and salt, not the contract bytecode and constructor parameters.
  */
-library Create3 {
+contract Create3 is ICreate3 {
     using ContractAddress for address;
 
     // slither-disable-next-line too-many-digits
-    bytes32 internal constant DEPLOYER_BYTECODE_HASH = keccak256(type(CreateDeployer).creationCode);
+    bytes32 internal constant DEPLOYER_BYTECODE_HASH = keccak256(type(Create).creationCode);
 
     /**
      * @notice Deploys a new contract using the CREATE3 method.
      * @dev This function first deploys the CreateDeployer contract using
-     * the CREATE2 opcode and then utilizes the CreateDeployerto deploy the
+     * the CREATE2 opcode and then utilizes the CreateDeployer to deploy the
      * new contract with the CREATE opcode.
      * @param salt A salt to further randomize the contract address
      * @param bytecode The bytecode of the contract to be deployed
      * @return deployed The address of the deployed contract
      */
-    function deploy(bytes32 salt, bytes memory bytecode) internal returns (address deployed) {
-        deployed = deployedAddress(address(this), salt);
+    function create3Deploy(bytes32 salt, bytes memory bytecode) internal returns (address deployed) {
+        deployed = create3Address(address(this), salt);
 
-        if (deployed.isContract()) revert AlreadyDeployed();
-        if (bytecode.length == 0) revert EmptyBytecode();
+        if (bytecode.length == 0) revert Create3DeployFailed();
+        if (deployed.isContract()) revert Create3AlreadyDeployed();
 
         // Deploy using create2
-        CreateDeployer deployer = new CreateDeployer{ salt: salt }();
+        Create deployer = new Create{ salt: salt }();
 
-        if (address(deployer) == address(0)) revert DeployFailed();
+        if (address(deployer) == address(0)) revert Create3DeployFailed();
 
-        deployer.deploy(bytecode);
+        deployer.createDeploy(bytecode);
     }
 
     /**
@@ -49,7 +46,7 @@ library Create3 {
      * @param sender The sender address which would deploy the contract
      * @return deployed The deterministic contract address if it was deployed
      */
-    function deployedAddress(address sender, bytes32 salt) internal pure returns (address deployed) {
+    function create3Address(address sender, bytes32 salt) internal pure returns (address deployed) {
         address deployer = address(
             uint160(uint256(keccak256(abi.encodePacked(hex'ff', sender, salt, DEPLOYER_BYTECODE_HASH))))
         );

@@ -15,7 +15,7 @@ import { Proxy } from './Proxy.sol';
  * that uses less gas than regular proxy calls. It inherits from the Proxy contract and implements
  * the IFinalProxy interface.
  */
-contract FinalProxy is Proxy, IFinalProxy {
+contract FinalProxy is Create3, Proxy, IFinalProxy {
     bytes32 internal constant FINAL_IMPLEMENTATION_SALT = keccak256('final-implementation');
 
     /**
@@ -59,7 +59,7 @@ contract FinalProxy is Proxy, IFinalProxy {
         /**
          * @dev Computing the address is cheaper than using storage
          */
-        implementation_ = Create3.deployedAddress(address(this), FINAL_IMPLEMENTATION_SALT);
+        implementation_ = create3Address(address(this), FINAL_IMPLEMENTATION_SALT);
 
         if (implementation_.code.length == 0) implementation_ = address(0);
     }
@@ -81,7 +81,7 @@ contract FinalProxy is Proxy, IFinalProxy {
         if (msg.sender != owner) revert NotOwner();
 
         bytes32 id = contractId();
-        finalImplementation_ = Create3.deploy(FINAL_IMPLEMENTATION_SALT, bytecode);
+        finalImplementation_ = create3Deploy(FINAL_IMPLEMENTATION_SALT, bytecode);
 
         // Skipping the check if contractId() is not set by an inheriting proxy contract
         if (id != bytes32(0) && IContractIdentifier(finalImplementation_).contractId() != id)

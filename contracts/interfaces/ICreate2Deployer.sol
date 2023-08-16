@@ -8,9 +8,9 @@ pragma solidity ^0.8.0;
  * using the `CREATE2` method.
  */
 interface ICreate2Deployer {
-    error EmptyBytecode();
-    error FailedDeploy();
-    error FailedInit();
+    error Create2EmptyBytecode();
+    error Create2FailedDeploy();
+    error Create2FailedInit();
 
     event Deployed(bytes32 indexed bytecodeHash, bytes32 indexed salt, address indexed deployedAddress);
 
@@ -20,7 +20,7 @@ interface ICreate2Deployer {
      * @param salt A salt to further randomize the contract address
      * @return deployedAddress_ The address of the deployed contract
      */
-    function deploy(bytes memory bytecode, bytes32 salt) external returns (address deployedAddress_);
+    function deploy(bytes memory bytecode, bytes32 salt) external payable returns (address deployedAddress_);
 
     /**
      * @notice Deploys a contract using `CREATE2` and initializes it.
@@ -33,7 +33,7 @@ interface ICreate2Deployer {
         bytes memory bytecode,
         bytes32 salt,
         bytes calldata init
-    ) external returns (address deployedAddress_);
+    ) external payable returns (address deployedAddress_);
 
     /**
      * @notice Returns the address where a contract will be stored if deployed via {deploy} or {deployAndInit} by `sender`.

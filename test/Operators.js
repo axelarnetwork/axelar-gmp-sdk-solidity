@@ -3,7 +3,7 @@
 const chai = require('chai');
 const { ethers } = require('hardhat');
 const { expect } = chai;
-const { deployContractConstant } = require('../scripts/constAddressDeployer');
+const { create2DeployContract } = require('../scripts/create2Deployer');
 const Operators = require('../artifacts/contracts/utils/Operators.sol/Operators.json');
 
 describe('Operators', () => {
@@ -29,7 +29,7 @@ describe('Operators', () => {
     testFactory = await ethers.getContractFactory('TestOperators', ownerWallet);
 
     deployerFactory = await ethers.getContractFactory(
-      'ConstAddressDeployer',
+      'Create2Deployer',
       ownerWallet,
     );
 
@@ -244,7 +244,7 @@ describe('Operators', () => {
     before(async () => {
       const key = 'Operators';
 
-      operators = await deployContractConstant(
+      operators = await create2DeployContract(
         deployer,
         ownerWallet,
         Operators,

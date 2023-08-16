@@ -79,7 +79,7 @@ contract Create2Deployer is ICreate2Deployer {
         address sender,
         bytes32 salt
     ) public view returns (address deployedAddress_) {
-        bytes32 newSalt = keccak256(abi.encode(sender, salt));
+        bytes32 deploySalt = keccak256(abi.encode(sender, salt));
         deployedAddress_ = address(
             uint160(
                 uint256(
@@ -87,7 +87,7 @@ contract Create2Deployer is ICreate2Deployer {
                         abi.encodePacked(
                             hex'ff',
                             address(this),
-                            newSalt,
+                            deploySalt,
                             keccak256(bytecode) // init code hash
                         )
                     )
@@ -103,11 +103,14 @@ contract Create2Deployer is ICreate2Deployer {
     function _deploy(bytes memory bytecode, bytes32 salt) internal returns (address deployedAddress_) {
         if (bytecode.length == 0) revert Create2EmptyBytecode();
 
-        if (msg.value > 0) {
-            deployedAddress(bytecode, msg.sender, salt).safeNativeTransfer(msg.value);
-        }
-
         bytes32 deploySalt = keccak256(abi.encode(msg.sender, salt));
+        address expectedAddress = deployedAddress(bytecode, msg.sender, salt);
+
+        emit Deployed(expectedAddress, msg.sender, salt, keccak256(bytecode));
+
+        if (msg.value > 0) {
+            expectedAddress.safeNativeTransfer(msg.value);
+        }
 
         // solhint-disable-next-line no-inline-assembly
         assembly {
@@ -115,7 +118,5 @@ contract Create2Deployer is ICreate2Deployer {
         }
 
         if (deployedAddress_ == address(0)) revert Create2FailedDeploy();
-
-        emit Deployed(keccak256(bytecode), deploySalt, deployedAddress_);
     }
 }

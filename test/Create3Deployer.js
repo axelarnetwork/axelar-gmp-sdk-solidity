@@ -259,11 +259,11 @@ describe('Create3Deployer', () => {
 
       const expected = {
         istanbul:
-          '0xc1e5019bff7914321bc18542ef091d400eba0638861728e31d8c3ea2935c2899',
+          '0xa950461924a09ee828ac5ad3c6f89bbdb41e8cf27681290fca5126e607cadc7e',
         berlin:
-          '0x8a7c988a893da618b17fa40739a5f2805bbbf83bf691c4cd4b217cfb086a5de6',
+          '0x4df4f9e400af37776311d5e03eb45e0441e9cc74701b608bc69f147e51691339',
         london:
-          '0x57cb97a38c1bbe3831abcd97aca5bca8f1723cd98ce95815451b3e675a75406a',
+          '0xa9622e0978752e787df44d55cfa81ecab94844dee15386fd41a81f5202a10815',
       }[getEVMVersion()];
 
       expect(deployerBytecodeHash).to.be.equal(expected);

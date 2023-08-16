@@ -31,12 +31,13 @@ contract Create3Deployer is Create3, ICreate3Deployer {
      * @return deployedAddress_ The address of the deployed contract
      */
     function deploy(bytes calldata bytecode, bytes32 salt) external payable returns (address deployedAddress_) {
-        emit Deployed(keccak256(bytecode), salt, deployedAddress_);
-
         bytes32 deploySalt = keccak256(abi.encode(msg.sender, salt));
+        address expectedAddress = create3Address(address(this), deploySalt);
+
+        emit Deployed(expectedAddress, msg.sender, salt);
 
         if (msg.value > 0) {
-            deployedAddress(msg.sender, salt).safeNativeTransfer(msg.value);
+            expectedAddress.safeNativeTransfer(msg.value);
         }
 
         deployedAddress_ = create3Deploy(deploySalt, bytecode);
@@ -65,12 +66,13 @@ contract Create3Deployer is Create3, ICreate3Deployer {
         bytes32 salt,
         bytes calldata init
     ) external payable returns (address deployedAddress_) {
-        emit Deployed(keccak256(bytecode), salt, deployedAddress_);
-
         bytes32 deploySalt = keccak256(abi.encode(msg.sender, salt));
+        address expectedAddress = create3Address(address(this), deploySalt);
+
+        emit Deployed(expectedAddress, msg.sender, salt);
 
         if (msg.value > 0) {
-            deployedAddress(msg.sender, salt).safeNativeTransfer(msg.value);
+            expectedAddress.safeNativeTransfer(msg.value);
         }
 
         deployedAddress_ = create3Deploy(deploySalt, bytecode);
@@ -86,7 +88,7 @@ contract Create3Deployer is Create3, ICreate3Deployer {
      * @param salt The salt that will be used to further randomize the contract address
      * @return address The address that the contract will be deployed to using `CREATE3`
      */
-    function deployedAddress(address sender, bytes32 salt) public view returns (address) {
+    function deployedAddress(address sender, bytes32 salt) external view returns (address) {
         bytes32 deploySalt = keccak256(abi.encode(sender, salt));
         return create3Address(address(this), deploySalt);
     }

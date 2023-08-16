@@ -12,7 +12,7 @@ import { ICreate3 } from './ICreate3.sol';
 interface ICreate3Deployer is ICreate3 {
     error Create3FailedInit();
 
-    event Deployed(bytes32 indexed bytecodeHash, bytes32 indexed salt, address indexed deployedAddress);
+    event Deployed(address indexed deployedAddress, address indexed sender, bytes32 indexed salt);
 
     /**
      * @notice Deploys a contract using `CREATE3`.

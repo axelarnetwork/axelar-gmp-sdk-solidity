@@ -12,7 +12,7 @@ interface ICreate2Deployer {
     error Create2FailedDeploy();
     error Create2FailedInit();
 
-    event Deployed(bytes32 indexed bytecodeHash, bytes32 indexed salt, address indexed deployedAddress);
+    event Deployed(address indexed deployedAddress, address indexed sender, bytes32 indexed salt, bytes32 bytecodeHash);
 
     /**
      * @notice Deploys a contract using `CREATE2`.

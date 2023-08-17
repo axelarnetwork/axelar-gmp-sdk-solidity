@@ -6,8 +6,8 @@ import { DeployerBase } from './DeployerBase.sol';
 import { DeployCreate3 } from './DeployCreate3.sol';
 
 /**
- * @title Create2Deployer Contract
- * @notice This contract is responsible for deploying and initializing new contracts using the `CREATE2` method
+ * @title Create3Deployer Contract
+ * @notice This contract is responsible for deploying and initializing new contracts using the `CREATE3` method
  * which computes the deployed contract address based on the bytecode, deployer address, and deployment salt.
  */
 contract Create3Deployer is DeployCreate3, DeployerBase {

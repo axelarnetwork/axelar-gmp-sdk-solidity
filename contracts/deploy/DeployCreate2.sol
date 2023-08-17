@@ -7,7 +7,7 @@ import { ContractAddress } from '../utils/ContractAddress.sol';
 import { SafeNativeTransfer } from '../utils/SafeTransfer.sol';
 
 /**
- * @title Create3 contract
+ * @title DeployCreate2 contract
  * @notice This contract can be used to deploy a contract with a deterministic address that only
  * depends on the sender and salt, not the contract bytecode and constructor parameters.
  */
@@ -16,7 +16,7 @@ contract DeployCreate2 is IDeploy {
     using SafeNativeTransfer for address;
 
     /**
-     * @notice Deploys a new contract using the CREATE3 method.
+     * @notice Deploys a new contract using the CREATE2 method.
      * @dev This function first deploys the contract using CREATE2 opcode
      * @param bytecode The bytecode of the contract to be deployed
      * @param deploySalt A salt to further randomize the contract address
@@ -42,7 +42,7 @@ contract DeployCreate2 is IDeploy {
     }
 
     /**
-     * @notice Compute the deployed address that will result from the CREATE3 method.
+     * @notice Compute the deployed address that will result from the CREATE2 method.
      * @param bytecode The bytecode of the contract to be deployed
      * @param deploySalt A salt to further randomize the contract address
      * @return deployed The deterministic contract address if it was deployed

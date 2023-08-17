@@ -8,7 +8,7 @@ import { SafeNativeTransfer } from '../utils/SafeTransfer.sol';
 import { DeployCreate } from './DeployCreate.sol';
 
 /**
- * @title Create3 contract
+ * @title DeployCreate3 contract
  * @notice This contract can be used to deploy a contract with a deterministic address that only
  * depends on the sender and salt, not the contract bytecode and constructor parameters.
  */

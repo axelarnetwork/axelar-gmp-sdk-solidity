@@ -285,7 +285,7 @@ describe('Proxy', async () => {
 
       await expect(
         finalProxy.finalUpgrade(bytecode, setupParams),
-      ).to.be.revertedWithCustomError(finalProxy, 'Create3AlreadyDeployed');
+      ).to.be.revertedWithCustomError(finalProxy, 'AlreadyDeployed');
     });
   });
 });

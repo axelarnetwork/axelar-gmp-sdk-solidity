@@ -24,7 +24,7 @@ Base interface for validating and executing GMP contract calls.
 Interface that allows expediting GMP calls by lending assets and performing execution 
 before it fully propagates through the Axelar network.
 
-### Create3Deployer and Create2Deployer
+### Create2Deployer and Create3Deployer
 These contracts are used to deploy your Executable to have the same address on different EVM chains.
 This simplifies message validation from peer Executables. You can learn more in the
 [documentation](https://docs.axelar.dev/dev/build/solidity-utilities).

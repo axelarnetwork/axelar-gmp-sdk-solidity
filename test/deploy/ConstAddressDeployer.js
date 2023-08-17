@@ -7,17 +7,16 @@ const {
   utils: { keccak256 },
 } = ethers;
 const {
-  create2DeployContract,
-  create2DeployAndInitContract,
-  getCreate2Address,
-} = require('../index.js');
-const { getSaltFromKey } = require('../scripts/utils');
-const BurnableMintableCappedERC20 = require('../artifacts/contracts/test/ERC20MintableBurnable.sol/ERC20MintableBurnable.json');
-const BurnableMintableCappedERC20Init = require('../artifacts/contracts/test/ERC20MintableBurnableInit.sol/ERC20MintableBurnableInit.json');
+  deployContractConstant,
+  deployAndInitContractConstant,
+  predictContractConstant,
+} = require('../../index.js');
+const BurnableMintableCappedERC20 = require('../../artifacts/contracts/test/ERC20MintableBurnable.sol/ERC20MintableBurnable.json');
+const BurnableMintableCappedERC20Init = require('../../artifacts/contracts/test/ERC20MintableBurnableInit.sol/ERC20MintableBurnableInit.json');
 
-const { getEVMVersion } = require('./utils.js');
+const { getEVMVersion } = require('../utils.js');
 
-describe('Create2Deployer', () => {
+describe('ConstAddressDeployer', () => {
   let deployerWallet;
   let userWallet;
 
@@ -31,7 +30,7 @@ describe('Create2Deployer', () => {
     [deployerWallet, userWallet] = await ethers.getSigners();
 
     deployerFactory = await ethers.getContractFactory(
-      'Create2Deployer',
+      'ConstAddressDeployer',
       deployerWallet,
     );
   });
@@ -42,27 +41,16 @@ describe('Create2Deployer', () => {
   });
 
   describe('deploy', () => {
-    it('should revert on deploy with empty bytecode', async () => {
-      const key = 'a test key';
-      const salt = getSaltFromKey(key);
-      const bytecode = '0x';
-      const deployerContract = deployerFactory.attach(deployer);
-
-      await expect(
-        deployerContract.connect(userWallet).deploy(bytecode, salt),
-      ).to.be.revertedWithCustomError(deployerContract, 'Create2EmptyBytecode');
-    });
-
     it('should deploy to the predicted address', async () => {
       const key = 'a test key';
-      const address = await getCreate2Address(
+      const address = await predictContractConstant(
         deployer,
         userWallet,
         BurnableMintableCappedERC20,
         key,
         [name, symbol, decimals],
       );
-      const contract = await create2DeployContract(
+      const contract = await deployContractConstant(
         deployer,
         userWallet,
         BurnableMintableCappedERC20,
@@ -80,7 +68,7 @@ describe('Create2Deployer', () => {
       // Send eth to address
       const amount = ethers.utils.parseEther('0.00000001');
 
-      const contract = await create2DeployContract(
+      const contract = await deployContractConstant(
         deployer,
         userWallet,
         BurnableMintableCappedERC20,
@@ -96,14 +84,14 @@ describe('Create2Deployer', () => {
 
     it('should deploy to the predicted address even with a different nonce', async () => {
       const key = 'a test key';
-      const address = await getCreate2Address(
+      const address = await predictContractConstant(
         deployer,
         userWallet,
         BurnableMintableCappedERC20,
         key,
         [name, symbol, decimals],
       );
-      const contract = await create2DeployContract(
+      const contract = await deployContractConstant(
         deployer,
         userWallet,
         BurnableMintableCappedERC20,
@@ -126,7 +114,7 @@ describe('Create2Deployer', () => {
       const addresses = [];
 
       for (const key of keys) {
-        const address = await getCreate2Address(
+        const address = await predictContractConstant(
           deployer,
           userWallet,
           BurnableMintableCappedERC20,
@@ -134,7 +122,7 @@ describe('Create2Deployer', () => {
           [name, symbol, decimals],
         );
         addresses.push(address);
-        const contract = await create2DeployContract(
+        const contract = await deployContractConstant(
           deployer,
           userWallet,
           BurnableMintableCappedERC20,
@@ -154,14 +142,14 @@ describe('Create2Deployer', () => {
   describe('deployAndInit', () => {
     it('should deploy to the predicted address regardless of init data', async () => {
       const key = 'a test key';
-      const address = await getCreate2Address(
+      const address = await predictContractConstant(
         deployer,
         userWallet,
         BurnableMintableCappedERC20Init,
         key,
         [decimals],
       );
-      const contract = await create2DeployAndInitContract(
+      const contract = await deployAndInitContractConstant(
         deployer,
         userWallet,
         BurnableMintableCappedERC20Init,
@@ -183,11 +171,11 @@ describe('Create2Deployer', () => {
 
       const expected = {
         istanbul:
-          '0x14736cc3e18bb85ca01055a8f6dc6db0db884687b18c1f3916a7d984625e547c',
+          '0x948f9503729b4ffc2a91ed206060e3dd53eaf75e9b3217d82855fee43f3f039b',
         berlin:
-          '0x2eaed9f6107196a1f7202986ce81298fa4a2d57fb9e94a2d0053c9fe36309832',
+          '0xd528ce21f5d56f593610066872f6836e8e321d6ae4edf78a4bb9e99b68bb7af7',
         london:
-          '0xd6c676f2fecb93e37b9704bae395f05fad70d68359d7d04096eaa8e14e935a74',
+          '0xe7be51043bc39d4ddc5f455511e1e2444c87602ff55ba8bc8e2e41dafa8b0916',
       }[getEVMVersion()];
 
       expect(deployerBytecodeHash).to.be.equal(expected);

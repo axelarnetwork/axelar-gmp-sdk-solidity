@@ -3,18 +3,16 @@
 pragma solidity ^0.8.0;
 
 /**
- * @title CreateDeployer Contract
+ * @title DeployCreate Contract
  * @notice This contract deploys new contracts using the `CREATE` opcode and is used as part of
  * the `Create3` deployment method.
  */
-contract Create {
+contract DeployCreate {
     /**
      * @dev Deploys a new contract with the specified bytecode using the CREATE opcode.
      * @param bytecode The bytecode of the contract to be deployed
      */
-    function createDeploy(bytes memory bytecode) external {
-        address deployed;
-
+    function deploy(bytes memory bytecode) external returns (address deployed) {
         assembly {
             deployed := create(0, add(bytecode, 32), mload(bytecode))
             if iszero(deployed) {

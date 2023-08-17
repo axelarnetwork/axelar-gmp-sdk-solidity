@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import { IProxy } from '../interfaces/IProxy.sol';
 import { IFinalProxy } from '../interfaces/IFinalProxy.sol';
 import { IContractIdentifier } from '../interfaces/IContractIdentifier.sol';
-import { Create3 } from '../deploy/Create3.sol';
+import { DeployCreate3 } from '../deploy/DeployCreate3.sol';
 import { BaseProxy } from './BaseProxy.sol';
 import { Proxy } from './Proxy.sol';
 
@@ -15,7 +15,7 @@ import { Proxy } from './Proxy.sol';
  * that uses less gas than regular proxy calls. It inherits from the Proxy contract and implements
  * the IFinalProxy interface.
  */
-contract FinalProxy is Create3, Proxy, IFinalProxy {
+contract FinalProxy is Proxy, DeployCreate3, IFinalProxy {
     bytes32 internal constant FINAL_IMPLEMENTATION_SALT = keccak256('final-implementation');
 
     /**
@@ -59,7 +59,7 @@ contract FinalProxy is Create3, Proxy, IFinalProxy {
         /**
          * @dev Computing the address is cheaper than using storage
          */
-        implementation_ = create3Address(address(this), FINAL_IMPLEMENTATION_SALT);
+        implementation_ = _create3Address(FINAL_IMPLEMENTATION_SALT);
 
         if (implementation_.code.length == 0) implementation_ = address(0);
     }
@@ -81,7 +81,7 @@ contract FinalProxy is Create3, Proxy, IFinalProxy {
         if (msg.sender != owner) revert NotOwner();
 
         bytes32 id = contractId();
-        finalImplementation_ = create3Deploy(FINAL_IMPLEMENTATION_SALT, bytecode);
+        finalImplementation_ = _deployCreate3(bytecode, FINAL_IMPLEMENTATION_SALT);
 
         // Skipping the check if contractId() is not set by an inheriting proxy contract
         if (id != bytes32(0) && IContractIdentifier(finalImplementation_).contractId() != id)

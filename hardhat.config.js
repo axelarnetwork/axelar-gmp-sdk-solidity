@@ -47,6 +47,6 @@ module.exports = {
     timeout: 100000,
   },
   gasReporter: {
-    enabled: !!process.env.REPORT_GAS,
+    enabled: process.env.REPORT_GAS ? true : false,
   },
 };

@@ -3,8 +3,8 @@
 const chai = require('chai');
 const { ethers } = require('hardhat');
 const { expect } = chai;
-const { create2DeployContract } = require('../scripts/create2Deployer');
-const Operators = require('../artifacts/contracts/utils/Operators.sol/Operators.json');
+const { create2DeployContract } = require('../../scripts/create2Deployer');
+const Operators = require('../../artifacts/contracts/utils/Operators.sol/Operators.json');
 
 describe('Operators', () => {
   let ownerWallet;

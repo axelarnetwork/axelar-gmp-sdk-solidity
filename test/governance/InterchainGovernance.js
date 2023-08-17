@@ -7,7 +7,7 @@ const {
   constants: { AddressZero },
 } = ethers;
 const { expect } = chai;
-const { isHardhat, waitFor, getPayloadAndProposalHash } = require('./utils');
+const { isHardhat, waitFor, getPayloadAndProposalHash } = require('../utils');
 
 describe('InterchainGovernance', () => {
   let ownerWallet;

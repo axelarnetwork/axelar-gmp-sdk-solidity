@@ -10,12 +10,12 @@ const {
   create3DeployContract,
   create3DeployAndInitContract,
   getCreate3Address,
-} = require('../index.js');
-const { getSaltFromKey } = require('../scripts/utils');
-const BurnableMintableCappedERC20 = require('../artifacts/contracts/test/ERC20MintableBurnable.sol/ERC20MintableBurnable.json');
-const BurnableMintableCappedERC20Init = require('../artifacts/contracts/test/ERC20MintableBurnableInit.sol/ERC20MintableBurnableInit.json');
-const MockDepositReceiver = require('../artifacts/contracts/test/MockDepositReceiver.sol/MockDepositReceiver.json');
-const { getEVMVersion } = require('./utils');
+} = require('../../index.js');
+const { getSaltFromKey } = require('../../scripts/utils');
+const BurnableMintableCappedERC20 = require('../../artifacts/contracts/test/ERC20MintableBurnable.sol/ERC20MintableBurnable.json');
+const BurnableMintableCappedERC20Init = require('../../artifacts/contracts/test/ERC20MintableBurnableInit.sol/ERC20MintableBurnableInit.json');
+const MockDepositReceiver = require('../../artifacts/contracts/test/MockDepositReceiver.sol/MockDepositReceiver.json');
+const { getEVMVersion } = require('../utils');
 
 describe('Create3Deployer', () => {
   let deployerWallet;
@@ -51,7 +51,7 @@ describe('Create3Deployer', () => {
 
       await expect(
         deployerContract.connect(userWallet).deploy(bytecode, salt),
-      ).to.be.revertedWithCustomError(deployerContract, 'Create3DeployFailed');
+      ).to.be.revertedWithCustomError(deployerContract, 'EmptyBytecode');
     });
 
     it('should deploy to the predicted address', async () => {
@@ -139,10 +139,7 @@ describe('Create3Deployer', () => {
           key,
           [name, symbol, decimals],
         ),
-      ).to.be.revertedWithCustomError(
-        deployerContract,
-        'Create3AlreadyDeployed',
-      );
+      ).to.be.revertedWithCustomError(deployerContract, 'AlreadyDeployed');
     });
 
     it('should not revert if contract is deployed to address with preexisting ether balance', async () => {
@@ -259,11 +256,11 @@ describe('Create3Deployer', () => {
 
       const expected = {
         istanbul:
-          '0xa950461924a09ee828ac5ad3c6f89bbdb41e8cf27681290fca5126e607cadc7e',
+          '0xed57a2b2d6bf8a6dfe202eb1ac8c5c9952a456cd32dc45fa8d65d32d0899fd34',
         berlin:
-          '0x4df4f9e400af37776311d5e03eb45e0441e9cc74701b608bc69f147e51691339',
+          '0x7a437f7a1081f1f14a50afd578530912d4e15fc16bf1eab6dcfa429477974e4e',
         london:
-          '0xa9622e0978752e787df44d55cfa81ecab94844dee15386fd41a81f5202a10815',
+          '0xc61f5b7dbed0292c6ccf9ebf3caa4e5092b8640ede8f10c5da9aa7039f0ea085',
       }[getEVMVersion()];
 
       expect(deployerBytecodeHash).to.be.equal(expected);

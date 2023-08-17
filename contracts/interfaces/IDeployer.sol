@@ -2,15 +2,15 @@
 
 pragma solidity ^0.8.0;
 
+import { IDeploy } from './IDeploy.sol';
+
 /**
  * @title ICreate2Deployer Interface
  * @notice This interface defines the contract responsible for deploying and optionally initializing new contracts
  * using the `CREATE2` method.
  */
-interface ICreate2Deployer {
-    error Create2EmptyBytecode();
-    error Create2FailedDeploy();
-    error Create2FailedInit();
+interface IDeployer is IDeploy {
+    error DeployInitFailed();
 
     event Deployed(address indexed deployedAddress, address indexed sender, bytes32 indexed salt, bytes32 bytecodeHash);
 

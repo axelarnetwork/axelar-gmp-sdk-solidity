@@ -6,7 +6,7 @@ const {
   utils: { defaultAbiCoder, Interface },
 } = ethers;
 const { expect } = chai;
-const { getPayloadAndProposalHash } = require('./utils');
+const { getPayloadAndProposalHash } = require('../utils');
 
 describe('AxelarServiceGovernance', () => {
   let ownerWallet;

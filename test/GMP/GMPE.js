@@ -8,8 +8,8 @@ const {
 const { expect } = chai;
 const { ethers } = require('hardhat');
 
-const DestinationChainSwapExpress = require('../artifacts/contracts/test/gmp/DestinationChainSwapExpress.sol/DestinationChainSwapExpress.json');
-const { deployContract } = require('../scripts/utils');
+const DestinationChainSwapExpress = require('../../artifacts/contracts/test/gmp/DestinationChainSwapExpress.sol/DestinationChainSwapExpress.json');
+const { deployContract } = require('../../scripts/utils');
 
 const getRandomID = () => id(Math.floor(Math.random() * 1e10).toString());
 

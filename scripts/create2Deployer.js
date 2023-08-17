@@ -3,7 +3,7 @@
 const { Contract, ContractFactory } = require('ethers');
 const { getSaltFromKey } = require('./utils');
 
-const Create2Deployer = require('../artifacts/contracts/interfaces/ICreate2Deployer.sol/ICreate2Deployer.json');
+const Create2Deployer = require('../artifacts/contracts/interfaces/IDeployer.sol/IDeployer.json');
 
 const estimateGasForCreate2Deploy = async (
   deployer,

@@ -89,6 +89,8 @@ abstract contract DeployerBase is IDeployer {
         return _deployedAddress(bytecode, deploySalt);
     }
 
+    // false detection from slither
+    // slither-disable-next-line dead-code
     function _deploy(
         bytes memory, /* bytecode */
         bytes32 /* deploySalt */
@@ -96,6 +98,8 @@ abstract contract DeployerBase is IDeployer {
         return address(0);
     }
 
+    // false detection from slither
+    // slither-disable-next-line dead-code
     function _deployedAddress(
         bytes memory, /* bytecode */
         bytes32 /* deploySalt */

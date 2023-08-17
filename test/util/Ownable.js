@@ -60,10 +60,8 @@ describe('Ownable', () => {
   });
 
   it('should revert on transfer owner if new owner address is invalid', async () => {
-    const newOwner = AddressZero;
-
     await expect(
-      ownableTest.connect(ownerWallet).transferOwnership(newOwner),
+      ownableTest.connect(ownerWallet).transferOwnership(AddressZero),
     ).to.be.revertedWithCustomError(ownableTest, 'InvalidOwnerAddress');
   });
 

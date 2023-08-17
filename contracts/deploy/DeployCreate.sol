@@ -12,7 +12,9 @@ contract DeployCreate {
      * @dev Deploys a new contract with the specified bytecode using the CREATE opcode.
      * @param bytecode The bytecode of the contract to be deployed
      */
-    function deploy(bytes memory bytecode) external returns (address deployed) {
+    function deploy(bytes memory bytecode) external {
+        address deployed;
+
         assembly {
             deployed := create(0, add(bytecode, 32), mload(bytecode))
             if iszero(deployed) {

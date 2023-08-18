@@ -16,7 +16,7 @@ abstract contract DeployerBase is IDeployer {
     using SafeNativeTransfer for address;
 
     /**
-     * @notice Deploys a contract using `CREATE2` or `CREATE3`.
+     * @notice Deploys a contract using a deployment method defined by derived contracts.
      * @dev The address where the contract will be deployed can be known in
      * advance via {deployedAddress}.
      *

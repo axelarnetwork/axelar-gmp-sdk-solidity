@@ -6,7 +6,7 @@ import { IDeployer } from '../interfaces/IDeployer.sol';
 import { SafeNativeTransfer } from '../utils/SafeTransfer.sol';
 
 /**
- * @title DeployerBase Contract
+ * @title Deployer Contract
  * @notice This contract is responsible for deploying and initializing new contracts using either the `CREATE2`
  * method which computes the deployed contract address from the bytecode, deployer address, and deployment
  * salt, or the `CREATE3` method which computes the deployed contract address from the deployer address and

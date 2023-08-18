@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 /**
- * @title ICreate3Deployer Interface
+ * @title IDeploy Interface
  * @notice This interface represents the contract responsible for deploying and initializing new contracts
  * using the `CREATE3` technique.
  */

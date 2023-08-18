@@ -69,7 +69,6 @@ abstract contract DeployerBase is IDeployer {
 
         emit Deployed(deployedAddress_, msg.sender, salt, keccak256(bytecode));
 
-        // solhint-disable-next-line avoid-low-level-calls
         (bool success, ) = deployedAddress_.call(init);
         if (!success) revert DeployInitFailed();
     }

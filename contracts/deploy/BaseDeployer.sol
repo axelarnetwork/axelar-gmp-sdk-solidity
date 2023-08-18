@@ -12,7 +12,7 @@ import { SafeNativeTransfer } from '../utils/SafeTransfer.sol';
  * salt, or the `CREATE3` method which computes the deployed contract address from the deployer address and
  * deployment salt.
  */
-abstract contract DeployerBase is IDeployer {
+abstract contract BaseDeployer is IDeployer {
     using SafeNativeTransfer for address;
 
     /**

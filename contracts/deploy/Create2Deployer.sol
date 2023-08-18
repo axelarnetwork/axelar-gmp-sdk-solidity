@@ -2,17 +2,17 @@
 
 pragma solidity ^0.8.0;
 
-import { DeployerBase } from './DeployerBase.sol';
-import { DeployCreate2 } from './DeployCreate2.sol';
+import { BaseDeployer } from './BaseDeployer.sol';
+import { Create2 } from './Create2.sol';
 
 /**
  * @title Create2Deployer Contract
  * @notice This contract is responsible for deploying and initializing new contracts using the `CREATE2` method
  * which computes the deployed contract address based on the bytecode, deployer address, and deployment salt.
  */
-contract Create2Deployer is DeployCreate2, DeployerBase {
+contract Create2Deployer is Create2, BaseDeployer {
     function _deploy(bytes memory bytecode, bytes32 deploySalt) internal override returns (address) {
-        return _deployCreate2(bytecode, deploySalt);
+        return _create2(bytecode, deploySalt);
     }
 
     function _deployedAddress(bytes memory bytecode, bytes32 deploySalt) internal view override returns (address) {

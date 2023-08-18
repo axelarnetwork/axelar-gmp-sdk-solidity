@@ -32,7 +32,6 @@ contract DeployCreate2 is IDeploy {
             deployed.safeNativeTransfer(msg.value);
         }
 
-        // solhint-disable-next-line no-inline-assembly
         assembly {
             deployed := create2(0, add(bytecode, 32), mload(bytecode), deploySalt)
         }

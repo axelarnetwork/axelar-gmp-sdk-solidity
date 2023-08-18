@@ -22,7 +22,6 @@ contract DeployCreate2 is IDeploy {
      * @param deploySalt A salt to further randomize the contract address
      * @return deployed The address of the deployed contract
      */
-
     function _deployCreate2(bytes memory bytecode, bytes32 deploySalt) internal returns (address deployed) {
         deployed = _create2Address(bytecode, deploySalt);
 

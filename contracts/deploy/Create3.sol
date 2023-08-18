@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import { ICreative } from '../interfaces/ICreative.sol';
+import { IDeploy } from '../interfaces/IDeploy.sol';
 import { ContractAddress } from '../utils/ContractAddress.sol';
 import { SafeNativeTransfer } from '../utils/SafeTransfer.sol';
 import { CreateDeploy } from './CreateDeploy.sol';
@@ -12,7 +12,7 @@ import { CreateDeploy } from './CreateDeploy.sol';
  * @notice This contract can be used to deploy a contract with a deterministic address that depends only on
  * the deployer address and deployment salt, not the contract bytecode and constructor parameters.
  */
-contract Create3 is ICreative {
+contract Create3 is IDeploy {
     using ContractAddress for address;
     using SafeNativeTransfer for address;
 
@@ -25,7 +25,7 @@ contract Create3 is ICreative {
      * the `CREATE2` opcode and then utilizes the DeployCreate to deploy the
      * new contract with the `CREATE` opcode.
      * @param bytecode The bytecode of the contract to be deployed
-     * @param deploySalt A salt to further randomize the contract address
+     * @param deploySalt A salt to influence the contract address
      * @return deployed The address of the deployed contract
      */
     function _create3(bytes memory bytecode, bytes32 deploySalt) internal returns (address deployed) {
@@ -49,7 +49,7 @@ contract Create3 is ICreative {
 
     /**
      * @notice Compute the deployed address that will result from the `CREATE3` method.
-     * @param deploySalt A salt to further randomize the contract address
+     * @param deploySalt A salt to influence the contract address
      * @return deployed The deterministic contract address if it was deployed
      */
     function _create3Address(bytes32 deploySalt) internal view returns (address deployed) {

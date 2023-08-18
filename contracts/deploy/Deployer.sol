@@ -29,7 +29,7 @@ abstract contract Deployer is IDeployer {
      * - `salt` must have not been used for `bytecode` already by the same `msg.sender`.
      *
      * @param bytecode The bytecode of the contract to be deployed
-     * @param salt A salt to further randomize the contract address
+     * @param salt A salt to influence the contract address
      * @return deployedAddress_ The address of the deployed contract
      */
     function deploy(bytes memory bytecode, bytes32 salt) external payable returns (address deployedAddress_) {
@@ -55,7 +55,7 @@ abstract contract Deployer is IDeployer {
      *    constructor args affect the address derived by `CREATE2`.
      *
      * @param bytecode The bytecode of the contract to be deployed
-     * @param salt A salt to further randomize the contract address
+     * @param salt A salt to influence the contract address
      * @param init Init data used to initialize the deployed contract
      * @return deployedAddress_ The address of the deployed contract
      */

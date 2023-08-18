@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import { ICreative } from '../interfaces/ICreative.sol';
+import { IDeploy } from '../interfaces/IDeploy.sol';
 import { ContractAddress } from '../utils/ContractAddress.sol';
 import { SafeNativeTransfer } from '../utils/SafeTransfer.sol';
 
@@ -11,7 +11,7 @@ import { SafeNativeTransfer } from '../utils/SafeTransfer.sol';
  * @notice This contract can be used to deploy a contract with a deterministic address that depends on
  * the contract bytecode, deployer address, and deployment salt.
  */
-contract Create2 is ICreative {
+contract Create2 is IDeploy {
     using ContractAddress for address;
     using SafeNativeTransfer for address;
 
@@ -19,7 +19,7 @@ contract Create2 is ICreative {
      * @notice Deploys a new contract using the `CREATE2` method.
      * @dev This function deploys the contract using `CREATE2` opcode.
      * @param bytecode The bytecode of the contract to be deployed
-     * @param deploySalt A salt to further randomize the contract address
+     * @param deploySalt A salt to influence the contract address
      * @return deployed The address of the deployed contract
      */
     function _create2(bytes memory bytecode, bytes32 deploySalt) internal returns (address deployed) {
@@ -42,7 +42,7 @@ contract Create2 is ICreative {
     /**
      * @notice Computes the deployed address that will result from the `CREATE2` method.
      * @param bytecode The bytecode of the contract to be deployed
-     * @param deploySalt A salt to further randomize the contract address
+     * @param deploySalt A salt to influence the contract address
      * @return address The deterministic contract address if it was deployed
      */
     function _create2Address(bytes memory bytecode, bytes32 deploySalt) internal view returns (address) {

@@ -2,14 +2,14 @@
 
 pragma solidity ^0.8.0;
 
-import { ICreative } from './ICreative.sol';
+import { IDeploy } from './IDeploy.sol';
 
 /**
- * @title ICreate2Deployer Interface
+ * @title IDeployer Interface
  * @notice This interface defines the contract responsible for deploying and optionally initializing new contracts
- * using the `CREATE2` method.
+ *  via a deployment method.
  */
-interface IDeployer is ICreative {
+interface IDeployer is IDeploy {
     error DeployInitFailed();
 
     event Deployed(address indexed deployedAddress, address indexed sender, bytes32 indexed salt, bytes32 bytecodeHash);
@@ -17,7 +17,7 @@ interface IDeployer is ICreative {
     /**
      * @notice Deploys a contract using `CREATE2`.
      * @param bytecode The bytecode of the contract to be deployed
-     * @param salt A salt to further randomize the contract address
+     * @param salt A salt to influence the contract address
      * @return deployedAddress_ The address of the deployed contract
      */
     function deploy(bytes memory bytecode, bytes32 salt) external payable returns (address deployedAddress_);
@@ -25,7 +25,7 @@ interface IDeployer is ICreative {
     /**
      * @notice Deploys a contract using `CREATE2` and initializes it.
      * @param bytecode The bytecode of the contract to be deployed
-     * @param salt A salt to further randomize the contract address
+     * @param salt A salt to influence the contract address
      * @param init Init data used to initialize the deployed contract
      * @return deployedAddress_ The address of the deployed contract
      */
@@ -39,7 +39,7 @@ interface IDeployer is ICreative {
      * @notice Returns the address where a contract will be stored if deployed via {deploy} or {deployAndInit} by `sender`.
      * @param bytecode The bytecode of the contract
      * @param sender The address that will deploy the contract via `CREATE2`
-     * @param salt The salt that will be used to further randomize the contract address
+     * @param salt The salt that will be used to influence the contract address
      * @return deployedAddress_ The address that the contract will be deployed to using `CREATE2`
      */
     function deployedAddress(

@@ -12,6 +12,7 @@ contract CreateDeploy {
      * @dev Deploys a new contract with the specified bytecode using the `CREATE` opcode.
      * @param bytecode The bytecode of the contract to be deployed
      */
+    // slither-disable-next-line locked-ether
     function deploy(bytes memory bytecode) external payable {
         assembly {
             if iszero(create(0, add(bytecode, 32), mload(bytecode))) {

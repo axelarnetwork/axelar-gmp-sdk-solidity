@@ -7,8 +7,10 @@ import { SafeNativeTransfer } from '../utils/SafeTransfer.sol';
 
 /**
  * @title DeployerBase Contract
- * @notice This contract is responsible for deploying and initializing new contracts using the `CREATE2` or `CREATE3` method
- * which computes the deployed contract address based on the bytecode, deployer address, and deployment salt.
+ * @notice This contract is responsible for deploying and initializing new contracts using either the `CREATE2`
+ * method which computes the deployed contract address from the bytecode, deployer address, and deployment
+ * salt, or the `CREATE3` method which computes the deployed contract address from the deployer address and
+ * deployment salt.
  */
 abstract contract DeployerBase is IDeployer {
     using SafeNativeTransfer for address;
@@ -38,7 +40,7 @@ abstract contract DeployerBase is IDeployer {
     }
 
     /**
-     * @notice Deploys a contract using `CREATE2` or `CREATE3` and initialize it.
+     * @notice Deploys a contract using `CREATE2` or `CREATE3` and initializes it.
      * @dev The address where the contract will be deployed can be known in advance
      * via {deployedAddress}.
      *
@@ -49,8 +51,8 @@ abstract contract DeployerBase is IDeployer {
      *
      * - `bytecode` must not be empty.
      * - `salt` must have not been used for `bytecode` already by the same `msg.sender`.
-     * - `init` is used to initialize the deployed contract
-     *    as an option to not have the constructor args affect the address derived by `CREATE2`.
+     * - `init` is used to initialize the deployed contract as an option to not have the
+     *    constructor args affect the address derived by `CREATE2`.
      *
      * @param bytecode The bytecode of the contract to be deployed
      * @param salt A salt to further randomize the contract address
@@ -74,7 +76,8 @@ abstract contract DeployerBase is IDeployer {
 
     /**
      * @notice Returns the address where a contract will be stored if deployed via {deploy} or {deployAndInit} by `sender`.
-     * @dev Any change in the `bytecode`, `sender`, or `salt` will result in a new destination address.
+     * @dev Any change in the `bytecode`, `sender`, or `salt` will result in a new deployed address (except for the `CREATE3`
+     * method where `bytecode` changes will not affect the deployed address).
      * @param bytecode The bytecode of the contract to be deployed
      * @param sender The address that will deploy the contract via `CREATE2` or `CREATE3`
      * @param salt The salt that will be used to further randomize the contract address

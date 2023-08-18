@@ -9,8 +9,8 @@ import { DeployCreate } from './DeployCreate.sol';
 
 /**
  * @title DeployCreate3 contract
- * @notice This contract can be used to deploy a contract with a deterministic address that only
- * depends on the sender and salt, not the contract bytecode and constructor parameters.
+ * @notice This contract can be used to deploy a contract with a deterministic address that depends only on
+ * the deployer address and deployment salt, not the contract bytecode and constructor parameters.
  */
 contract DeployCreate3 is IDeploy {
     using ContractAddress for address;
@@ -20,10 +20,10 @@ contract DeployCreate3 is IDeploy {
     bytes32 internal constant DEPLOYER_BYTECODE_HASH = keccak256(type(DeployCreate).creationCode);
 
     /**
-     * @notice Deploys a new contract using the CREATE3 method.
-     * @dev This function first deploys the CreateDeployer contract using
-     * the CREATE2 opcode and then utilizes the CreateDeployer to deploy the
-     * new contract with the CREATE opcode.
+     * @notice Deploys a new contract using the `CREATE3` method.
+     * @dev This function first deploys the DeployCreate contract using
+     * the `CREATE2` opcode and then utilizes the DeployCreate to deploy the
+     * new contract with the `CREATE` opcode.
      * @param bytecode The bytecode of the contract to be deployed
      * @param deploySalt A salt to further randomize the contract address
      * @return deployed The address of the deployed contract
@@ -47,7 +47,7 @@ contract DeployCreate3 is IDeploy {
     }
 
     /**
-     * @notice Compute the deployed address that will result from the CREATE3 method.
+     * @notice Compute the deployed address that will result from the `CREATE3` method.
      * @param deploySalt A salt to further randomize the contract address
      * @return deployed The deterministic contract address if it was deployed
      */

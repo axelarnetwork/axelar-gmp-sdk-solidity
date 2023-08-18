@@ -8,7 +8,7 @@ import { DeployCreate3 } from './DeployCreate3.sol';
 /**
  * @title Create3Deployer Contract
  * @notice This contract is responsible for deploying and initializing new contracts using the `CREATE3` method
- * which computes the deployed contract address based on the bytecode, deployer address, and deployment salt.
+ * which computes the deployed contract address based on the deployer address and deployment salt.
  */
 contract Create3Deployer is DeployCreate3, DeployerBase {
     function _deploy(bytes memory bytecode, bytes32 deploySalt) internal override returns (address) {

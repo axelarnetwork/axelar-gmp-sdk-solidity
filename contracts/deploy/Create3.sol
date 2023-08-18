@@ -2,22 +2,22 @@
 
 pragma solidity ^0.8.0;
 
-import { IDeploy } from '../interfaces/IDeploy.sol';
+import { ICreative } from '../interfaces/ICreative.sol';
 import { ContractAddress } from '../utils/ContractAddress.sol';
 import { SafeNativeTransfer } from '../utils/SafeTransfer.sol';
-import { DeployCreate } from './DeployCreate.sol';
+import { CreateDeploy } from './CreateDeploy.sol';
 
 /**
- * @title DeployCreate3 contract
+ * @title Create3 contract
  * @notice This contract can be used to deploy a contract with a deterministic address that depends only on
  * the deployer address and deployment salt, not the contract bytecode and constructor parameters.
  */
-contract DeployCreate3 is IDeploy {
+contract Create3 is ICreative {
     using ContractAddress for address;
     using SafeNativeTransfer for address;
 
     // slither-disable-next-line too-many-digits
-    bytes32 internal constant DEPLOYER_BYTECODE_HASH = keccak256(type(DeployCreate).creationCode);
+    bytes32 internal constant DEPLOYER_BYTECODE_HASH = keccak256(type(CreateDeploy).creationCode);
 
     /**
      * @notice Deploys a new contract using the `CREATE3` method.
@@ -28,7 +28,7 @@ contract DeployCreate3 is IDeploy {
      * @param deploySalt A salt to further randomize the contract address
      * @return deployed The address of the deployed contract
      */
-    function _deployCreate3(bytes memory bytecode, bytes32 deploySalt) internal returns (address deployed) {
+    function _create3(bytes memory bytecode, bytes32 deploySalt) internal returns (address deployed) {
         deployed = _create3Address(deploySalt);
 
         if (bytecode.length == 0) revert EmptyBytecode();
@@ -39,11 +39,12 @@ contract DeployCreate3 is IDeploy {
         }
 
         // Deploy using create2
-        DeployCreate deployer = new DeployCreate{ salt: deploySalt }();
+        CreateDeploy create = new CreateDeploy{ salt: deploySalt }();
 
-        if (address(deployer) == address(0)) revert DeployFailed();
+        if (address(create) == address(0)) revert DeployFailed();
 
-        deployer.deploy(bytecode);
+        // Deploy using create
+        create.deploy(bytecode);
     }
 
     /**

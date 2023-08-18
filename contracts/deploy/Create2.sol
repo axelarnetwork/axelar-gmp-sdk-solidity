@@ -2,16 +2,16 @@
 
 pragma solidity ^0.8.0;
 
-import { IDeploy } from '../interfaces/IDeploy.sol';
+import { ICreative } from '../interfaces/ICreative.sol';
 import { ContractAddress } from '../utils/ContractAddress.sol';
 import { SafeNativeTransfer } from '../utils/SafeTransfer.sol';
 
 /**
- * @title DeployCreate2 contract
+ * @title Create2 contract
  * @notice This contract can be used to deploy a contract with a deterministic address that depends on
  * the contract bytecode, deployer address, and deployment salt.
  */
-contract DeployCreate2 is IDeploy {
+contract Create2 is ICreative {
     using ContractAddress for address;
     using SafeNativeTransfer for address;
 
@@ -23,7 +23,7 @@ contract DeployCreate2 is IDeploy {
      * @return deployed The address of the deployed contract
      */
 
-    function _deployCreate2(bytes memory bytecode, bytes32 deploySalt) internal returns (address deployed) {
+    function _create2(bytes memory bytecode, bytes32 deploySalt) internal returns (address deployed) {
         deployed = _create2Address(bytecode, deploySalt);
 
         if (bytecode.length == 0) revert EmptyBytecode();

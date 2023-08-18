@@ -7,7 +7,7 @@ pragma solidity ^0.8.0;
  * @notice This interface represents the contract responsible for deploying and initializing new contracts
  * using the `CREATE3` technique.
  */
-interface IDeploy {
+interface ICreative {
     error EmptyBytecode();
     error AlreadyDeployed();
     error DeployFailed();

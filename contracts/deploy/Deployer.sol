@@ -40,7 +40,7 @@ abstract contract Deployer is IDeployer {
     }
 
     /**
-     * @notice Deploys a contract using `CREATE2` or `CREATE3` and initializes it.
+     * @notice Deploys a contract using a deployment method defined by derived contracts and initializes it.
      * @dev The address where the contract will be deployed can be known in advance
      * via {deployedAddress}.
      *
@@ -80,7 +80,7 @@ abstract contract Deployer is IDeployer {
      * @param bytecode The bytecode of the contract to be deployed
      * @param sender The address that will deploy the contract via the deployment method
      * @param salt The salt that will be used to further randomize the contract address
-     * @return deployedAddress_ The address that the contract will be deployed to using `CREATE2` or `CREATE3`
+     * @return deployedAddress_ The address that the contract will be deployed to
      */
     function deployedAddress(
         bytes memory bytecode,

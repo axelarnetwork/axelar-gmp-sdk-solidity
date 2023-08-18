@@ -21,8 +21,8 @@ contract Create3 is IDeploy {
 
     /**
      * @notice Deploys a new contract using the `CREATE3` method.
-     * @dev This function first deploys the DeployCreate contract using
-     * the `CREATE2` opcode and then utilizes the DeployCreate to deploy the
+     * @dev This function first deploys the CreateDeploy contract using
+     * the `CREATE2` opcode and then utilizes the CreateDeploy to deploy the
      * new contract with the `CREATE` opcode.
      * @param bytecode The bytecode of the contract to be deployed
      * @param deploySalt A salt to influence the contract address

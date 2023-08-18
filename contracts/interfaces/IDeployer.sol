@@ -7,7 +7,7 @@ import { IDeploy } from './IDeploy.sol';
 /**
  * @title IDeployer Interface
  * @notice This interface defines the contract responsible for deploying and optionally initializing new contracts
- *  via a deployment method.
+ *  via a specified deployment method.
  */
 interface IDeployer is IDeploy {
     error DeployInitFailed();
@@ -15,7 +15,7 @@ interface IDeployer is IDeploy {
     event Deployed(address indexed deployedAddress, address indexed sender, bytes32 indexed salt, bytes32 bytecodeHash);
 
     /**
-     * @notice Deploys a contract using `CREATE2`.
+     * @notice Deploys a contract using a deployment method defined by derived contracts.
      * @param bytecode The bytecode of the contract to be deployed
      * @param salt A salt to influence the contract address
      * @return deployedAddress_ The address of the deployed contract
@@ -23,7 +23,7 @@ interface IDeployer is IDeploy {
     function deploy(bytes memory bytecode, bytes32 salt) external payable returns (address deployedAddress_);
 
     /**
-     * @notice Deploys a contract using `CREATE2` and initializes it.
+     * @notice Deploys a contract using a deployment method defined by derived contracts and initializes it.
      * @param bytecode The bytecode of the contract to be deployed
      * @param salt A salt to influence the contract address
      * @param init Init data used to initialize the deployed contract
@@ -38,9 +38,9 @@ interface IDeployer is IDeploy {
     /**
      * @notice Returns the address where a contract will be stored if deployed via {deploy} or {deployAndInit} by `sender`.
      * @param bytecode The bytecode of the contract
-     * @param sender The address that will deploy the contract via `CREATE2`
+     * @param sender The address that will deploy the contract
      * @param salt The salt that will be used to influence the contract address
-     * @return deployedAddress_ The address that the contract will be deployed to using `CREATE2`
+     * @return deployedAddress_ The address that the contract will be deployed to
      */
     function deployedAddress(
         bytes calldata bytecode,

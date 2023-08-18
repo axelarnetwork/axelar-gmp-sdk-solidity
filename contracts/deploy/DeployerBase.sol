@@ -79,7 +79,7 @@ abstract contract DeployerBase is IDeployer {
      * @dev Any change in the `bytecode`, `sender`, or `salt` will result in a new deployed address (except for the `CREATE3`
      * method where `bytecode` changes will not affect the deployed address).
      * @param bytecode The bytecode of the contract to be deployed
-     * @param sender The address that will deploy the contract via `CREATE2` or `CREATE3`
+     * @param sender The address that will deploy the contract via the deployment method
      * @param salt The salt that will be used to further randomize the contract address
      * @return deployedAddress_ The address that the contract will be deployed to using `CREATE2` or `CREATE3`
      */

@@ -5,8 +5,8 @@ const { expect } = chai;
 const { ethers } = require('hardhat');
 
 const { deployCreate3Upgradable, upgradeUpgradable } = require('../../index');
-const Proxy = require('../../artifacts/contracts/test/ProxyTest.sol/ProxyTest.json');
-const Upgradable = require('../../artifacts/contracts/test/UpgradableTest.sol/UpgradableTest.json');
+const Proxy = require('../../artifacts/contracts/test/upgradable/ProxyTest.sol/ProxyTest.json');
+const Upgradable = require('../../artifacts/contracts/test/upgradable/UpgradableTest.sol/UpgradableTest.json');
 
 describe('Upgradable', () => {
   let upgradable;

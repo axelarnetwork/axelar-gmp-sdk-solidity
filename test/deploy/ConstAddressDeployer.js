@@ -11,8 +11,8 @@ const {
   deployAndInitContractConstant,
   predictContractConstant,
 } = require('../../index.js');
-const BurnableMintableCappedERC20 = require('../../artifacts/contracts/test/ERC20MintableBurnable.sol/ERC20MintableBurnable.json');
-const BurnableMintableCappedERC20Init = require('../../artifacts/contracts/test/ERC20MintableBurnableInit.sol/ERC20MintableBurnableInit.json');
+const BurnableMintableCappedERC20 = require('../../artifacts/contracts/test/token/ERC20MintableBurnable.sol/ERC20MintableBurnable.json');
+const BurnableMintableCappedERC20Init = require('../../artifacts/contracts/test/token/ERC20MintableBurnableInit.sol/ERC20MintableBurnableInit.json');
 
 const { getEVMVersion } = require('../utils.js');
 
@@ -171,11 +171,11 @@ describe('ConstAddressDeployer', () => {
 
       const expected = {
         istanbul:
-          '0xdddda3fa728d84caf2ddd6bfe62cdf3fb4855a0727196f960e063e34cfda42bc',
+          '0xccf8516a6eebe82f4cbd832a13ffc8358c80a15da5f16b14310199905fe0f236',
         berlin:
-          '0x764c43af7e84275bd41d395b1157a078622f4b90cb6576e8f43f64c0f858d30d',
+          '0x0416755e7b67e63ea2af790f5f3161a0772edc90811ca073d6db6a3463ffdc4f',
         london:
-          '0x5da43f595ea8cbe4194e557647e99331a18af4b6386df9ac0b6d9392c72e4a6e',
+          '0xb402ce219fafa163b5bd83e780fb6626fda3368d585377bfeeb719697486374b',
       }[getEVMVersion()];
 
       expect(deployerBytecodeHash).to.be.equal(expected);

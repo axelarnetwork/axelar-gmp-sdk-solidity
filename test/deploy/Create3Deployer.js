@@ -12,9 +12,9 @@ const {
   getCreate3Address,
 } = require('../../index.js');
 const { getSaltFromKey } = require('../../scripts/utils');
-const BurnableMintableCappedERC20 = require('../../artifacts/contracts/test/ERC20MintableBurnable.sol/ERC20MintableBurnable.json');
-const BurnableMintableCappedERC20Init = require('../../artifacts/contracts/test/ERC20MintableBurnableInit.sol/ERC20MintableBurnableInit.json');
-const MockDepositReceiver = require('../../artifacts/contracts/test/MockDepositReceiver.sol/MockDepositReceiver.json');
+const BurnableMintableCappedERC20 = require('../../artifacts/contracts/test/token/ERC20MintableBurnable.sol/ERC20MintableBurnable.json');
+const BurnableMintableCappedERC20Init = require('../../artifacts/contracts/test/token/ERC20MintableBurnableInit.sol/ERC20MintableBurnableInit.json');
+const MockDepositReceiver = require('../../artifacts/contracts/test/mocks/MockDepositReceiver.sol/MockDepositReceiver.json');
 const { getEVMVersion } = require('../utils');
 
 describe('Create3Deployer', () => {
@@ -256,11 +256,11 @@ describe('Create3Deployer', () => {
 
       const expected = {
         istanbul:
-          '0xb2c2350908524a06185c3609468c6e1f3034057be8bded82627b4a9ac732935a',
+          '0x5628cb461554ff122d06d778ec9bd25f7e241a0cd1840e419985345a867c3ff1',
         berlin:
-          '0xc03f3a625e3c5e88677cd27a414b623e768114fb34663f6841d6f5af7571917a',
+          '0x13e84fd6a9fe2020eb75a311147c433e25b4456e9cd30f183c2d9a04ce6380f7',
         london:
-          '0x8b202f81e7f267785f0507794f5d6a814227ac5f19a22a0c124215bebd9e19ec',
+          '0x1a851687e07e78bb5792749ffbd3fe3adcec3a1c82ef090f22f7b2d55476600d',
       }[getEVMVersion()];
 
       expect(deployerBytecodeHash).to.be.equal(expected);

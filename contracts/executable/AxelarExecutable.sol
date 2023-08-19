@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
 import { IAxelarExecutable } from '../interfaces/IAxelarExecutable.sol';
 
-contract AxelarExecutable is IAxelarExecutable {
+abstract contract AxelarExecutable is IAxelarExecutable {
     IAxelarGateway public immutable gateway;
 
     constructor(address gateway_) {
@@ -56,15 +56,13 @@ contract AxelarExecutable is IAxelarExecutable {
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
-    ) internal virtual {}
+    ) internal virtual;
 
-    // false detection from slither
-    // slither-disable-next-line dead-code
     function _executeWithToken(
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload,
         string calldata tokenSymbol,
         uint256 amount
-    ) internal virtual {}
+    ) internal virtual;
 }

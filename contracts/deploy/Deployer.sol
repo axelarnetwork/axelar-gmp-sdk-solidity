@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import { IDeployer } from '../interfaces/IDeployer.sol';
-import { SafeNativeTransfer } from '../utils/SafeTransfer.sol';
+import { SafeNativeTransfer } from '../libs/SafeTransfer.sol';
 
 /**
  * @title Deployer Contract
@@ -91,21 +91,13 @@ abstract contract Deployer is IDeployer {
         return _deployedAddress(bytecode, deploySalt);
     }
 
-    // false detection from slither
-    // slither-disable-next-line dead-code
     function _deploy(
         bytes memory, /* bytecode */
         bytes32 /* deploySalt */
-    ) internal virtual returns (address) {
-        return address(0);
-    }
+    ) internal virtual returns (address);
 
-    // false detection from slither
-    // slither-disable-next-line dead-code
     function _deployedAddress(
         bytes memory, /* bytecode */
         bytes32 /* deploySalt */
-    ) internal view virtual returns (address) {
-        return address(0);
-    }
+    ) internal view virtual returns (address);
 }

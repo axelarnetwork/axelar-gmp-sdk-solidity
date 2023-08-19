@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import { AxelarServiceGovernance } from '../governance/AxelarServiceGovernance.sol';
+import { AxelarServiceGovernance } from '../../governance/AxelarServiceGovernance.sol';
 
 contract TestServiceGovernance is AxelarServiceGovernance {
     constructor(

@@ -4,46 +4,46 @@ const chai = require('chai');
 const { expect } = chai;
 const { ethers } = require('hardhat');
 
-describe('UtilTest', () => {
-  let utilTestFactory;
-  let utilTest;
+describe('LibsTest', () => {
+  let libsTestFactory;
+  let libsTest;
 
   let ownerWallet;
 
   before(async () => {
     [ownerWallet] = await ethers.getSigners();
 
-    utilTestFactory = await ethers.getContractFactory('UtilTest', ownerWallet);
+    libsTestFactory = await ethers.getContractFactory('LibsTest', ownerWallet);
   });
 
   beforeEach(async () => {
-    utilTest = await utilTestFactory.deploy().then((d) => d.deployed());
+    libsTest = await libsTestFactory.deploy().then((d) => d.deployed());
   });
 
   it('should convert address to lowercase string', async () => {
     const address = ownerWallet.address;
-    expect(await utilTest.addressToString(address)).to.equal(
+    expect(await libsTest.addressToString(address)).to.equal(
       address.toLowerCase(),
     );
   });
 
   it('should convert string of any format to address', async () => {
     const address = ownerWallet.address;
-    expect(await utilTest.stringToAddress(address)).to.equal(address);
-    expect(await utilTest.stringToAddress(address.toString())).to.equal(
+    expect(await libsTest.stringToAddress(address)).to.equal(address);
+    expect(await libsTest.stringToAddress(address.toString())).to.equal(
       address,
     );
     expect(
-      await utilTest.stringToAddress(address.toString().toLowerCase()),
+      await libsTest.stringToAddress(address.toString().toLowerCase()),
     ).to.equal(address);
   });
 
   it('should convert string to bytes and back', async () => {
     const string = 'big test string';
-    const bytes = await utilTest.stringToBytes32(string);
+    const bytes = await libsTest.stringToBytes32(string);
     expect(bytes).to.equal(
       '0x626967207465737420737472696e67000000000000000000000000000000000f',
     );
-    expect(await utilTest.bytes32ToString(bytes)).to.equal(string);
+    expect(await libsTest.bytes32ToString(bytes)).to.equal(string);
   });
 });

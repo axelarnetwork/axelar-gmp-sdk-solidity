@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import { ContractAddress } from './ContractAddress.sol';
+import { ContractAddress } from '../libs/ContractAddress.sol';
 import { ICaller } from '../interfaces/ICaller.sol';
 
 contract Caller is ICaller {

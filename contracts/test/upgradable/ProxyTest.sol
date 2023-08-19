@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import { Proxy } from '../upgradable/Proxy.sol';
+import { Proxy } from '../../upgradable/Proxy.sol';
 
 contract ProxyTest is Proxy {
     constructor(

@@ -6,7 +6,7 @@ pragma solidity ^0.8.0;
  * @title IMultisigBase Interface
  * @notice An interface defining the base operations for a multi-signature contract.
  */
-interface IMultisigBase {
+interface IBaseMultisig {
     error NotSigner();
     error AlreadyVoted();
     error InvalidSigners();

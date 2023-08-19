@@ -2,11 +2,11 @@
 
 pragma solidity ^0.8.0;
 
-import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
-import { IERC20 } from '../interfaces/IERC20.sol';
-import { IERC20MintableBurnable } from '../interfaces/IERC20MintableBurnable.sol';
+import { IAxelarGateway } from '../../interfaces/IAxelarGateway.sol';
+import { IERC20 } from '../../interfaces/IERC20.sol';
+import { IERC20MintableBurnable } from '../../interfaces/IERC20MintableBurnable.sol';
 
-import { ERC20MintableBurnable } from './ERC20MintableBurnable.sol';
+import { ERC20MintableBurnable } from "../token/ERC20MintableBurnable.sol";
 
 contract MockGateway is IAxelarGateway {
     enum TokenType {

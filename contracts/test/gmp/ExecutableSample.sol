@@ -33,4 +33,14 @@ contract ExecutableSample is AxelarExpressExecutable {
         sourceChain = sourceChain_;
         sourceAddress = sourceAddress_;
     }
+
+    function _executeWithToken(
+        string calldata /* sourceChain_ */,
+        string calldata /* sourceAddress_ */,
+        bytes calldata /* payload_ */,
+        string calldata /* tokenSymbol_ */,
+        uint256 /* amount_ */
+    ) internal override {
+        revert('not implemented');
+    }
 }

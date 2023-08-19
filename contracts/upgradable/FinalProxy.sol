@@ -16,7 +16,7 @@ import { Proxy } from './Proxy.sol';
  * the IFinalProxy interface.
  */
 contract FinalProxy is Create3, Proxy, IFinalProxy {
-    bytes32 internal constant FINAL_IMPLEMENTATION_SALT = keccak256('final-implementation');
+    bytes32 internal constant FINAL_IMPLEMENTATION_SALT = bytes32(uint256(keccak256('final-implementation')) - 1);
 
     /**
      * @dev Constructs a FinalProxy contract with a given implementation address, owner, and setup parameters.
@@ -46,7 +46,7 @@ contract FinalProxy is Create3, Proxy, IFinalProxy {
      * @dev Checks if the final implementation has been deployed.
      * @return bool True if the final implementation exists, false otherwise
      */
-    function isFinal() public view returns (bool) {
+    function isFinal() external view returns (bool) {
         return _finalImplementation() != address(0);
     }
 
@@ -71,7 +71,7 @@ contract FinalProxy is Create3, Proxy, IFinalProxy {
      * @return finalImplementation_ The address of the final implementation contract
      */
     function finalUpgrade(bytes memory bytecode, bytes calldata setupParams)
-        public
+        external
         returns (address finalImplementation_)
     {
         address owner;

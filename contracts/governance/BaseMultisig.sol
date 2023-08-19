@@ -2,14 +2,14 @@
 
 pragma solidity ^0.8.0;
 
-import { IMultisigBase } from '../interfaces/IMultisigBase.sol';
+import { IBaseMultisig } from '../interfaces/IBaseMultisig.sol';
 
 /**
  * @title MultisigBase Contract
  * @notice This contract implements a custom multi-signature wallet where transactions must be confirmed by a
  * threshold of signers. The signers and threshold may be updated every `epoch`.
  */
-contract MultisigBase is IMultisigBase {
+contract BaseMultisig is IBaseMultisig {
     struct Voting {
         uint256 voteCount;
         mapping(address => bool) hasVoted;

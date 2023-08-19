@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import { InterchainGovernance } from '../governance/InterchainGovernance.sol';
+import { InterchainGovernance } from '../../governance/InterchainGovernance.sol';
 
 contract TestInterchainGovernance is InterchainGovernance {
     constructor(

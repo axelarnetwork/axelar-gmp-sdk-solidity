@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.0;
 
-import { IAxelarGasService } from '../interfaces/IAxelarGasService.sol';
-import { IERC20 } from '../interfaces/IERC20.sol';
-import { SafeTokenTransfer, SafeTokenTransferFrom, SafeNativeTransfer } from '../utils/SafeTransfer.sol';
+import { IAxelarGasService } from '../../interfaces/IAxelarGasService.sol';
+import { IERC20 } from '../../interfaces/IERC20.sol';
+import { SafeTokenTransfer, SafeTokenTransferFrom, SafeNativeTransfer } from '../../libs/SafeTransfer.sol';
 
 contract MockGasService is IAxelarGasService {
     using SafeTokenTransfer for IERC20;

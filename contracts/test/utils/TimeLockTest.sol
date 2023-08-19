@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import { TimeLock } from '../utils/TimeLock.sol';
+import { TimeLock } from '../../utils/TimeLock.sol';
 
 contract TimeLockTest is TimeLock {
     uint256 public num;

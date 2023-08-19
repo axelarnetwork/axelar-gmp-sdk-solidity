@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import { AxelarExecutable } from '../executable/AxelarExecutable.sol';
 import { TimeLock } from '../utils/TimeLock.sol';
-import { SafeNativeTransfer } from '../utils/SafeTransfer.sol';
+import { SafeNativeTransfer } from '../libs/SafeTransfer.sol';
 import { IInterchainGovernance } from '../interfaces/IInterchainGovernance.sol';
 import { Caller } from '../utils/Caller.sol';
 

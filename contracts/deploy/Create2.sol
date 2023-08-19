@@ -3,8 +3,8 @@
 pragma solidity ^0.8.0;
 
 import { IDeploy } from '../interfaces/IDeploy.sol';
-import { ContractAddress } from '../utils/ContractAddress.sol';
-import { SafeNativeTransfer } from '../utils/SafeTransfer.sol';
+import { ContractAddress } from '../libs/ContractAddress.sol';
+import { SafeNativeTransfer } from '../libs/SafeTransfer.sol';
 
 /**
  * @title Create2 contract

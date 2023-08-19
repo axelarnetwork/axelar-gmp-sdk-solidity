@@ -3,13 +3,13 @@
 pragma solidity ^0.8.0;
 
 import { IInterchainGovernance } from './IInterchainGovernance.sol';
-import { IMultisigBase } from './IMultisigBase.sol';
+import { IBaseMultisig } from './IBaseMultisig.sol';
 
 /**
  * @title IAxelarServiceGovernance Interface
  * @dev This interface extends IInterchainGovernance and IMultisigBase for multisig proposal actions
  */
-interface IAxelarServiceGovernance is IMultisigBase, IInterchainGovernance {
+interface IAxelarServiceGovernance is IBaseMultisig, IInterchainGovernance {
     error NotApproved();
 
     event MultisigApproved(

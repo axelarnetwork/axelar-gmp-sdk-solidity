@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
 import { ExpressExecutorTracker } from './ExpressExecutorTracker.sol';
 
-import { SafeTokenTransferFrom, SafeTokenTransfer } from '../utils/SafeTransfer.sol';
+import { SafeTokenTransferFrom, SafeTokenTransfer } from '../libs/SafeTransfer.sol';
 import { IERC20 } from '../interfaces/IERC20.sol';
 
 abstract contract AxelarExpressExecutable is ExpressExecutorTracker {
@@ -146,13 +146,11 @@ abstract contract AxelarExpressExecutable is ExpressExecutorTracker {
         _executeWithToken(sourceChain, sourceAddress, payload, symbol, amount);
     }
 
-    // false detection from slither
-    // slither-disable-next-line dead-code
     function _execute(
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
-    ) internal virtual {}
+    ) internal virtual;
 
     function _executeWithToken(
         string calldata sourceChain,
@@ -160,5 +158,5 @@ abstract contract AxelarExpressExecutable is ExpressExecutorTracker {
         bytes calldata payload,
         string calldata tokenSymbol,
         uint256 amount
-    ) internal virtual {}
+    ) internal virtual;
 }

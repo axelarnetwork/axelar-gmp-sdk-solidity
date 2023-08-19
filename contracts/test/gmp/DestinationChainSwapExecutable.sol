@@ -17,7 +17,7 @@ contract DestinationChainSwapExecutable is AxelarExecutable {
         string calldata, /* sourceChain */
         string calldata, /* sourceAddress */
         bytes calldata /* payload */
-    ) internal override {
+    ) internal pure override {
         revert('not implemented');
     }
 

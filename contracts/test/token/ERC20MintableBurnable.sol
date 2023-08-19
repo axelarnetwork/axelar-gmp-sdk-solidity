@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import { IERC20MintableBurnable } from '../../interfaces/IERC20MintableBurnable.sol';
-import { ERC20 } from "./ERC20.sol";
+import { ERC20 } from './ERC20.sol';
 
 contract ERC20MintableBurnable is ERC20, IERC20MintableBurnable {
     constructor(

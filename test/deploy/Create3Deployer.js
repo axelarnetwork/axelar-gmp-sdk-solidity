@@ -14,7 +14,6 @@ const {
 const { getSaltFromKey } = require('../../scripts/utils');
 const BurnableMintableCappedERC20 = require('../../artifacts/contracts/test/token/ERC20MintableBurnable.sol/ERC20MintableBurnable.json');
 const BurnableMintableCappedERC20Init = require('../../artifacts/contracts/test/token/ERC20MintableBurnableInit.sol/ERC20MintableBurnableInit.json');
-const MockDepositReceiver = require('../../artifacts/contracts/test/mocks/MockDepositReceiver.sol/MockDepositReceiver.json');
 const { getEVMVersion } = require('../utils');
 
 describe('Create3Deployer', () => {
@@ -189,22 +188,22 @@ describe('Create3Deployer', () => {
       );
     });
 
-    it('should revert if a contract that self-destructs is deployed a second time', async () => {
+    it('should revert if a contract is deployed a second time', async () => {
       const key = 'a test key';
 
       // Deploy contract that self-destructs in its constructor
       await create3DeployContract(
         deployer,
         userWallet,
-        MockDepositReceiver,
+        BurnableMintableCappedERC20,
         key,
-        [receiverWallet.address],
+        [name, symbol, decimals],
       );
 
       // Attempt to deploy MockDepositReceiver again, should fail
       await expect(
-        create3DeployContract(deployer, userWallet, MockDepositReceiver, key, [
-          receiverWallet.address,
+        create3DeployContract(deployer, userWallet, BurnableMintableCappedERC20, key, [
+          name, symbol, decimals,
         ]),
       ).to.be.reverted;
     });
@@ -256,11 +255,11 @@ describe('Create3Deployer', () => {
 
       const expected = {
         istanbul:
-          '0x5628cb461554ff122d06d778ec9bd25f7e241a0cd1840e419985345a867c3ff1',
+          '0xfda6def9de2c220908d4144e3b87ab3be948b6ba396d558cd7e92b85a7b7445f',
         berlin:
-          '0x13e84fd6a9fe2020eb75a311147c433e25b4456e9cd30f183c2d9a04ce6380f7',
+          '0x442cad9594b9595fac6d65be103cf2a24630015ad4b0f1b7d42babbc2e4200d2',
         london:
-          '0x1a851687e07e78bb5792749ffbd3fe3adcec3a1c82ef090f22f7b2d55476600d',
+          '0x180dbf5200a1d8f04094c63d08e4966b84e69b29692fcef15b2578be24285795',
       }[getEVMVersion()];
 
       expect(deployerBytecodeHash).to.be.equal(expected);

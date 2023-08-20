@@ -88,13 +88,7 @@ abstract contract Deployer is IDeployer {
         return _deployedAddress(bytecode, deploySalt);
     }
 
-    function _deploy(
-        bytes memory bytecode,
-        bytes32 deploySalt
-    ) internal virtual returns (address);
+    function _deploy(bytes memory bytecode, bytes32 deploySalt) internal virtual returns (address);
 
-    function _deployedAddress(
-        bytes memory bytecode,
-        bytes32 deploySalt
-    ) internal view virtual returns (address);
+    function _deployedAddress(bytes memory bytecode, bytes32 deploySalt) internal view virtual returns (address);
 }

@@ -19,7 +19,6 @@ const { getEVMVersion } = require('../utils');
 describe('Create3Deployer', () => {
   let deployerWallet;
   let userWallet;
-  let receiverWallet;
 
   let deployerFactory;
   let deployer;
@@ -28,7 +27,7 @@ describe('Create3Deployer', () => {
   const decimals = 16;
 
   before(async () => {
-    [deployerWallet, userWallet, receiverWallet] = await ethers.getSigners();
+    [deployerWallet, userWallet] = await ethers.getSigners();
 
     deployerFactory = await ethers.getContractFactory(
       'Create3Deployer',
@@ -191,7 +190,6 @@ describe('Create3Deployer', () => {
     it('should revert if a contract is deployed a second time', async () => {
       const key = 'a test key';
 
-      // Deploy contract that self-destructs in its constructor
       await create3DeployContract(
         deployer,
         userWallet,
@@ -200,11 +198,15 @@ describe('Create3Deployer', () => {
         [name, symbol, decimals],
       );
 
-      // Attempt to deploy MockDepositReceiver again, should fail
+      // Attempt to deploy contract again, should fail
       await expect(
-        create3DeployContract(deployer, userWallet, BurnableMintableCappedERC20, key, [
-          name, symbol, decimals,
-        ]),
+        create3DeployContract(
+          deployer,
+          userWallet,
+          BurnableMintableCappedERC20,
+          key,
+          [name, symbol, decimals],
+        ),
       ).to.be.reverted;
     });
   });

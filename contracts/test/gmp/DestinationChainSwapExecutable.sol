@@ -13,14 +13,6 @@ contract DestinationChainSwapExecutable is AxelarExecutable {
         swapper = DestinationChainTokenSwapper(swapperAddress);
     }
 
-    function _execute(
-        string calldata, /* sourceChain */
-        string calldata, /* sourceAddress */
-        bytes calldata /* payload */
-    ) internal pure override {
-        revert('not implemented');
-    }
-
     function _executeWithToken(
         string calldata sourceChain,
         string calldata, /*sourceAddress*/

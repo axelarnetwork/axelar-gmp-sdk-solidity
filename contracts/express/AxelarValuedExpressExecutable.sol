@@ -8,7 +8,7 @@ import { ExpressExecutorTracker } from './ExpressExecutorTracker.sol';
 import { SafeTokenTransferFrom, SafeTokenTransfer, SafeNativeTransfer } from '../libs/SafeTransfer.sol';
 import { IERC20 } from '../interfaces/IERC20.sol';
 
-abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker {
+contract AxelarValuedExpressExecutable is ExpressExecutorTracker {
     using SafeTokenTransfer for IERC20;
     using SafeTokenTransferFrom for IERC20;
     using SafeNativeTransfer for address payable;
@@ -26,7 +26,7 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker {
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
-    ) public view virtual returns (address tokenAddress, uint256 value);
+    ) public view virtual returns (address tokenAddress, uint256 value) {}
 
     // Returns the amount of token that this call is worth. If `tokenAddress` is `0`, then value is in terms of the native token, otherwise it's in terms of the token address.
     // The returned call value is in addition to the `amount` of token `symbol` being transferred with the call.
@@ -36,7 +36,7 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker {
         bytes calldata payload,
         string calldata symbol,
         uint256 amount
-    ) public view virtual returns (address tokenAddress, uint256 value);
+    ) public view virtual returns (address tokenAddress, uint256 value) {}
 
     function execute(
         bytes32 commandId,
@@ -234,7 +234,7 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker {
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
-    ) internal virtual;
+    ) internal virtual {}
 
     function _executeWithToken(
         string calldata sourceChain,
@@ -242,5 +242,5 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker {
         bytes calldata payload,
         string calldata tokenSymbol,
         uint256 amount
-    ) internal virtual;
+    ) internal virtual {}
 }

@@ -8,7 +8,7 @@ import { ExpressExecutorTracker } from './ExpressExecutorTracker.sol';
 import { SafeTokenTransferFrom, SafeTokenTransfer } from '../libs/SafeTransfer.sol';
 import { IERC20 } from '../interfaces/IERC20.sol';
 
-abstract contract AxelarExpressExecutable is ExpressExecutorTracker {
+contract AxelarExpressExecutable is ExpressExecutorTracker {
     using SafeTokenTransfer for IERC20;
     using SafeTokenTransferFrom for IERC20;
 
@@ -100,11 +100,11 @@ abstract contract AxelarExpressExecutable is ExpressExecutorTracker {
         address expressExecutor = msg.sender;
         bytes32 payloadHash = keccak256(payload);
 
+        emit ExpressExecuted(commandId, sourceChain, sourceAddress, payloadHash, expressExecutor);
+
         _setExpressExecutor(commandId, sourceChain, sourceAddress, payloadHash, expressExecutor);
 
         _execute(sourceChain, sourceAddress, payload);
-
-        emit ExpressExecuted(commandId, sourceChain, sourceAddress, payloadHash, expressExecutor);
     }
 
     function expressExecuteWithToken(
@@ -150,7 +150,7 @@ abstract contract AxelarExpressExecutable is ExpressExecutorTracker {
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
-    ) internal virtual;
+    ) internal virtual {}
 
     function _executeWithToken(
         string calldata sourceChain,
@@ -158,5 +158,5 @@ abstract contract AxelarExpressExecutable is ExpressExecutorTracker {
         bytes calldata payload,
         string calldata tokenSymbol,
         uint256 amount
-    ) internal virtual;
+    ) internal virtual {}
 }

@@ -7,10 +7,8 @@ import { SafeNativeTransfer } from '../libs/SafeTransfer.sol';
 
 /**
  * @title Deployer Contract
- * @notice This contract is responsible for deploying and initializing new contracts using either the `CREATE2`
- * method which computes the deployed contract address from the bytecode, deployer address, and deployment
- * salt, or the `CREATE3` method which computes the deployed contract address from the deployer address and
- * deployment salt.
+ * @notice This contract is responsible for deploying and initializing new contracts using
+ * a deployment method, such as `CREATE2` or `CREATE3`.
  */
 abstract contract Deployer is IDeployer {
     using SafeNativeTransfer for address;
@@ -75,11 +73,10 @@ abstract contract Deployer is IDeployer {
 
     /**
      * @notice Returns the address where a contract will be stored if deployed via {deploy} or {deployAndInit} by `sender`.
-     * @dev Any change in the `bytecode`, `sender`, or `salt` will result in a new deployed address (except for the `CREATE3`
-     * method where `bytecode` changes will not affect the deployed address).
+     * @dev Any change in the `bytecode` (except for `CREATE3`), `sender`, or `salt` will result in a new deployed address.
      * @param bytecode The bytecode of the contract to be deployed
      * @param sender The address that will deploy the contract via the deployment method
-     * @param salt The salt that will be used to further randomize the contract address
+     * @param salt The salt that will be used to influence the contract address
      * @return deployedAddress_ The address that the contract will be deployed to
      */
     function deployedAddress(
@@ -92,12 +89,12 @@ abstract contract Deployer is IDeployer {
     }
 
     function _deploy(
-        bytes memory, /* bytecode */
-        bytes32 /* deploySalt */
+        bytes memory bytecode,
+        bytes32 deploySalt
     ) internal virtual returns (address);
 
     function _deployedAddress(
-        bytes memory, /* bytecode */
-        bytes32 /* deploySalt */
+        bytes memory bytecode,
+        bytes32 deploySalt
     ) internal view virtual returns (address);
 }

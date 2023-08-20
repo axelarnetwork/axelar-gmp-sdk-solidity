@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
 import { IAxelarExecutable } from '../interfaces/IAxelarExecutable.sol';
 
-abstract contract AxelarExecutable is IAxelarExecutable {
+contract AxelarExecutable is IAxelarExecutable {
     IAxelarGateway public immutable gateway;
 
     constructor(address gateway_) {
@@ -56,7 +56,7 @@ abstract contract AxelarExecutable is IAxelarExecutable {
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
-    ) internal virtual;
+    ) internal virtual {}
 
     function _executeWithToken(
         string calldata sourceChain,
@@ -64,5 +64,5 @@ abstract contract AxelarExecutable is IAxelarExecutable {
         bytes calldata payload,
         string calldata tokenSymbol,
         uint256 amount
-    ) internal virtual;
+    ) internal virtual {}
 }

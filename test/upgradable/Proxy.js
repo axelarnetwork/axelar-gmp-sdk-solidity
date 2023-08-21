@@ -183,7 +183,10 @@ describe('Proxy', async () => {
     let differentProxyImplementation;
 
     beforeEach(async () => {
-      finalProxyFactory = await ethers.getContractFactory('FinalProxy', owner);
+      finalProxyFactory = await ethers.getContractFactory(
+        'TestFinalProxy',
+        owner,
+      );
       proxyImplementationFactory = await ethers.getContractFactory(
         'ProxyImplementation',
         owner,

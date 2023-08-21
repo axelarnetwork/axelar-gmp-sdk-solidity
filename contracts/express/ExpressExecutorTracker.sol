@@ -5,18 +5,16 @@ pragma solidity ^0.8.0;
 import { IAxelarExpressExecutable } from '../interfaces/IAxelarExpressExecutable.sol';
 
 abstract contract ExpressExecutorTracker is IAxelarExpressExecutable {
-    uint256 private constant PREFIX_EXPRESS_EXECUTE = uint256(keccak256('express-execute'));
-    uint256 private constant PREFIX_EXPRESS_EXECUTE_WTIH_TOKEN = uint256(keccak256('express-execute-with-token'));
+    bytes32 internal constant PREFIX_EXPRESS_EXECUTE = keccak256('express-execute');
+    bytes32 internal constant PREFIX_EXPRESS_EXECUTE_WITH_TOKEN = keccak256('express-execute-with-token');
 
     function _expressExecuteSlot(
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes32 payloadHash
-    ) internal pure returns (uint256 slot) {
-        slot = uint256(
-            keccak256(abi.encode(PREFIX_EXPRESS_EXECUTE, commandId, sourceChain, sourceAddress, payloadHash))
-        );
+    ) internal pure returns (bytes32 slot) {
+        slot = keccak256(abi.encode(PREFIX_EXPRESS_EXECUTE, commandId, sourceChain, sourceAddress, payloadHash));
     }
 
     function _expressExecuteWithTokenSlot(
@@ -26,18 +24,16 @@ abstract contract ExpressExecutorTracker is IAxelarExpressExecutable {
         bytes32 payloadHash,
         string calldata symbol,
         uint256 amount
-    ) internal pure returns (uint256 slot) {
-        slot = uint256(
-            keccak256(
-                abi.encode(
-                    PREFIX_EXPRESS_EXECUTE_WTIH_TOKEN,
-                    commandId,
-                    sourceChain,
-                    sourceAddress,
-                    payloadHash,
-                    symbol,
-                    amount
-                )
+    ) internal pure returns (bytes32 slot) {
+        slot = keccak256(
+            abi.encode(
+                PREFIX_EXPRESS_EXECUTE_WITH_TOKEN,
+                commandId,
+                sourceChain,
+                sourceAddress,
+                payloadHash,
+                symbol,
+                amount
             )
         );
     }
@@ -48,7 +44,7 @@ abstract contract ExpressExecutorTracker is IAxelarExpressExecutable {
         string calldata sourceAddress,
         bytes32 payloadHash
     ) external view returns (address expressExecutor) {
-        uint256 slot = _expressExecuteSlot(commandId, sourceChain, sourceAddress, payloadHash);
+        bytes32 slot = _expressExecuteSlot(commandId, sourceChain, sourceAddress, payloadHash);
 
         assembly {
             expressExecutor := sload(slot)
@@ -63,7 +59,7 @@ abstract contract ExpressExecutorTracker is IAxelarExpressExecutable {
         string calldata symbol,
         uint256 amount
     ) external view returns (address expressExecutor) {
-        uint256 slot = _expressExecuteWithTokenSlot(commandId, sourceChain, sourceAddress, payloadHash, symbol, amount);
+        bytes32 slot = _expressExecuteWithTokenSlot(commandId, sourceChain, sourceAddress, payloadHash, symbol, amount);
 
         assembly {
             expressExecutor := sload(slot)
@@ -77,7 +73,7 @@ abstract contract ExpressExecutorTracker is IAxelarExpressExecutable {
         bytes32 payloadHash,
         address expressExecutor
     ) internal {
-        uint256 slot = _expressExecuteSlot(commandId, sourceChain, sourceAddress, payloadHash);
+        bytes32 slot = _expressExecuteSlot(commandId, sourceChain, sourceAddress, payloadHash);
         address currentExecutor;
 
         assembly {
@@ -100,7 +96,7 @@ abstract contract ExpressExecutorTracker is IAxelarExpressExecutable {
         uint256 amount,
         address expressExecutor
     ) internal {
-        uint256 slot = _expressExecuteWithTokenSlot(commandId, sourceChain, sourceAddress, payloadHash, symbol, amount);
+        bytes32 slot = _expressExecuteWithTokenSlot(commandId, sourceChain, sourceAddress, payloadHash, symbol, amount);
         address currentExecutor;
 
         assembly {
@@ -120,7 +116,7 @@ abstract contract ExpressExecutorTracker is IAxelarExpressExecutable {
         string calldata sourceAddress,
         bytes32 payloadHash
     ) internal returns (address expressExecutor) {
-        uint256 slot = _expressExecuteSlot(commandId, sourceChain, sourceAddress, payloadHash);
+        bytes32 slot = _expressExecuteSlot(commandId, sourceChain, sourceAddress, payloadHash);
 
         assembly {
             expressExecutor := sload(slot)
@@ -138,7 +134,7 @@ abstract contract ExpressExecutorTracker is IAxelarExpressExecutable {
         string calldata symbol,
         uint256 amount
     ) internal returns (address expressExecutor) {
-        uint256 slot = _expressExecuteWithTokenSlot(commandId, sourceChain, sourceAddress, payloadHash, symbol, amount);
+        bytes32 slot = _expressExecuteWithTokenSlot(commandId, sourceChain, sourceAddress, payloadHash, symbol, amount);
 
         assembly {
             expressExecutor := sload(slot)

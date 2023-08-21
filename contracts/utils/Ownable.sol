@@ -75,6 +75,8 @@ abstract contract Ownable is IOwnable {
      * @param newOwner The address to transfer ownership to
      */
     function proposeOwnership(address newOwner) external virtual onlyOwner {
+        if (newOwner == address(0)) revert InvalidOwnerAddress();
+
         emit OwnershipTransferStarted(newOwner);
 
         assembly {
@@ -90,12 +92,7 @@ abstract contract Ownable is IOwnable {
         address newOwner = pendingOwner();
         if (newOwner != msg.sender) revert InvalidOwner();
 
-        emit OwnershipTransferred(newOwner);
-
-        assembly {
-            sstore(_OWNERSHIP_TRANSFER_SLOT, 0)
-            sstore(_OWNER_SLOT, newOwner)
-        }
+        _transferOwnership(newOwner);
     }
 
     /**

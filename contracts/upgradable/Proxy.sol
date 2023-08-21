@@ -46,4 +46,8 @@ contract Proxy is BaseProxy {
             if (!success) revert SetupFailed();
         }
     }
+
+    function contractId() internal pure virtual override returns (bytes32) {
+        return bytes32(0);
+    }
 }

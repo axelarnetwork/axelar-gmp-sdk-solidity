@@ -56,9 +56,7 @@ contract FinalProxy is Create3, Proxy, IFinalProxy {
      * has not yet been deployed
      */
     function _finalImplementation() internal view virtual returns (address implementation_) {
-        /**
-         * @dev Computing the address is cheaper than using storage
-         */
+        // Computing the address is cheaper than using storage
         implementation_ = _create3Address(FINAL_IMPLEMENTATION_SALT);
 
         if (implementation_.code.length == 0) implementation_ = address(0);

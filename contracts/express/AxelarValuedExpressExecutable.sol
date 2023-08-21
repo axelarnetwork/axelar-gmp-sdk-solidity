@@ -225,7 +225,7 @@ contract AxelarValuedExpressExecutable is ExpressExecutorTracker {
 
         if (tokenAddress == address(0)) {
             if (value != msg.value) revert InsufficientValue();
-        } else if (value > 0) {
+        } else {
             IERC20(tokenAddress).safeTransferFrom(expressExecutor, address(this), value);
         }
     }

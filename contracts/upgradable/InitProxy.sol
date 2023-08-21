@@ -23,6 +23,10 @@ contract InitProxy is BaseProxy, IInitProxy {
         }
     }
 
+    function contractId() internal pure virtual override returns (bytes32) {
+        return bytes32(0);
+    }
+
     /**
      * @notice Initializes the proxy contract with the specified implementation, new owner, and any optional setup parameters.
      * @param implementationAddress The address of the implementation contract

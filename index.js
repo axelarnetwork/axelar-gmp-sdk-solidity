@@ -1,9 +1,16 @@
 'use strict';
 const {
+  estimateGasForCreate2Deploy,
+  estimateGasForCreate2DeployAndInit,
+  create2DeployContract,
+  create2DeployAndInitContract,
+  getCreate2Address,
+} = require('./scripts/create2Deployer');
+const {
   estimateGasForCreate3Deploy,
   estimateGasForCreate3DeployAndInit,
-  deployCreate3Contract,
-  deployCreate3AndInitContract,
+  create3DeployContract,
+  create3DeployAndInitContract,
   getCreate3Address,
 } = require('./scripts/create3Deployer');
 const {
@@ -26,11 +33,19 @@ module.exports = {
   deployContractConstant,
   deployAndInitContractConstant,
   predictContractConstant,
+
+  estimateGasForCreate2Deploy,
+  estimateGasForCreate2DeployAndInit,
+  create2DeployContract,
+  create2DeployAndInitContract,
+  getCreate2Address,
+
   estimateGasForCreate3Deploy,
   estimateGasForCreate3DeployAndInit,
-  deployCreate3Contract,
-  deployCreate3AndInitContract,
+  create3DeployContract,
+  create3DeployAndInitContract,
   getCreate3Address,
+
   deployUpgradable,
   deployCreate3Upgradable,
   upgradeUpgradable,

@@ -4,14 +4,14 @@ pragma solidity ^0.8.0;
 
 import { IAxelarServiceGovernance } from '../interfaces/IAxelarServiceGovernance.sol';
 import { InterchainGovernance } from './InterchainGovernance.sol';
-import { MultisigBase } from './MultisigBase.sol';
+import { BaseMultisig } from './BaseMultisig.sol';
 
 /**
  * @title AxelarServiceGovernance Contract
  * @dev This contract is part of the Axelar Governance system, it inherits the Interchain Governance contract
  * with added functionality to approve and execute multisig proposals.
  */
-contract AxelarServiceGovernance is InterchainGovernance, MultisigBase, IAxelarServiceGovernance {
+contract AxelarServiceGovernance is InterchainGovernance, BaseMultisig, IAxelarServiceGovernance {
     enum ServiceGovernanceCommand {
         ScheduleTimeLockProposal,
         CancelTimeLockProposal,
@@ -39,7 +39,7 @@ contract AxelarServiceGovernance is InterchainGovernance, MultisigBase, IAxelarS
         uint256 threshold
     )
         InterchainGovernance(gateway_, governanceChain_, governanceAddress_, minimumTimeDelay)
-        MultisigBase(cosigners, threshold)
+        BaseMultisig(cosigners, threshold)
     {}
 
     /**

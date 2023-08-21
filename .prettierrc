@@ -13,6 +13,18 @@
         "bracketSpacing": true,
         "explicitTypes": "always"
       }
+    },
+    {
+      "files": "*.js",
+      "options": {
+        "trailingComma": "all"
+      }
+    },
+    {
+      "files": "*.json",
+      "options": {
+        "tabWidth": 2
+      }
     }
   ]
 }

@@ -3,15 +3,15 @@
 pragma solidity ^0.8.0;
 
 import { IMultisig } from '../interfaces/IMultisig.sol';
-import { MultisigBase } from './MultisigBase.sol';
-import { SafeNativeTransfer } from '../utils/SafeTransfer.sol';
+import { BaseMultisig } from './BaseMultisig.sol';
+import { SafeNativeTransfer } from '../libs/SafeTransfer.sol';
 import { Caller } from '../utils/Caller.sol';
 
 /**
  * @title Multisig Contract
  * @notice An extension of MultisigBase that can call functions on any contract.
  */
-contract Multisig is Caller, MultisigBase, IMultisig {
+contract Multisig is Caller, BaseMultisig, IMultisig {
     using SafeNativeTransfer for address;
 
     /**
@@ -20,7 +20,7 @@ contract Multisig is Caller, MultisigBase, IMultisig {
      * @param accounts Address array of the signers
      * @param threshold Signature threshold required to validate a transaction
      */
-    constructor(address[] memory accounts, uint256 threshold) MultisigBase(accounts, threshold) {}
+    constructor(address[] memory accounts, uint256 threshold) BaseMultisig(accounts, threshold) {}
 
     /**
      * @notice Executes an external contract call.

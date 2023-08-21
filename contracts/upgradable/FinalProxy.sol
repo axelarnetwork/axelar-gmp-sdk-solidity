@@ -15,8 +15,8 @@ import { Proxy } from './Proxy.sol';
  * that uses less gas than regular proxy calls. It inherits from the Proxy contract and implements
  * the IFinalProxy interface.
  */
-contract FinalProxy is Proxy, IFinalProxy {
-    bytes32 internal constant FINAL_IMPLEMENTATION_SALT = keccak256('final-implementation');
+contract FinalProxy is Create3, Proxy, IFinalProxy {
+    bytes32 internal constant FINAL_IMPLEMENTATION_SALT = bytes32(uint256(keccak256('final-implementation')) - 1);
 
     /**
      * @dev Constructs a FinalProxy contract with a given implementation address, owner, and setup parameters.
@@ -46,7 +46,7 @@ contract FinalProxy is Proxy, IFinalProxy {
      * @dev Checks if the final implementation has been deployed.
      * @return bool True if the final implementation exists, false otherwise
      */
-    function isFinal() public view returns (bool) {
+    function isFinal() external view returns (bool) {
         return _finalImplementation() != address(0);
     }
 
@@ -59,7 +59,7 @@ contract FinalProxy is Proxy, IFinalProxy {
         /**
          * @dev Computing the address is cheaper than using storage
          */
-        implementation_ = Create3.deployedAddress(address(this), FINAL_IMPLEMENTATION_SALT);
+        implementation_ = _create3Address(FINAL_IMPLEMENTATION_SALT);
 
         if (implementation_.code.length == 0) implementation_ = address(0);
     }
@@ -71,7 +71,7 @@ contract FinalProxy is Proxy, IFinalProxy {
      * @return finalImplementation_ The address of the final implementation contract
      */
     function finalUpgrade(bytes memory bytecode, bytes calldata setupParams)
-        public
+        external
         returns (address finalImplementation_)
     {
         address owner;
@@ -81,7 +81,7 @@ contract FinalProxy is Proxy, IFinalProxy {
         if (msg.sender != owner) revert NotOwner();
 
         bytes32 id = contractId();
-        finalImplementation_ = Create3.deploy(FINAL_IMPLEMENTATION_SALT, bytecode);
+        finalImplementation_ = _create3(bytecode, FINAL_IMPLEMENTATION_SALT);
 
         // Skipping the check if contractId() is not set by an inheriting proxy contract
         if (id != bytes32(0) && IContractIdentifier(finalImplementation_).contractId() != id)

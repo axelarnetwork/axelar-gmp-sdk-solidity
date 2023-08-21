@@ -1,4 +1,7 @@
-const { ContractFactory } = require('ethers');
+const {
+  ContractFactory,
+  utils: { keccak256, defaultAbiCoder },
+} = require('ethers');
 const http = require('http');
 const { outputJsonSync } = require('fs-extra');
 
@@ -17,6 +20,10 @@ const deployContract = async (
   const contract = await factory.deploy(...args, { ...options });
   await contract.deployed();
   return contract;
+};
+
+const getSaltFromKey = (key) => {
+  return keccak256(defaultAbiCoder.encode(['string'], [key.toString()]));
 };
 
 const printObj = (obj) => {
@@ -70,6 +77,7 @@ const httpGet = (url) => {
 };
 
 module.exports = {
+  getSaltFromKey,
   deployContract,
   setJSON,
   httpGet,

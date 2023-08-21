@@ -58,8 +58,6 @@ contract AxelarExecutable is IAxelarExecutable {
         bytes calldata payload
     ) internal virtual {}
 
-    // false detection from slither
-    // slither-disable-next-line dead-code
     function _executeWithToken(
         string calldata sourceChain,
         string calldata sourceAddress,

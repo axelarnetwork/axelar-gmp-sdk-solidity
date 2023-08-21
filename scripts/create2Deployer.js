@@ -3,9 +3,9 @@
 const { Contract, ContractFactory } = require('ethers');
 const { getSaltFromKey } = require('./utils');
 
-const Create3Deployer = require('../artifacts/contracts/interfaces/IDeployer.sol/IDeployer.json');
+const Create2Deployer = require('../artifacts/contracts/interfaces/IDeployer.sol/IDeployer.json');
 
-const estimateGasForCreate3Deploy = async (
+const estimateGasForCreate2Deploy = async (
   deployer,
   contractJson,
   args = [],
@@ -16,7 +16,7 @@ const estimateGasForCreate3Deploy = async (
   return await deployer.estimateGas.deploy(bytecode, salt);
 };
 
-const estimateGasForCreate3DeployAndInit = async (
+const estimateGasForCreate2DeployAndInit = async (
   deployer,
   wallet,
   contractJson,
@@ -27,13 +27,17 @@ const estimateGasForCreate3DeployAndInit = async (
   const factory = new ContractFactory(contractJson.abi, contractJson.bytecode);
   const bytecode = factory.getDeployTransaction(...args).data;
 
-  const address = await deployer.deployedAddress('0x', wallet.address, salt);
+  const address = await deployer.deployedAddress(
+    bytecode,
+    wallet.address,
+    salt,
+  );
   const contract = new Contract(address, contractJson.abi, wallet);
   const initData = (await contract.populateTransaction.init(...initArgs)).data;
   return await deployer.estimateGas.deployAndInit(bytecode, salt, initData);
 };
 
-const create3DeployContract = async (
+const create2DeployContract = async (
   deployerAddress,
   wallet,
   contractJson,
@@ -47,17 +51,21 @@ const create3DeployContract = async (
     };
   }
 
-  const deployer = new Contract(deployerAddress, Create3Deployer.abi, wallet);
+  const deployer = new Contract(deployerAddress, Create2Deployer.abi, wallet);
   const salt = getSaltFromKey(key);
   const factory = new ContractFactory(contractJson.abi, contractJson.bytecode);
   const bytecode = factory.getDeployTransaction(...args).data;
   const tx = await deployer.connect(wallet).deploy(bytecode, salt, txOptions);
   await tx.wait();
-  const address = await deployer.deployedAddress('0x', wallet.address, salt);
+  const address = await deployer.deployedAddress(
+    bytecode,
+    wallet.address,
+    salt,
+  );
   return new Contract(address, contractJson.abi, wallet);
 };
 
-const create3DeployAndInitContract = async (
+const create2DeployAndInitContract = async (
   deployerAddress,
   wallet,
   contractJson,
@@ -72,11 +80,15 @@ const create3DeployAndInitContract = async (
     };
   }
 
-  const deployer = new Contract(deployerAddress, Create3Deployer.abi, wallet);
+  const deployer = new Contract(deployerAddress, Create2Deployer.abi, wallet);
   const salt = getSaltFromKey(key);
   const factory = new ContractFactory(contractJson.abi, contractJson.bytecode);
   const bytecode = factory.getDeployTransaction(...args).data;
-  const address = await deployer.deployedAddress('0x', wallet.address, salt);
+  const address = await deployer.deployedAddress(
+    bytecode,
+    wallet.address,
+    salt,
+  );
   const contract = new Contract(address, contractJson.abi, wallet);
   const initData = (await contract.populateTransaction.init(...initArgs)).data;
   const tx = await deployer
@@ -86,17 +98,25 @@ const create3DeployAndInitContract = async (
   return contract;
 };
 
-const getCreate3Address = async (deployerAddress, wallet, key) => {
-  const deployer = new Contract(deployerAddress, Create3Deployer.abi, wallet);
+const getCreate2Address = async (
+  deployerAddress,
+  wallet,
+  contractJson,
+  key,
+  args = [],
+) => {
+  const deployer = new Contract(deployerAddress, Create2Deployer.abi, wallet);
   const salt = getSaltFromKey(key);
 
-  return await deployer.deployedAddress('0x', wallet.address, salt);
+  const factory = new ContractFactory(contractJson.abi, contractJson.bytecode);
+  const bytecode = factory.getDeployTransaction(...args).data;
+  return await deployer.deployedAddress(bytecode, wallet.address, salt);
 };
 
 module.exports = {
-  estimateGasForCreate3Deploy,
-  estimateGasForCreate3DeployAndInit,
-  create3DeployContract,
-  create3DeployAndInitContract,
-  getCreate3Address,
+  estimateGasForCreate2Deploy,
+  estimateGasForCreate2DeployAndInit,
+  create2DeployContract,
+  create2DeployAndInitContract,
+  getCreate2Address,
 };

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.8.0;
+
 import { FinalProxy } from '../../upgradable/FinalProxy.sol';
 
 contract TestFinalProxy is FinalProxy {

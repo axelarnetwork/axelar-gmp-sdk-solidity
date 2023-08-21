@@ -32,13 +32,10 @@ abstract contract BaseProxy is IProxy {
     function setup(bytes calldata params) external {}
 
     /**
-     * @dev Returns the contract ID. It can be used as a check during upgrades.
-     * @notice Meant to be overridden in derived contracts.
+     * @dev Returns the contract ID. It can be used as a check during upgrades. Meant to be implemented in derived contracts.
      * @return bytes32 The contract ID
      */
-    function contractId() internal pure virtual returns (bytes32) {
-        return bytes32(0);
-    }
+    function contractId() internal pure virtual returns (bytes32);
 
     /**
      * @dev Fallback function. Delegates the call to the current implementation contract.

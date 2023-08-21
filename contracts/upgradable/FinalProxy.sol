@@ -16,7 +16,8 @@ import { Proxy } from './Proxy.sol';
  * the IFinalProxy interface.
  */
 contract FinalProxy is Create3, Proxy, IFinalProxy {
-    bytes32 internal constant FINAL_IMPLEMENTATION_SALT = bytes32(uint256(keccak256('final-implementation')) - 1);
+    // FINAL_IMPLEMENTATION_SALT = bytes32(uint256(keccak256('final-implementation')) - 1);
+    bytes32 internal constant FINAL_IMPLEMENTATION_SALT = 0x80df4dfef2d6527a47431f6f203697684e26d83f81418443821420778d4c4e8c;
 
     /**
      * @dev Constructs a FinalProxy contract with a given implementation address, owner, and setup parameters.

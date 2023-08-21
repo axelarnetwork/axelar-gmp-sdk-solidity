@@ -9,7 +9,9 @@ contract TimeLockTest is TimeLock {
 
     event NumUpdated(uint256 newNum);
 
-    constructor(uint256 _minimumTimeDelay) TimeLock(_minimumTimeDelay) {}
+    constructor(uint256 _minimumTimeDelay) TimeLock(_minimumTimeDelay) {
+        if (PREFIX_TIME_LOCK != keccak256('time-lock')) revert('invalid time-lock slot');
+    }
 
     function getNum() external view returns (uint256) {
         return num;

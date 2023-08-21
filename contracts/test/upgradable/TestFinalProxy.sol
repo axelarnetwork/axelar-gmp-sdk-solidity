@@ -1,4 +1,4 @@
-import '../../upgradable/FinalProxy.sol';
+import { FinalProxy } from '../../upgradable/FinalProxy.sol';
 
 contract TestFinalProxy is FinalProxy {
     constructor(
@@ -7,6 +7,6 @@ contract TestFinalProxy is FinalProxy {
         bytes memory setupParams
     ) FinalProxy(implementationAddress, owner, setupParams) {
         if (FINAL_IMPLEMENTATION_SALT != bytes32(uint256(keccak256('final-implementation')) - 1))
-            revert('invalid final implementation salt');
+            revert('invalid final salt');
     }
 }

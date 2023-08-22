@@ -189,16 +189,17 @@ describe('Proxy', async () => {
     });
 
     it('should preserve the proxy bytecode [ @skip-on-coverage ]', async () => {
+      const proxyFactory = await ethers.getContractFactory('Proxy', owner);
       const proxyBytecode = proxyFactory.bytecode;
       const proxyBytecodeHash = keccak256(proxyBytecode);
 
       const expected = {
         istanbul:
-          '0xb63923c8818b3f1a2576521660ddbe5ad6df0bcea6fb36106f1392cd1dd0f64a',
+          '0x9708ed200e1c05090844fc16c500a593be639f493c8949ee2d773aa0fce7d051',
         berlin:
-          '0x3ba099df39cbcb664016963fbb30ff28e70329c527d6bb810e4739b6bf76eeb7',
+          '0xfc17f3b1332553428d12c6edcb24322e92f5ff4d455c0112845a249c936bf6fc',
         london:
-          '0x9a930016584906252718ae8da0587240c1c46164395fef703f976ba4122080bd',
+          '0x04e1ba2679e69e7ce1a3934e9aecc4de17c178000c619658abe453ce74854105',
       }[getEVMVersion()];
 
       expect(proxyBytecodeHash).to.be.equal(expected);
@@ -217,7 +218,7 @@ describe('Proxy', async () => {
 
     beforeEach(async () => {
       finalProxyFactory = await ethers.getContractFactory(
-        'TestFinalProxy',
+        'FinalProxy',
         owner,
       );
       proxyImplementationFactory = await ethers.getContractFactory(
@@ -238,6 +239,18 @@ describe('Proxy', async () => {
         .then((d) => d.deployed());
       differentProxyImplementation = await differentProxyImplementationFactory
         .deploy()
+        .then((d) => d.deployed());
+    });
+
+    it('check internal constants', async () => {
+      const setupParams = '0x';
+      const testFinalProxyFactory = await ethers.getContractFactory(
+        'TestFinalProxy',
+        owner,
+      );
+
+      await testFinalProxyFactory
+        .deploy(proxyImplementation.address, owner.address, setupParams)
         .then((d) => d.deployed());
     });
 
@@ -330,11 +343,11 @@ describe('Proxy', async () => {
 
       const expected = {
         istanbul:
-          '0xa380508f0834d5a0c7a632fc3fb7170234f1f1b5966ec89b2ef624c432202c1d',
+          '0x39586dfa5a7bc74eabb6f3600496f2821eee196468b0c920b34f0713e4583c35',
         berlin:
-          '0xe74cc8d86dc3900151dcedfa44d8e6803fa5e04a1ba7089b8e2f63a1e400df83',
+          '0x05c75dd004894625d1f9249bbbdde22fdf618c0a595f58a274d6efb5e5afc535',
         london:
-          '0x99a18a9ea3cf78066969e3a22ffcd784378001d64422efb5050decafe5dcfeec',
+          '0xa56b26415fd16c8b83d7a37c231fe39dcf582c6bc3d9e9e6184971c4c63714a2',
       }[getEVMVersion()];
 
       expect(finalProxyBytecodeHash).to.be.equal(expected);

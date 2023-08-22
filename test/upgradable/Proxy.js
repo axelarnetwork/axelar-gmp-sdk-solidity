@@ -11,8 +11,16 @@ const { getEVMVersion } = require('../utils');
 describe('Proxy', async () => {
   let owner, user;
 
+  let proxyImplementationFactory;
+  let proxyImplementation;
+
   before(async () => {
     [owner, user] = await ethers.getSigners();
+
+    proxyImplementationFactory = await ethers.getContractFactory(
+      'ProxyImplementation',
+      owner,
+    );
   });
 
   describe('FixedProxy', async () => {
@@ -73,21 +81,15 @@ describe('Proxy', async () => {
 
   describe('Proxy & BaseProxy', async () => {
     let proxyFactory;
-    let proxyImplementationFactory;
     let invalidProxyImplementationFactory;
     let invalidSetupProxyImplementationFactory;
 
     let proxy;
-    let proxyImplementation;
     let invalidProxyImplementation;
     let invalidSetupProxyImplementation;
 
     beforeEach(async () => {
       proxyFactory = await ethers.getContractFactory('TestProxy', owner);
-      proxyImplementationFactory = await ethers.getContractFactory(
-        'ProxyImplementation',
-        owner,
-      );
       invalidProxyImplementationFactory = await ethers.getContractFactory(
         'InvalidProxyImplementation',
         owner,
@@ -208,23 +210,14 @@ describe('Proxy', async () => {
 
   describe('FinalProxy', async () => {
     let finalProxyFactory;
-    let proxyImplementationFactory;
     let differentProxyImplementationFactory;
     let invalidSetupProxyImplementationFactory;
 
     let finalProxy;
-    let proxyImplementation;
     let differentProxyImplementation;
 
     beforeEach(async () => {
-      finalProxyFactory = await ethers.getContractFactory(
-        'FinalProxy',
-        owner,
-      );
-      proxyImplementationFactory = await ethers.getContractFactory(
-        'ProxyImplementation',
-        owner,
-      );
+      finalProxyFactory = await ethers.getContractFactory('FinalProxy', owner);
       differentProxyImplementationFactory = await ethers.getContractFactory(
         'DifferentProxyImplementation',
         owner,
@@ -351,6 +344,90 @@ describe('Proxy', async () => {
       }[getEVMVersion()];
 
       expect(finalProxyBytecodeHash).to.be.equal(expected);
+    });
+  });
+
+  describe('InitProxy', async () => {
+    let initProxyFactory;
+    let initProxy;
+
+    beforeEach(async () => {
+      initProxyFactory = await ethers.getContractFactory('InitProxy', owner);
+
+      initProxy = await initProxyFactory.deploy().then((d) => d.deployed());
+
+      proxyImplementation = await proxyImplementationFactory
+        .deploy()
+        .then((d) => d.deployed());
+    });
+
+    it('should revert if non-owner calls init', async () => {
+      await expect(
+        initProxy
+          .connect(user)
+          .init(proxyImplementation.address, owner.address, '0x'),
+      ).to.be.revertedWithCustomError(initProxy, 'NotOwner');
+    });
+
+    it('should initialize init proxy with the implementation', async () => {
+      await initProxy
+        .init(proxyImplementation.address, owner.address, '0x')
+        .then((tx) => tx.wait());
+
+      const expectedAddress = await initProxy.implementation();
+
+      expect(proxyImplementation.address).to.equal(expectedAddress);
+    });
+
+    it('should revert if proxy has already been initialized', async () => {
+      await initProxy
+        .init(proxyImplementation.address, owner.address, '0x')
+        .then((tx) => tx.wait());
+
+      await expect(
+        initProxy.init(proxyImplementation.address, owner.address, '0x'),
+      ).to.be.revertedWithCustomError(initProxy, 'AlreadyInitialized');
+    });
+
+    it('should revert if call to setup on the implementation fails', async () => {
+      const initVal = 123;
+
+      const setupParams = defaultAbiCoder.encode(['uint256'], [initVal]);
+
+      await expect(
+        initProxy.init(proxyImplementation.address, owner.address, setupParams),
+      ).to.be.revertedWithCustomError(initProxy, 'SetupFailed');
+    });
+
+    it('should initialize init proxy with setup params', async () => {
+      const initVal = 123;
+      const initName = 'test';
+
+      const setupParams = defaultAbiCoder.encode(
+        ['uint256', 'string'],
+        [initVal, initName],
+      );
+
+      // if init does not revert, setup was successful
+      await initProxy
+        .init(proxyImplementation.address, owner.address, setupParams)
+        .then((tx) => tx.wait());
+    });
+
+    it('should preserve the init proxy bytecode [ @skip-on-coverage ]', async () => {
+      const initProxyBytecode = initProxyFactory.bytecode;
+      const initProxyBytecodeHash = keccak256(initProxyBytecode);
+
+      const expected = {
+        istanbul:
+          '0x75dc062062acecd55d475213b60dfd69753017317a5ce14078758d1ccb32f17f',
+        berlin:
+          '0x8d4322fbdf6c1488dabe92d991e3e74f3b1666184b22110e1f1f924bc1db2e8b',
+        london:
+          '0x107eefebd032510da85d8de3712d95bab49956c66f9bd79a280bb736e6cfd054',
+      }[getEVMVersion()];
+
+      expect(initProxyBytecodeHash).to.be.equal(expected);
     });
   });
 });

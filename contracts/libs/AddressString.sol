@@ -10,8 +10,7 @@ library StringToAddress {
         uint160 addressNumber = 0;
         uint8 stringByte;
 
-        if (stringBytes.length != 42 || stringBytes[0] != '0' || stringBytes[1] != 'x')
-            revert InvalidAddressString();
+        if (stringBytes.length != 42 || stringBytes[0] != '0' || stringBytes[1] != 'x') revert InvalidAddressString();
 
         for (uint256 i = 2; i < 42; ++i) {
             stringByte = uint8(stringBytes[i]);

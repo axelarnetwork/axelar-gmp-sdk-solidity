@@ -22,6 +22,22 @@ const deployContract = async (
   return contract;
 };
 
+const isNumber = (arg) => {
+  return Number.isInteger(arg);
+};
+
+const isString = (arg) => {
+  return typeof arg === 'string' && arg !== '';
+};
+
+function loadConfig(env) {
+  return require(`${__dirname}/../info/${env}.json`);
+}
+
+function saveConfig(config, env) {
+  writeJSON(config, `${__dirname}/../info/${env}.json`);
+}
+
 const getSaltFromKey = (key) => {
   return keccak256(defaultAbiCoder.encode(['string'], [key.toString()]));
 };
@@ -31,6 +47,13 @@ const printObj = (obj) => {
 };
 
 const setJSON = (data, name) => {
+  outputJsonSync(name, data, {
+    spaces: 2,
+    EOL: '\n',
+  });
+};
+
+const writeJSON = (data, name) => {
   outputJsonSync(name, data, {
     spaces: 2,
     EOL: '\n',
@@ -79,6 +102,10 @@ const httpGet = (url) => {
 module.exports = {
   getSaltFromKey,
   deployContract,
+  isNumber,
+  isString,
+  loadConfig,
+  saveConfig,
   setJSON,
   httpGet,
   printObj,

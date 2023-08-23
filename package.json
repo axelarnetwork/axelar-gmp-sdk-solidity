@@ -15,6 +15,9 @@
   },
   "author": "axelar-network",
   "license": "MIT",
+  "dependencies": {
+    "ethers": "^5.7.2"
+  },
   "devDependencies": {
     "@axelar-network/axelar-contract-deployments": "github:axelarnetwork/axelar-contract-deployments#acfe0fb83cc20fee11206dacbb607f1c0b048434",
     "@nomicfoundation/hardhat-toolbox": "^2.0.2",
@@ -28,7 +31,10 @@
     "mocha": "^10.2.0",
     "prettier": "^2.8.7",
     "prettier-plugin-solidity": "^1.0.0-beta.19",
-    "solhint": "^3.4.1"
+    "solhint": "^3.4.1",
+    "dotenv": "^16.0.1",
+    "commander": "^11.0.0",
+    "readline-sync": "^1.4.10"
   },
   "engines": {
     "node": ">=16"

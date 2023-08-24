@@ -6,18 +6,16 @@ import { IDeploy } from '../interfaces/IDeploy.sol';
 import { ContractAddress } from '../libs/ContractAddress.sol';
 import { SafeNativeTransfer } from '../libs/SafeTransfer.sol';
 import { CreateDeploy } from './CreateDeploy.sol';
+import { Create3Address } from  "./Create3Address.sol";
 
 /**
  * @title Create3 contract
  * @notice This contract can be used to deploy a contract with a deterministic address that depends only on
  * the deployer address and deployment salt, not the contract bytecode and constructor parameters.
  */
-contract Create3 is IDeploy {
+contract Create3 is Create3Address, IDeploy {
     using ContractAddress for address;
     using SafeNativeTransfer for address;
-
-    // slither-disable-next-line too-many-digits
-    bytes32 internal constant DEPLOYER_BYTECODE_HASH = keccak256(type(CreateDeploy).creationCode);
 
     /**
      * @notice Deploys a new contract using the `CREATE3` method.
@@ -45,18 +43,5 @@ contract Create3 is IDeploy {
 
         // Deploy using create
         create.deploy(bytecode);
-    }
-
-    /**
-     * @notice Compute the deployed address that will result from the `CREATE3` method.
-     * @param deploySalt A salt to influence the contract address
-     * @return deployed The deterministic contract address if it was deployed
-     */
-    function _create3Address(bytes32 deploySalt) internal view returns (address deployed) {
-        address deployer = address(
-            uint160(uint256(keccak256(abi.encodePacked(hex'ff', address(this), deploySalt, DEPLOYER_BYTECODE_HASH))))
-        );
-
-        deployed = address(uint160(uint256(keccak256(abi.encodePacked(hex'd6_94', deployer, hex'01')))));
     }
 }

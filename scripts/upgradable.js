@@ -6,12 +6,16 @@ const {
   utils: { keccak256 },
 } = require('ethers');
 const { create2DeployAndInitContract } = require('./create2Deployer');
-const { create3DeployContract } = require('./create3Deployer');
+const {
+  create3DeployContract,
+  create3DeployAndInitContract,
+} = require('./create3Deployer');
 const { verifyContract } = require('./utils');
 
 const IUpgradable = require('../interfaces/IUpgradable.json');
 
-async function deployUpgradable(
+// for deploying upgradable contracts with InitProxy via CREATE2 method
+async function deployCreate2InitUpgradable(
   create2DeployerAddress,
   wallet,
   implementationJson,
@@ -59,6 +63,7 @@ async function deployUpgradable(
   return new Contract(proxy.address, implementationJson.abi, wallet);
 }
 
+// for deploying upgradable contracts with Proxy via CREATE3 method
 async function deployCreate3Upgradable(
   create3DeployerAddress,
   wallet,
@@ -105,12 +110,61 @@ async function deployCreate3Upgradable(
       implementation.address,
       implementationConstructorArgs,
     );
+    await verifyContract(env, chain, proxy.address, [
+      implementation.address,
+      wallet.address,
+      setupParams,
+      ...additionalProxyConstructorArgs,
+    ]);
+  }
+
+  return new Contract(proxy.address, implementationJson.abi, wallet);
+}
+
+// for deploying upgradable contracts with InitProxy via CREATE3 method
+async function deployCreate3InitUpgradable(
+  create3DeployerAddress,
+  wallet,
+  implementationJson,
+  proxyJson,
+  implementationConstructorArgs = [],
+  proxyConstructorArgs = [],
+  setupParams = '0x',
+  key = Date.now(),
+  gasLimit = null,
+  env = 'testnet',
+  chain = 'ethereum',
+  shouldVerifyContract = false,
+) {
+  const implementationFactory = new ContractFactory(
+    implementationJson.abi,
+    implementationJson.bytecode,
+    wallet,
+  );
+
+  const implementation = await implementationFactory.deploy(
+    ...implementationConstructorArgs,
+  );
+  await implementation.deployed();
+
+  const proxy = await create3DeployAndInitContract(
+    create3DeployerAddress,
+    wallet,
+    proxyJson,
+    key,
+    proxyConstructorArgs,
+    [implementation.address, wallet.address, setupParams],
+    gasLimit,
+  );
+
+  if (shouldVerifyContract) {
     await verifyContract(
       env,
       chain,
-      proxy.address,
-      additionalProxyConstructorArgs,
+      implementation.address,
+      implementationConstructorArgs,
     );
+    await verifyContract(env, chain, proxy.address, proxyConstructorArgs);
   }
 
   return new Contract(proxy.address, implementationJson.abi, wallet);
@@ -164,7 +218,9 @@ async function upgradeUpgradable(
 }
 
 module.exports = {
-  deployUpgradable,
+  deployUpgradable: deployCreate2InitUpgradable, // deprecated alias
+  deployCreate2InitUpgradable,
   deployCreate3Upgradable,
+  deployCreate3InitUpgradable,
   upgradeUpgradable,
 };

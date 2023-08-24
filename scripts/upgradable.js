@@ -14,6 +14,7 @@ const { verifyContract } = require('./utils');
 
 const IUpgradable = require('../interfaces/IUpgradable.json');
 
+// for deploying upgradable contracts with InitProxy via CREATE2 method
 async function deployCreate2InitUpgradable(
   create2DeployerAddress,
   wallet,
@@ -62,6 +63,7 @@ async function deployCreate2InitUpgradable(
   return new Contract(proxy.address, implementationJson.abi, wallet);
 }
 
+// for deploying upgradable contracts with Proxy via CREATE3 method
 async function deployCreate3Upgradable(
   create3DeployerAddress,
   wallet,
@@ -119,6 +121,7 @@ async function deployCreate3Upgradable(
   return new Contract(proxy.address, implementationJson.abi, wallet);
 }
 
+// for deploying upgradable contracts with InitProxy via CREATE3 method
 async function deployCreate3InitUpgradable(
   create3DeployerAddress,
   wallet,

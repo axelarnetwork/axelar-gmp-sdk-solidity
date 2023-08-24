@@ -22,7 +22,9 @@ const {
 } = require('./scripts/constAddressDeployer');
 const {
   deployUpgradable,
+  deployCreate2InitUpgradable,
   deployCreate3Upgradable,
+  deployCreate3InitUpgradable,
   upgradeUpgradable,
 } = require('./scripts/upgradable');
 const { printObj } = require('./scripts/utils');
@@ -47,7 +49,9 @@ module.exports = {
   getCreate3Address,
 
   deployUpgradable,
+  deployCreate2InitUpgradable,
   deployCreate3Upgradable,
+  deployCreate3InitUpgradable,
   upgradeUpgradable,
   printObj,
 };

@@ -10,10 +10,10 @@ pragma solidity ^0.8.0;
  */
 contract Create3Address {
     // keccak256(type(CreateDeploy).creationCode)
-    bytes32 internal immutable _createDeployBytecodeHash;
+    bytes32 internal immutable createDeployBytecodeHash;
 
     constructor() {
-        _createDeployBytecodeHash = keccak256(type(CreateDeploy).creationCode);
+        createDeployBytecodeHash = keccak256(type(CreateDeploy).creationCode);
     }
 
     /**
@@ -23,7 +23,7 @@ contract Create3Address {
      */
     function _create3Address(bytes32 deploySalt) internal view returns (address deployed) {
         address deployer = address(
-            uint160(uint256(keccak256(abi.encodePacked(hex'ff', address(this), deploySalt, _createDeployBytecodeHash))))
+            uint160(uint256(keccak256(abi.encodePacked(hex'ff', address(this), deploySalt, createDeployBytecodeHash))))
         );
 
         deployed = address(uint160(uint256(keccak256(abi.encodePacked(hex'd6_94', deployer, hex'01')))));

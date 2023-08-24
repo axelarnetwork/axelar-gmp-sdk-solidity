@@ -6,8 +6,7 @@ pragma solidity ^0.8.0;
 
 /**
  * @title Create3Address contract
- * @notice This contract can be used to deploy a contract with a deterministic address that depends only on
- * the deployer address and deployment salt, not the contract bytecode and constructor parameters.
+ * @notice This contract can be used to predict the deterministic deployment address of a contract deployed with the `CREATE3` technique.
  */
 contract Create3Address {
     // keccak256(type(CreateDeploy).creationCode)

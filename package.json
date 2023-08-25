@@ -37,7 +37,6 @@
   "files": [
     "artifacts",
     "contracts",
-    "dist",
     "interfaces",
     "scripts",
     "README.md",

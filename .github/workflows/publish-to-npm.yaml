@@ -25,6 +25,9 @@ jobs:
       - name: Flatten
         run: npm run flatten
 
+      - name: Clean artifacts
+        run: npm run clean:artifacts
+
       - name: Publish
         run: npm publish
         env:

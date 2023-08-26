@@ -5,7 +5,7 @@ on:
   release:
     types: [published]
 
-jobs:  
+jobs:
   publish-to-npm:
     name: 'Publish to NPM'
     runs-on: ubuntu-latest
@@ -22,8 +22,8 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Flatten
-        run: npm run flatten
+      - name: Clean artifacts
+        run: npm run clean:artifacts
 
       - name: Publish
         run: npm publish

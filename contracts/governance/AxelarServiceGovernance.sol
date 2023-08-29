@@ -43,6 +43,21 @@ contract AxelarServiceGovernance is InterchainGovernance, BaseMultisig, IAxelarS
     {}
 
     /**
+     * @notice Returns whether a multisig proposal has been approved
+     * @param target The address of the contract targeted by the proposal
+     * @param callData The call data to be sent to the target contract
+     * @param nativeValue The amount of native tokens to be sent to the target contract
+     * @return bool True if the proposal has been approved, False otherwise
+     */
+    function isMultisigProposalApproved(
+        address target,
+        bytes calldata callData,
+        uint256 nativeValue
+    ) external view returns (bool) {
+        return multisigApprovals[_getProposalHash(target, callData, nativeValue)];
+    }
+
+    /**
      * @notice Executes a multisig proposal.
      * @param target The target address the proposal will call
      * @param callData The data that encodes the function and arguments to call on the target contract

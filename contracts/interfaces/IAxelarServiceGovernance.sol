@@ -34,9 +34,22 @@ interface IAxelarServiceGovernance is IBaseMultisig, IInterchainGovernance {
     /**
      * @notice Returns whether a multisig proposal has been approved
      * @param proposalHash The hash of the proposal
-     * @return bool Whether the proposal has been approved
+     * @return bool True if the proposal has been approved, False otherwise
      */
     function multisigApprovals(bytes32 proposalHash) external view returns (bool);
+
+    /**
+     * @notice Returns whether a multisig proposal has been approved
+     * @param target The address of the contract targeted by the proposal
+     * @param callData The call data to be sent to the target contract
+     * @param nativeValue The amount of native tokens to be sent to the target contract
+     * @return bool True if the proposal has been approved, False otherwise
+     */
+    function isMultisigProposalApproved(
+        address target,
+        bytes calldata callData,
+        uint256 nativeValue
+    ) external view returns (bool);
 
     /**
      * @notice Executes a multisig proposal

@@ -185,6 +185,43 @@ describe('AxelarServiceGovernance', () => {
       .withArgs(proposalHash, target, calldata, nativeValue);
   });
 
+  it('should return whether or not a multisig proposal is approved', async () => {
+    const commandID = 2;
+    const target = targetContract.address;
+    const nativeValue = 100;
+
+    const [payload, proposalHash] = await getPayloadAndProposalHash(
+      commandID,
+      target,
+      nativeValue,
+      calldata,
+    );
+
+    let isApproved = await serviceGovernance.isMultisigProposalApproved(
+      target,
+      calldata,
+      nativeValue,
+    );
+    expect(isApproved).to.be.false;
+
+    await expect(
+      serviceGovernance.executeProposalAction(
+        governanceChain,
+        governanceAddress.address,
+        payload,
+      ),
+    )
+      .to.emit(serviceGovernance, 'MultisigApproved')
+      .withArgs(proposalHash, target, calldata, nativeValue);
+
+    isApproved = await serviceGovernance.isMultisigProposalApproved(
+      target,
+      calldata,
+      nativeValue,
+    );
+    expect(isApproved).to.be.true;
+  });
+
   it('should cancel an approved multisig proposal', async () => {
     const commandID = 3;
     const target = targetContract.address;

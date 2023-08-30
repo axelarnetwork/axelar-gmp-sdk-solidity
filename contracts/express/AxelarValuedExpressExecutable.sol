@@ -8,7 +8,6 @@ import { SafeTokenTransferFrom, SafeTokenTransfer } from '../libs/SafeTransfer.s
 import { SafeNativeTransfer } from '../libs/SafeNativeTransfer.sol';
 import { ExpressExecutorTracker } from './ExpressExecutorTracker.sol';
 
-
 abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker {
     using SafeTokenTransfer for IERC20;
     using SafeTokenTransferFrom for IERC20;

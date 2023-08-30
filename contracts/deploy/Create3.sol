@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import { IDeploy } from '../interfaces/IDeploy.sol';
 import { ContractAddress } from '../libs/ContractAddress.sol';
-import { SafeNativeTransfer } from '../libs/SafeTransfer.sol';
+import { SafeNativeTransfer } from '../libs/SafeNativeTransfer.sol';
 import { CreateDeploy } from './CreateDeploy.sol';
 import { Create3Address } from './Create3Address.sol';
 

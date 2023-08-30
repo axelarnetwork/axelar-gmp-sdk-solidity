@@ -171,11 +171,11 @@ describe('ConstAddressDeployer', () => {
 
       const expected = {
         istanbul:
-          '0x3de5713bd1f93a6d95e5590ab0cc64298215ffdebc1096c696e66ed815b6cce5',
+          '0x0b6df5274214c23b1debcb298e8c016e018e43f3a83995ec65006a3ddc5e1ea7',
         berlin:
-          '0x9b21ea18f399dc86a00bc8d8f9af872c351011119a1c59d80ac4cb1712c35e94',
+          '0xb88fad352fd1c673a9f3ce02d067298d1d5fd9d007e861f74c2cf0307a0d3fd2',
         london:
-          '0x87bd886010a984ed1f08516a3b19d0064c43d9937da71616fb41126458babc63',
+          '0x1762cf60795003d64d94a1550989843767b77c7e0dd1840cfa6db84b0d643860',
       }[getEVMVersion()];
 
       expect(deployerBytecodeHash).to.be.equal(expected);

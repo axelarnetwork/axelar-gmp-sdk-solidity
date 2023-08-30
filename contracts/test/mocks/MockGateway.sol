@@ -45,6 +45,18 @@ contract MockGateway is IAxelarGateway {
     mapping(bytes32 => string) public strings;
     mapping(bytes32 => bytes32) public bytes32s;
 
+    function governance() external pure returns (address) {
+        return address(0);
+    }
+
+    function mintLimiter() external pure returns (address) {
+        return address(0);
+    }
+
+    function transferGovernance(address newGovernance) external {}
+
+    function transferMintLimiter(address newGovernance) external {}
+
     /******************\
     |* Public Methods *|
     \******************/

@@ -336,11 +336,11 @@ describe('Proxy', async () => {
 
       const expected = {
         istanbul:
-          '0x11f58c7ca630c9044ea8a1858b8d74f1f6662956957c742992ff43b5365d69dd',
+          '0x5783daa6a87868e3688dbf756c2b22435972a8861bd9b1ce845e7b3743e6e91d',
         berlin:
-          '0x3d2c244c920b81e3243ce43a340b9dea3e034f0f61bef8142eca422a8a5cf2ec',
+          '0x897a0eb5e643779a9dc956301807206603ea3363c082c3f5a0c6830f2569a206',
         london:
-          '0x3d74d0a87e8b919b4179f14288e9ce6fc9ce21686983eabc1a2624a9ef4a76de',
+          '0x07ae950d9aa7a5cafa356c43b79cca5a74d598cbcfe757532073b377f59c8960',
       }[getEVMVersion()];
 
       expect(finalProxyBytecodeHash).to.be.equal(expected);

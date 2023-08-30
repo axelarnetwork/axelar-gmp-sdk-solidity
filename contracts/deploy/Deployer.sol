@@ -3,7 +3,6 @@
 pragma solidity ^0.8.0;
 
 import { IDeployer } from '../interfaces/IDeployer.sol';
-import { SafeNativeTransfer } from '../libs/SafeTransfer.sol';
 
 /**
  * @title Deployer Contract
@@ -11,8 +10,6 @@ import { SafeNativeTransfer } from '../libs/SafeTransfer.sol';
  * a deployment method, such as `CREATE2` or `CREATE3`.
  */
 abstract contract Deployer is IDeployer {
-    using SafeNativeTransfer for address;
-
     /**
      * @notice Deploys a contract using a deployment method defined by derived contracts.
      * @dev The address where the contract will be deployed can be known in

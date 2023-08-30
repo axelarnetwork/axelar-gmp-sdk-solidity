@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import { IMultisig } from '../interfaces/IMultisig.sol';
 import { BaseMultisig } from './BaseMultisig.sol';
-import { SafeNativeTransfer } from '../libs/SafeTransfer.sol';
+import { SafeNativeTransfer } from '../libs/SafeNativeTransfer.sol';
 import { Caller } from '../utils/Caller.sol';
 
 /**

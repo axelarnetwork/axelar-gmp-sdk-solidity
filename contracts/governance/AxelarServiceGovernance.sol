@@ -39,7 +39,7 @@ contract AxelarServiceGovernance is InterchainGovernance, BaseMultisig, IAxelarS
         uint256 threshold
     )
         InterchainGovernance(gateway_, governanceChain_, governanceAddress_, minimumTimeDelay)
-        BaseMultisig(cosigners, threshold)
+        BaseMultisig(cosigners, threshold) // can add batch events for cosigners
     {}
 
     /**
@@ -53,10 +53,13 @@ contract AxelarServiceGovernance is InterchainGovernance, BaseMultisig, IAxelarS
         bytes calldata callData,
         uint256 nativeValue
     ) external payable onlySigners {
+        // have to execute multiple txs from each signer, can be cahnged to a sigle tx with multiple txs, look at Gnosis Safe contracts
         bytes32 proposalHash = _getProposalHash(target, callData, nativeValue);
 
         if (!multisigApprovals[proposalHash]) revert NotApproved();
 
+        // We need to do this update because proposalhash need not be unique
+        // In such cases previous transactions executed on the same chain or some other chain for the same set of signers in this epoch can be used to get false votes
         multisigApprovals[proposalHash] = false;
 
         emit MultisigExecuted(proposalHash, target, callData, nativeValue);

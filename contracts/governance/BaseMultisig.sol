@@ -128,6 +128,8 @@ contract BaseMultisig is IBaseMultisig {
         signers.accounts = newAccounts;
         signers.threshold = newThreshold;
 
+        // We can use merkle trees, merke roots to avoid for loops in the code altogether
+        // So we can save just one merkle root and then check if the address is included within it
         for (uint256 i; i < length; ++i) {
             address account = newAccounts[i];
 
@@ -147,7 +149,7 @@ contract BaseMultisig is IBaseMultisig {
     function _isFinalSignerVote() internal returns (bool) {
         if (!signers.isSigner[msg.sender]) revert NotSigner();
 
-        bytes32 topic = keccak256(msg.data);
+        bytes32 topic = keccak256(msg.data); // check: msg.data security
         Voting storage voting = votingPerTopic[signerEpoch][topic];
 
         // Check that signer has not voted, then record that they have voted.
@@ -164,12 +166,14 @@ contract BaseMultisig is IBaseMultisig {
             voting.voteCount = voteCount;
             return false;
         }
+        // We should emit an event indicating the single Vote, since voting data on the topic will be deleted once the vote is executed
 
         // Clear vote count and voted booleans.
         delete voting.voteCount;
 
         uint256 count = signers.accounts.length;
 
+        // check if this actually releases gas
         for (uint256 i; i < count; ++i) {
             delete voting.hasVoted[signers.accounts[i]];
         }

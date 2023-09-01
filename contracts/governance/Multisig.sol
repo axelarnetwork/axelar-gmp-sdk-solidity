@@ -36,6 +36,7 @@ contract Multisig is Caller, BaseMultisig, IMultisig {
         bytes calldata callData,
         uint256 nativeValue
     ) external payable returns (bytes memory) {
+        // Have to execute multiple txs from each signer
         if (!_isFinalSignerVote()) return bytes('');
 
         return _call(target, callData, nativeValue);
@@ -48,6 +49,7 @@ contract Multisig is Caller, BaseMultisig, IMultisig {
      * @param amount The amount of native token to send
      * @dev This function is only callable by the contract itself after passing according proposal
      */
+    // have to execute multiple txs from each signer
     function withdraw(address recipient, uint256 amount) external onlySigners {
         recipient.safeNativeTransfer(amount);
     }

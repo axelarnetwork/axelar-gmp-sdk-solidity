@@ -22,7 +22,7 @@ contract InterchainGovernance is AxelarExecutable, TimeLock, Caller, IInterchain
     }
 
     string public governanceChain;
-    string public governanceAddress;
+    string public governanceAddress; // why address is a string?
     bytes32 public immutable governanceChainHash;
     bytes32 public immutable governanceAddressHash;
 
@@ -54,10 +54,11 @@ contract InterchainGovernance is AxelarExecutable, TimeLock, Caller, IInterchain
      * @param sourceChain The source chain of the proposal, must equal the governance chain
      * @param sourceAddress The source address of the proposal, must equal the governance address
      */
+    // if these values are provided as input params what's the use of adding this modifier, a user can just bypass this check based on other params
     modifier onlyGovernance(string calldata sourceChain, string calldata sourceAddress) {
         if (
-            keccak256(bytes(sourceChain)) != governanceChainHash ||
-            keccak256(bytes(sourceAddress)) != governanceAddressHash
+            keccak256(bytes(sourceChain)) != governanceChainHash || // We could have stored these values in bytes to begin with
+            keccak256(bytes(sourceAddress)) != governanceAddressHash // We could have stored these values in bytes to begin with
         ) revert NotGovernance();
 
         _;
@@ -135,7 +136,7 @@ contract InterchainGovernance is AxelarExecutable, TimeLock, Caller, IInterchain
             (uint256, address, bytes, uint256, uint256)
         );
 
-        if (target == address(0)) revert InvalidTarget();
+        if (target == address(0)) revert InvalidTarget(); // rename error to ZerotargetAddress or emit address with error
 
         _processCommand(command, target, callData, nativeValue, eta);
     }
@@ -175,6 +176,7 @@ contract InterchainGovernance is AxelarExecutable, TimeLock, Caller, IInterchain
     /**
      * @dev Get proposal hash using the target, callData, and nativeValue
      */
+    // This can result in conflicting proposal hash, though it is not an issue because we set timelock to zero when we finalise but ideally we should have unique proposal hashes
     function _getProposalHash(
         address target,
         bytes memory callData,

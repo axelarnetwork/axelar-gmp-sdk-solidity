@@ -20,6 +20,7 @@ contract TimeLock is ITimeLock {
      */
     constructor(uint256 minimumTimeDelay) {
         minimumTimeLockDelay = minimumTimeDelay;
+        // where do we set roles?
     }
 
     /**
@@ -40,7 +41,7 @@ contract TimeLock is ITimeLock {
      * @return uint The Unix timestamp (in secs) after which the new timelock can be executed
      */
     function _scheduleTimeLock(bytes32 hash, uint256 eta) internal returns (uint256) {
-        if (hash == 0) revert InvalidTimeLockHash();
+        if (hash == 0) revert InvalidTimeLockHash(); // rename to EmptyTimeLockHash OR include hash as an argument in the error thrown
         if (_getTimeLockEta(hash) != 0) revert TimeLockAlreadyScheduled();
 
         uint256 minimumEta = block.timestamp + minimumTimeLockDelay;
@@ -73,7 +74,7 @@ contract TimeLock is ITimeLock {
 
         if (hash == 0 || eta == 0) revert InvalidTimeLockHash();
 
-        if (block.timestamp < eta) revert TimeLockNotReady();
+        if (block.timestamp < eta) revert TimeLockNotReady(); // emit eta for easy debugging
 
         _setTimeLockEta(hash, 0);
     }
@@ -98,5 +99,6 @@ contract TimeLock is ITimeLock {
         assembly {
             sstore(key, eta)
         }
+        // Think: should we emit an Event?
     }
 }

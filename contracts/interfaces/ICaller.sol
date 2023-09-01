@@ -3,7 +3,8 @@
 pragma solidity ^0.8.0;
 
 interface ICaller {
-    error InvalidContract(address target);
-    error InsufficientBalance();
-    error ExecutionFailed();
+    // check: when is it called?
+    error InvalidContract(address target); // rename to AddressEmptyCode will make it more meaningful?
+    error InsufficientBalance(); // can log current balance with 
+    error ExecutionFailed(); // can log returned data
 }

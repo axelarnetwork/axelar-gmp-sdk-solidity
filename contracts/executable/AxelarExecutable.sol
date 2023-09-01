@@ -9,6 +9,7 @@ contract AxelarExecutable is IAxelarExecutable {
     IAxelarGateway public immutable gateway;
 
     constructor(address gateway_) {
+        // We should implement ERC-165 instead of the address zero check
         if (gateway_ == address(0)) revert InvalidAddress();
 
         gateway = IAxelarGateway(gateway_);
@@ -38,6 +39,7 @@ contract AxelarExecutable is IAxelarExecutable {
     ) external {
         bytes32 payloadHash = keccak256(payload);
 
+        // Will we always mint? we should also burn, lock and unlock?
         if (
             !gateway.validateContractCallAndMint(
                 commandId,

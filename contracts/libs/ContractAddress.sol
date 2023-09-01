@@ -2,7 +2,10 @@
 
 pragma solidity ^0.8.0;
 
+// remove this lib with: `address(...).code.length > 0` reduces code size
+// OZ did it recently: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/3945
 library ContractAddress {
+    // check gas comparizon with OZ
     function isContract(address contractAddress) internal view returns (bool) {
         bytes32 existingCodeHash = contractAddress.codehash;
 

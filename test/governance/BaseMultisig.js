@@ -6,7 +6,7 @@ const {
 } = ethers;
 const { expect } = chai;
 
-describe('MultisigBase', () => {
+describe('BaseMultisig', () => {
   let signer1, signer2, signer3, signer4, signer5, signer6, nonSigner;
   let initAccounts;
   let rotatedAccounts;
@@ -23,7 +23,7 @@ describe('MultisigBase', () => {
     );
 
     multiSigFactory = await ethers.getContractFactory(
-      'TestMultiSigBase',
+      'TestBaseMultiSig',
       signer1,
     );
   });
@@ -103,6 +103,52 @@ describe('MultisigBase', () => {
       newThreshold,
     ]);
     const msgDataHash = keccak256(msgData);
+
+    await multiSig
+      .connect(signer1)
+      .rotateSigners(rotatedAccounts, newThreshold)
+      .then((tx) => tx.wait());
+
+    await expect(
+      multiSig.connect(signer2).rotateSigners(rotatedAccounts, newThreshold),
+    )
+      .to.emit(multiSig, 'MultisigOperationExecuted')
+      .withArgs(msgDataHash);
+  });
+
+  it('should reset the votes internally', async () => {
+    const newThreshold = 2;
+
+    const rotateInterface = new Interface([
+      'function rotateSigners(address[] memory newAccounts, uint256 newThreshold) external payable',
+    ]);
+    const msgData = rotateInterface.encodeFunctionData('rotateSigners', [
+      rotatedAccounts,
+      newThreshold,
+    ]);
+    const msgDataHash = keccak256(msgData);
+
+    expect(await multiSig.getSignerVotesCount(msgDataHash)).to.equal(0);
+    expect(
+      await multiSig.hasSignerVoted(signer1.address, msgDataHash),
+    ).to.equal(false);
+
+    await multiSig
+      .connect(signer1)
+      .rotateSigners(rotatedAccounts, newThreshold)
+      .then((tx) => tx.wait());
+
+    expect(await multiSig.getSignerVotesCount(msgDataHash)).to.equal(1);
+    expect(
+      await multiSig.hasSignerVoted(signer1.address, msgDataHash),
+    ).to.equal(true);
+
+    await multiSig.resetVotes(msgDataHash);
+
+    expect(await multiSig.getSignerVotesCount(msgDataHash)).to.equal(0);
+    expect(
+      await multiSig.hasSignerVoted(signer1.address, msgDataHash),
+    ).to.equal(false);
 
     await multiSig
       .connect(signer1)

@@ -66,10 +66,10 @@ The contract orchestrates four governance operations:
 
 - **Cancel TimeLock Proposal**: Again, similar to Interchain Governance, it cancels an existing governance proposal.
 
-- **Approve Multisig Proposal**: Enables multisig proposal approval, setting the approval status of the proposal to true and signaling successful approval via a `MultisigApproved` event.
+- **Approve Multisig Proposal**: Enables multisig proposal approval by setting the approval status of the proposal to true, resetting any previous voting and signaling successful approval via a `MultisigApproved` event.
 
 - **Cancel Multisig Approval**: Cancels an approved multisig proposal, setting the approval status of the proposal to false and indicating successful cancellation through a `MultisigCancelled` event.
 
 ### Secure Execution of Multisig Proposals
 
-Upon receiving the necessary number of signatory approvals, a multisig proposal becomes eligible for execution. Before execution, the contract verifies the proposal's approval status; if the approval status is false, the transaction is reverted. Following successful execution, the proposal's approval status is reset, and a `MultisigExecuted` event is emitted.
+As every new multisig proposal is approved by the governance, the multisig voting is always reset to 0. This guaranties that any previous voting on similar proposal is not affecting this new proposal. Upon receiving the necessary number of signatory approvals, a multisig proposal becomes eligible for execution. Before execution, the contract verifies the proposal's approval status; if the approval status is false, the transaction is reverted. Following successful execution, the proposal's approval status is reset, and a `MultisigExecuted` event is emitted.

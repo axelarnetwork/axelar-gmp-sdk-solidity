@@ -166,6 +166,24 @@ contract BaseMultisig is IBaseMultisig {
         }
 
         // Clear vote count and voted booleans.
+        _resetVoting(voting);
+
+        emit MultisigOperationExecuted(topic);
+
+        return true;
+    }
+
+    /**
+     * @dev Internal function to reset the votes for a topic
+     */
+    function _resetSignerVotes(bytes32 topic) internal {
+        _resetVoting(votingPerTopic[signerEpoch][topic]);
+    }
+
+    /**
+     * @dev Internal function to reset the votes for a topic
+     */
+    function _resetVoting(Voting storage voting) internal {
         delete voting.voteCount;
 
         uint256 count = signers.accounts.length;
@@ -173,9 +191,5 @@ contract BaseMultisig is IBaseMultisig {
         for (uint256 i; i < count; ++i) {
             delete voting.hasVoted[signers.accounts[i]];
         }
-
-        emit MultisigOperationExecuted(topic);
-
-        return true;
     }
 }

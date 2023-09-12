@@ -19,4 +19,14 @@ contract TestInterchainGovernance is InterchainGovernance {
     ) external {
         _execute(sourceChain, sourceAddress, payload);
     }
+
+    function executeToken(
+        string calldata sourceChain,
+        string calldata sourceAddress,
+        bytes calldata payload,
+        string calldata tokenSymbol,
+        uint256 amount
+    ) external pure {
+        _executeWithToken(sourceChain, sourceAddress, payload, tokenSymbol, amount);
+    }
 }

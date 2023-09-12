@@ -3,7 +3,7 @@
 const chai = require('chai');
 const { ethers } = require('hardhat');
 const {
-  utils: { defaultAbiCoder, Interface },
+  utils: { defaultAbiCoder, Interface, keccak256 },
 } = ethers;
 const { expect } = chai;
 const { getPayloadAndProposalHash } = require('../utils');
@@ -398,6 +398,31 @@ describe('AxelarServiceGovernance', () => {
       calldata,
     );
 
+    const msgData = serviceGovernance.interface.encodeFunctionData(
+      'executeMultisigProposal',
+      [target, calldata, nativeValue],
+    );
+    const msgDataHash = keccak256(msgData);
+
+    expect(await serviceGovernance.getSignerVotesCount(msgDataHash)).to.equal(
+      0,
+    );
+    expect(
+      await serviceGovernance.hasSignerVoted(signer1.address, msgDataHash),
+    ).to.equal(false);
+
+    await serviceGovernance
+      .connect(signer1)
+      .executeMultisigProposal(target, calldata, nativeValue)
+      .then((tx) => tx.wait());
+
+    expect(await serviceGovernance.getSignerVotesCount(msgDataHash)).to.equal(
+      1,
+    );
+    expect(
+      await serviceGovernance.hasSignerVoted(signer1.address, msgDataHash),
+    ).to.equal(true);
+
     await expect(
       serviceGovernance.executeProposalAction(
         governanceChain,
@@ -407,6 +432,13 @@ describe('AxelarServiceGovernance', () => {
     )
       .to.emit(serviceGovernance, 'MultisigApproved')
       .withArgs(proposalHash, target, calldata, nativeValue);
+
+    expect(await serviceGovernance.getSignerVotesCount(msgDataHash)).to.equal(
+      0,
+    );
+    expect(
+      await serviceGovernance.hasSignerVoted(signer1.address, msgDataHash),
+    ).to.equal(false);
 
     await serviceGovernance
       .connect(signer1)

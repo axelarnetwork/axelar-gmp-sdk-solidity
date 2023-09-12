@@ -479,4 +479,16 @@ describe('InterchainGovernance', () => {
       ),
     ).to.be.revertedWithCustomError(interchainGovernance, 'ExecutionFailed');
   });
+
+  it('should revert on execute with token', async () => {
+    await expect(
+      interchainGovernance.executeToken(
+        governanceChain,
+        AddressZero,
+        '0x',
+        'abc',
+        123,
+      ),
+    ).to.be.revertedWithCustomError(interchainGovernance, 'TokenNotSupported');
+  });
 });

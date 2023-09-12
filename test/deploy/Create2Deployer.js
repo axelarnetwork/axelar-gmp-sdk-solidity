@@ -5,6 +5,7 @@ const { ethers } = require('hardhat');
 const { expect } = chai;
 const {
   utils: { keccak256 },
+  ContractFactory,
 } = ethers;
 const {
   create2DeployContract,
@@ -149,6 +150,43 @@ describe('Create2Deployer', () => {
       }
 
       expect(addresses[0]).to.not.equal(addresses[1]);
+    });
+
+    it('should revert when deployed twice with the same salt', async () => {
+      const key = 'a test key';
+      const address = await getCreate2Address(
+        deployer,
+        userWallet,
+        BurnableMintableCappedERC20,
+        key,
+        [name, symbol, decimals],
+      );
+
+      const contract = await create2DeployContract(
+        deployer,
+        userWallet,
+        BurnableMintableCappedERC20,
+        key,
+        [name, symbol, decimals],
+      );
+      expect(contract.address).to.equal(address);
+
+      const deployerContract = deployerFactory.attach(deployer);
+
+      const salt = getSaltFromKey(key);
+      const factory = new ContractFactory(
+        BurnableMintableCappedERC20.abi,
+        BurnableMintableCappedERC20.bytecode,
+      );
+      const bytecode = factory.getDeployTransaction(
+        name,
+        symbol,
+        decimals,
+      ).data;
+
+      await expect(
+        deployerContract.connect(userWallet).deploy(bytecode, salt),
+      ).to.be.revertedWithCustomError(deployerContract, 'AlreadyDeployed');
     });
   });
 

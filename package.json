@@ -17,7 +17,7 @@
   "author": "axelar-network",
   "license": "MIT",
   "devDependencies": {
-    "@axelar-network/axelar-contract-deployments": "github:axelarnetwork/axelar-contract-deployments#acfe0fb83cc20fee11206dacbb607f1c0b048434",
+    "@axelar-network/axelar-chains-config": "^0.1.2",
     "@nomicfoundation/hardhat-toolbox": "^2.0.2",
     "cross-env": "^7.0.3",
     "eslint": "^8.37.0",

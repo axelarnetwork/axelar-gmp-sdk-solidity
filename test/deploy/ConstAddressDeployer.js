@@ -66,7 +66,7 @@ describe('ConstAddressDeployer', () => {
     it('should deploy with native value passed to the constructor', async () => {
       const key = 'a test key';
       // Send eth to address
-      const amount = ethers.utils.parseEther('0.00000001');
+      const amount = 10;
 
       const contract = await deployContractConstant(
         deployer,

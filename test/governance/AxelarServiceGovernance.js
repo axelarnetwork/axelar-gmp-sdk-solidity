@@ -4,9 +4,11 @@ const chai = require('chai');
 const { ethers } = require('hardhat');
 const {
   utils: { defaultAbiCoder, Interface, keccak256 },
+  constants: { HashZero },
+  Wallet,
 } = ethers;
 const { expect } = chai;
-const { getPayloadAndProposalHash } = require('../utils');
+const { isHardhat, getPayloadAndProposalHash } = require('../utils');
 
 describe('AxelarServiceGovernance', () => {
   let ownerWallet;
@@ -17,6 +19,7 @@ describe('AxelarServiceGovernance', () => {
 
   let serviceGovernanceFactory;
   let serviceGovernance;
+  const govCommandID = HashZero;
 
   let targetFactory;
   let targetContract;
@@ -25,23 +28,37 @@ describe('AxelarServiceGovernance', () => {
   let calldata;
 
   const governanceChain = 'Governance Chain';
-  const timeDelay = 12 * 60 * 60;
+  const timeDelay = isHardhat ? 12 * 60 * 60 : 45;
+  const threshold = 2;
 
   before(async () => {
-    [ownerWallet, governanceAddress, gateway, signer1, signer2, signer3] =
-      await ethers.getSigners();
+    [ownerWallet, signer1, signer2] = await ethers.getSigners();
+    signer3 = Wallet.createRandom().connect(ethers.provider);
     signers = [signer1, signer2, signer3].map((signer) => signer.address);
+    governanceAddress = signer1;
 
     serviceGovernanceFactory = await ethers.getContractFactory(
-      'TestServiceGovernance',
+      'AxelarServiceGovernance',
       ownerWallet,
     );
     targetFactory = await ethers.getContractFactory('Target', ownerWallet);
+
+    const mockGatewayFactory = await ethers.getContractFactory(
+      'MockGatewayValidation',
+      ownerWallet,
+    );
+    gateway = await mockGatewayFactory.deploy().then((d) => d.deployed());
+
+    targetContract = await targetFactory.deploy().then((d) => d.deployed());
+
+    targetInterface = new ethers.utils.Interface(
+      targetContract.interface.fragments,
+    );
+    calldata = targetInterface.encodeFunctionData('callTarget');
   });
 
   beforeEach(async () => {
-    const minimumTimeDelay = 10 * 60 * 60;
-    const threshold = 2;
+    const minimumTimeDelay = isHardhat ? 10 * 60 * 60 : 15;
 
     serviceGovernance = await serviceGovernanceFactory
       .deploy(
@@ -53,26 +70,15 @@ describe('AxelarServiceGovernance', () => {
         threshold,
       )
       .then((d) => d.deployed());
-
-    targetContract = await targetFactory.deploy().then((d) => d.deployed());
-
-    targetInterface = new ethers.utils.Interface(
-      targetContract.interface.fragments,
-    );
-    calldata = targetInterface.encodeFunctionData('callTarget');
   });
 
   it('should initialize the service governance with correct parameters', async () => {
-    const currentThreshold = 2;
-
     expect(await serviceGovernance.gateway()).to.equal(gateway.address);
     expect(await serviceGovernance.governanceChain()).to.equal(governanceChain);
     expect(await serviceGovernance.governanceAddress()).to.equal(
       governanceAddress.address,
     );
-    expect(await serviceGovernance.signerThreshold()).to.equal(
-      currentThreshold,
-    );
+    expect(await serviceGovernance.signerThreshold()).to.equal(threshold);
     expect(await serviceGovernance.signerAccounts()).to.deep.equal(signers);
   });
 
@@ -90,7 +96,8 @@ describe('AxelarServiceGovernance', () => {
     );
 
     await expect(
-      serviceGovernance.executeProposalAction(
+      serviceGovernance.execute(
+        govCommandID,
         governanceChain,
         governanceAddress.address,
         payload,
@@ -112,7 +119,8 @@ describe('AxelarServiceGovernance', () => {
     );
 
     await expect(
-      serviceGovernance.executeProposalAction(
+      serviceGovernance.execute(
+        govCommandID,
         governanceChain,
         governanceAddress.address,
         payload,
@@ -137,7 +145,8 @@ describe('AxelarServiceGovernance', () => {
     );
 
     await expect(
-      serviceGovernance.executeProposalAction(
+      serviceGovernance.execute(
+        govCommandID,
         governanceChain,
         governanceAddress.address,
         payload,
@@ -152,7 +161,8 @@ describe('AxelarServiceGovernance', () => {
     );
 
     await expect(
-      serviceGovernance.executeProposalAction(
+      serviceGovernance.execute(
+        govCommandID,
         governanceChain,
         governanceAddress.address,
         cancelPayload,
@@ -175,7 +185,8 @@ describe('AxelarServiceGovernance', () => {
     );
 
     await expect(
-      serviceGovernance.executeProposalAction(
+      serviceGovernance.execute(
+        govCommandID,
         governanceChain,
         governanceAddress.address,
         payload,
@@ -205,7 +216,8 @@ describe('AxelarServiceGovernance', () => {
     expect(isApproved).to.be.false;
 
     await expect(
-      serviceGovernance.executeProposalAction(
+      serviceGovernance.execute(
+        govCommandID,
         governanceChain,
         governanceAddress.address,
         payload,
@@ -220,29 +232,6 @@ describe('AxelarServiceGovernance', () => {
       nativeValue,
     );
     expect(isApproved).to.be.true;
-  });
-
-  it('should cancel an approved multisig proposal', async () => {
-    const commandID = 3;
-    const target = targetContract.address;
-    const nativeValue = 100;
-
-    const [payload, proposalHash] = await getPayloadAndProposalHash(
-      commandID,
-      target,
-      nativeValue,
-      calldata,
-    );
-
-    await expect(
-      serviceGovernance.executeProposalAction(
-        governanceChain,
-        governanceAddress.address,
-        payload,
-      ),
-    )
-      .to.emit(serviceGovernance, 'MultisigCancelled')
-      .withArgs(proposalHash, target, calldata, nativeValue);
   });
 
   it('should re-approve a multisig proposal after cancelling it', async () => {
@@ -264,7 +253,8 @@ describe('AxelarServiceGovernance', () => {
     );
 
     await expect(
-      serviceGovernance.executeProposalAction(
+      serviceGovernance.execute(
+        govCommandID,
         governanceChain,
         governanceAddress.address,
         payload,
@@ -274,7 +264,8 @@ describe('AxelarServiceGovernance', () => {
       .withArgs(proposalHash, target, calldata, nativeValue);
 
     await expect(
-      serviceGovernance.executeProposalAction(
+      serviceGovernance.execute(
+        govCommandID,
         governanceChain,
         governanceAddress.address,
         payloadCancel,
@@ -284,7 +275,8 @@ describe('AxelarServiceGovernance', () => {
       .withArgs(proposalHash, target, calldata, nativeValue);
 
     await expect(
-      serviceGovernance.executeProposalAction(
+      serviceGovernance.execute(
+        govCommandID,
         governanceChain,
         governanceAddress.address,
         payload,
@@ -336,7 +328,8 @@ describe('AxelarServiceGovernance', () => {
     );
 
     await expect(
-      serviceGovernance.executeProposalAction(
+      serviceGovernance.execute(
+        govCommandID,
         governanceChain,
         governanceAddress.address,
         payload,
@@ -370,7 +363,8 @@ describe('AxelarServiceGovernance', () => {
     );
 
     await expect(
-      serviceGovernance.executeProposalAction(
+      serviceGovernance.execute(
+        govCommandID,
         governanceChain,
         governanceAddress.address,
         payload,
@@ -424,7 +418,8 @@ describe('AxelarServiceGovernance', () => {
     ).to.equal(true);
 
     await expect(
-      serviceGovernance.executeProposalAction(
+      serviceGovernance.execute(
+        govCommandID,
         governanceChain,
         governanceAddress.address,
         payload,
@@ -455,10 +450,51 @@ describe('AxelarServiceGovernance', () => {
       .and.to.emit(targetContract, 'TargetCalled');
   });
 
+  it('should cancel an approved multisig proposal', async () => {
+    const target = targetContract.address;
+    const nativeValue = 100;
+
+    let [payload, proposalHash] = await getPayloadAndProposalHash(
+      2,
+      target,
+      nativeValue,
+      calldata,
+    );
+
+    await expect(
+      serviceGovernance.execute(
+        govCommandID,
+        governanceChain,
+        governanceAddress.address,
+        payload,
+      ),
+    )
+      .to.emit(serviceGovernance, 'MultisigApproved')
+      .withArgs(proposalHash, target, calldata, nativeValue);
+
+    [payload, proposalHash] = await getPayloadAndProposalHash(
+      3,
+      target,
+      nativeValue,
+      calldata,
+    );
+
+    await expect(
+      serviceGovernance.execute(
+        govCommandID,
+        governanceChain,
+        governanceAddress.address,
+        payload,
+      ),
+    )
+      .to.emit(serviceGovernance, 'MultisigCancelled')
+      .withArgs(proposalHash, target, calldata, nativeValue);
+  });
+
   it('should execute a multisig proposal and increase balance of target', async () => {
     const commandID = 2;
     const target = targetContract.address;
-    const nativeValue = 1000;
+    const nativeValue = 100;
 
     const [payload, proposalHash] = await getPayloadAndProposalHash(
       commandID,
@@ -468,7 +504,8 @@ describe('AxelarServiceGovernance', () => {
     );
 
     await expect(
-      serviceGovernance.executeProposalAction(
+      serviceGovernance.execute(
+        govCommandID,
         governanceChain,
         governanceAddress.address,
         payload,
@@ -482,16 +519,25 @@ describe('AxelarServiceGovernance', () => {
       .executeMultisigProposal(target, calldata, nativeValue)
       .then((tx) => tx.wait());
 
+    await ownerWallet
+      .sendTransaction({
+        to: serviceGovernance.address,
+        value: nativeValue,
+      })
+      .then((tx) => tx.wait());
+
+    const oldBalance = await ethers.provider.getBalance(target);
+
     const tx = await serviceGovernance
       .connect(signer2)
-      .executeMultisigProposal(target, calldata, nativeValue, {
-        value: nativeValue,
-      });
+      .executeMultisigProposal(target, calldata, nativeValue);
 
     await expect(tx)
       .to.emit(serviceGovernance, 'MultisigExecuted')
       .withArgs(proposalHash, target, calldata, nativeValue)
       .and.to.emit(targetContract, 'TargetCalled');
-    await expect(tx).to.changeEtherBalance(target, nativeValue);
+
+    const newBalance = await ethers.provider.getBalance(target);
+    expect(newBalance).to.equal(oldBalance.add(nativeValue));
   });
 });

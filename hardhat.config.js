@@ -44,7 +44,7 @@ module.exports = {
     sources: './contracts',
   },
   mocha: {
-    timeout: 100000,
+    timeout: 4 * 60 * 60 * 1000, // 4 hrs
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS ? true : false,

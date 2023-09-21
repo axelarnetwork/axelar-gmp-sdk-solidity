@@ -4,6 +4,9 @@ pragma solidity ^0.8.0;
 
 import { InterchainGovernance } from '../../governance/InterchainGovernance.sol';
 
+/**
+ * @dev This exists so Slither knows InterchainGovernance methods are being used.
+ */
 contract TestInterchainGovernance is InterchainGovernance {
     constructor(
         address gatewayAddress,

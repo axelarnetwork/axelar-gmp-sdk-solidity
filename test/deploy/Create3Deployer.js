@@ -144,8 +144,8 @@ describe('Create3Deployer', () => {
       const key = 'a test key';
       const address = await getCreate3Address(deployer, userWallet, key);
 
-      // Send 1 eth to address
-      const amount = ethers.utils.parseEther('0.00000001');
+      // Send eth to address
+      const amount = 10;
 
       await userWallet.sendTransaction({
         to: address,
@@ -171,7 +171,7 @@ describe('Create3Deployer', () => {
     it('should deploy with native value passed to the constructor', async () => {
       const key = 'a test key';
       // Send eth to address
-      const amount = ethers.utils.parseEther('0.00000001');
+      const amount = 10;
 
       const contract = await create3DeployContract(
         deployer,
@@ -232,7 +232,7 @@ describe('Create3Deployer', () => {
     it('should deploy and init with native value passed to the constructor', async () => {
       const key = 'a test key';
       // Send eth to address
-      const amount = ethers.utils.parseEther('0.00000001');
+      const amount = 10;
 
       const contract = await create3DeployAndInitContract(
         deployer,

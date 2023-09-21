@@ -10,6 +10,7 @@ const { ethers } = require('hardhat');
 
 const DestinationChainSwapExpress = require('../../artifacts/contracts/test/gmp/DestinationChainSwapExpress.sol/DestinationChainSwapExpress.json');
 const { deployContract } = require('../../scripts/utils');
+const { getGasOptions } = require('../utils');
 
 const getRandomID = () => id(Math.floor(Math.random() * 1e10).toString());
 
@@ -70,15 +71,6 @@ describe('GMPE', async () => {
       'AxelarValuedExpressExecutableTest',
       ownerWallet,
     );
-  });
-
-  beforeEach(async () => {
-    sourceChainGateway = await gatewayFactory
-      .deploy()
-      .then((d) => d.deployed());
-    destinationChainGateway = await gatewayFactory
-      .deploy()
-      .then((d) => d.deployed());
 
     tokenA = await tokenFactory
       .deploy(nameA, symbolA, decimals)
@@ -88,39 +80,77 @@ describe('GMPE', async () => {
       .deploy(nameB, symbolB, decimals)
       .then((d) => d.deployed());
 
-    await sourceChainGateway.deployToken(
-      defaultAbiCoder.encode(
-        ['string', 'string', 'uint8', 'uint256', ' address', 'uint256'],
-        [nameA, symbolA, decimals, capacity, ethers.constants.AddressZero, 0],
-      ),
-      keccak256('0x'),
-    );
-    await sourceChainGateway.deployToken(
-      defaultAbiCoder.encode(
-        ['string', 'string', 'uint8', 'uint256', ' address', 'uint256'],
-        [nameB, symbolB, decimals, capacity, ethers.constants.AddressZero, 0],
-      ),
-      keccak256('0x'),
-    );
-
-    await destinationChainGateway.deployToken(
-      defaultAbiCoder.encode(
-        ['string', 'string', 'uint8', 'uint256', ' address', 'uint256'],
-        [nameA, symbolA, decimals, capacity, tokenA.address, 0],
-      ),
-      keccak256('0x'),
-    );
-    await destinationChainGateway.deployToken(
-      defaultAbiCoder.encode(
-        ['string', 'string', 'uint8', 'uint256', ' address', 'uint256'],
-        [nameB, symbolB, decimals, capacity, tokenB.address, 0],
-      ),
-      keccak256('0x'),
-    );
+    await tokenA.mint(ownerWallet.address, 1e9).then((t) => t.wait());
+    await tokenB.mint(ownerWallet.address, 1e9).then((t) => t.wait());
+    await tokenA.mint(userWallet.address, 1e9).then((t) => t.wait());
 
     destinationChainTokenSwapper = await destinationChainTokenSwapperFactory
       .deploy(tokenA.address.toString(), tokenB.address.toString())
       .then((d) => d.deployed());
+
+    sourceChainGateway = await gatewayFactory
+      .deploy()
+      .then((d) => d.deployed());
+
+    destinationChainGateway = await gatewayFactory
+      .deploy()
+      .then((d) => d.deployed());
+
+    await sourceChainGateway
+      .deployToken(
+        defaultAbiCoder.encode(
+          ['string', 'string', 'uint8', 'uint256', ' address', 'uint256'],
+          [nameA, symbolA, decimals, capacity, ethers.constants.AddressZero, 0],
+        ),
+        keccak256('0x'),
+      )
+      .then((t) => t.wait());
+    await sourceChainGateway
+      .deployToken(
+        defaultAbiCoder.encode(
+          ['string', 'string', 'uint8', 'uint256', ' address', 'uint256'],
+          [nameB, symbolB, decimals, capacity, ethers.constants.AddressZero, 0],
+        ),
+        keccak256('0x'),
+      )
+      .then((t) => t.wait());
+
+    await sourceChainGateway
+      .mintToken(
+        defaultAbiCoder.encode(
+          ['string', 'address', 'uint256'],
+          [symbolA, userWallet.address, 1e9],
+          keccak256('0x'),
+        ),
+        keccak256('0x'),
+      )
+      .then((t) => t.wait());
+
+    await destinationChainGateway
+      .deployToken(
+        defaultAbiCoder.encode(
+          ['string', 'string', 'uint8', 'uint256', ' address', 'uint256'],
+          [nameA, symbolA, decimals, capacity, tokenA.address, 0],
+        ),
+        keccak256('0x'),
+      )
+      .then((t) => t.wait());
+    await destinationChainGateway
+      .deployToken(
+        defaultAbiCoder.encode(
+          ['string', 'string', 'uint8', 'uint256', ' address', 'uint256'],
+          [nameB, symbolB, decimals, capacity, tokenB.address, 0],
+        ),
+        keccak256('0x'),
+      )
+      .then((t) => t.wait());
+
+    await tokenA
+      .mint(destinationChainGateway.address, 1e9)
+      .then((t) => t.wait());
+    await tokenB
+      .mint(destinationChainTokenSwapper.address, 1e9)
+      .then((t) => t.wait());
 
     destinationChainSwapExpress = await deployContract(
       ownerWallet,
@@ -131,6 +161,7 @@ describe('GMPE', async () => {
     expressExecutableTest = await expressExecutableTestFactory
       .deploy(destinationChainGateway.address)
       .then((d) => d.deployed());
+
     valuedAxelarExpressExecutableTest =
       await valuedAxelarExpressExecutableTestFactory
         .deploy(destinationChainGateway.address)
@@ -143,23 +174,6 @@ describe('GMPE', async () => {
         destinationChainSwapExpress.address,
       )
       .then((d) => d.deployed());
-
-    await tokenA.mint(destinationChainGateway.address, 1e9);
-    await tokenA.mint(ownerWallet.address, 1e9);
-    await tokenB.mint(destinationChainTokenSwapper.address, 1e9);
-    await tokenB.mint(ownerWallet.address, 1e9);
-
-    await sourceChainGateway.mintToken(
-      defaultAbiCoder.encode(
-        ['string', 'address', 'uint256'],
-        [symbolA, userWallet.address, 1e9],
-        keccak256('0x'),
-      ),
-      keccak256('0x'),
-    );
-    await (
-      await tokenA.connect(ownerWallet).mint(userWallet.address, 1e9)
-    ).wait();
   });
 
   describe('AxelarExpressExecutable', () => {
@@ -169,8 +183,8 @@ describe('GMPE', async () => {
       ).to.be.revertedWithCustomError(expressExecutableTest, 'InvalidAddress');
     });
 
-    it('should expressCallWithToken a swap on remote chain', async () => {
-      const swapAmount = 1e6;
+    it('should expressExecuteWithToken a swap on remote chain', async () => {
+      const swapAmount = 1e3;
       const convertedAmount = 2 * swapAmount;
       const payload = defaultAbiCoder.encode(
         ['string', 'string'],
@@ -218,6 +232,7 @@ describe('GMPE', async () => {
             payload,
             symbolA,
             swapAmount,
+            getGasOptions(),
           ),
       )
         .to.emit(tokenA, 'Transfer')
@@ -444,9 +459,12 @@ describe('GMPE', async () => {
         .and.to.not.emit(contract, 'Executed');
     }
 
-    beforeEach(() => {
-      commandId = getRandomID();
+    before(() => {
       contract = expressExecutableTest;
+    });
+
+    beforeEach(async () => {
+      commandId = getRandomID();
     });
 
     it('Should Execute without express', async () => {
@@ -667,9 +685,12 @@ describe('GMPE', async () => {
         .and.to.not.emit(contract, 'ExecutedWithToken');
     }
 
-    beforeEach(() => {
-      commandId = getRandomID();
+    before(() => {
       contract = expressExecutableTest;
+    });
+
+    beforeEach(async () => {
+      commandId = getRandomID();
     });
 
     it('Should Execute without express', async () => {
@@ -712,7 +733,7 @@ describe('GMPE', async () => {
     const payload = '0x1234';
     const payloadHash = keccak256(payload);
     const sourceAddress = '0x5678';
-    const value = 5678;
+    const value = 12;
 
     async function approve() {
       const approveWithMintData = defaultAbiCoder.encode(
@@ -850,11 +871,18 @@ describe('GMPE', async () => {
       expect(newBalance - balance).to.equal(value);
     }
 
+    before(async () => {
+      contract = valuedAxelarExpressExecutableTest;
+      await valuedAxelarExpressExecutableTest
+        .setCallValue(value)
+        .then((tx) => tx.wait());
+      await valuedAxelarExpressExecutableTest
+        .setExpressToken(AddressZero)
+        .then((tx) => tx.wait());
+    });
+
     beforeEach(async () => {
       commandId = getRandomID();
-      contract = valuedAxelarExpressExecutableTest;
-      await valuedAxelarExpressExecutableTest.setCallValue(value);
-      await valuedAxelarExpressExecutableTest.setExpressToken(AddressZero);
     });
 
     it('should revert on deployment with invalid gateway address', async () => {
@@ -1076,11 +1104,14 @@ describe('GMPE', async () => {
         .and.to.not.emit(contract, 'Executed');
     }
 
-    beforeEach(async () => {
-      commandId = getRandomID();
+    before(async () => {
       contract = valuedAxelarExpressExecutableTest;
       await valuedAxelarExpressExecutableTest.setCallValue(value);
       await valuedAxelarExpressExecutableTest.setExpressToken(tokenB.address);
+    });
+
+    beforeEach(async () => {
+      commandId = getRandomID();
     });
 
     it('Should Execute without express', async () => {
@@ -1306,11 +1337,14 @@ describe('GMPE', async () => {
       expect(newBalance - balance).to.equal(value);
     }
 
-    beforeEach(async () => {
-      commandId = getRandomID();
+    before(async () => {
       contract = valuedAxelarExpressExecutableTest;
       await valuedAxelarExpressExecutableTest.setCallValue(value);
       await valuedAxelarExpressExecutableTest.setExpressToken(AddressZero);
+    });
+
+    beforeEach(async () => {
+      commandId = getRandomID();
     });
 
     it('Should Execute without express', async () => {
@@ -1614,11 +1648,14 @@ describe('GMPE', async () => {
         .and.to.not.emit(contract, 'ExecutedWithToken');
     }
 
-    beforeEach(async () => {
-      commandId = getRandomID();
+    before(async () => {
       contract = valuedAxelarExpressExecutableTest;
       await valuedAxelarExpressExecutableTest.setCallValue(value);
       await valuedAxelarExpressExecutableTest.setExpressToken(tokenB.address);
+    });
+
+    beforeEach(async () => {
+      commandId = getRandomID();
     });
 
     it('Should Execute without express', async () => {
@@ -1840,11 +1877,14 @@ describe('GMPE', async () => {
         .and.to.not.emit(contract, 'ExecutedWithToken');
     }
 
-    beforeEach(async () => {
-      commandId = getRandomID();
+    before(async () => {
       contract = valuedAxelarExpressExecutableTest;
       await valuedAxelarExpressExecutableTest.setCallValue(value);
       await valuedAxelarExpressExecutableTest.setExpressToken(tokenA.address);
+    });
+
+    beforeEach(async () => {
+      commandId = getRandomID();
     });
 
     it('Should Execute without express', async () => {

@@ -1,263 +1,276 @@
 const chai = require('chai');
 const { ethers } = require('hardhat');
 const {
-  utils: { keccak256, Interface },
+  utils: { keccak256 },
   constants: { AddressZero },
+  Wallet,
 } = ethers;
 const { expect } = chai;
 
 describe('BaseMultisig', () => {
-  let signer1, signer2, signer3, signer4, signer5, signer6, nonSigner;
+  let signer1, signer2, signer3, nonSigner;
   let initAccounts;
   let rotatedAccounts;
+  let threshold;
 
-  let multiSigFactory;
-  let multiSig;
+  let multisigFactory;
+  let multisig;
 
   before(async () => {
-    [signer1, signer2, signer3, signer4, signer5, signer6, nonSigner] =
-      await ethers.getSigners();
+    threshold = 2;
+    [signer1, signer2, nonSigner] = await ethers.getSigners();
+    signer3 = Wallet.createRandom().connect(ethers.provider);
+
     initAccounts = [signer1, signer2, signer3].map((signer) => signer.address);
-    rotatedAccounts = [signer4, signer5, signer6].map(
+    rotatedAccounts = [signer2, signer3, nonSigner].map(
       (signer) => signer.address,
     );
 
-    multiSigFactory = await ethers.getContractFactory(
-      'TestBaseMultiSig',
+    multisigFactory = await ethers.getContractFactory(
+      'TestBaseMultisig',
       signer1,
     );
   });
 
-  beforeEach(async () => {
-    multiSig = await multiSigFactory
-      .deploy(initAccounts, 2)
-      .then((d) => d.deployed());
+  describe('queries', () => {
+    before(async () => {
+      multisig = await multisigFactory
+        .deploy(initAccounts, threshold)
+        .then((d) => d.deployed());
+    });
+
+    it('should return the current epoch', async () => {
+      const currentEpoch = 1;
+      const returnedEpoch = await multisig.signerEpoch();
+
+      expect(currentEpoch).to.equal(returnedEpoch);
+    });
+
+    it('should return the signer threshold for a given epoch', async () => {
+      expect(await multisig.signerThreshold()).to.equal(threshold);
+    });
+
+    it('should return true if an account is a signer', async () => {
+      expect(await multisig.isSigner(signer1.address)).to.equal(true);
+      expect(await multisig.isSigner(signer2.address)).to.equal(true);
+      expect(await multisig.isSigner(signer3.address)).to.equal(true);
+    });
+
+    it('should return false if an account is not a signer', async () => {
+      expect(await multisig.isSigner(nonSigner.address)).to.equal(false);
+    });
+
+    it('should return the array of signers for a given epoch', async () => {
+      expect(await multisig.signerAccounts()).to.deep.equal(initAccounts);
+    });
   });
 
-  it('should return the current epoch', async () => {
-    const currentEpoch = 1;
-    const returnedEpoch = await multiSig.signerEpoch();
+  describe('negative tests', () => {
+    before(async () => {
+      multisig = await multisigFactory
+        .deploy(initAccounts, threshold)
+        .then((d) => d.deployed());
+    });
 
-    expect(currentEpoch).to.equal(returnedEpoch);
+    it('should revert if non-signer calls only signers function', async () => {
+      const newThreshold = 2;
+
+      await expect(
+        multisig
+          .connect(nonSigner)
+          .rotateSigners(rotatedAccounts, newThreshold),
+      ).to.be.revertedWithCustomError(multisig, 'NotSigner');
+    });
+
+    it('should not proceed with operation execution with insufficient votes', async () => {
+      const newThreshold = 2;
+
+      const tx = await multisig
+        .connect(signer1)
+        .rotateSigners(rotatedAccounts, newThreshold);
+
+      await expect(tx).to.not.emit(multisig, 'MultisigOperationExecuted');
+    });
+
+    it('should revert if signer tries to vote twice', async () => {
+      const newThreshold = 1;
+
+      await multisig
+        .connect(signer1)
+        .rotateSigners(rotatedAccounts, newThreshold)
+        .then((tx) => tx.wait());
+
+      await expect(
+        multisig.connect(signer1).rotateSigners(rotatedAccounts, newThreshold),
+      ).to.be.revertedWithCustomError(multisig, 'AlreadyVoted');
+    });
+
+    it('should revert on rotate signers if new threshold is too large', async () => {
+      const newThreshold = 4;
+
+      await multisig
+        .connect(signer1)
+        .rotateSigners(rotatedAccounts, newThreshold)
+        .then((tx) => tx.wait());
+
+      await expect(
+        multisig.connect(signer2).rotateSigners(rotatedAccounts, newThreshold),
+      ).to.be.revertedWithCustomError(multisig, 'InvalidSigners');
+    });
+
+    it('should revert on rotate signers if new threshold is zero', async () => {
+      const newThreshold = 0;
+
+      await multisig
+        .connect(signer1)
+        .rotateSigners(rotatedAccounts, newThreshold)
+        .then((tx) => tx.wait());
+
+      await expect(
+        multisig.connect(signer2).rotateSigners(rotatedAccounts, newThreshold),
+      ).to.be.revertedWithCustomError(multisig, 'InvalidSignerThreshold');
+    });
+
+    it('should revert on rotate signers with any duplicate signers', async () => {
+      const newThreshold = 2;
+
+      const rotatedAccountsWithDuplicate = rotatedAccounts.concat(
+        rotatedAccounts[0],
+      );
+
+      await multisig
+        .connect(signer1)
+        .rotateSigners(rotatedAccountsWithDuplicate, newThreshold)
+        .then((tx) => tx.wait());
+
+      await expect(
+        multisig
+          .connect(signer2)
+          .rotateSigners(rotatedAccountsWithDuplicate, newThreshold),
+      ).to.be.revertedWithCustomError(multisig, 'DuplicateSigner');
+    });
+
+    it('should revert on rotate signers with any invalid signer addresses', async () => {
+      const newThreshold = 2;
+
+      const rotatedAccountsInvalid = rotatedAccounts.concat(AddressZero);
+
+      await multisig
+        .connect(signer1)
+        .rotateSigners(rotatedAccountsInvalid, newThreshold)
+        .then((tx) => tx.wait());
+
+      await expect(
+        multisig
+          .connect(signer2)
+          .rotateSigners(rotatedAccountsInvalid, newThreshold),
+      ).to.be.revertedWithCustomError(multisig, 'InvalidSigners');
+    });
   });
 
-  it('should return the signer threshold for a given epoch', async () => {
-    const currentThreshold = 2;
+  describe('positive tests', () => {
+    beforeEach(async () => {
+      multisig = await multisigFactory
+        .deploy(initAccounts, threshold)
+        .then((d) => d.deployed());
+    });
 
-    expect(await multiSig.signerThreshold()).to.equal(currentThreshold);
-  });
+    it('should proceed with operation execution with sufficient votes', async () => {
+      const newThreshold = 2;
 
-  it('should return true if an account is a signer', async () => {
-    expect(await multiSig.isSigner(signer1.address)).to.equal(true);
-    expect(await multiSig.isSigner(signer2.address)).to.equal(true);
-    expect(await multiSig.isSigner(signer3.address)).to.equal(true);
-  });
+      const msgData = multisig.interface.encodeFunctionData('rotateSigners', [
+        rotatedAccounts,
+        newThreshold,
+      ]);
+      const msgDataHash = keccak256(msgData);
 
-  it('should return false if an account is not a signer', async () => {
-    expect(await multiSig.isSigner(nonSigner.address)).to.equal(false);
-  });
+      await multisig
+        .connect(signer1)
+        .rotateSigners(rotatedAccounts, newThreshold)
+        .then((tx) => tx.wait());
 
-  it('should return the array of signers for a given epoch', async () => {
-    expect(await multiSig.signerAccounts()).to.deep.equal(initAccounts);
-  });
+      await expect(
+        multisig.connect(signer2).rotateSigners(rotatedAccounts, newThreshold),
+      )
+        .to.emit(multisig, 'MultisigOperationExecuted')
+        .withArgs(msgDataHash);
+    });
 
-  it('should revert if non-signer calls only signers function', async () => {
-    const newThreshold = 2;
+    it('should reset the votes internally', async () => {
+      const newThreshold = 2;
 
-    await expect(
-      multiSig.connect(nonSigner).rotateSigners(rotatedAccounts, newThreshold),
-    ).to.be.revertedWithCustomError(multiSig, 'NotSigner');
-  });
+      const msgData = multisig.interface.encodeFunctionData('rotateSigners', [
+        rotatedAccounts,
+        newThreshold,
+      ]);
+      const msgDataHash = keccak256(msgData);
 
-  it('should not proceed with operation execution with insufficient votes', async () => {
-    const newThreshold = 2;
+      expect(await multisig.getSignerVotesCount(msgDataHash)).to.equal(0);
+      expect(
+        await multisig.hasSignerVoted(signer1.address, msgDataHash),
+      ).to.equal(false);
 
-    const tx = await multiSig
-      .connect(signer1)
-      .rotateSigners(rotatedAccounts, newThreshold);
+      await multisig
+        .connect(signer1)
+        .rotateSigners(rotatedAccounts, newThreshold)
+        .then((tx) => tx.wait());
 
-    await expect(tx).to.not.emit(multiSig, 'MultisigOperationExecuted');
-  });
+      expect(await multisig.getSignerVotesCount(msgDataHash)).to.equal(1);
+      expect(
+        await multisig.hasSignerVoted(signer1.address, msgDataHash),
+      ).to.equal(true);
 
-  it('should revert if signer tries to vote twice', async () => {
-    const newThreshold = 2;
+      await multisig.resetVotes(msgDataHash).then((tx) => tx.wait());
 
-    await multiSig
-      .connect(signer1)
-      .rotateSigners(rotatedAccounts, newThreshold)
-      .then((tx) => tx.wait());
+      expect(await multisig.getSignerVotesCount(msgDataHash)).to.equal(0);
+      expect(
+        await multisig.hasSignerVoted(signer1.address, msgDataHash),
+      ).to.equal(false);
 
-    await expect(
-      multiSig.connect(signer1).rotateSigners(rotatedAccounts, newThreshold),
-    ).to.be.revertedWithCustomError(multiSig, 'AlreadyVoted');
-  });
+      await multisig
+        .connect(signer1)
+        .rotateSigners(rotatedAccounts, newThreshold)
+        .then((tx) => tx.wait());
 
-  it('should proceed with operation execution with sufficient votes', async () => {
-    const newThreshold = 2;
+      await expect(
+        await multisig
+          .connect(signer2)
+          .rotateSigners(rotatedAccounts, newThreshold),
+      )
+        .to.emit(multisig, 'MultisigOperationExecuted')
+        .withArgs(msgDataHash);
+    });
 
-    const rotateInterface = new Interface([
-      'function rotateSigners(address[] memory newAccounts, uint256 newThreshold) external payable',
-    ]);
-    const msgData = rotateInterface.encodeFunctionData('rotateSigners', [
-      rotatedAccounts,
-      newThreshold,
-    ]);
-    const msgDataHash = keccak256(msgData);
+    it('should proceed with signer rotation with sufficient votes and valid arguments', async () => {
+      const newThreshold = 2;
 
-    await multiSig
-      .connect(signer1)
-      .rotateSigners(rotatedAccounts, newThreshold)
-      .then((tx) => tx.wait());
+      const msgData = multisig.interface.encodeFunctionData('rotateSigners', [
+        rotatedAccounts,
+        newThreshold,
+      ]);
+      const msgDataHash = keccak256(msgData);
 
-    await expect(
-      multiSig.connect(signer2).rotateSigners(rotatedAccounts, newThreshold),
-    )
-      .to.emit(multiSig, 'MultisigOperationExecuted')
-      .withArgs(msgDataHash);
-  });
+      await multisig
+        .connect(signer1)
+        .rotateSigners(rotatedAccounts, newThreshold)
+        .then((tx) => tx.wait());
 
-  it('should reset the votes internally', async () => {
-    const newThreshold = 2;
+      await expect(
+        multisig.connect(signer2).rotateSigners(rotatedAccounts, newThreshold),
+      )
+        .to.emit(multisig, 'MultisigOperationExecuted')
+        .withArgs(msgDataHash)
+        .and.to.emit(multisig, 'SignersRotated')
+        .withArgs(rotatedAccounts, newThreshold);
 
-    const rotateInterface = new Interface([
-      'function rotateSigners(address[] memory newAccounts, uint256 newThreshold) external payable',
-    ]);
-    const msgData = rotateInterface.encodeFunctionData('rotateSigners', [
-      rotatedAccounts,
-      newThreshold,
-    ]);
-    const msgDataHash = keccak256(msgData);
+      expect(await multisig.signerThreshold()).to.equal(newThreshold);
+      expect(await multisig.signerAccounts()).to.deep.equal(rotatedAccounts);
 
-    expect(await multiSig.getSignerVotesCount(msgDataHash)).to.equal(0);
-    expect(
-      await multiSig.hasSignerVoted(signer1.address, msgDataHash),
-    ).to.equal(false);
+      for (const signer of rotatedAccounts) {
+        expect(await multisig.isSigner(signer)).to.equal(true);
+      }
 
-    await multiSig
-      .connect(signer1)
-      .rotateSigners(rotatedAccounts, newThreshold)
-      .then((tx) => tx.wait());
-
-    expect(await multiSig.getSignerVotesCount(msgDataHash)).to.equal(1);
-    expect(
-      await multiSig.hasSignerVoted(signer1.address, msgDataHash),
-    ).to.equal(true);
-
-    await multiSig.resetVotes(msgDataHash);
-
-    expect(await multiSig.getSignerVotesCount(msgDataHash)).to.equal(0);
-    expect(
-      await multiSig.hasSignerVoted(signer1.address, msgDataHash),
-    ).to.equal(false);
-
-    await multiSig
-      .connect(signer1)
-      .rotateSigners(rotatedAccounts, newThreshold)
-      .then((tx) => tx.wait());
-
-    await expect(
-      multiSig.connect(signer2).rotateSigners(rotatedAccounts, newThreshold),
-    )
-      .to.emit(multiSig, 'MultisigOperationExecuted')
-      .withArgs(msgDataHash);
-  });
-
-  it('should revert on rotate signers if new threshold is too large', async () => {
-    const newThreshold = 4;
-
-    await multiSig
-      .connect(signer1)
-      .rotateSigners(rotatedAccounts, newThreshold)
-      .then((tx) => tx.wait());
-
-    await expect(
-      multiSig.connect(signer2).rotateSigners(rotatedAccounts, newThreshold),
-    ).to.be.revertedWithCustomError(multiSig, 'InvalidSigners');
-  });
-
-  it('should revert on rotate signers if new threshold is zero', async () => {
-    const newThreshold = 0;
-
-    await multiSig
-      .connect(signer1)
-      .rotateSigners(rotatedAccounts, newThreshold)
-      .then((tx) => tx.wait());
-
-    await expect(
-      multiSig.connect(signer2).rotateSigners(rotatedAccounts, newThreshold),
-    ).to.be.revertedWithCustomError(multiSig, 'InvalidSignerThreshold');
-  });
-
-  it('should revert on rotate signers with any duplicate signers', async () => {
-    const newThreshold = 2;
-
-    const rotatedAccountsWithDuplicate = rotatedAccounts.concat(
-      signer4.address,
-    );
-
-    await multiSig
-      .connect(signer1)
-      .rotateSigners(rotatedAccountsWithDuplicate, newThreshold)
-      .then((tx) => tx.wait());
-
-    await expect(
-      multiSig
-        .connect(signer2)
-        .rotateSigners(rotatedAccountsWithDuplicate, newThreshold),
-    ).to.be.revertedWithCustomError(multiSig, 'DuplicateSigner');
-  });
-
-  it('should revert on rotate signers with any invalid signer addresses', async () => {
-    const newThreshold = 2;
-
-    const rotatedAccountsInvalid = rotatedAccounts.concat(AddressZero);
-
-    await multiSig
-      .connect(signer1)
-      .rotateSigners(rotatedAccountsInvalid, newThreshold)
-      .then((tx) => tx.wait());
-
-    await expect(
-      multiSig
-        .connect(signer2)
-        .rotateSigners(rotatedAccountsInvalid, newThreshold),
-    ).to.be.revertedWithCustomError(multiSig, 'InvalidSigners');
-  });
-
-  it('should proceed with signer rotation with sufficient votes and valid arguments', async () => {
-    const newThreshold = 2;
-
-    const rotateInterface = new Interface([
-      'function rotateSigners(address[] memory newAccounts, uint256 newThreshold) external payable',
-    ]);
-    const msgData = rotateInterface.encodeFunctionData('rotateSigners', [
-      rotatedAccounts,
-      newThreshold,
-    ]);
-    const msgDataHash = keccak256(msgData);
-
-    await multiSig
-      .connect(signer1)
-      .rotateSigners(rotatedAccounts, newThreshold)
-      .then((tx) => tx.wait());
-
-    await expect(
-      multiSig.connect(signer2).rotateSigners(rotatedAccounts, newThreshold),
-    )
-      .to.emit(multiSig, 'MultisigOperationExecuted')
-      .withArgs(msgDataHash)
-      .and.to.emit(multiSig, 'SignersRotated')
-      .withArgs(rotatedAccounts, newThreshold);
-
-    expect(await multiSig.signerThreshold()).to.equal(newThreshold);
-    expect(await multiSig.signerAccounts()).to.deep.equal(rotatedAccounts);
-
-    for (const signer of rotatedAccounts) {
-      expect(await multiSig.isSigner(signer)).to.equal(true);
-    }
-
-    for (const signer of initAccounts) {
-      expect(await multiSig.isSigner(signer)).to.equal(false);
-    }
+      expect(await multisig.isSigner(signer1.address)).to.equal(false);
+    });
   });
 });

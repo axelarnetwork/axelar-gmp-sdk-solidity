@@ -7,7 +7,7 @@ const {
 } = require('ethers');
 const { expect } = chai;
 const { ethers } = require('hardhat');
-const { getEVMVersion } = require('../utils');
+const { getEVMVersion, getGasOptions } = require('../utils');
 
 describe('Proxy', async () => {
   let owner, user;
@@ -150,7 +150,7 @@ describe('Proxy', async () => {
           invalidProxyImplementation.address,
           owner.address,
           setupParams,
-          { gasLimit: 250000 },
+          getGasOptions(),
         ),
       ).to.be.revertedWithCustomError(proxyFactory, 'InvalidImplementation');
     });
@@ -166,7 +166,7 @@ describe('Proxy', async () => {
           invalidSetupProxyImplementation.address,
           owner.address,
           setupParams,
-          { gasLimit: 250000 },
+          getGasOptions(),
         ),
       ).to.be.revertedWithCustomError(proxyFactory, 'SetupFailed');
     });

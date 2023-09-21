@@ -11,9 +11,9 @@ describe('Multisig', () => {
 
   let multisigFactory;
   let multisig;
-
   let targetFactory;
   let targetContract;
+  let calldata;
 
   before(async () => {
     [signer1, signer2, signer3] = await ethers.getSigners();
@@ -21,12 +21,17 @@ describe('Multisig', () => {
 
     multisigFactory = await ethers.getContractFactory('Multisig', signer1);
     targetFactory = await ethers.getContractFactory('Target', signer1);
-  });
 
-  beforeEach(async () => {
+    const targetInterface = new Interface(['function callTarget() external']);
+    calldata = targetInterface.encodeFunctionData('callTarget');
+
     multisig = await multisigFactory
       .deploy(accounts, 2)
       .then((d) => d.deployed());
+  });
+
+  beforeEach(async () => {
+    // new target contract for each test
     targetContract = await targetFactory.deploy().then((d) => d.deployed());
   });
 
@@ -38,9 +43,7 @@ describe('Multisig', () => {
   });
 
   it('should revert on execute with insufficient value sent', async () => {
-    const targetInterface = new Interface(['function callTarget() external']);
-    const calldata = targetInterface.encodeFunctionData('callTarget');
-    const nativeValue = 1000;
+    const nativeValue = 100;
 
     await multisig
       .connect(signer1)
@@ -55,34 +58,28 @@ describe('Multisig', () => {
   });
 
   it('should revert on execute if call to target fails', async () => {
-    // Encode function that does not exist on target
-    const targetInterface = new Interface(['function set() external']);
-    const calldata = targetInterface.encodeFunctionData('set');
-    const nativeValue = 1000;
+    // Invalid function selector that does not exist on target
+    const invalidCalldata = '0x12345678';
+    const nativeValue = 100;
 
     await multisig
       .connect(signer1)
-      .executeContract(targetContract.address, calldata, nativeValue)
+      .executeContract(targetContract.address, invalidCalldata, nativeValue)
       .then((tx) => tx.wait());
 
     await expect(
       multisig
         .connect(signer2)
-        .executeContract(targetContract.address, calldata, nativeValue, {
+        .executeContract(targetContract.address, invalidCalldata, nativeValue, {
           value: nativeValue,
         }),
     ).to.be.revertedWithCustomError(multisig, 'ExecutionFailed');
   });
 
   it('should return true if signer has voted on a given topic', async () => {
-    const targetInterface = new Interface(['function callTarget() external']);
-    const calldata = targetInterface.encodeFunctionData('callTarget');
-    const nativeValue = 1000;
+    const nativeValue = 100;
 
-    const multiSigInterface = new Interface([
-      'function executeContract(address target, bytes calldata callData, uint256 nativeValue) external payable returns (bytes memory)',
-    ]);
-    const calldataMultiSig = multiSigInterface.encodeFunctionData(
+    const calldataMultiSig = multisig.interface.encodeFunctionData(
       'executeContract',
       [targetContract.address, calldata, nativeValue],
     );
@@ -99,14 +96,9 @@ describe('Multisig', () => {
   });
 
   it('should return false if a signer has not voted on a given topic', async () => {
-    const targetInterface = new Interface(['function callTarget() external']);
-    const calldata = targetInterface.encodeFunctionData('callTarget');
-    const nativeValue = 1000;
+    const nativeValue = 100;
 
-    const multiSigInterface = new Interface([
-      'function executeContract(address target, bytes calldata callData, uint256 nativeValue) external payable returns (bytes memory)',
-    ]);
-    const calldataMultiSig = multiSigInterface.encodeFunctionData(
+    const calldataMultiSig = multisig.interface.encodeFunctionData(
       'executeContract',
       [targetContract.address, calldata, nativeValue],
     );
@@ -123,14 +115,9 @@ describe('Multisig', () => {
   });
 
   it('should return the correct vote count for a given topic', async () => {
-    const targetInterface = new Interface(['function callTarget() external']);
-    const calldata = targetInterface.encodeFunctionData('callTarget');
-    const nativeValue = 1000;
+    const nativeValue = 10;
 
-    const multiSigInterface = new Interface([
-      'function executeContract(address target, bytes calldata callData, uint256 nativeValue) external payable returns (bytes memory)',
-    ]);
-    const calldataMultiSig = multiSigInterface.encodeFunctionData(
+    const calldataMultiSig = multisig.interface.encodeFunctionData(
       'executeContract',
       [targetContract.address, calldata, nativeValue],
     );
@@ -163,9 +150,7 @@ describe('Multisig', () => {
   });
 
   it('should execute function on target contract', async () => {
-    const targetInterface = new Interface(['function callTarget() external']);
-    const calldata = targetInterface.encodeFunctionData('callTarget');
-    const nativeValue = 1000;
+    const nativeValue = 100;
 
     await multisig
       .connect(signer1)
@@ -181,36 +166,26 @@ describe('Multisig', () => {
     ).to.emit(targetContract, 'TargetCalled');
   });
 
-  it('should execute function on target contract twice within the same epoch without rotating signers', async () => {
-    const targetInterface = new Interface(['function callTarget() external']);
-    const calldata = targetInterface.encodeFunctionData('callTarget');
-    const nativeValue = 1000;
+  it('should execute function on target contract from different participants', async () => {
+    const nativeValue = 100;
 
-    await multisig
-      .connect(signer1)
-      .executeContract(targetContract.address, calldata, nativeValue)
-      .then((tx) => tx.wait());
+    for (let i = 0; i < 2; i++) {
+      const firstSigner = [signer1, signer2][i];
+      const secondSigner = [signer2, signer3][i];
 
-    await expect(
-      multisig
-        .connect(signer2)
-        .executeContract(targetContract.address, calldata, nativeValue, {
-          value: nativeValue,
-        }),
-    ).to.emit(targetContract, 'TargetCalled');
+      await multisig
+        .connect(firstSigner)
+        .executeContract(targetContract.address, calldata, nativeValue)
+        .then((tx) => tx.wait());
 
-    await multisig
-      .connect(signer1)
-      .executeContract(targetContract.address, calldata, nativeValue)
-      .then((tx) => tx.wait());
-
-    await expect(
-      multisig
-        .connect(signer2)
-        .executeContract(targetContract.address, calldata, nativeValue, {
-          value: nativeValue,
-        }),
-    ).to.emit(targetContract, 'TargetCalled');
+      await expect(
+        multisig
+          .connect(secondSigner)
+          .executeContract(targetContract.address, calldata, nativeValue, {
+            value: nativeValue,
+          }),
+      ).to.emit(targetContract, 'TargetCalled');
+    }
   });
 
   it('should withdraw native value', async () => {
@@ -229,8 +204,14 @@ describe('Multisig', () => {
       .withdraw(recipient, nativeValue)
       .then((tx) => tx.wait());
 
-    await expect(
-      await multisig.connect(signer2).withdraw(recipient, nativeValue),
-    ).to.changeEtherBalance(recipient, nativeValue);
+    const oldBalance = await ethers.provider.getBalance(recipient);
+
+    await multisig
+      .connect(signer2)
+      .withdraw(recipient, nativeValue)
+      .then((tx) => tx.wait());
+
+    const newBalance = await ethers.provider.getBalance(recipient);
+    expect(newBalance).to.equal(oldBalance.add(nativeValue));
   });
 });

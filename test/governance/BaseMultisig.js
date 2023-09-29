@@ -184,16 +184,19 @@ describe('BaseMultisig', () => {
       ]);
       const msgDataHash = keccak256(msgData);
 
-      await multisig
-        .connect(signer1)
-        .rotateSigners(rotatedAccounts, newThreshold)
-        .then((tx) => tx.wait());
+      await expect(
+        await multisig
+          .connect(signer1)
+          .rotateSigners(rotatedAccounts, newThreshold),
+      )
+        .to.emit(multisig, 'MultisigVoted')
+        .withArgs(msgDataHash, 1, signer1.address, 1, 2);
 
       await expect(
         multisig.connect(signer2).rotateSigners(rotatedAccounts, newThreshold),
       )
         .to.emit(multisig, 'MultisigOperationExecuted')
-        .withArgs(msgDataHash);
+        .withArgs(msgDataHash, 1, signer2.address, 2);
     });
 
     it('should reset the votes internally', async () => {
@@ -227,10 +230,13 @@ describe('BaseMultisig', () => {
         await multisig.hasSignerVoted(signer1.address, msgDataHash),
       ).to.equal(false);
 
-      await multisig
-        .connect(signer1)
-        .rotateSigners(rotatedAccounts, newThreshold)
-        .then((tx) => tx.wait());
+      await expect(
+        await multisig
+          .connect(signer1)
+          .rotateSigners(rotatedAccounts, newThreshold),
+      )
+        .to.emit(multisig, 'MultisigVoted')
+        .withArgs(msgDataHash, 1, signer1.address, 1, 2);
 
       await expect(
         await multisig
@@ -238,7 +244,7 @@ describe('BaseMultisig', () => {
           .rotateSigners(rotatedAccounts, newThreshold),
       )
         .to.emit(multisig, 'MultisigOperationExecuted')
-        .withArgs(msgDataHash);
+        .withArgs(msgDataHash, 1, signer2.address, 2);
     });
 
     it('should proceed with signer rotation with sufficient votes and valid arguments', async () => {
@@ -250,16 +256,19 @@ describe('BaseMultisig', () => {
       ]);
       const msgDataHash = keccak256(msgData);
 
-      await multisig
-        .connect(signer1)
-        .rotateSigners(rotatedAccounts, newThreshold)
-        .then((tx) => tx.wait());
+      await expect(
+        await multisig
+          .connect(signer1)
+          .rotateSigners(rotatedAccounts, newThreshold),
+      )
+        .to.emit(multisig, 'MultisigVoted')
+        .withArgs(msgDataHash, 1, signer1.address, 1, 2);
 
       await expect(
         multisig.connect(signer2).rotateSigners(rotatedAccounts, newThreshold),
       )
         .to.emit(multisig, 'MultisigOperationExecuted')
-        .withArgs(msgDataHash)
+        .withArgs(msgDataHash, 1, signer2.address, 2)
         .and.to.emit(multisig, 'SignersRotated')
         .withArgs(rotatedAccounts, newThreshold);
 

@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import { IUpgradable } from '../interfaces/IUpgradable.sol';
 import { Ownable } from '../utils/Ownable.sol';
-import {Implementation} from "./Implementation.sol";
+import { Implementation } from './Implementation.sol';
 
 /**
  * @title Upgradable Contract

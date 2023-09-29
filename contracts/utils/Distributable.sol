@@ -15,7 +15,8 @@ contract Distributable is IDistributable {
     uint256 internal constant DISTRIBUTOR_SLOT = 0x71c5a35e45a25c49e8f747acd4bcb869814b3d104c492d2554f4c46e12371f56;
 
     // uint256(keccak256('proposed-distributor')) - 1
-    uint256 internal constant PROPOSED_DISTRIBUTOR_SLOT = 0xbb1aa7d30971a97896e14e460c5ace030e39b624cf8f7c1ce200eeb378d7dcf1;
+    uint256 internal constant PROPOSED_DISTRIBUTOR_SLOT =
+        0xbb1aa7d30971a97896e14e460c5ace030e39b624cf8f7c1ce200eeb378d7dcf1;
 
     /**
      * @dev Throws a NotDistributor custom error if called by any account other than the distributor.

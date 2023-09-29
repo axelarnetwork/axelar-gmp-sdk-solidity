@@ -9,7 +9,7 @@ pragma solidity ^0.8.0;
  */
 interface IMulticall {
     error MulticallFailed(bytes err);
-    
+
     /**
      * @notice Performs multiple delegate calls and returns the results of all calls as an array
      * @dev This function requires that the contract has sufficient balance for the delegate calls.

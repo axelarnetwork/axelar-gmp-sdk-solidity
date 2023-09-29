@@ -10,7 +10,6 @@ import { IMulticall } from '../interfaces/IMulticall.sol';
  * contract calls in a single transaction.
  */
 contract Multicall is IMulticall {
-
     /**
      * @notice Performs multiple delegate calls and returns the results of all calls as an array
      * @dev This function requires that the contract has sufficient balance for the delegate calls.

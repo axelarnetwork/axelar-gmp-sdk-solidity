@@ -62,6 +62,11 @@ const waitFor = async (timeDelay) => {
   }
 };
 
+async function deployContract(wallet, contractName, args = []) {
+  const factory = await ethers.getContractFactory(contractName, wallet);
+  return factory.deploy(...args);
+}
+
 module.exports = {
   bigNumberToNumber: (bigNumber) => bigNumber.toNumber(),
 
@@ -97,4 +102,6 @@ module.exports = {
   getPayloadAndProposalHash,
 
   waitFor,
+
+  deployContract,
 };

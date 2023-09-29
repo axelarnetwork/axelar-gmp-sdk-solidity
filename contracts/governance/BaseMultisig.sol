@@ -160,16 +160,17 @@ contract BaseMultisig is IBaseMultisig {
 
         // Do not proceed with operation execution if insufficient votes.
         if (voteCount < signers.threshold) {
+            emit MultisigVoted(topic, msg.sender);
+
             // Save updated vote count.
             voting.voteCount = voteCount;
             return false;
         }
 
+        emit MultisigOperationExecuted(topic, msg.sender);
+
         // Clear vote count and voted booleans.
         _resetVoting(voting);
-
-        emit MultisigOperationExecuted(topic);
-
         return true;
     }
 

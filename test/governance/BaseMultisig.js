@@ -190,13 +190,13 @@ describe('BaseMultisig', () => {
           .rotateSigners(rotatedAccounts, newThreshold),
       )
         .to.emit(multisig, 'MultisigVoted')
-        .withArgs(msgDataHash, signer1.address);
+        .withArgs(msgDataHash, 1, signer1.address, 1, 2);
 
       await expect(
         multisig.connect(signer2).rotateSigners(rotatedAccounts, newThreshold),
       )
         .to.emit(multisig, 'MultisigOperationExecuted')
-        .withArgs(msgDataHash, signer2.address);
+        .withArgs(msgDataHash, 1, signer2.address, 2);
     });
 
     it('should reset the votes internally', async () => {
@@ -236,7 +236,7 @@ describe('BaseMultisig', () => {
           .rotateSigners(rotatedAccounts, newThreshold),
       )
         .to.emit(multisig, 'MultisigVoted')
-        .withArgs(msgDataHash, signer1.address);
+        .withArgs(msgDataHash, 1, signer1.address, 1, 2);
 
       await expect(
         await multisig
@@ -244,7 +244,7 @@ describe('BaseMultisig', () => {
           .rotateSigners(rotatedAccounts, newThreshold),
       )
         .to.emit(multisig, 'MultisigOperationExecuted')
-        .withArgs(msgDataHash, signer2.address);
+        .withArgs(msgDataHash, 1, signer2.address, 2);
     });
 
     it('should proceed with signer rotation with sufficient votes and valid arguments', async () => {
@@ -262,13 +262,13 @@ describe('BaseMultisig', () => {
           .rotateSigners(rotatedAccounts, newThreshold),
       )
         .to.emit(multisig, 'MultisigVoted')
-        .withArgs(msgDataHash, signer1.address);
+        .withArgs(msgDataHash, 1, signer1.address, 1, 2);
 
       await expect(
         multisig.connect(signer2).rotateSigners(rotatedAccounts, newThreshold),
       )
         .to.emit(multisig, 'MultisigOperationExecuted')
-        .withArgs(msgDataHash, signer2.address)
+        .withArgs(msgDataHash, 1, signer2.address, 2)
         .and.to.emit(multisig, 'SignersRotated')
         .withArgs(rotatedAccounts, newThreshold);
 

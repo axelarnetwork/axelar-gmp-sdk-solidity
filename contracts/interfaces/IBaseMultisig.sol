@@ -17,9 +17,9 @@ interface IBaseMultisig {
     |* Events *|
     \**********/
 
-    event MultisigVoted(bytes32 indexed topic, address indexed voter);
+    event MultisigVoted(bytes32 indexed topic, uint256 indexed signerEpoch, address indexed voter, uint256 voteCount, uint256 threshold);
 
-    event MultisigOperationExecuted(bytes32 indexed topic, address indexed voter);
+    event MultisigOperationExecuted(bytes32 indexed topic, uint256 indexed signerEpoch, address indexed voter, uint256 threshold);
 
     event SignersRotated(address[] newAccounts, uint256 newThreshold);
 

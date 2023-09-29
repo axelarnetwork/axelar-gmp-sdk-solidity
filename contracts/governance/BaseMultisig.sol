@@ -148,7 +148,8 @@ contract BaseMultisig is IBaseMultisig {
         if (!signers.isSigner[msg.sender]) revert NotSigner();
 
         bytes32 topic = keccak256(msg.data);
-        Voting storage voting = votingPerTopic[signerEpoch][topic];
+        uint256 epoch = signerEpoch;
+        Voting storage voting = votingPerTopic[epoch][topic];
 
         // Check that signer has not voted, then record that they have voted.
         if (voting.hasVoted[msg.sender]) revert AlreadyVoted();
@@ -157,19 +158,21 @@ contract BaseMultisig is IBaseMultisig {
 
         // Determine the new vote count.
         uint256 voteCount = voting.voteCount + 1;
+        uint256 threshold = signers.threshold;
 
         // Do not proceed with operation execution if insufficient votes.
-        if (voteCount < signers.threshold) {
+        if (voteCount < threshold) {
+            emit MultisigVoted(topic, epoch, msg.sender, voteCount, threshold);
+
             // Save updated vote count.
             voting.voteCount = voteCount;
             return false;
         }
 
+        emit MultisigOperationExecuted(topic, epoch, msg.sender, threshold);
+
         // Clear vote count and voted booleans.
         _resetVoting(voting);
-
-        emit MultisigOperationExecuted(topic);
-
         return true;
     }
 

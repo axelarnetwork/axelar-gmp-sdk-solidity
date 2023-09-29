@@ -10,7 +10,6 @@ interface IUpgradable is IOwnable, IContractIdentifier {
     error InvalidCodeHash();
     error InvalidImplementation();
     error SetupFailed();
-    error NotProxy();
 
     event Upgraded(address indexed newImplementation);
 
@@ -21,6 +20,4 @@ interface IUpgradable is IOwnable, IContractIdentifier {
         bytes32 newImplementationCodeHash,
         bytes calldata params
     ) external;
-
-    function setup(bytes calldata data) external;
 }

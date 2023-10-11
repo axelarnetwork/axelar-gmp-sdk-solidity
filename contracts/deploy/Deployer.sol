@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import { IDeployer } from '../interfaces/IDeployer.sol';
+import { SafeNativeTransfer } from '../libs/SafeNativeTransfer.sol';
 
 /**
  * @title Deployer Contract
@@ -10,6 +11,8 @@ import { IDeployer } from '../interfaces/IDeployer.sol';
  * a deployment method, such as `CREATE2` or `CREATE3`.
  */
 abstract contract Deployer is IDeployer {
+    using SafeNativeTransfer for address;
+
     /**
      * @notice Deploys a contract using a deployment method defined by derived contracts.
      * @dev The address where the contract will be deployed can be known in
@@ -29,6 +32,12 @@ abstract contract Deployer is IDeployer {
      */
     function deploy(bytes memory bytecode, bytes32 salt) external payable returns (address deployedAddress_) {
         bytes32 deploySalt = keccak256(abi.encode(msg.sender, salt));
+        deployedAddress_ = _deployedAddress(bytecode, deploySalt);
+
+        if (msg.value > 0) {
+            deployedAddress_.safeNativeTransfer(msg.value);
+        }
+
         deployedAddress_ = _deploy(bytecode, deploySalt);
 
         emit Deployed(deployedAddress_, msg.sender, salt, keccak256(bytecode));
@@ -60,6 +69,12 @@ abstract contract Deployer is IDeployer {
         bytes calldata init
     ) external payable returns (address deployedAddress_) {
         bytes32 deploySalt = keccak256(abi.encode(msg.sender, salt));
+        deployedAddress_ = _deployedAddress(bytecode, deploySalt);
+
+        if (msg.value > 0) {
+            deployedAddress_.safeNativeTransfer(msg.value);
+        }
+
         deployedAddress_ = _deploy(bytecode, deploySalt);
 
         emit Deployed(deployedAddress_, msg.sender, salt, keccak256(bytecode));

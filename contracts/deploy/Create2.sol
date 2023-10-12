@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 
 import { IDeploy } from '../interfaces/IDeploy.sol';
 import { ContractAddress } from '../libs/ContractAddress.sol';
-import { SafeNativeTransfer } from '../libs/SafeNativeTransfer.sol';
 
 /**
  * @title Create2 contract
@@ -13,7 +12,6 @@ import { SafeNativeTransfer } from '../libs/SafeNativeTransfer.sol';
  */
 contract Create2 is IDeploy {
     using ContractAddress for address;
-    using SafeNativeTransfer for address;
 
     /**
      * @notice Deploys a new contract using the `CREATE2` method.
@@ -27,10 +25,6 @@ contract Create2 is IDeploy {
 
         if (bytecode.length == 0) revert EmptyBytecode();
         if (deployed.isContract()) revert AlreadyDeployed();
-
-        if (msg.value > 0) {
-            deployed.safeNativeTransfer(msg.value);
-        }
 
         assembly {
             deployed := create2(0, add(bytecode, 32), mload(bytecode), deploySalt)

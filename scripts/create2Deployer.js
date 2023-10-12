@@ -44,6 +44,7 @@ const create2DeployContract = async (
   key,
   args = [],
   txOptions = null,
+  confirmations = null,
 ) => {
   if (txOptions && !Number.isNaN(Number(txOptions))) {
     txOptions = {
@@ -55,8 +56,10 @@ const create2DeployContract = async (
   const salt = getSaltFromKey(key);
   const factory = new ContractFactory(contractJson.abi, contractJson.bytecode);
   const bytecode = factory.getDeployTransaction(...args).data;
-  const tx = await deployer.connect(wallet).deploy(bytecode, salt, txOptions);
-  await tx.wait();
+
+  const tx = await deployer.deploy(bytecode, salt, txOptions);
+  await tx.wait(confirmations);
+
   const address = await deployer.deployedAddress(
     bytecode,
     wallet.address,
@@ -73,6 +76,7 @@ const create2DeployAndInitContract = async (
   args = [],
   initArgs = [],
   txOptions = null,
+  confirmations = null,
 ) => {
   if (txOptions && !Number.isNaN(Number(txOptions))) {
     txOptions = {
@@ -91,10 +95,11 @@ const create2DeployAndInitContract = async (
   );
   const contract = new Contract(address, contractJson.abi, wallet);
   const initData = (await contract.populateTransaction.init(...initArgs)).data;
+
   const tx = await deployer
-    .connect(wallet)
     .deployAndInit(bytecode, salt, initData, txOptions);
-  await tx.wait();
+  await tx.wait(confirmations);
+
   return contract;
 };
 

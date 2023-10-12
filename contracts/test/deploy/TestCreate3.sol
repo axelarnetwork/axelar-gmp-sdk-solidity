@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.8.0;
+
 import { Create3 } from '../../deploy/Create3.sol';
 
 contract TestCreate3 is Create3 {

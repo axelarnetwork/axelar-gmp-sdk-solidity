@@ -30,11 +30,13 @@ abstract contract Deployer is IDeployer {
      * @param salt A salt to influence the contract address
      * @return deployedAddress_ The address of the deployed contract
      */
+    // slither-disable-next-line locked-ether
     function deploy(bytes memory bytecode, bytes32 salt) external payable returns (address deployedAddress_) {
         bytes32 deploySalt = keccak256(abi.encode(msg.sender, salt));
         deployedAddress_ = _deployedAddress(bytecode, deploySalt);
 
         if (msg.value > 0) {
+            // slither-disable-next-line unused-return
             deployedAddress_.safeNativeTransfer(msg.value);
         }
 
@@ -63,6 +65,7 @@ abstract contract Deployer is IDeployer {
      * @param init Init data used to initialize the deployed contract
      * @return deployedAddress_ The address of the deployed contract
      */
+    // slither-disable-next-line locked-ether
     function deployAndInit(
         bytes memory bytecode,
         bytes32 salt,
@@ -72,6 +75,7 @@ abstract contract Deployer is IDeployer {
         deployedAddress_ = _deployedAddress(bytecode, deploySalt);
 
         if (msg.value > 0) {
+            // slither-disable-next-line unused-return
             deployedAddress_.safeNativeTransfer(msg.value);
         }
 

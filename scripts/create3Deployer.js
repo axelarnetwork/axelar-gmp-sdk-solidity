@@ -85,8 +85,7 @@ const create3DeployAndInitContract = async (
   const contract = new Contract(address, contractJson.abi, wallet);
   const initData = (await contract.populateTransaction.init(...initArgs)).data;
 
-  const tx = await deployer
-    .deployAndInit(bytecode, salt, initData, txOptions);
+  const tx = await deployer.deployAndInit(bytecode, salt, initData, txOptions);
   await tx.wait(confirmations);
 
   return contract;

@@ -21,8 +21,7 @@ abstract contract Upgradable is Ownable, Implementation, IUpgradable {
      * @dev The owner is initially set as address(1) because the actual owner is set within the proxy. It is not
      * set as the zero address because Ownable is designed to throw an error for ownership transfers to the zero address.
      */
-    constructor() Ownable(address(1)) {
-    }
+    constructor() Ownable(address(1)) {}
 
     /**
      * @notice Returns the address of the current implementation

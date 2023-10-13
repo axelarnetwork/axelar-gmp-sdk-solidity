@@ -7,7 +7,7 @@ const { defaultAbiCoder } = ethers.utils;
 const { expect } = chai;
 const { deployContract } = require('../utils.js');
 
-const TestImplementation = require('../../artifacts/contracts/test/utils/TestImplementation.sol/TestImplementation.json');
+const TestImplementation = require('../../artifacts/contracts/test/upgradable/TestImplementation.sol/TestImplementation.json');
 
 let ownerWallet;
 before(async () => {

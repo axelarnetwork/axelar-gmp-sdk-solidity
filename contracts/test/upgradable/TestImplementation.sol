@@ -10,4 +10,8 @@ contract TestImplementation is Implementation {
     function setup(bytes calldata params) external override onlyProxy {
         val = abi.decode(params, (uint256));
     }
+
+    function contractId() external pure override returns (bytes32) {
+        return keccak256('TestImplementation');
+    }
 }

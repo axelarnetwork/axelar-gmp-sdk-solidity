@@ -18,7 +18,7 @@ describe('Mutlicall', () => {
   let function2Data;
 
   before(async () => {
-    test = await deployContract(ownerWallet, 'MulticallTest');
+    test = await deployContract(ownerWallet, 'TestMulticall');
     function1Data = (await test.populateTransaction.function1()).data;
     function2Data = (await test.populateTransaction.function2()).data;
   });

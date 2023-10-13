@@ -7,7 +7,7 @@ const { defaultAbiCoder } = ethers.utils;
 const { expect } = chai;
 const { deployContract } = require('../utils.js');
 
-const ImplemenationTest = require('../../artifacts/contracts/test/utils/ImplementationTest.sol/ImplementationTest.json');
+const TestImplementation = require('../../artifacts/contracts/test/utils/TestImplementation.sol/TestImplementation.json');
 
 let ownerWallet;
 before(async () => {
@@ -21,16 +21,16 @@ describe('Implementation', () => {
   const val = 123;
 
   before(async () => {
-    implementation = await deployContract(ownerWallet, 'ImplementationTest');
+    implementation = await deployContract(ownerWallet, 'TestImplementation');
     proxy = await deployContract(ownerWallet, 'InitProxy', []);
 
     const params = defaultAbiCoder.encode(['uint256'], [val]);
     proxy.init(implementation.address, ownerWallet.address, params);
 
-    proxy = new Contract(proxy.address, ImplemenationTest.abi, ownerWallet);
+    proxy = new Contract(proxy.address, TestImplementation.abi, ownerWallet);
   });
 
-  it('Should test the implemenation contract', async () => {
+  it('Should test the implementation contract', async () => {
     expect(await proxy.val()).to.equal(val);
 
     const params = defaultAbiCoder.encode(['uint256'], [val]);

@@ -3,10 +3,10 @@
 pragma solidity ^0.8.0;
 
 /**
- * @title Pausable
+ * @title NoReEntrancy
  * @notice This contract provides a mechanism to halt the execution of specific functions
  * if a pause condition is activated.
  */
-interface INoReentrancy {
-    error Reentrancy();
+interface INoReEntrancy {
+    error ReEntrancy();
 }

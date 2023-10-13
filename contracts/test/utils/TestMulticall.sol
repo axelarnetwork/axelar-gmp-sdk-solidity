@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import { Multicall } from '../../utils/Multicall.sol';
 
-contract MulticallTest is Multicall {
+contract TestMulticall is Multicall {
     uint256 public nonce;
     bytes[] public lastMulticallReturns;
     event Function1Called(uint256 nonce_);

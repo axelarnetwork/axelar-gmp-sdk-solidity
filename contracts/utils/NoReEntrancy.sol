@@ -2,16 +2,16 @@
 
 pragma solidity ^0.8.0;
 
-import { INoReentrancy } from '../interfaces/INoReentrancy.sol';
+import { INoReEntrancy } from '../interfaces/INoReEntrancy.sol';
 
 /**
  * @title NoReEntrancy
  * @notice This contract provides a mechanism to halt the execution of specific functions
  * if a pause condition is activated.
  */
-contract NoReentrancy is INoReentrancy {
-    // uint256(keccak256('NoReentrancy:entered')) - 1
-    uint256 internal constant ENTERED_SLOT = 0xc53920124e19af3581a129b263d0dbc87702a93cab8b8e343ad19817772c085b;
+contract NoReEntrancy is INoReEntrancy {
+    // uint256(keccak256('NoReEntrancy:entered')) - 1
+    uint256 internal constant ENTERED_SLOT = 0x0016dd9bb763cbc73282bce71c3993f0d87f25e0b653852d9a699a7f794fcfb8;
     uint256 internal constant NOT_ENTERED = 1;
     uint256 internal constant HAS_ENTERED = 2;
 
@@ -19,8 +19,8 @@ contract NoReentrancy is INoReentrancy {
      * @notice A modifier that throws a ReEntrancy custom error if the contract is entered
      * @dev This modifier should be used with functions that can be entered twice
      */
-    modifier noReentrancy() {
-        if (hasEntered()) revert Reentrancy();
+    modifier noReEntrancy() {
+        if (hasEntered()) revert ReEntrancy();
         _setEntered(HAS_ENTERED);
         _;
         _setEntered(NOT_ENTERED);

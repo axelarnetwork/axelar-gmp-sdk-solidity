@@ -14,7 +14,7 @@ before(async () => {
 describe('Pausable', () => {
   let test;
   before(async () => {
-    test = await deployContract(ownerWallet, 'PausableTest');
+    test = await deployContract(ownerWallet, 'TestPausable');
   });
 
   it('Should be able to set paused to true or false', async () => {

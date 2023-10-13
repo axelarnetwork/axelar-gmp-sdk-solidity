@@ -109,6 +109,18 @@ contract AxelarServiceGovernance is InterchainGovernance, BaseMultisig, IAxelarS
         } else if (commandType == uint256(ServiceGovernanceCommand.ApproveMultisigProposal)) {
             multisigApprovals[proposalHash] = true;
 
+            // Reset all previous votes for this proposal
+            _resetSignerVotes(
+                keccak256(
+                    abi.encodeWithSelector(
+                        AxelarServiceGovernance.executeMultisigProposal.selector,
+                        target,
+                        callData,
+                        nativeValue
+                    )
+                )
+            );
+
             emit MultisigApproved(proposalHash, target, callData, nativeValue);
             return;
         } else if (commandType == uint256(ServiceGovernanceCommand.CancelMultisigApproval)) {

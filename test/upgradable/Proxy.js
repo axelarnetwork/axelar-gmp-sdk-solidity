@@ -3,10 +3,11 @@
 const chai = require('chai');
 const {
   utils: { defaultAbiCoder, keccak256 },
+  constants: { AddressZero },
 } = require('ethers');
 const { expect } = chai;
 const { ethers } = require('hardhat');
-const { getEVMVersion } = require('../utils');
+const { getEVMVersion, getGasOptions } = require('../utils');
 
 describe('Proxy', async () => {
   let owner, user;
@@ -14,11 +15,19 @@ describe('Proxy', async () => {
   let proxyImplementationFactory;
   let proxyImplementation;
 
+  let invalidProxyImplementationFactory;
+  let invalidProxyImplementation;
+
   before(async () => {
     [owner, user] = await ethers.getSigners();
 
     proxyImplementationFactory = await ethers.getContractFactory(
       'ProxyImplementation',
+      owner,
+    );
+
+    invalidProxyImplementationFactory = await ethers.getContractFactory(
+      'InvalidProxyImplementation',
       owner,
     );
   });
@@ -43,6 +52,20 @@ describe('Proxy', async () => {
       fixedProxy = await fixedProxyFactory
         .deploy(fixedProxyImplementation.address)
         .then((d) => d.deployed());
+    });
+
+    it('should revert with invalid contract id', async () => {
+      fixedProxyFactory = await ethers.getContractFactory(
+        'TestFixedProxy',
+        owner,
+      );
+      const invalidProxyImplementation = await invalidProxyImplementationFactory
+        .deploy()
+        .then((d) => d.deployed());
+
+      await expect(
+        fixedProxyFactory.deploy(invalidProxyImplementation.address),
+      ).to.be.revertedWithCustomError(fixedProxy, 'InvalidImplementation');
     });
 
     it('call to proxy invokes correct function in implementation', async () => {
@@ -81,30 +104,27 @@ describe('Proxy', async () => {
 
   describe('Proxy & BaseProxy', async () => {
     let proxyFactory;
-    let invalidProxyImplementationFactory;
     let invalidSetupProxyImplementationFactory;
 
     let proxy;
-    let invalidProxyImplementation;
     let invalidSetupProxyImplementation;
 
     beforeEach(async () => {
       proxyFactory = await ethers.getContractFactory('TestProxy', owner);
-      invalidProxyImplementationFactory = await ethers.getContractFactory(
-        'InvalidProxyImplementation',
-        owner,
-      );
+
       invalidSetupProxyImplementationFactory = await ethers.getContractFactory(
         'InvalidSetupProxyImplementation',
         owner,
       );
 
-      proxyImplementation = await proxyImplementationFactory
-        .deploy()
-        .then((d) => d.deployed());
       invalidProxyImplementation = await invalidProxyImplementationFactory
         .deploy()
         .then((d) => d.deployed());
+
+      proxyImplementation = await proxyImplementationFactory
+        .deploy()
+        .then((d) => d.deployed());
+
       invalidSetupProxyImplementation =
         await invalidSetupProxyImplementationFactory
           .deploy()
@@ -130,7 +150,7 @@ describe('Proxy', async () => {
           invalidProxyImplementation.address,
           owner.address,
           setupParams,
-          { gasLimit: 250000 },
+          getGasOptions(),
         ),
       ).to.be.revertedWithCustomError(proxyFactory, 'InvalidImplementation');
     });
@@ -146,7 +166,7 @@ describe('Proxy', async () => {
           invalidSetupProxyImplementation.address,
           owner.address,
           setupParams,
-          { gasLimit: 250000 },
+          getGasOptions(),
         ),
       ).to.be.revertedWithCustomError(proxyFactory, 'SetupFailed');
     });
@@ -190,6 +210,30 @@ describe('Proxy', async () => {
       expect(val).to.equal(input);
     });
 
+    it('should shadow a call to setup on the implementation', async () => {
+      let setupParams = defaultAbiCoder.encode(
+        ['uint256', 'string'],
+        [123, 'test'],
+      );
+
+      proxy = await proxyFactory
+        .deploy(proxyImplementation.address, owner.address, setupParams)
+        .then((d) => d.deployed());
+
+      const implementationAsProxy = proxyImplementation.attach(proxy.address);
+
+      setupParams = defaultAbiCoder.encode(
+        ['uint256', 'string'],
+        [456, 'test'],
+      );
+
+      await proxyImplementation.setup(setupParams);
+
+      const val = await implementationAsProxy.value();
+
+      expect(val).to.eq(123);
+    });
+
     it('should preserve the proxy bytecode [ @skip-on-coverage ]', async () => {
       const proxyFactory = await ethers.getContractFactory('Proxy', owner);
       const proxyBytecode = proxyFactory.bytecode;
@@ -230,6 +274,11 @@ describe('Proxy', async () => {
       proxyImplementation = await proxyImplementationFactory
         .deploy()
         .then((d) => d.deployed());
+
+      invalidProxyImplementation = await invalidProxyImplementationFactory
+        .deploy()
+        .then((d) => d.deployed());
+
       differentProxyImplementation = await differentProxyImplementationFactory
         .deploy()
         .then((d) => d.deployed());
@@ -294,6 +343,25 @@ describe('Proxy', async () => {
       ).to.be.revertedWithCustomError(finalProxy, 'SetupFailed');
     });
 
+    it('should revert on final upgrade with invalid contract ID', async () => {
+      const setupParams = '0x';
+      const testFinalProxyFactory = await ethers.getContractFactory(
+        'TestFinalProxy',
+        owner,
+      );
+
+      const finalProxy = await testFinalProxyFactory
+        .deploy(proxyImplementation.address, owner.address, setupParams)
+        .then((d) => d.deployed());
+
+      const bytecode =
+        await invalidProxyImplementationFactory.getDeployTransaction().data;
+
+      await expect(
+        finalProxy.finalUpgrade(bytecode, setupParams),
+      ).to.be.revertedWithCustomError(finalProxy, 'InvalidImplementation');
+    });
+
     it('after finalUpgrade, isFinal returns true', async () => {
       const setupParams = '0x';
 
@@ -309,6 +377,53 @@ describe('Proxy', async () => {
       const isFinal = await finalProxy.isFinal();
 
       expect(isFinal).to.be.true;
+    });
+
+    it('should perform final upgrade with setup params', async () => {
+      let setupParams = '0x';
+
+      finalProxy = await finalProxyFactory
+        .deploy(
+          differentProxyImplementation.address,
+          owner.address,
+          setupParams,
+        )
+        .then((d) => d.deployed());
+
+      const bytecode = await proxyImplementationFactory.getDeployTransaction()
+        .data;
+
+      setupParams = defaultAbiCoder.encode(
+        ['uint256', 'string'],
+        [123, 'test'],
+      );
+
+      await finalProxy.finalUpgrade(bytecode, setupParams);
+
+      const isFinal = await finalProxy.isFinal();
+
+      expect(isFinal).to.be.true;
+    });
+
+    it('should return the correct implementation address', async () => {
+      const setupParams = '0x';
+
+      finalProxy = await finalProxyFactory
+        .deploy(proxyImplementation.address, owner.address, setupParams)
+        .then((d) => d.deployed());
+
+      let implementationAddress = await finalProxy.implementation();
+
+      expect(implementationAddress).to.eq(proxyImplementation.address);
+
+      const bytecode =
+        await differentProxyImplementationFactory.getDeployTransaction().data;
+
+      await finalProxy.finalUpgrade(bytecode, setupParams);
+
+      implementationAddress = await finalProxy.implementation();
+
+      expect(implementationAddress).to.not.eq(AddressZero);
     });
 
     it('reverts on second call to finalUpgrade', async () => {
@@ -336,11 +451,11 @@ describe('Proxy', async () => {
 
       const expected = {
         istanbul:
-          '0x5783daa6a87868e3688dbf756c2b22435972a8861bd9b1ce845e7b3743e6e91d',
+          '0x570e4c4cc995c99cf9057ac71c4136d102f06889927bc1dd288a1d3457a82cc3',
         berlin:
-          '0x897a0eb5e643779a9dc956301807206603ea3363c082c3f5a0c6830f2569a206',
+          '0x3b58c148b79cf0e98e5217a227622a25a7aab91c752a2f2b3f53c89dcbca929d',
         london:
-          '0x07ae950d9aa7a5cafa356c43b79cca5a74d598cbcfe757532073b377f59c8960',
+          '0xd2488fd23a1380e0836ef6b9f562fc80d2196d3f8059e33eb39b3af3b01da254',
       }[getEVMVersion()];
 
       expect(finalProxyBytecodeHash).to.be.equal(expected);
@@ -397,6 +512,29 @@ describe('Proxy', async () => {
       await expect(
         initProxy.init(proxyImplementation.address, owner.address, setupParams),
       ).to.be.revertedWithCustomError(initProxy, 'SetupFailed');
+    });
+
+    it('should revert with invalid contract ID', async () => {
+      initProxyFactory = await ethers.getContractFactory(
+        'TestInitProxy',
+        owner,
+      );
+
+      initProxy = await initProxyFactory.deploy().then((d) => d.deployed());
+
+      const invalidProxyImplementation = await invalidProxyImplementationFactory
+        .deploy()
+        .then((d) => d.deployed());
+
+      const setupParams = '0x';
+
+      await expect(
+        initProxy.init(
+          invalidProxyImplementation.address,
+          owner.address,
+          setupParams,
+        ),
+      ).to.be.revertedWithCustomError(initProxy, 'InvalidImplementation');
     });
 
     it('should initialize init proxy with setup params', async () => {

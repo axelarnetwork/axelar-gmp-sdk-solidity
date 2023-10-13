@@ -5,8 +5,8 @@ const env = process.env.ENV || 'testnet';
 const {
   importNetworks,
   readJSON,
-} = require('@axelar-network/axelar-contract-deployments/evm/utils');
-const chains = require(`@axelar-network/axelar-contract-deployments/info/${env}.json`);
+} = require('@axelar-network/axelar-chains-config');
+const chains = require(`@axelar-network/axelar-chains-config/info/${env}.json`);
 const keys = readJSON(`${__dirname}/keys.json`);
 const { networks, etherscan } = importNetworks(chains, keys);
 
@@ -44,7 +44,7 @@ module.exports = {
     sources: './contracts',
   },
   mocha: {
-    timeout: 100000,
+    timeout: 4 * 60 * 60 * 1000, // 4 hrs
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS ? true : false,

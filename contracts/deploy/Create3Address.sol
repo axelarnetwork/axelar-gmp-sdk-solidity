@@ -9,7 +9,7 @@ pragma solidity ^0.8.0;
  * @notice This contract can be used to predict the deterministic deployment address of a contract deployed with the `CREATE3` technique.
  */
 contract Create3Address {
-    // keccak256(type(CreateDeploy).creationCode)
+    /// @dev bytecode hash of the CreateDeploy helper contract
     bytes32 internal immutable createDeployBytecodeHash;
 
     constructor() {

@@ -17,7 +17,7 @@ const getEVMVersion = () => {
 const getGasOptions = () => {
   return network.config.blockGasLimit
     ? { gasLimit: network.config.blockGasLimit.toString() }
-    : {};
+    : { gasLimit: 5e6 }; // defaults to 5M gas for revert tests to work correctly
 };
 
 const isHardhat = network.name === 'hardhat';
@@ -33,7 +33,7 @@ const getPayloadAndProposalHash = async (
 
   if (timeDelay) {
     const block = await ethers.provider.getBlock('latest');
-    eta = block.timestamp + timeDelay;
+    eta = block.timestamp + timeDelay - 12; // 12 second buffer for live network tests
   } else {
     eta = 0;
   }

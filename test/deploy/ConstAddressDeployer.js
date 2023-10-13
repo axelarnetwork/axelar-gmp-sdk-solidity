@@ -66,7 +66,7 @@ describe('ConstAddressDeployer', () => {
     it('should deploy with native value passed to the constructor', async () => {
       const key = 'a test key';
       // Send eth to address
-      const amount = ethers.utils.parseEther('0.00000001');
+      const amount = 10;
 
       const contract = await deployContractConstant(
         deployer,
@@ -171,11 +171,11 @@ describe('ConstAddressDeployer', () => {
 
       const expected = {
         istanbul:
-          '0xe1258061a89a5b0519bb43a06bc3b73f46d9a3bbc572047e1286edb896ded7e9',
+          '0x79d0b7d0f663b2c3f60a1d05538d99b3245c362123a6671132afae524f7b5d45',
         berlin:
-          '0x60fc779d2859fddbd650f3316511721ed0fda05c23341e6b7759491fdfbfb3d3',
+          '0x44db6b0a90d8beb5c3c5c53685a4ef195dfec7ffa71d24e90963f19fbd00937e',
         london:
-          '0x327d57890888e414d342a8dbaa3fe0a48dff039bb8288443af3ba1f7a3b48e57',
+          '0x3ac0db9ec02bb762514fb942c0223dff7a1f2fd0f9bb4df3fba8dba6a20c616f',
       }[getEVMVersion()];
 
       expect(deployerBytecodeHash).to.be.equal(expected);

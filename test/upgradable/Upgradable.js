@@ -3,6 +3,10 @@
 const chai = require('chai');
 const { expect } = chai;
 const { ethers } = require('hardhat');
+const {
+  utils: { keccak256, defaultAbiCoder },
+  constants: { AddressZero },
+} = ethers;
 
 const { deployCreate3Upgradable, upgradeUpgradable } = require('../../index');
 const Proxy = require('../../artifacts/contracts/test/upgradable/ProxyTest.sol/ProxyTest.json');
@@ -44,6 +48,53 @@ describe('Upgradable', () => {
     );
   });
 
+  it('should store implementation address in the proxy, not the implementation', async () => {
+    const implementationAddress = await upgradable.implementation();
+
+    const implementation = upgradableTestFactory.attach(implementationAddress);
+
+    expect(await implementation.implementation()).to.eq(AddressZero);
+  });
+
+  it('should revert on upgrade if called by non-owner', async () => {
+    await expect(
+      upgradable.connect(userWallet).upgrade(AddressZero, keccak256(0), '0x'),
+    ).to.be.revertedWithCustomError(upgradable, 'NotOwner');
+  });
+
+  it('should revert on upgrade with invalid contract ID', async () => {
+    const invalidUpgradableTestFactory = await ethers.getContractFactory(
+      'InvalidUpgradableTest',
+      ownerWallet,
+    );
+
+    const invalidUpgradableTest = await invalidUpgradableTestFactory
+      .deploy()
+      .then((d) => d.deployed());
+
+    const implementationCode = await ethers.provider.getCode(
+      invalidUpgradableTest.address,
+    );
+
+    const implementationCodeHash = keccak256(implementationCode);
+
+    await expect(
+      upgradable.upgrade(
+        invalidUpgradableTest.address,
+        implementationCodeHash,
+        '0x',
+      ),
+    ).to.be.revertedWithCustomError(upgradable, 'InvalidImplementation');
+  });
+
+  it('should revert on upgrade with invalid code hash', async () => {
+    const invalidCodeHash = keccak256(0);
+
+    await expect(
+      upgradable.upgrade(upgradable.address, invalidCodeHash, '0x'),
+    ).to.be.revertedWithCustomError(upgradable, 'InvalidCodeHash');
+  });
+
   it('should upgrade to a new implementation', async () => {
     const oldImplementation = await upgradable.implementation();
 
@@ -52,6 +103,38 @@ describe('Upgradable', () => {
     const newImplementation = await upgradable.implementation();
 
     expect(newImplementation).not.to.be.equal(oldImplementation);
+  });
+
+  it('should upgrade to a new implementation with setup params', async () => {
+    const oldImplementation = await upgradable.implementation();
+
+    const setupParams = defaultAbiCoder.encode(['uint256'], [10]);
+
+    await upgradeUpgradable(
+      upgradable.address,
+      ownerWallet,
+      Upgradable,
+      [],
+      setupParams,
+    );
+
+    const newImplementation = await upgradable.implementation();
+
+    expect(newImplementation).not.to.be.equal(oldImplementation);
+  });
+
+  it('should revert on upgrade if setup fails', async () => {
+    const implementation = await upgradable.implementation();
+
+    const setupParams = '0x00';
+
+    const implementationCode = await ethers.provider.getCode(implementation);
+
+    const implementationCodeHash = keccak256(implementationCode);
+
+    await expect(
+      upgradable.upgrade(implementation, implementationCodeHash, setupParams),
+    ).to.be.revertedWithCustomError(upgradable, 'SetupFailed');
   });
 
   it('should transfer ownership', async () => {

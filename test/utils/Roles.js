@@ -6,13 +6,17 @@ const { ethers } = require('hardhat');
 const {
   constants: { AddressZero },
 } = require('ethers');
+const { expectRevert } = require('../utils');
 
-describe('TestRoles', () => {
+describe('Roles', () => {
   let testRolesFactory;
   let testRoles;
 
   let ownerWallet;
   let userWallet;
+
+  let accounts;
+  let roleSets;
 
   before(async () => {
     [ownerWallet, userWallet] = await ethers.getSigners();
@@ -25,24 +29,40 @@ describe('TestRoles', () => {
 
   describe('negative tests', () => {
     beforeEach(async () => {
-      const accounts = [ownerWallet.address];
-      const roleSets = [[1, 2, 3]];
+      accounts = [ownerWallet.address];
+      roleSets = [[1, 2, 3]];
 
       testRoles = await testRolesFactory
         .deploy(accounts, roleSets)
         .then((d) => d.deployed());
     });
 
+    it('should revert on deployment with invalid roles length', async () => {
+      accounts.push(userWallet.address);
+
+      await expectRevert(
+        (gasOptions) => testRolesFactory.deploy(accounts, roleSets, gasOptions),
+        testRoles,
+        'InvalidRolesLength',
+      );
+
+      accounts.pop();
+    });
+
     it('should revert when non-role account calls onlyRole function', async () => {
       const num = 5;
       const role = 1;
 
-      await expect(
-        testRoles.connect(userWallet).setNum(num, role),
-      ).to.be.revertedWithCustomError(testRoles, 'MissingRole', {
-        account: userWallet.address,
-        role,
-      });
+      await expectRevert(
+        (gasOptions) =>
+          testRoles.connect(userWallet).setNum(num, role, gasOptions),
+        testRoles,
+        'MissingRole',
+        {
+          account: userWallet.address,
+          role,
+        },
+      );
     });
 
     it('should not revert when role account calls onlyRole function', async () => {
@@ -58,12 +78,18 @@ describe('TestRoles', () => {
       const num = 5;
       const roles = [1, 2, 3];
 
-      await expect(
-        testRoles.connect(userWallet).setNumWithAllRoles(num, roles),
-      ).to.be.revertedWithCustomError(testRoles, 'MissingAllRoles', {
-        account: userWallet.address,
-        roles,
-      });
+      await expectRevert(
+        (gasOptions) =>
+          testRoles
+            .connect(userWallet)
+            .setNumWithAllRoles(num, roles, gasOptions),
+        testRoles,
+        'MissingAllRoles',
+        {
+          account: userWallet.address,
+          roles,
+        },
+      );
     });
 
     it('should not revert when role account calls withAllTheRoles function', async () => {
@@ -81,12 +107,18 @@ describe('TestRoles', () => {
       const num = 5;
       const roles = [1, 2, 3];
 
-      await expect(
-        testRoles.connect(userWallet).setNumWithAnyRoles(num, roles),
-      ).to.be.revertedWithCustomError(testRoles, 'MissingAnyOfRoles', {
-        account: userWallet.address,
-        roles,
-      });
+      await expectRevert(
+        (gasOptions) =>
+          testRoles
+            .connect(userWallet)
+            .setNumWithAnyRoles(num, roles, gasOptions),
+        testRoles,
+        'MissingAnyOfRoles',
+        {
+          account: userWallet.address,
+          roles,
+        },
+      );
     });
 
     it('should not revert when role account calls withAnyOfRoles function', async () => {
@@ -114,48 +146,116 @@ describe('TestRoles', () => {
     it('should revert on acceptRoles if called by an account without all the proposed roles', async () => {
       const roles = [1, 2, 3];
 
-      await testRoles.proposeRoles(userWallet.address, roles);
+      await testRoles
+        .proposeRoles(userWallet.address, roles)
+        .then((tx) => tx.wait());
 
-      await expect(
-        testRoles.connect(ownerWallet).acceptRoles(ownerWallet.address, roles),
-      ).to.be.revertedWithCustomError(testRoles, 'InvalidProposedRoles', {
-        fromAccount: ownerWallet.address,
-        toAccount: ownerWallet.address,
-        roles,
-      });
+      await expectRevert(
+        (gasOptions) =>
+          testRoles
+            .connect(ownerWallet)
+            .acceptRoles(ownerWallet.address, roles, gasOptions),
+        testRoles,
+        'InvalidProposedRoles',
+        {
+          fromAccount: ownerWallet.address,
+          toAccount: ownerWallet.address,
+          roles,
+        },
+      );
+    });
+
+    it('should revert on transferRoles if called by an account without all the proposed roles', async () => {
+      const roles = [1, 2, 3];
+
+      await testRoles
+        .transferRoles(userWallet.address, [3])
+        .then((tx) => tx.wait());
+
+      await expectRevert(
+        (gasOptions) =>
+          testRoles
+            .connect(ownerWallet)
+            .transferRoles(ownerWallet.address, roles, gasOptions),
+        testRoles,
+        'MissingAllRoles',
+        {
+          account: ownerWallet.address,
+          roles,
+        },
+      );
+    });
+
+    it('should revert on proposeRoles if called by an account without all the proposed roles', async () => {
+      const roles = [1, 2, 3];
+
+      await testRoles
+        .transferRoles(userWallet.address, [3])
+        .then((tx) => tx.wait());
+
+      await expectRevert(
+        (gasOptions) =>
+          testRoles
+            .connect(ownerWallet)
+            .proposeRoles(ownerWallet.address, roles, gasOptions),
+        testRoles,
+        'MissingAllRoles',
+        {
+          account: ownerWallet.address,
+          roles,
+        },
+      );
     });
 
     it('should revert on proposeRoles if proposed to a wrong account', async () => {
       const roles = [1, 2, 3];
 
-      await expect(
-        testRoles.connect(ownerWallet).proposeRoles(AddressZero, roles),
-      ).to.be.revertedWithCustomError(testRoles, 'InvalidProposedAccount', {
-        account: AddressZero,
-      });
+      await expectRevert(
+        (gasOptions) =>
+          testRoles
+            .connect(ownerWallet)
+            .proposeRoles(AddressZero, roles, gasOptions),
+        testRoles,
+        'InvalidProposedAccount',
+        {
+          account: AddressZero,
+        },
+      );
 
-      await expect(
-        testRoles.connect(ownerWallet).proposeRoles(ownerWallet.address, roles),
-      ).to.be.revertedWithCustomError(testRoles, 'InvalidProposedAccount', {
-        account: ownerWallet.address,
-      });
+      await expectRevert(
+        (gasOptions) =>
+          testRoles
+            .connect(ownerWallet)
+            .proposeRoles(ownerWallet.address, roles, gasOptions),
+        testRoles,
+        'InvalidProposedAccount',
+        {
+          account: ownerWallet.address,
+        },
+      );
     });
 
     it('should revert on acceptRoles if called with incorrect proposed roles', async () => {
       const roles = [1, 2, 3];
       const incorrectRoles = [1, 2];
 
-      await testRoles.proposeRoles(userWallet.address, roles);
+      await testRoles
+        .proposeRoles(userWallet.address, roles)
+        .then((tx) => tx.wait());
 
-      await expect(
-        testRoles
-          .connect(userWallet)
-          .acceptRoles(ownerWallet.address, incorrectRoles),
-      ).to.be.revertedWithCustomError(testRoles, 'InvalidProposedRoles', {
-        fromAccount: ownerWallet.address,
-        toAccount: userWallet.address,
-        roles: incorrectRoles,
-      });
+      await expectRevert(
+        (gasOptions) =>
+          testRoles
+            .connect(userWallet)
+            .acceptRoles(ownerWallet.address, incorrectRoles, gasOptions),
+        testRoles,
+        'InvalidProposedRoles',
+        {
+          fromAccount: ownerWallet.address,
+          toAccount: userWallet.address,
+          roles: incorrectRoles,
+        },
+      );
     });
   });
 
@@ -184,12 +284,8 @@ describe('TestRoles', () => {
         .to.emit(testRoles, 'RolesAdded')
         .withArgs(userWallet.address, roles);
 
-      await expect(
-        await testRoles.getAccountRoles(userWallet.address),
-      ).to.equal(6); // 6 is the binary representation of roles [1, 2]
-      await expect(
-        await testRoles.getAccountRoles(ownerWallet.address),
-      ).to.equal(8); // 8 is a binary representation of role 3, other roles transferred
+      expect(await testRoles.getAccountRoles(userWallet.address)).to.equal(6); // 6 is the binary representation of roles [1, 2]
+      expect(await testRoles.getAccountRoles(ownerWallet.address)).to.equal(8); // 8 is a binary representation of role 3, other roles transferred
     });
 
     it('should propose new roles and accept roles', async () => {
@@ -199,27 +295,22 @@ describe('TestRoles', () => {
         .to.emit(testRoles, 'RolesProposed')
         .withArgs(ownerWallet.address, userWallet.address, roles);
 
-      await expect(
+      expect(
         await testRoles.proposedRoles(ownerWallet.address, userWallet.address),
       ).to.equal(12); // 12 is the binary representation of roles [2, 3]
 
-      await expect(
-        await testRoles.getAccountRoles(userWallet.address),
-      ).to.equal(0);
+      expect(await testRoles.getAccountRoles(userWallet.address)).to.equal(0);
 
       await testRoles
         .connect(userWallet)
-        .acceptRoles(ownerWallet.address, roles);
+        .acceptRoles(ownerWallet.address, roles)
+        .then((tx) => tx.wait());
 
-      await expect(
+      expect(
         await testRoles.proposedRoles(ownerWallet.address, userWallet.address),
       ).to.equal(0); // cleared proposed roles
-      await expect(
-        await testRoles.getAccountRoles(userWallet.address),
-      ).to.equal(12); // 12 is the binary representation of roles [2, 3]
-      await expect(
-        await testRoles.getAccountRoles(ownerWallet.address),
-      ).to.equal(2); // 2 is a binary representation of role 1, other roles transferred
+      expect(await testRoles.getAccountRoles(userWallet.address)).to.equal(12); // 12 is the binary representation of roles [2, 3]
+      expect(await testRoles.getAccountRoles(ownerWallet.address)).to.equal(2); // 2 is a binary representation of role 1, other roles transferred
     });
   });
 });

@@ -17,4 +17,12 @@ interface IRolesBase {
     event RolesProposed(address indexed fromAccount, address indexed toAccount, uint8[] roles);
     event RolesAdded(address indexed account, uint8[] roles);
     event RolesRemoved(address indexed account, uint8[] roles);
+
+    /**
+     * @notice Checks if an account has a role.
+     * @param account The address to check
+     * @param role The role to check
+     * @return True if the account has the role, false otherwise
+     */
+    function hasRole(address account, uint8 role) external view returns (bool);
 }

@@ -16,16 +16,6 @@ import { RolesBase } from './RolesBase.sol';
  */
 contract Roles is RolesBase, IRoles {
     /**
-     * @notice Checks if an account has a role.
-     * @param account The address to check
-     * @param role The role to check
-     * @return True if the account has the role, false otherwise
-     */
-    function hasRole(address account, uint8 role) public view returns (bool) {
-        return _hasRole(_getRoles(account), role);
-    }
-
-    /**
      * @notice Checks if an account has all the roles.
      * @param account The address to check
      * @param roles The roles to check

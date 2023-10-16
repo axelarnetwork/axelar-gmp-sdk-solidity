@@ -50,6 +50,16 @@ contract RolesBase is IRolesBase {
     }
 
     /**
+     * @notice Checks if an account has a role.
+     * @param account The address to check
+     * @param role The role to check
+     * @return True if the account has the role, false otherwise
+     */
+    function hasRole(address account, uint8 role) public view returns (bool) {
+        return _hasRole(_getRoles(account), role);
+    }
+
+    /**
      * @notice Internal function to convert an array of roles to a uint256.
      * @param roles The roles to convert
      * @return accountRoles The roles in uint256 format

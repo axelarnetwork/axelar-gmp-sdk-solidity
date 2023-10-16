@@ -22,7 +22,7 @@ describe('Roles', () => {
     [ownerWallet, userWallet] = await ethers.getSigners();
 
     testRolesFactory = await ethers.getContractFactory(
-      'TestRoleTransfer',
+      'TestRoles',
       ownerWallet,
     );
   });

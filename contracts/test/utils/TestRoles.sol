@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.0;
 
-import { RoleTransfer } from '../../utils/RoleTransfer.sol';
+import { Roles } from '../../utils/Roles.sol';
 
-contract TestRoleTransfer is RoleTransfer {
+contract TestRoles is Roles {
     error InvalidRolesLength();
 
     event NumSet(uint256 _num);

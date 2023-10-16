@@ -22,7 +22,7 @@ describe('Roles', () => {
     [ownerWallet, userWallet] = await ethers.getSigners();
 
     testRolesFactory = await ethers.getContractFactory(
-      'TestRoles',
+      'TestRoleTransfer',
       ownerWallet,
     );
   });
@@ -296,7 +296,10 @@ describe('Roles', () => {
         .withArgs(ownerWallet.address, userWallet.address, roles);
 
       expect(
-        await testRoles.proposedRoles(ownerWallet.address, userWallet.address),
+        await testRoles.getProposedRoles(
+          ownerWallet.address,
+          userWallet.address,
+        ),
       ).to.equal(12); // 12 is the binary representation of roles [2, 3]
 
       expect(await testRoles.getAccountRoles(userWallet.address)).to.equal(0);
@@ -307,7 +310,10 @@ describe('Roles', () => {
         .then((tx) => tx.wait());
 
       expect(
-        await testRoles.proposedRoles(ownerWallet.address, userWallet.address),
+        await testRoles.getProposedRoles(
+          ownerWallet.address,
+          userWallet.address,
+        ),
       ).to.equal(0); // cleared proposed roles
       expect(await testRoles.getAccountRoles(userWallet.address)).to.equal(12); // 12 is the binary representation of roles [2, 3]
       expect(await testRoles.getAccountRoles(ownerWallet.address)).to.equal(2); // 2 is a binary representation of role 1, other roles transferred

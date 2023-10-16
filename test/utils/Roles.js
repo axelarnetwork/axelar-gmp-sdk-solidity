@@ -186,6 +186,29 @@ describe('Roles', () => {
       );
     });
 
+    it('should revert on transferRoles if transferred to an invalid account', async () => {
+      const roles = [1, 2, 3];
+
+      await expectRevert(
+        (gasOptions) => testRoles.transferRoles(AddressZero, roles, gasOptions),
+        testRoles,
+        'InvalidProposedAccount',
+        {
+          account: AddressZero,
+        },
+      );
+
+      await expectRevert(
+        (gasOptions) =>
+          testRoles.transferRoles(ownerWallet.address, roles, gasOptions),
+        testRoles,
+        'InvalidProposedAccount',
+        {
+          account: ownerWallet.address,
+        },
+      );
+    });
+
     it('should revert on proposeRoles if called by an account without all the proposed roles', async () => {
       const roles = [1, 2, 3];
 
@@ -207,7 +230,7 @@ describe('Roles', () => {
       );
     });
 
-    it('should revert on proposeRoles if proposed to a wrong account', async () => {
+    it('should revert on proposeRoles if proposed to an invalid account', async () => {
       const roles = [1, 2, 3];
 
       await expectRevert(
@@ -260,9 +283,11 @@ describe('Roles', () => {
   });
 
   describe('positive tests', () => {
+    let roleSets;
+
     beforeEach(async () => {
       const accounts = [ownerWallet.address];
-      const roleSets = [[1, 2, 3]];
+      roleSets = [[1, 2, 3]];
 
       testRoles = await testRolesFactory
         .deploy(accounts, roleSets)
@@ -273,6 +298,54 @@ describe('Roles', () => {
       const currentRoles = await testRoles.getAccountRoles(ownerWallet.address);
 
       expect(currentRoles).to.equal(14); // 14 is the binary representation of roles [1, 2, 3]
+    });
+
+    it('should return if an account has a specific role', async () => {
+      const hasRole = await testRoles.hasRole(
+        ownerWallet.address,
+        roleSets[0][0],
+      );
+
+      expect(hasRole).to.be.true;
+
+      const hasRoleNegative = await testRoles.hasRole(
+        userWallet.address,
+        roleSets[0][0],
+      );
+
+      expect(hasRoleNegative).to.be.false;
+    });
+
+    it('should return if an account has all the roles', async () => {
+      const hasAllTheRoles = await testRoles.hasAllTheRoles(
+        ownerWallet.address,
+        roleSets[0],
+      );
+
+      expect(hasAllTheRoles).to.be.true;
+
+      const hasAllTheRolesNegative = await testRoles.hasAllTheRoles(
+        userWallet.address,
+        roleSets[0],
+      );
+
+      expect(hasAllTheRolesNegative).to.be.false;
+    });
+
+    it('should return if an account has any of the roles', async () => {
+      const hasAnyRoles = await testRoles.hasAnyOfRoles(
+        ownerWallet.address,
+        roleSets[0],
+      );
+
+      expect(hasAnyRoles).to.be.true;
+
+      const hasAnyRolesNegative = await testRoles.hasAnyOfRoles(
+        userWallet.address,
+        roleSets[0],
+      );
+
+      expect(hasAnyRolesNegative).to.be.false;
     });
 
     it('should transfer roles in one step', async () => {

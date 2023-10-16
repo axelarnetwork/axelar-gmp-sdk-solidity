@@ -7,7 +7,7 @@ import { IRoles } from '../interfaces/IRoles.sol';
 /**
  * @title Roles
  * @notice A contract module which provides a basic access control mechanism, where
- * there is an account (an role) that can be granted exclusive access to
+ * there is an account (a role) that can be granted exclusive access to
  * specific functions.
  *
  * The role account is set through role transfer. This module makes

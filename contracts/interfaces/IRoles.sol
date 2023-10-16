@@ -55,7 +55,7 @@ interface IRoles {
 
     /**
      * @notice Returns the pending role of the contract.
-     * @param fromAccount The address of the current role
+     * @param fromAccount The address with the current roles
      * @param toAccount The address with the pending roles
      * @return proposedRoles_ The pending role of the contract in uint256 format
      */

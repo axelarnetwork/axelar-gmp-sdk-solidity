@@ -25,7 +25,7 @@ contract TestRoles is Roles {
         emit NumSet(_num);
     }
 
-    function setNumWithAllRoles(uint256 _num, uint8[] calldata roles) external withAllRoles(roles) {
+    function setNumWithAllRoles(uint256 _num, uint8[] calldata roles) external withEveryRole(roles) {
         num = _num;
         emit NumSet(_num);
     }

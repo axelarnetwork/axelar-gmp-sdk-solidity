@@ -12,7 +12,6 @@ import { IRolesBase } from './IRolesBase.sol';
  */
 interface IRoles is IRolesBase {
     error InvalidProposedAccount(address account);
-    error InvalidProposedRoles(address fromAccount, address toAccount, uint8[] roles);
 
     /**
      * @notice Checks if an account has a role.

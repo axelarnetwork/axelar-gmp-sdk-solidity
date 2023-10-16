@@ -12,6 +12,8 @@ interface IRolesBase {
     error MissingAllRoles(address account, uint8[] roles);
     error MissingAnyOfRoles(address account, uint8[] roles);
 
+    error InvalidProposedRoles(address fromAccount, address toAccount, uint8[] roles);
+
     event RolesProposed(address indexed fromAccount, address indexed toAccount, uint8[] roles);
     event RolesAdded(address indexed account, uint8[] roles);
     event RolesRemoved(address indexed account, uint8[] roles);

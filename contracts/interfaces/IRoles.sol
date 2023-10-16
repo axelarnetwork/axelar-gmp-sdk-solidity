@@ -56,7 +56,7 @@ interface IRoles {
     /**
      * @notice Returns the pending role of the contract.
      * @param fromAccount The address of the current role
-     * @param toAccount The address of the pending role
+     * @param toAccount The address with the pending roles
      * @return proposedRoles_ The pending role of the contract in uint256 format
      */
     function proposedRoles(address fromAccount, address toAccount) external view returns (uint256 proposedRoles_);

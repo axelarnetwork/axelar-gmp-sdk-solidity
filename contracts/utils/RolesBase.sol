@@ -10,11 +10,9 @@ import { IRolesBase } from '../interfaces/IRolesBase.sol';
  * for implementing role control features.
  */
 contract RolesBase is IRolesBase {
-    // keccak256('roles')
-    bytes32 internal constant ROLES_PREFIX = 0xde9bdca322e1a848f72215bc15cf2c87fe7749145789a9ee281a2a6290af26ab;
-    // keccak256('roles-proposal')
+    bytes32 internal constant ROLES_PREFIX = keccak256('roles');
     bytes32 internal constant ROLES_PROPOSAL_PREFIX =
-        0xba4194d54b1b77cbe0d65a9d86e72151cbe0cc321e0311638ec1dba0aa25bf82;
+       keccak256('roles-proposal');
 
     /**
      * @notice Modifier that throws an error if called by any account missing the role.

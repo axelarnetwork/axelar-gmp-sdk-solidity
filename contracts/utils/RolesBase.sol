@@ -11,7 +11,7 @@ import { IRolesBase } from '../interfaces/IRolesBase.sol';
  */
 contract RolesBase is IRolesBase {
     bytes32 internal constant ROLES_PREFIX = keccak256('roles');
-    bytes32 internal constant ROLES_PROPOSAL_PREFIX = keccak256('roles-proposal');
+    bytes32 internal constant PROPOSE_ROLES_PREFIX = keccak256('propose-roles');
 
     /**
      * @notice Modifier that throws an error if called by any account missing the role.
@@ -112,7 +112,7 @@ contract RolesBase is IRolesBase {
      * @return key The key of the proposed roles mapping
      */
     function _proposalKey(address fromAccount, address toAccount) internal view virtual returns (bytes32 key) {
-        return keccak256(abi.encodePacked(ROLES_PROPOSAL_PREFIX, fromAccount, toAccount));
+        return keccak256(abi.encodePacked(PROPOSE_ROLES_PREFIX, fromAccount, toAccount));
     }
 
     /**

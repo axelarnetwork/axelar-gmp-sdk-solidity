@@ -11,8 +11,7 @@ import { IRolesBase } from '../interfaces/IRolesBase.sol';
  */
 contract RolesBase is IRolesBase {
     bytes32 internal constant ROLES_PREFIX = keccak256('roles');
-    bytes32 internal constant ROLES_PROPOSAL_PREFIX =
-       keccak256('roles-proposal');
+    bytes32 internal constant ROLES_PROPOSAL_PREFIX = keccak256('roles-proposal');
 
     /**
      * @notice Modifier that throws an error if called by any account missing the role.

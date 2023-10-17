@@ -232,7 +232,7 @@ contract RolesBase is IRolesBase {
 
     /**
      * @notice Internal function to propose to transfer roles of message sender to a new account.
-     * @dev Can only be called by the account with all the proposed roles.
+     * @dev Caller MUST verify that msg.sender has all the proposed roles.
      * @dev emits a RolesProposed event.
      * @dev Roles are not transferred until the new role accepts the role transfer.
      * @param toAccount The address to transfer role to

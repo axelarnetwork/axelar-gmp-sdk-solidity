@@ -17,9 +17,7 @@ contract RolesBase is IRolesBase {
      * @notice Modifier that throws an error if called by any account missing the role.
      */
     modifier onlyRole(uint8 role) {
-        if (!_hasRole(_getRoles(msg.sender), role)) {
-            revert MissingRole(msg.sender, role);
-        }
+        if (!_hasRole(_getRoles(msg.sender), role)) revert MissingRole(msg.sender, role);
 
         _;
     }
@@ -28,9 +26,7 @@ contract RolesBase is IRolesBase {
      * @notice Modifier that throws an error if called by an account without all the roles.
      */
     modifier withEveryRole(uint8[] memory roles) {
-        if (!_hasAllTheRoles(_getRoles(msg.sender), roles)) {
-            revert MissingAllRoles(msg.sender, roles);
-        }
+        if (!_hasAllTheRoles(_getRoles(msg.sender), roles)) revert MissingAllRoles(msg.sender, roles);
 
         _;
     }
@@ -39,9 +35,7 @@ contract RolesBase is IRolesBase {
      * @notice Modifier that throws an error if called by an account without any of the roles.
      */
     modifier withAnyRole(uint8[] memory roles) {
-        if (!_hasAnyOfRoles(_getRoles(msg.sender), roles)) {
-            revert MissingAnyOfRoles(msg.sender, roles);
-        }
+        if (!_hasAnyOfRoles(_getRoles(msg.sender), roles)) revert MissingAnyOfRoles(msg.sender, roles);
 
         _;
     }
@@ -146,6 +140,20 @@ contract RolesBase is IRolesBase {
     }
 
     /**
+     * @notice Internal function to add a role to an account.
+     * @dev emits a RolesAdded event.
+     * @param account The address to add the role to
+     * @param role The role to add
+     */
+    function _addRole(address account, uint8 role) internal {
+        uint256 accountRoles = _getRoles(account);
+        accountRoles |= (1 << role);
+        _setRoles(account, accountRoles);
+
+        emit RolesAdded(account, new uint8[]((role)));
+    }
+
+    /**
      * @notice Internal function to add roles to an account.
      * @dev emits a RolesAdded event.
      * @dev Called in the constructor to set the initial roles.
@@ -163,6 +171,20 @@ contract RolesBase is IRolesBase {
         _setRoles(account, accountRoles);
 
         emit RolesAdded(account, roles);
+    }
+
+    /**
+     * @notice Internal function to remove a role from an account.
+     * @dev emits a RolesRemoved event.
+     * @param account The address to remove the role from
+     * @param role The role to remove
+     */
+    function _removeRole(address account, uint8 role) internal {
+        uint256 accountRoles = _getRoles(account);
+        accountRoles &= ~(1 << role);
+        _setRoles(account, accountRoles);
+
+        emit RolesRemoved(account, new uint8[]((role)));
     }
 
     /**
@@ -232,41 +254,48 @@ contract RolesBase is IRolesBase {
 
     /**
      * @notice Internal function to propose to transfer roles of message sender to a new account.
-     * @dev Caller MUST verify that msg.sender has all the proposed roles.
-     * @dev emits a RolesProposed event.
+     * @dev Original account must have all the proposed roles.
+     * @dev Emits a RolesProposed event.
      * @dev Roles are not transferred until the new role accepts the role transfer.
-     * @param toAccount The address to transfer role to
+     * @param fromAccount The address of the current roles
+     * @param toAccount The address to transfer roles to
      * @param roles The roles to transfer
      */
-    function _proposeRoles(address toAccount, uint8[] memory roles) internal {
-        uint256 proposed = _toAccountRoles(roles);
+    function _proposeRoles(
+        address fromAccount,
+        address toAccount,
+        uint8[] memory roles
+    ) internal {
+        if (!_hasAllTheRoles(_getRoles(fromAccount), roles)) revert MissingAllRoles(fromAccount, roles);
 
-        _setProposedRoles(msg.sender, toAccount, proposed);
+        _setProposedRoles(fromAccount, toAccount, _toAccountRoles(roles));
 
-        emit RolesProposed(msg.sender, toAccount, roles);
+        emit RolesProposed(fromAccount, toAccount, roles);
     }
 
     /**
      * @notice Internal function to accept roles transferred from another account.
-     * @dev Can only be called by the pending account with all the proposed roles.
+     * @dev Pending account needs to pass all the proposed roles.
      * @dev Emits RolesRemoved and RolesAdded events.
      * @param fromAccount The address of the current role
      * @param roles The roles to accept
      */
-    function _acceptRoles(address fromAccount, uint8[] memory roles) internal virtual {
-        uint256 proposed = _getProposedRoles(fromAccount, msg.sender);
-
-        if (proposed != _toAccountRoles(roles)) {
-            revert InvalidProposedRoles(fromAccount, msg.sender, roles);
+    function _acceptRoles(
+        address fromAccount,
+        address toAccount,
+        uint8[] memory roles
+    ) internal virtual {
+        if (_getProposedRoles(fromAccount, toAccount) != _toAccountRoles(roles)) {
+            revert InvalidProposedRoles(fromAccount, toAccount, roles);
         }
 
-        _setProposedRoles(fromAccount, msg.sender, 0);
-
-        _transferRoles(fromAccount, msg.sender, roles);
+        _setProposedRoles(fromAccount, toAccount, 0);
+        _transferRoles(fromAccount, toAccount, roles);
     }
 
     /**
      * @notice Internal function to transfer roles from one account to another.
+     * @dev Original account must have all the proposed roles.
      * @param fromAccount The address of the current role
      * @param toAccount The address to transfer role to
      * @param roles The roles to transfer
@@ -276,6 +305,8 @@ contract RolesBase is IRolesBase {
         address toAccount,
         uint8[] memory roles
     ) internal {
+        if (!_hasAllTheRoles(_getRoles(fromAccount), roles)) revert MissingAllRoles(fromAccount, roles);
+
         _removeRoles(fromAccount, roles);
         _addRoles(toAccount, roles);
     }

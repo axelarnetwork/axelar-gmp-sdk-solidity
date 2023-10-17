@@ -176,7 +176,7 @@ describe('Roles', () => {
         (gasOptions) =>
           testRoles
             .connect(ownerWallet)
-            .transferRoles(ownerWallet.address, roles, gasOptions),
+            .transferRoles(userWallet.address, roles, gasOptions),
         testRoles,
         'MissingAllRoles',
         {
@@ -220,7 +220,7 @@ describe('Roles', () => {
         (gasOptions) =>
           testRoles
             .connect(ownerWallet)
-            .proposeRoles(ownerWallet.address, roles, gasOptions),
+            .proposeRoles(userWallet.address, roles, gasOptions),
         testRoles,
         'MissingAllRoles',
         {

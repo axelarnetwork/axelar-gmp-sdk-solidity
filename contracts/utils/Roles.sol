@@ -62,10 +62,10 @@ contract Roles is RolesBase, IRoles {
      * @param toAccount The address to transfer role to
      * @param roles The roles to transfer
      */
-    function proposeRoles(address toAccount, uint8[] memory roles) external virtual withEveryRole(roles) {
+    function proposeRoles(address toAccount, uint8[] memory roles) external virtual {
         if (toAccount == address(0) || toAccount == msg.sender) revert InvalidProposedAccount(toAccount);
 
-        _proposeRoles(toAccount, roles);
+        _proposeRoles(msg.sender, toAccount, roles);
     }
 
     /**
@@ -76,7 +76,7 @@ contract Roles is RolesBase, IRoles {
      * @param roles The roles to accept
      */
     function acceptRoles(address fromAccount, uint8[] memory roles) external virtual {
-        _acceptRoles(fromAccount, roles);
+        _acceptRoles(fromAccount, msg.sender, roles);
     }
 
     /**
@@ -86,7 +86,7 @@ contract Roles is RolesBase, IRoles {
      * @param toAccount The address to transfer role to
      * @param roles The roles to transfer
      */
-    function transferRoles(address toAccount, uint8[] memory roles) external virtual withEveryRole(roles) {
+    function transferRoles(address toAccount, uint8[] memory roles) external virtual {
         if (toAccount == address(0) || toAccount == msg.sender) revert InvalidProposedAccount(toAccount);
 
         _transferRoles(msg.sender, toAccount, roles);

@@ -34,4 +34,12 @@ contract TestRoles is Roles {
         num = _num;
         emit NumSet(_num);
     }
+
+    function addRole(address account, uint8 role) external {
+        _addRole(account, role);
+    }
+        
+    function removeRole(address account, uint8 role) external {
+        _removeRole(account, role);
+    }
 }

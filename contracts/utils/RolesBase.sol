@@ -150,7 +150,9 @@ contract RolesBase is IRolesBase {
         accountRoles |= (1 << role);
         _setRoles(account, accountRoles);
 
-        emit RolesAdded(account, new uint8[]((role)));
+        uint8[] memory roles = new uint8[](1);
+        roles[0] = role;
+        emit RolesAdded(account, roles);
     }
 
     /**
@@ -184,7 +186,9 @@ contract RolesBase is IRolesBase {
         accountRoles &= ~(1 << role);
         _setRoles(account, accountRoles);
 
-        emit RolesRemoved(account, new uint8[]((role)));
+        uint8[] memory roles = new uint8[](1);
+        roles[0] = role;
+        emit RolesRemoved(account, roles);
     }
 
     /**

@@ -391,5 +391,21 @@ describe('Roles', () => {
       expect(await testRoles.getAccountRoles(userWallet.address)).to.equal(12); // 12 is the binary representation of roles [2, 3]
       expect(await testRoles.getAccountRoles(ownerWallet.address)).to.equal(2); // 2 is a binary representation of role 1, other roles transferred
     });
+
+    it('should add and remove single role', async () => {
+      const role = 2;
+
+      await expect(testRoles.addRole(userWallet.address, role))
+          .to.emit(testRoles, 'RolesAdded')
+          .withArgs(userWallet.address, [role]);
+
+      expect(await testRoles.getAccountRoles(userWallet.address)).to.equal(4); // 4 is the binary representation of roles [2]
+
+      await expect(testRoles.removeRole(userWallet.address, role))
+          .to.emit(testRoles, 'RolesRemoved')
+          .withArgs(userWallet.address, [role]);
+
+      expect(await testRoles.getAccountRoles(userWallet.address)).to.equal(0);
+    });
   });
 });

@@ -146,13 +146,9 @@ contract RolesBase is IRolesBase {
      * @param role The role to add
      */
     function _addRole(address account, uint8 role) internal {
-        uint256 accountRoles = _getRoles(account);
-        accountRoles |= (1 << role);
-        _setRoles(account, accountRoles);
-
         uint8[] memory roles = new uint8[](1);
         roles[0] = role;
-        emit RolesAdded(account, roles);
+        _addRoles(account, roles);
     }
 
     /**
@@ -182,13 +178,9 @@ contract RolesBase is IRolesBase {
      * @param role The role to remove
      */
     function _removeRole(address account, uint8 role) internal {
-        uint256 accountRoles = _getRoles(account);
-        accountRoles &= ~(1 << role);
-        _setRoles(account, accountRoles);
-
         uint8[] memory roles = new uint8[](1);
         roles[0] = role;
-        emit RolesRemoved(account, roles);
+        _removeRoles(account, roles);
     }
 
     /**

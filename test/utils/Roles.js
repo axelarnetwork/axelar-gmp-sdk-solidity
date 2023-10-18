@@ -396,14 +396,14 @@ describe('Roles', () => {
       const role = 2;
 
       await expect(testRoles.addRole(userWallet.address, role))
-          .to.emit(testRoles, 'RolesAdded')
-          .withArgs(userWallet.address, [role]);
+        .to.emit(testRoles, 'RolesAdded')
+        .withArgs(userWallet.address, [role]);
 
       expect(await testRoles.getAccountRoles(userWallet.address)).to.equal(4); // 4 is the binary representation of roles [2]
 
       await expect(testRoles.removeRole(userWallet.address, role))
-          .to.emit(testRoles, 'RolesRemoved')
-          .withArgs(userWallet.address, [role]);
+        .to.emit(testRoles, 'RolesRemoved')
+        .withArgs(userWallet.address, [role]);
 
       expect(await testRoles.getAccountRoles(userWallet.address)).to.equal(0);
     });

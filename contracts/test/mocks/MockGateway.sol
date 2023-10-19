@@ -571,4 +571,8 @@ contract MockGateway is IAxelarGateway {
         bytes32 newImplementationCodeHash,
         bytes calldata setupParams
     ) external override {}
+
+    function contractId() external pure override returns (bytes32) {
+        return keccak256('MockGateway');
+    }
 }

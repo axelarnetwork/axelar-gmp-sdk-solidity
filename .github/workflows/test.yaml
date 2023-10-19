@@ -13,7 +13,7 @@ jobs:
           - ubuntu-latest
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install Node.js
         uses: actions/setup-node@v3
@@ -24,7 +24,19 @@ jobs:
         run: npm ci
 
       - name: Build
-        run: npm run build
+        run: npm run build > build.log 2>&1
+
+      - name: Check for build warnings
+        run: |
+          if grep -q -i "error" build.log || grep -q -i "warning" build.log; then
+            echo "Build contains following errors or warnings..."
+
+            cat build.log
+
+            exit 1
+          else
+            exit 0;
+          fi
 
       - name: Test
         run: npm run test-evm-versions

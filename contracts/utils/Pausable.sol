@@ -29,11 +29,11 @@ contract Pausable is IPausable {
 
     /**
      * @notice Check if the contract is paused
-     * @return paused A boolean representing the pause status. True if paused, false otherwise.
+     * @return paused_ A boolean representing the pause status. True if paused, false otherwise.
      */
-    function paused() public view returns (bool paused) {
+    function paused() public view returns (bool paused_) {
         assembly {
-            paused := sload(PAUSE_SLOT)
+            paused_ := sload(PAUSE_SLOT)
         }
     }
 
@@ -59,11 +59,11 @@ contract Pausable is IPausable {
      * @notice Sets the pause status of the contract
      * @dev This is an internal function, meaning it can only be called from within the contract itself
      * or from derived contracts.
-     * @param paused The new pause status
+     * @param paused_ The new pause status
      */
-    function _setPaused(bool paused) internal {
+    function _setPaused(bool paused_) internal {
         assembly {
-            sstore(PAUSE_SLOT, paused)
+            sstore(PAUSE_SLOT, paused_)
         }
     }
 }

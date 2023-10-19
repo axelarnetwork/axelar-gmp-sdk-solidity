@@ -1,6 +1,7 @@
 'use strict';
 
 const { config, ethers, network } = require('hardhat');
+const { expect } = require('chai');
 const {
   utils: { defaultAbiCoder, id, arrayify, keccak256 },
 } = ethers;
@@ -69,6 +70,18 @@ async function deployContract(wallet, contractName, args = []) {
   return contract;
 }
 
+const expectRevert = async (txFunc, contract, error, args) => {
+  if (network.config.skipRevertTests) {
+    await expect(txFunc(getGasOptions())).to.be.reverted;
+  } else {
+    await expect(txFunc(null)).to.be.revertedWithCustomError(
+      contract,
+      error,
+      args,
+    );
+  }
+};
+
 module.exports = {
   bigNumberToNumber: (bigNumber) => bigNumber.toNumber(),
 
@@ -106,4 +119,6 @@ module.exports = {
   waitFor,
 
   deployContract,
+
+  expectRevert,
 };

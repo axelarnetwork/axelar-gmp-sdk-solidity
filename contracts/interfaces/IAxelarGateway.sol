@@ -83,6 +83,8 @@ interface IAxelarGateway is IGovernable {
         uint256 sourceEventIndex
     );
 
+    event ContractCallExecuted(bytes32 indexed commandId);
+
     event TokenMintLimitUpdated(string symbol, uint256 limit);
 
     event OperatorshipTransferred(bytes newOperatorsData);

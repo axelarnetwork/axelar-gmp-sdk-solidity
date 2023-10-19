@@ -548,18 +548,6 @@ contract MockGateway is IAxelarGateway {
     |* Unimplemented *|
     \*****************/
 
-    function adminEpoch() external pure override returns (uint256) {
-        return 0;
-    }
-
-    function adminThreshold(uint256) external pure override returns (uint256) {
-        return 0;
-    }
-
-    function admins(uint256) external pure override returns (address[] memory) {
-        return new address[](0);
-    }
-
     function execute(bytes calldata input) external override {}
 
     function setTokenMintLimits(string[] calldata symbols, uint256[] calldata limits) external override {}

@@ -172,15 +172,9 @@ interface IAxelarGateway is IImplementation, IGovernable {
 
     function isCommandExecuted(bytes32 commandId) external view returns (bool);
 
-    function adminEpoch() external view returns (uint256);
-
-    function adminThreshold(uint256 epoch) external view returns (uint256);
-
-    function admins(uint256 epoch) external view returns (address[] memory);
-
-    /*******************\
-    |* Admin Functions *|
-    \*******************/
+    /************************\
+    |* Governance Functions *|
+    \************************/
 
     function setTokenMintLimits(string[] calldata symbols, uint256[] calldata limits) external;
 

@@ -63,6 +63,13 @@ const waitFor = async (timeDelay) => {
   }
 };
 
+async function deployContract(wallet, contractName, args = []) {
+  const factory = await ethers.getContractFactory(contractName, wallet);
+  const contract = await factory.deploy(...args);
+  await contract.deployTransaction.wait(network.config.confirmations);
+  return contract;
+}
+
 const expectRevert = async (txFunc, contract, error, args) => {
   if (network.config.skipRevertTests) {
     await expect(txFunc(getGasOptions())).to.be.reverted;
@@ -110,6 +117,8 @@ module.exports = {
   getPayloadAndProposalHash,
 
   waitFor,
+
+  deployContract,
 
   expectRevert,
 };

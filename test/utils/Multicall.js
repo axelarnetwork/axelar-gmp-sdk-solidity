@@ -6,18 +6,16 @@ const { defaultAbiCoder } = ethers.utils;
 const { expect } = chai;
 const { deployContract } = require('../utils.js');
 
-let ownerWallet;
-before(async () => {
-  const wallets = await ethers.getSigners();
-  ownerWallet = wallets[0];
-});
-
 describe('Mutlicall', () => {
   let test;
   let function1Data;
   let function2Data;
+  let ownerWallet;
 
   before(async () => {
+    const wallets = await ethers.getSigners();
+    ownerWallet = wallets[0];
+
     test = await deployContract(ownerWallet, 'TestMulticall');
     function1Data = (await test.populateTransaction.function1()).data;
     function2Data = (await test.populateTransaction.function2()).data;

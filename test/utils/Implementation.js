@@ -1,33 +1,35 @@
 'use strict';
 
 const chai = require('chai');
-const { ethers } = require('hardhat');
-const { Contract } = ethers;
+const { ethers, network } = require('hardhat');
 const { defaultAbiCoder } = ethers.utils;
 const { expect } = chai;
 const { deployContract } = require('../utils.js');
 
-const TestImplementation = require('../../artifacts/contracts/test/upgradable/TestImplementation.sol/TestImplementation.json');
-
-let ownerWallet;
-before(async () => {
-  const wallets = await ethers.getSigners();
-  ownerWallet = wallets[0];
-});
-
 describe('Implementation', () => {
   let implementation, proxy;
+  let ownerWallet;
 
   const val = 123;
 
   before(async () => {
+    const wallets = await ethers.getSigners();
+    ownerWallet = wallets[0];
+
     implementation = await deployContract(ownerWallet, 'TestImplementation');
     proxy = await deployContract(ownerWallet, 'InitProxy', []);
 
     const params = defaultAbiCoder.encode(['uint256'], [val]);
-    proxy.init(implementation.address, ownerWallet.address, params);
+    await proxy
+      .init(implementation.address, ownerWallet.address, params)
+      .then((d) => d.wait(network.config.confirmations));
 
-    proxy = new Contract(proxy.address, TestImplementation.abi, ownerWallet);
+    const factory = await ethers.getContractFactory(
+      'TestImplementation',
+      ownerWallet,
+    );
+
+    proxy = factory.attach(proxy.address);
   });
 
   it('Should test the implementation contract', async () => {

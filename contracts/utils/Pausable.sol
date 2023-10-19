@@ -17,8 +17,13 @@ contract Pausable is IPausable {
      * @notice A modifier that throws a Paused custom error if the contract is paused
      * @dev This modifier should be used with functions that can be paused
      */
-    modifier notPaused() {
-        if (isPaused()) revert Paused();
+    modifier whenNotPaused() {
+        if (paused()) revert Pause();
+        _;
+    }
+
+    modifier whenPaused() {
+        if (!paused()) revert NotPaused();
         _;
     }
 
@@ -26,10 +31,28 @@ contract Pausable is IPausable {
      * @notice Check if the contract is paused
      * @return paused A boolean representing the pause status. True if paused, false otherwise.
      */
-    function isPaused() public view returns (bool paused) {
+    function paused() public view returns (bool paused) {
         assembly {
             paused := sload(PAUSE_SLOT)
         }
+    }
+
+    /**
+     * @notice Pauses the contract
+     * @dev This function should be callable by the owner/governance.
+     */
+    function _pause() internal {
+        _setPaused(true);
+        emit Paused(msg.sender);
+    }
+
+    /**
+     * @notice Unpauses the contract
+     * @dev This function should be callable by the owner/governance.
+     */
+    function _unpause() internal {
+        _setPaused(false);
+        emit Unpaused(msg.sender);
     }
 
     /**
@@ -42,7 +65,5 @@ contract Pausable is IPausable {
         assembly {
             sstore(PAUSE_SLOT, paused)
         }
-
-        emit PausedSet(paused);
     }
 }

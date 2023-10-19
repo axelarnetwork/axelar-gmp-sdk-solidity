@@ -64,7 +64,9 @@ const waitFor = async (timeDelay) => {
 
 async function deployContract(wallet, contractName, args = []) {
   const factory = await ethers.getContractFactory(contractName, wallet);
-  return factory.deploy(...args);
+  const contract = await factory.deploy(...args);
+  await contract.deployTransaction.wait(network.config.confirmations);
+  return contract;
 }
 
 module.exports = {

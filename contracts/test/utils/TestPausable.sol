@@ -7,11 +7,15 @@ import { Pausable } from '../../utils/Pausable.sol';
 contract TestPausable is Pausable {
     event TestEvent();
 
-    function setPaused(bool paused) external {
-        _setPaused(paused);
+    function pause() external {
+        _pause();
     }
 
-    function testPaused() external notPaused {
+    function unpause() external {
+        _unpause();
+    }
+
+    function testPaused() external whenNotPaused {
         emit TestEvent();
     }
 }

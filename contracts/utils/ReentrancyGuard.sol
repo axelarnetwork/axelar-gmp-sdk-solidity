@@ -2,26 +2,26 @@
 
 pragma solidity ^0.8.0;
 
-import { INoReEntrancy } from '../interfaces/INoReEntrancy.sol';
+import { IReentrancyGuard } from '../interfaces/IReentrancyGuard.sol';
 
 /**
- * @title NoReEntrancy
+ * @title ReentrancyGuard
  * @notice This contract provides a mechanism to halt the execution of specific functions
  * if a pause condition is activated.
  */
-contract NoReEntrancy is INoReEntrancy {
-    // uint256(keccak256('NoReEntrancy:entered')) - 1
-    uint256 internal constant ENTERED_SLOT = 0x0016dd9bb763cbc73282bce71c3993f0d87f25e0b653852d9a699a7f794fcfb8;
+contract ReentrancyGuard is IReentrancyGuard {
+    // uint256(keccak256('ReentrancyGuard:entered')) - 1
+    uint256 internal constant ENTERED_SLOT = 0x1a771c70cada93a906f955a7dec24a83d7954ba2f75256be4febcf62b395d532;
     uint256 internal constant NOT_ENTERED = 1;
-    uint256 internal constant HAS_ENTERED = 2;
+    uint256 internal constant ENTERED = 2;
 
     /**
      * @notice A modifier that throws a ReEntrancy custom error if the contract is entered
      * @dev This modifier should be used with functions that can be entered twice
      */
     modifier noReEntrancy() {
-        if (hasEntered()) revert ReEntrancy();
-        _setEntered(HAS_ENTERED);
+        if (_hasEntered()) revert ReentrantCall();
+        _setEntered(ENTERED);
         _;
         _setEntered(NOT_ENTERED);
     }
@@ -30,9 +30,9 @@ contract NoReEntrancy is INoReEntrancy {
      * @notice Check if the contract is already executing.
      * @return entered A boolean representing the entered status. True if already executing, false otherwise.
      */
-    function hasEntered() public view returns (bool entered) {
+    function _hasEntered() internal view returns (bool entered) {
         assembly {
-            entered := eq(sload(ENTERED_SLOT), HAS_ENTERED)
+            entered := eq(sload(ENTERED_SLOT), ENTERED)
         }
     }
 

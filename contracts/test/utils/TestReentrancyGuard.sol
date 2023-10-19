@@ -2,13 +2,13 @@
 
 pragma solidity ^0.8.0;
 
-import { NoReEntrancy } from '../../utils/NoReEntrancy.sol';
+import { ReentrancyGuard } from '../../utils/ReentrancyGuard.sol';
 
-contract TestNoReEntrancy is NoReEntrancy {
+contract TestReentrancyGuard is ReentrancyGuard {
     uint256 public value;
 
     constructor() {
-        require(ENTERED_SLOT == uint256(keccak256('NoReEntrancy:entered')) - 1, 'invalid constant');
+        require(ENTERED_SLOT == uint256(keccak256('ReentrancyGuard:entered')) - 1, 'invalid constant');
     }
 
     function testFunction() external noReEntrancy {

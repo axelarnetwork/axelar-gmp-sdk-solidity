@@ -8,7 +8,7 @@ pragma solidity ^0.8.0;
  * contract calls in a single transaction.
  */
 interface IMulticall {
-    error MulticallFailed(bytes err);
+    error MulticallFailed();
 
     /**
      * @notice Performs multiple delegate calls and returns the results of all calls as an array

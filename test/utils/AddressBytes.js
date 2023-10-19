@@ -2,24 +2,19 @@
 
 const { ethers } = require('hardhat');
 const chai = require('chai');
+const { deployContract } = require('../utils');
 const { defaultAbiCoder, arrayify, toUtf8Bytes, hexlify } = ethers.utils;
 const { expect } = chai;
 
-let ownerWallet;
-before(async () => {
-  const wallets = await ethers.getSigners();
-  ownerWallet = wallets[0];
-});
-
 describe('AddressBytes', () => {
   let addressBytes;
+  let ownerWallet;
 
   before(async () => {
-    const factory = await ethers.getContractFactory(
-      'TestAddressBytes',
-      ownerWallet,
-    );
-    addressBytes = await factory.deploy().then((d) => d.deployed());
+    const wallets = await ethers.getSigners();
+    ownerWallet = wallets[0];
+
+    addressBytes = await deployContract(ownerWallet, 'TestAddressBytes');
   });
 
   it('Should convert bytes address to address', async () => {

@@ -8,13 +8,15 @@ pragma solidity ^0.8.0;
  * if a pause condition is activated.
  */
 interface IPausable {
-    event PausedSet(bool indexed paused);
+    event Paused(address indexed account);
+    event Unpaused(address indexed account);
 
-    error Paused();
+    error Pause();
+    error NotPaused();
 
     /**
      * @notice Check if the contract is paused
      * @return paused A boolean representing the pause status. True if paused, false otherwise.
      */
-    function isPaused() external view returns (bool);
+    function paused() external view returns (bool);
 }

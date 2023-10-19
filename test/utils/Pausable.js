@@ -5,41 +5,40 @@ const { ethers } = require('hardhat');
 const { expect } = chai;
 const { deployContract } = require('../utils.js');
 
-let ownerWallet;
-before(async () => {
-  const wallets = await ethers.getSigners();
-  ownerWallet = wallets[0];
-});
-
 describe('Pausable', () => {
   let test;
+  let ownerWallet;
+
   before(async () => {
+    const wallets = await ethers.getSigners();
+    ownerWallet = wallets[0];
+
     test = await deployContract(ownerWallet, 'TestPausable');
   });
 
   it('Should be able to set paused to true or false', async () => {
-    await expect(test.setPaused(true))
-      .to.emit(test, 'PausedSet')
-      .withArgs(true);
-    expect(await test.isPaused()).to.equal(true);
-    await expect(test.setPaused(false))
-      .to.emit(test, 'PausedSet')
-      .withArgs(false);
-    expect(await test.isPaused()).to.equal(false);
+    await expect(test.pause())
+      .to.emit(test, 'Paused')
+      .withArgs(ownerWallet.address);
+    expect(await test.paused()).to.equal(true);
+    await expect(test.unpause())
+      .to.emit(test, 'Unpaused')
+      .withArgs(ownerWallet.address);
+    expect(await test.paused()).to.equal(false);
   });
 
   it('Should be able to execute notPaused functions only when not paused', async () => {
-    await expect(test.setPaused(false))
-      .to.emit(test, 'PausedSet')
-      .withArgs(false);
-    await expect(test.testPaused()).to.emit(test, 'TestEvent');
-
-    await expect(test.setPaused(true))
-      .to.emit(test, 'PausedSet')
-      .withArgs(true);
+    await expect(test.pause())
+      .to.emit(test, 'Paused')
+      .withArgs(ownerWallet.address);
     await expect(test.testPaused()).to.be.revertedWithCustomError(
       test,
-      'Paused',
+      'Pause',
     );
+
+    await expect(test.unpause())
+      .to.emit(test, 'Unpaused')
+      .withArgs(ownerWallet.address);
+    await expect(test.testPaused()).to.emit(test, 'TestEvent');
   });
 });

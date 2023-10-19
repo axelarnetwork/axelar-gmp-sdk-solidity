@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import { Upgradable } from '../../upgradable/Upgradable.sol';
 
-contract UpgradableTest is Upgradable {
+contract UpgradableTest2 is Upgradable {
     uint256 public num;
 
     constructor() Upgradable() {
@@ -22,6 +22,6 @@ contract UpgradableTest is Upgradable {
     }
 
     function getDummyMessage() external pure returns (string memory) {
-        return 'Hello from UpgradableTest';
+        return 'Hello from UpgradableTest2';
     }
 }

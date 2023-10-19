@@ -26,7 +26,11 @@ contract InterchainDeployer is IInterchainDeployer, AxelarExecutable, Ownable, C
     }
 
     function deployStatic(bytes32 userSalt, bytes memory implementationBytecode) external {
-        _deployImplementation(keccak256(abi.encode(msg.sender, userSalt)), implementationBytecode);
+        _deployStatic(msg.sender, userSalt, implementationBytecode, '');
+    }
+
+    function getProxyAddress(bytes32 userSalt) external view returns (address) {
+        return _create3Address(keccak256(abi.encode(msg.sender, userSalt)));
     }
 
     function deployUpgradeable(
@@ -45,7 +49,26 @@ contract InterchainDeployer is IInterchainDeployer, AxelarExecutable, Ownable, C
         _upgradeUpgradeable(msg.sender, userSalt, newImplementationBytecode, setupParams, '');
     }
 
-    function deployRemoteContracts(
+    function deployRemoteFixedContracts(
+        RemoteChains[] calldata remoteChains,
+        bytes calldata implementationBytecode,
+        bytes32 userSalt,
+        bytes calldata setupParams
+    ) external payable {
+        require(msg.value > 0, 'Gas payment is required');
+
+        bytes memory payload = abi.encode(
+            Command.DeployStatic,
+            msg.sender,
+            userSalt,
+            implementationBytecode,
+            setupParams
+        );
+
+        _sendRemote(remoteChains, payload);
+    }
+
+    function deployRemoteUpgradeableContracts(
         RemoteChains[] calldata remoteChains,
         bytes calldata implementationBytecode,
         bytes32 userSalt,
@@ -110,7 +133,18 @@ contract InterchainDeployer is IInterchainDeployer, AxelarExecutable, Ownable, C
         address newImplementation = _deployImplementation(deploySalt, newImplementationBytecode);
         bytes32 newImplementationCodeHash = newImplementation.codehash;
         IUpgradable(proxy).upgrade(newImplementation, newImplementationCodeHash, setupParams);
-        emit Upgraded(sender, userSalt, proxy, newImplementation, sourceChain);
+        emit UpgradedContract(sender, userSalt, proxy, newImplementation, sourceChain);
+    }
+
+    function _deployStatic(
+        address sender,
+        bytes32 userSalt,
+        bytes memory implementationBytecode,
+        string memory sourceChain
+    ) internal {
+        bytes32 deploySalt = keccak256(abi.encode(sender, userSalt));
+        address deployedImplementationAddress = _deployImplementation(deploySalt, implementationBytecode);
+        emit DeployedStaticContract(sender, userSalt, deployedImplementationAddress, sourceChain);
     }
 
     function _deployUpgradeable(
@@ -121,10 +155,10 @@ contract InterchainDeployer is IInterchainDeployer, AxelarExecutable, Ownable, C
         string memory sourceChain
     ) internal {
         bytes32 deploySalt = keccak256(abi.encode(sender, userSalt));
-        address deployedImplementationAddress = _deployImplementation(deploySalt, implementationBytecode);
-        address deployedProxyAddress = _deployProxy(deploySalt, deployedImplementationAddress, setupParams);
+        address implementation = _deployImplementation(deploySalt, implementationBytecode);
+        address proxy = _deployProxy(deploySalt, implementation, setupParams);
 
-        emit Deployed(sender, userSalt, deployedProxyAddress, deployedImplementationAddress, sourceChain);
+        emit DeployedUpgradeableContract(sender, userSalt, proxy, implementation, sourceChain);
     }
 
     function _deployImplementation(bytes32 deploySalt, bytes memory implementationBytecode) internal returns (address) {
@@ -146,7 +180,7 @@ contract InterchainDeployer is IInterchainDeployer, AxelarExecutable, Ownable, C
         bytes32 deploySalt,
         address implementationAddress,
         bytes memory setupParams
-    ) internal returns (address deployedProxyAddress) {
+    ) internal returns (address proxy) {
         return
             _create3(
                 abi.encodePacked(
@@ -172,7 +206,7 @@ contract InterchainDeployer is IInterchainDeployer, AxelarExecutable, Ownable, C
                 payload,
                 (Command, address, bytes32, bytes)
             );
-            _deployImplementation(keccak256(abi.encode(sender, userSalt)), bytecode);
+            _deployStatic(sender, userSalt, bytecode, sourceChain);
         } else if (command == Command.DeployUpgradeable) {
             (, address sender, bytes32 userSalt, bytes memory bytecode, bytes memory setupParams) = abi.decode(
                 payload,

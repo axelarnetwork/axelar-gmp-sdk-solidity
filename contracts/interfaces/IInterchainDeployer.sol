@@ -20,14 +20,21 @@ interface IInterchainDeployer is IOwnable, IAxelarExecutable, IDeploy {
         UpgradeUpgradeable
     }
 
-    event Deployed(
+    event DeployedStaticContract(
+        address indexed sender,
+        bytes32 indexed userSalt,
+        address implementation,
+        string sourceChain
+    );
+
+    event DeployedUpgradeableContract(
         address indexed sender,
         bytes32 indexed userSalt,
         address indexed proxy,
         address implementation,
         string sourceChain
     );
-    event Upgraded(
+    event UpgradedContract(
         address indexed sender,
         bytes32 indexed userSalt,
         address indexed proxy,
@@ -45,7 +52,14 @@ interface IInterchainDeployer is IOwnable, IAxelarExecutable, IDeploy {
         bytes memory setupParams
     ) external;
 
-    function deployRemoteContracts(
+    function deployRemoteFixedContracts(
+        RemoteChains[] calldata remoteChains,
+        bytes calldata implementationBytecode,
+        bytes32 userSalt,
+        bytes calldata setupParams
+    ) external payable;
+
+    function deployRemoteUpgradeableContracts(
         RemoteChains[] calldata remoteChains,
         bytes calldata implementationBytecode,
         bytes32 userSalt,
@@ -55,7 +69,7 @@ interface IInterchainDeployer is IOwnable, IAxelarExecutable, IDeploy {
     function upgradeUpgradeable(
         bytes32 userSalt,
         bytes memory newImplementationBytecode,
-        bytes memory params
+        bytes memory setupParams
     ) external;
 
     function upgradeRemoteContracts(
@@ -64,6 +78,8 @@ interface IInterchainDeployer is IOwnable, IAxelarExecutable, IDeploy {
         bytes calldata newImplementationBytecode,
         bytes calldata setupParams
     ) external payable;
+
+    function getProxyAddress(bytes32 userSalt) external view returns (address);
 
     function setWhitelistedSourceAddress(
         string calldata sourceChain,

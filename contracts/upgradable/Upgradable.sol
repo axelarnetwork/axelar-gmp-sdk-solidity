@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.0;
 
+import { IImplementation } from '../interfaces/IImplementation.sol';
 import { IUpgradable } from '../interfaces/IUpgradable.sol';
 import { Ownable } from '../utils/Ownable.sol';
 import { Implementation } from './Implementation.sol';
@@ -69,7 +70,7 @@ abstract contract Upgradable is Ownable, Implementation, IUpgradable {
      * @param data Initialization data for the contract
      * @dev This function is only callable by the proxy contract.
      */
-    function setup(bytes calldata data) external override onlyProxy {
+    function setup(bytes calldata data) external override(IImplementation, Implementation) onlyProxy {
         _setup(data);
     }
 

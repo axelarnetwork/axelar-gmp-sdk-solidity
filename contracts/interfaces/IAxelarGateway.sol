@@ -3,14 +3,14 @@
 pragma solidity ^0.8.0;
 
 import { IGovernable } from './IGovernable.sol';
+import { IImplementation } from './IImplementation.sol';
 
-interface IAxelarGateway is IGovernable {
+interface IAxelarGateway is IImplementation, IGovernable {
     /**********\
     |* Errors *|
     \**********/
 
     error NotSelf();
-    error NotProxy();
     error InvalidCodeHash();
     error SetupFailed();
     error InvalidAuthModule();
@@ -193,8 +193,6 @@ interface IAxelarGateway is IGovernable {
     /**********************\
     |* External Functions *|
     \**********************/
-
-    function setup(bytes calldata params) external;
 
     function execute(bytes calldata input) external;
 }

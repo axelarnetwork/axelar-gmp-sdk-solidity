@@ -6,4 +6,6 @@ import { IContractIdentifier } from './IContractIdentifier.sol';
 
 interface IImplementation is IContractIdentifier {
     error NotProxy();
+
+    function setup(bytes calldata data) external;
 }

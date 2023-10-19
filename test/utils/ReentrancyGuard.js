@@ -5,7 +5,7 @@ const { ethers } = require('hardhat');
 const { deployContract } = require('../utils');
 const { expect } = chai;
 
-describe('guard', () => {
+describe('ReentrancyGuard', () => {
   let guard;
   let ownerWallet;
 

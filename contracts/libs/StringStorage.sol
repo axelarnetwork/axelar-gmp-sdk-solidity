@@ -8,7 +8,7 @@ library StringStorage {
         assembly {
             sstore(slot, length)
         }
-        length /= 32;
+        length = (length + 31) / 32;
         for(uint256 i = 1; i <= length; ++i) {
             assembly {
                 sstore(add(slot, i), mload(add(str, mul(i, 32))))
@@ -22,7 +22,7 @@ library StringStorage {
             length := sload(slot)
         }
         str = new string(length);
-        length /= 32;
+        length = (length + 31) / 32;
         for(uint256 i = 1 ; i <= length; ++i) {
             assembly {
                 mstore(add(str, mul(i, 32)), sload(add(slot, i)))
@@ -36,6 +36,7 @@ library StringStorage {
             length := sload(slot)
             sstore(slot, 0)
         }
+        length = (length + 31) / 32;
         for(uint256 i = 1 ; i <= length; ++i) {
             assembly {
                 sstore(sload(add(slot, i)), 0)

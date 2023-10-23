@@ -16,6 +16,7 @@ interface IInterchainRouter is IContractIdentifier {
 
     event TrustedAddressAdded(string sourceChain, string sourceAddress);
     event TrustedAddressRemoved(string sourceChain);
+
     /**
      * @dev Gets the name of the chain this is deployed at
      */
@@ -27,14 +28,14 @@ interface IInterchainRouter is IContractIdentifier {
      * @return trustedAddress the trusted address for the chain. Returns '' if the chain is untrusted
      */
     function getTrustedAddress(string memory chain) external view returns (string memory trustedAddress);
-    
+
     /**
      * @dev Gets  the trusted address hash at a remote chain
      * @param chain Chain name of the remote chain
      * @return trustedAddressHash the hash of the trusted address
      */
     function getTrustedAddressHash(string memory chain) external view returns (bytes32 trustedAddressHash);
-    
+
     /**
      * @dev Validates that the sender is a valid interchain token service address
      * @param sourceChain Source chain of the transaction

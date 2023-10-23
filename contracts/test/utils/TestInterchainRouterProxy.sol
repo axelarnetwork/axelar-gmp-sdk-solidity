@@ -17,7 +17,11 @@ contract TestInterchainRouterProxy is Proxy {
      * @param owner Address of the owner of the proxy
      * @param params The params to be passed to the _setup function of the implementation.
      */
-    constructor(address implementationAddress, address owner, bytes memory params) Proxy(implementationAddress, owner, params) {}
+    constructor(
+        address implementationAddress,
+        address owner,
+        bytes memory params
+    ) Proxy(implementationAddress, owner, params) {}
 
     /**
      * @dev Override for the `contractId` function in Proxy. Returns a unique identifier for this contract.

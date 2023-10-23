@@ -10,7 +10,6 @@ import { Upgradable } from '../upgradable/Upgradable.sol';
  * @dev Manages and validates remote addresses, keeps track of addresses supported by the Axelar gateway contract
  */
 contract InterchainRouter is IInterchainRouter, Upgradable {
-
     bytes32 internal constant PREFIX_ADDRESS_MAPPING = keccak256('interchain-router-address-mapping');
     bytes32 internal constant PREFIX_ADDRESS_HASH_MAPPING = keccak256('interchain-router-address-hash-mapping');
     uint256 internal constant CHAIN_NAME_SLOT = 0x6406a0b603e31e24a15e9f663879eedde3bef27687f318a9875bafac9d63fc1f;
@@ -38,15 +37,17 @@ contract InterchainRouter is IInterchainRouter, Upgradable {
     }
 
     function _setup(bytes calldata params) internal override {
-        (string[] memory trustedChainNames, string[] memory trustedAddresses) = abi.decode(params, (string[], string[]));
+        (string[] memory trustedChainNames, string[] memory trustedAddresses) = abi.decode(
+            params,
+            (string[], string[])
+        );
         uint256 length = trustedChainNames.length;
         if (length != trustedAddresses.length) revert LengthMismatch();
-        
+
         for (uint256 i; i < length; ++i) {
             addTrustedAddress(trustedChainNames[i], trustedAddresses[i]);
         }
     }
-
 
     /**
      * @dev Gets the name of the chain this is deployed at
@@ -148,7 +149,7 @@ contract InterchainRouter is IInterchainRouter, Upgradable {
         if (bytes(sourceChain).length == 0) revert ZeroStringLength();
 
         delete _getStringStorage(_getTrustedAddressSlot(sourceChain)).value;
-            uint256 slot = _getTrustedAddressHashSlot(sourceChain);
+        uint256 slot = _getTrustedAddressHashSlot(sourceChain);
         assembly {
             sstore(slot, 0)
         }

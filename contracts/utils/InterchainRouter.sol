@@ -4,16 +4,17 @@ pragma solidity ^0.8.0;
 
 import { IInterchainRouter } from '../interfaces/IInterchainRouter.sol';
 import { Upgradable } from '../upgradable/Upgradable.sol';
-import { EternalStorage } from './EternalStorage.sol';
+import { StringStorage } from '../libs/StringStorage.sol';
 
 /**
  * @title RemoteAddressValidator
  * @dev Manages and validates remote addresses, keeps track of addresses supported by the Axelar gateway contract
  */
-contract InterchainRouter is IInterchainRouter, Upgradable, EternalStorage {
+contract InterchainRouter is IInterchainRouter, Upgradable {
 
     bytes32 internal constant PREFIX_ADDRESS_MAPPING = keccak256('interchain-router-address-mapping');
-    bytes32 internal constant CHAIN_NAME_KEY = keccak256('interchain-router-chain-name-slot');
+    bytes32 internal constant PREFIX_ADDRESS_HASH_MAPPING = keccak256('interchain-router-address-hash-mapping');
+    uint256 internal constant CHAIN_NAME_SLOT = 0x6406a0b603e31e24a15e9f663879eedde3bef27687f318a9875bafac9d63fc1f;
 
     bytes32 private constant CONTRACT_ID = keccak256('remote-address-validator');
 
@@ -23,7 +24,7 @@ contract InterchainRouter is IInterchainRouter, Upgradable, EternalStorage {
      */
     constructor(string memory chainName_) {
         if (bytes(chainName_).length == 0) revert ZeroStringLength();
-        _setChainName(chainName_);
+        StringStorage.storeString(CHAIN_NAME_SLOT, chainName_);
     }
 
     /**
@@ -44,28 +45,30 @@ contract InterchainRouter is IInterchainRouter, Upgradable, EternalStorage {
         }
     }
 
-    /**
-     * @dev Sets the name of the chain this is deployed at. Should probably not chainge after being set initially
-     * @param chainName Chain name of the current chain
-     */
-    function _setChainName(string memory chainName) internal {
-        _setString(CHAIN_NAME_KEY, chainName);
-    }
 
     /**
      * @dev Gets the name of the chain this is deployed at
      */
     function getChainName() external view returns (string memory chainName) {
-        chainName = getString(CHAIN_NAME_KEY);
+        chainName = StringStorage.loadString(CHAIN_NAME_SLOT);
     }
 
     /**
      * @dev Gets the key for the trusted address at a remote chain
      * @param chain Chain name of the remote chain
-     * @return key the key to use in the Eternal Storage for both the trusted address and its hash
+     * @return slot the slot to store the trusted address in
      */
-    function _getTrustedAddressKey(string memory chain) internal pure returns (bytes32 key) {
-        key = keccak256(abi.encode(PREFIX_ADDRESS_MAPPING, chain));
+    function _getTrustedAddressSlot(string memory chain) internal pure returns (uint256 slot) {
+        slot = uint256(keccak256(abi.encode(PREFIX_ADDRESS_MAPPING, chain)));
+    }
+
+    /**
+     * @dev Gets the key for the trusted address at a remote chain
+     * @param chain Chain name of the remote chain
+     * @return slot the slot to store the trusted address hash in
+     */
+    function _getTrustedAddressHashSlot(string memory chain) internal pure returns (uint256 slot) {
+        slot = uint256(keccak256(abi.encode(PREFIX_ADDRESS_HASH_MAPPING, chain)));
     }
 
     /**
@@ -74,8 +77,12 @@ contract InterchainRouter is IInterchainRouter, Upgradable, EternalStorage {
      * @param trustedAddress the string representation of the trusted address
      */
     function _setTrustedAddress(string memory chain, string memory trustedAddress) internal {
-        _setString(_getTrustedAddressKey(chain), trustedAddress);
-        _setUint(_getTrustedAddressKey(chain), uint256(keccak256(bytes(trustedAddress))));
+        StringStorage.storeString(_getTrustedAddressSlot(chain), trustedAddress);
+        uint256 slot = _getTrustedAddressHashSlot(chain);
+        bytes32 addressHash = keccak256(bytes(trustedAddress));
+        assembly {
+            sstore(slot, addressHash)
+        }
     }
 
     /**
@@ -84,7 +91,7 @@ contract InterchainRouter is IInterchainRouter, Upgradable, EternalStorage {
      * @return trustedAddress the trusted address for the chain. Returns '' if the chain is untrusted
      */
     function getTrustedAddress(string memory chain) public view returns (string memory trustedAddress) {
-        trustedAddress = getString(_getTrustedAddressKey(chain));
+        trustedAddress = StringStorage.loadString(_getTrustedAddressSlot(chain));
     }
 
     /**
@@ -93,7 +100,10 @@ contract InterchainRouter is IInterchainRouter, Upgradable, EternalStorage {
      * @return trustedAddressHash the hash of the trusted address
      */
     function getTrustedAddressHash(string memory chain) public view returns (bytes32 trustedAddressHash) {
-        trustedAddressHash = bytes32(getUint(_getTrustedAddressKey(chain)));
+        uint256 slot = _getTrustedAddressHashSlot(chain);
+        assembly {
+            trustedAddressHash := sload(slot)
+        }
     }
 
     /**
@@ -129,9 +139,11 @@ contract InterchainRouter is IInterchainRouter, Upgradable, EternalStorage {
     function removeTrustedAddress(string calldata sourceChain) external onlyOwner {
         if (bytes(sourceChain).length == 0) revert ZeroStringLength();
 
-        _deleteString(_getTrustedAddressKey(sourceChain));
-        _deleteUint(_getTrustedAddressKey(sourceChain));
-
+        StringStorage.deleteString(_getTrustedAddressSlot(sourceChain));
+            uint256 slot = _getTrustedAddressHashSlot(sourceChain);
+        assembly {
+            sstore(slot, 0)
+        }
         emit TrustedAddressRemoved(sourceChain);
     }
 

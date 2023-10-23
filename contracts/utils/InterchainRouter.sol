@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 
 import { IInterchainRouter } from '../interfaces/IInterchainRouter.sol';
 import { Upgradable } from '../upgradable/Upgradable.sol';
-import { StringStorage } from '../libs/StringStorage.sol';
 
 /**
  * @title RemoteAddressValidator
@@ -16,7 +15,11 @@ contract InterchainRouter is IInterchainRouter, Upgradable {
     bytes32 internal constant PREFIX_ADDRESS_HASH_MAPPING = keccak256('interchain-router-address-hash-mapping');
     uint256 internal constant CHAIN_NAME_SLOT = 0x6406a0b603e31e24a15e9f663879eedde3bef27687f318a9875bafac9d63fc1f;
 
-    bytes32 private constant CONTRACT_ID = keccak256('remote-address-validator');
+    bytes32 private constant CONTRACT_ID = keccak256('interchain-router');
+
+    struct StringStorage {
+        string value;
+    }
 
     /**
      * @dev Constructs the RemoteAddressValidator contract, both array parameters must be equal in length.
@@ -24,7 +27,7 @@ contract InterchainRouter is IInterchainRouter, Upgradable {
      */
     constructor(string memory chainName_) {
         if (bytes(chainName_).length == 0) revert ZeroStringLength();
-        StringStorage.storeString(CHAIN_NAME_SLOT, chainName_);
+        _getStringStorage(CHAIN_NAME_SLOT).value = chainName_;
     }
 
     /**
@@ -37,9 +40,8 @@ contract InterchainRouter is IInterchainRouter, Upgradable {
     function _setup(bytes calldata params) internal override {
         (string[] memory trustedChainNames, string[] memory trustedAddresses) = abi.decode(params, (string[], string[]));
         uint256 length = trustedChainNames.length;
-
         if (length != trustedAddresses.length) revert LengthMismatch();
-
+        
         for (uint256 i; i < length; ++i) {
             addTrustedAddress(trustedChainNames[i], trustedAddresses[i]);
         }
@@ -50,7 +52,7 @@ contract InterchainRouter is IInterchainRouter, Upgradable {
      * @dev Gets the name of the chain this is deployed at
      */
     function getChainName() external view returns (string memory chainName) {
-        chainName = StringStorage.loadString(CHAIN_NAME_SLOT);
+        chainName = _getStringStorage(CHAIN_NAME_SLOT).value;
     }
 
     /**
@@ -71,13 +73,19 @@ contract InterchainRouter is IInterchainRouter, Upgradable {
         slot = uint256(keccak256(abi.encode(PREFIX_ADDRESS_HASH_MAPPING, chain)));
     }
 
+    function _getStringStorage(uint256 slot) internal view returns (StringStorage storage storageStr) {
+        assembly {
+            storageStr.slot := slot
+        }
+    }
+
     /**
      * @dev Sets the trusted address and its hash for a remote chain
      * @param chain Chain name of the remote chain
      * @param trustedAddress the string representation of the trusted address
      */
     function _setTrustedAddress(string memory chain, string memory trustedAddress) internal {
-        StringStorage.storeString(_getTrustedAddressSlot(chain), trustedAddress);
+        _getStringStorage(_getTrustedAddressSlot(chain)).value = trustedAddress;
         uint256 slot = _getTrustedAddressHashSlot(chain);
         bytes32 addressHash = keccak256(bytes(trustedAddress));
         assembly {
@@ -91,7 +99,7 @@ contract InterchainRouter is IInterchainRouter, Upgradable {
      * @return trustedAddress the trusted address for the chain. Returns '' if the chain is untrusted
      */
     function getTrustedAddress(string memory chain) public view returns (string memory trustedAddress) {
-        trustedAddress = StringStorage.loadString(_getTrustedAddressSlot(chain));
+        trustedAddress = _getStringStorage((_getTrustedAddressSlot(chain))).value;
     }
 
     /**
@@ -139,7 +147,7 @@ contract InterchainRouter is IInterchainRouter, Upgradable {
     function removeTrustedAddress(string calldata sourceChain) external onlyOwner {
         if (bytes(sourceChain).length == 0) revert ZeroStringLength();
 
-        StringStorage.deleteString(_getTrustedAddressSlot(sourceChain));
+        delete _getStringStorage(_getTrustedAddressSlot(sourceChain)).value;
             uint256 slot = _getTrustedAddressHashSlot(sourceChain);
         assembly {
             sstore(slot, 0)

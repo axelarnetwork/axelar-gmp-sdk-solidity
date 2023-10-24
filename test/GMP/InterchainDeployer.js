@@ -74,10 +74,9 @@ describe('InterchainDeployer', () => {
         await ethers.getContractFactory('FixedImplementation', owner)
       ).getDeployTransaction().data;
 
-      await expect(srcID.connect(user).deployStatic(salt, fixedImpl)).to.emit(
-        srcID,
-        'DeployedStaticContract',
-      );
+      await expect(
+        srcID.connect(user).deployStaticContract(salt, fixedImpl),
+      ).to.emit(srcID, 'DeployedStaticContract');
     });
 
     it('should be able to deploy an upgradeable contract', async () => {
@@ -86,7 +85,7 @@ describe('InterchainDeployer', () => {
       ).getDeployTransaction().data;
 
       await expect(
-        srcID.connect(user).deployUpgradeable(salt, impl1, setupParams),
+        srcID.connect(user).deployUpgradeableContract(salt, impl1, setupParams),
       ).to.emit(srcID, 'DeployedUpgradeableContract');
 
       expect(await srcProxyContract.getDummyMessage()).to.equal(
@@ -100,7 +99,9 @@ describe('InterchainDeployer', () => {
       ).getDeployTransaction().data;
 
       await expect(
-        srcID.connect(user).upgradeUpgradeable(salt, impl2, setupParams),
+        srcID
+          .connect(user)
+          .upgradeUpgradeableContract(salt, impl2, setupParams),
       ).to.emit(srcID, 'UpgradedContract');
 
       expect(await srcProxyContract.getDummyMessage()).to.equal(
@@ -171,21 +172,15 @@ describe('InterchainDeployer', () => {
           destinationChain,
           destinationAddress: destID.address,
           gas,
+          implBytecode: fixedImplBytecode,
+          implSetupParams: setupParams,
         },
       ];
 
       await expect(
-        srcID
-          .connect(user)
-          .deployRemoteFixedContracts(
-            remoteChains,
-            fixedImplBytecode,
-            salt,
-            setupParams,
-            {
-              value: gas,
-            },
-          ),
+        srcID.connect(user).deployRemoteStaticContracts(remoteChains, salt, {
+          value: gas,
+        }),
       )
         .to.emit(srcGateway, 'ContractCall')
         .withArgs(
@@ -262,21 +257,17 @@ describe('InterchainDeployer', () => {
           destinationChain,
           destinationAddress: destID.address,
           gas,
+          implBytecode: impl1Bytecode,
+          implSetupParams: setupParams,
         },
       ];
 
       await expect(
         srcID
           .connect(user)
-          .deployRemoteUpgradeableContracts(
-            remoteChains,
-            impl1Bytecode,
-            salt,
-            setupParams,
-            {
-              value: gas,
-            },
-          ),
+          .deployRemoteUpgradeableContracts(remoteChains, salt, {
+            value: gas,
+          }),
       )
         .to.emit(srcGateway, 'ContractCall')
         .withArgs(
@@ -364,19 +355,20 @@ describe('InterchainDeployer', () => {
         [2, user.address, salt, impl2Bytecode, setupParams],
       );
       const upgradePayloadHash = keccak256(upgradePayload);
+      remoteChains = [
+        {
+          destinationChain,
+          destinationAddress: destID.address,
+          gas,
+          implBytecode: impl2Bytecode,
+          implSetupParams: setupParams,
+        },
+      ];
 
       await expect(
-        srcID
-          .connect(user)
-          .upgradeRemoteContracts(
-            remoteChains,
-            salt,
-            impl2Bytecode,
-            setupParams,
-            {
-              value: gas,
-            },
-          ),
+        srcID.connect(user).upgradeRemoteContracts(remoteChains, salt, {
+          value: gas,
+        }),
       )
         .to.emit(srcGateway, 'ContractCall')
         .withArgs(

@@ -25,7 +25,7 @@ contract InterchainDeployer is IInterchainDeployer, AxelarExecutable, Ownable, C
         gasService = IAxelarGasService(gasService_);
     }
 
-    function deployStatic(bytes32 userSalt, bytes memory implementationBytecode) external {
+    function deployStaticContract(bytes32 userSalt, bytes memory implementationBytecode) external {
         _deployStatic(msg.sender, userSalt, implementationBytecode, '');
     }
 
@@ -33,7 +33,7 @@ contract InterchainDeployer is IInterchainDeployer, AxelarExecutable, Ownable, C
         return _create3Address(keccak256(abi.encode(msg.sender, userSalt)));
     }
 
-    function deployUpgradeable(
+    function deployUpgradeableContract(
         bytes32 userSalt,
         bytes memory newImplementationBytecode,
         bytes memory setupParams
@@ -41,7 +41,7 @@ contract InterchainDeployer is IInterchainDeployer, AxelarExecutable, Ownable, C
         _deployUpgradeable(msg.sender, userSalt, newImplementationBytecode, setupParams, '');
     }
 
-    function upgradeUpgradeable(
+    function upgradeUpgradeableContract(
         bytes32 userSalt,
         bytes memory newImplementationBytecode,
         bytes memory setupParams
@@ -49,65 +49,37 @@ contract InterchainDeployer is IInterchainDeployer, AxelarExecutable, Ownable, C
         _upgradeUpgradeable(msg.sender, userSalt, newImplementationBytecode, setupParams, '');
     }
 
-    function deployRemoteFixedContracts(
-        RemoteChains[] calldata remoteChains,
-        bytes calldata implementationBytecode,
-        bytes32 userSalt,
-        bytes calldata setupParams
-    ) external payable {
+    function deployRemoteStaticContracts(RemoteChains[] calldata remoteChainData, bytes32 userSalt) external payable {
         require(msg.value > 0, 'Gas payment is required');
-
-        bytes memory payload = abi.encode(
-            Command.DeployStatic,
-            msg.sender,
-            userSalt,
-            implementationBytecode,
-            setupParams
-        );
-
-        _sendRemote(remoteChains, payload);
+        _sendRemote(Command.DeployStatic, remoteChainData, userSalt);
     }
 
-    function deployRemoteUpgradeableContracts(
-        RemoteChains[] calldata remoteChains,
-        bytes calldata implementationBytecode,
-        bytes32 userSalt,
-        bytes calldata setupParams
-    ) external payable {
+    function deployRemoteUpgradeableContracts(RemoteChains[] calldata remoteChainData, bytes32 userSalt)
+        external
+        payable
+    {
         require(msg.value > 0, 'Gas payment is required');
-
-        bytes memory payload = abi.encode(
-            Command.DeployUpgradeable,
-            msg.sender,
-            userSalt,
-            implementationBytecode,
-            setupParams
-        );
-
-        _sendRemote(remoteChains, payload);
+        _sendRemote(Command.DeployUpgradeable, remoteChainData, userSalt);
     }
 
-    function upgradeRemoteContracts(
-        RemoteChains[] calldata remoteChains,
-        bytes32 userSalt,
-        bytes calldata newImplementationBytecode,
-        bytes calldata setupParams
-    ) external payable {
+    function upgradeRemoteContracts(RemoteChains[] calldata remoteChainData, bytes32 userSalt) external payable {
         require(msg.value > 0, 'Gas payment is required');
-
-        bytes memory payload = abi.encode(
-            Command.UpgradeUpgradeable,
-            msg.sender,
-            userSalt,
-            newImplementationBytecode,
-            setupParams
-        );
-
-        _sendRemote(remoteChains, payload);
+        _sendRemote(Command.UpgradeUpgradeable, remoteChainData, userSalt);
     }
 
-    function _sendRemote(RemoteChains[] calldata remoteChains, bytes memory payload) internal {
+    function _sendRemote(
+        Command command,
+        RemoteChains[] calldata remoteChains,
+        bytes32 userSalt
+    ) internal {
         for (uint256 i = 0; i < remoteChains.length; i++) {
+            bytes memory payload = abi.encode(
+                command,
+                msg.sender,
+                userSalt,
+                remoteChains[i].implBytecode,
+                remoteChains[i].implSetupParams
+            );
             if (remoteChains[i].gas > 0) {
                 gasService.payNativeGasForContractCall{ value: remoteChains[i].gas }(
                     address(this),

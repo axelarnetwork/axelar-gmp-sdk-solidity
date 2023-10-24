@@ -10,8 +10,8 @@ interface IInterchainDeployer is IOwnable, IAxelarExecutable, IDeploy {
         string destinationChain;
         string destinationAddress;
         uint256 gas;
-        //TODO add constructor args bytes, i.e. bytes calldata implConstructorArgs
-        //TODO add setupParam args bytes, i.e. bytes calldata implSetupParams
+        bytes implBytecode;
+        bytes implSetupParams;
     }
 
     enum Command {
@@ -44,40 +44,27 @@ interface IInterchainDeployer is IOwnable, IAxelarExecutable, IDeploy {
     event WhitelistedSourceAddressSet(string indexed sourceChain, string sourceSender, bool whitelisted);
     error NotWhitelistedSourceAddress();
 
-    function deployStatic(bytes32 userSalt, bytes memory implementationBytecode) external;
+    function deployStaticContract(bytes32 userSalt, bytes memory implementationBytecode) external;
 
-    function deployUpgradeable(
+    function deployUpgradeableContract(
         bytes32 userSalt,
         bytes memory newImplementationBytecode,
         bytes memory setupParams
     ) external;
 
-    function deployRemoteFixedContracts(
-        RemoteChains[] calldata remoteChains,
-        bytes calldata implementationBytecode,
-        bytes32 userSalt,
-        bytes calldata setupParams
-    ) external payable;
+    function deployRemoteStaticContracts(RemoteChains[] calldata remoteChainData, bytes32 userSalt) external payable;
 
-    function deployRemoteUpgradeableContracts(
-        RemoteChains[] calldata remoteChains,
-        bytes calldata implementationBytecode,
-        bytes32 userSalt,
-        bytes calldata setupParams
-    ) external payable;
+    function deployRemoteUpgradeableContracts(RemoteChains[] calldata remoteChainData, bytes32 userSalt)
+        external
+        payable;
 
-    function upgradeUpgradeable(
+    function upgradeUpgradeableContract(
         bytes32 userSalt,
         bytes memory newImplementationBytecode,
         bytes memory setupParams
     ) external;
 
-    function upgradeRemoteContracts(
-        RemoteChains[] calldata remoteChains,
-        bytes32 userSalt,
-        bytes calldata newImplementationBytecode,
-        bytes calldata setupParams
-    ) external payable;
+    function upgradeRemoteContracts(RemoteChains[] calldata remoteChainData, bytes32 userSalt) external payable;
 
     function getProxyAddress(bytes32 userSalt) external view returns (address);
 

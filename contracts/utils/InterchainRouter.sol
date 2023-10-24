@@ -74,7 +74,7 @@ contract InterchainRouter is IInterchainRouter, Upgradable {
         slot = uint256(keccak256(abi.encode(PREFIX_ADDRESS_HASH_MAPPING, chain)));
     }
 
-    function _getStringStorage(uint256 slot) internal view returns (StringStorage storage storageStr) {
+    function _getStringStorage(uint256 slot) internal pure returns (StringStorage storage storageStr) {
         assembly {
             storageStr.slot := slot
         }

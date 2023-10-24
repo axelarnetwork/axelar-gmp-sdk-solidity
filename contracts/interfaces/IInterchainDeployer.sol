@@ -10,8 +10,13 @@ interface IInterchainDeployer is IOwnable, IAxelarExecutable, IDeploy {
         string destinationChain;
         string destinationAddress;
         uint256 gas;
+        ImplContractDetails contractDetails;
+    }
+
+    struct ImplContractDetails {
         bytes implBytecode;
         bytes implSetupParams;
+        bool onlyIGEUpgrades;
     }
 
     enum Command {
@@ -43,14 +48,12 @@ interface IInterchainDeployer is IOwnable, IAxelarExecutable, IDeploy {
     );
     event WhitelistedSourceAddressSet(string indexed sourceChain, string sourceSender, bool whitelisted);
     error NotWhitelistedSourceAddress();
+    error CannotUpgradeFromNonIGEAccount(string reason);
+    error CannotUpgradeForSomeoneElse(string reason);
 
     function deployStaticContract(bytes32 userSalt, bytes memory implementationBytecode) external;
 
-    function deployUpgradeableContract(
-        bytes32 userSalt,
-        bytes memory newImplementationBytecode,
-        bytes memory setupParams
-    ) external;
+    function deployUpgradeableContract(bytes32 userSalt, ImplContractDetails memory contractDetails) external;
 
     function deployRemoteStaticContracts(RemoteChains[] calldata remoteChainData, bytes32 userSalt) external payable;
 
@@ -59,9 +62,9 @@ interface IInterchainDeployer is IOwnable, IAxelarExecutable, IDeploy {
         payable;
 
     function upgradeUpgradeableContract(
+        address proxyOwner,
         bytes32 userSalt,
-        bytes memory newImplementationBytecode,
-        bytes memory setupParams
+        ImplContractDetails memory contractDetails
     ) external;
 
     function upgradeRemoteContracts(RemoteChains[] calldata remoteChainData, bytes32 userSalt) external payable;
@@ -73,4 +76,6 @@ interface IInterchainDeployer is IOwnable, IAxelarExecutable, IDeploy {
         string calldata sourceSender,
         bool whitelisted
     ) external;
+
+    function setGovernanceExecutor(address governanceExecutor_) external;
 }

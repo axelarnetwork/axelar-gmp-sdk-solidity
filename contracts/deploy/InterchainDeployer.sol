@@ -14,43 +14,75 @@ import { Create3 } from './Create3.sol';
 
 contract InterchainDeployer is IInterchainDeployer, AxelarExecutable, Ownable, Create3 {
     IAxelarGasService public immutable gasService;
+    address governanceExecutor;
 
     mapping(string => mapping(string => bool)) public whitelistedSourceAddresses;
+    mapping(address => address) public igeRestrictedProxies;
 
     constructor(
         address gateway_,
         address gasService_,
-        address owner_
+        address owner_,
+        address governanceExecutor_
     ) AxelarExecutable(gateway_) Ownable(owner_) {
         gasService = IAxelarGasService(gasService_);
+        governanceExecutor = governanceExecutor_;
+    }
+
+    function setWhitelistedSourceAddress(
+        string calldata sourceChain,
+        string calldata sourceSender,
+        bool whitelisted
+    ) external onlyOwner {
+        whitelistedSourceAddresses[sourceChain][sourceSender] = whitelisted;
+        emit WhitelistedSourceAddressSet(sourceChain, sourceSender, whitelisted);
     }
 
     function deployStaticContract(bytes32 userSalt, bytes memory implementationBytecode) external {
         _deployStatic(msg.sender, userSalt, implementationBytecode, '');
     }
 
-    function getProxyAddress(bytes32 userSalt) external view returns (address) {
+    function setGovernanceExecutor(address governanceExecutor_) external onlyOwner {
+        governanceExecutor = governanceExecutor_;
+    }
+
+    function getProxyAddress(bytes32 userSalt) public view returns (address) {
         return _create3Address(keccak256(abi.encode(msg.sender, userSalt)));
     }
 
-    function deployUpgradeableContract(
-        bytes32 userSalt,
-        bytes memory newImplementationBytecode,
-        bytes memory setupParams
-    ) external {
-        _deployUpgradeable(msg.sender, userSalt, newImplementationBytecode, setupParams, '');
+    function deployUpgradeableContract(bytes32 userSalt, ImplContractDetails memory contractDetails) external {
+        _deployUpgradeable(msg.sender, userSalt, contractDetails, '');
     }
 
     function upgradeUpgradeableContract(
+        address proxyOwner,
         bytes32 userSalt,
-        bytes memory newImplementationBytecode,
-        bytes memory setupParams
+        ImplContractDetails memory contractDetails
     ) external {
-        _upgradeUpgradeable(msg.sender, userSalt, newImplementationBytecode, setupParams, '');
+        address proxy;
+
+        if (msg.sender == governanceExecutor) {
+            proxy = _create3Address(keccak256(abi.encode(proxyOwner, userSalt)));
+        } else if (msg.sender == proxyOwner) {
+            proxy = _create3Address(keccak256(abi.encode(msg.sender, userSalt)));
+        } else {
+            revert CannotUpgradeForSomeoneElse('cannot upgrade for someone else');
+        }
+
+        address ownerInMapping = igeRestrictedProxies[proxy];
+
+        if (ownerInMapping != address(0x0) && msg.sender != governanceExecutor)
+            revert CannotUpgradeFromNonIGEAccount('Only upgradeable via IGE');
+
+        _upgradeUpgradeable(
+            ownerInMapping != address(0x0) ? ownerInMapping : msg.sender,
+            userSalt,
+            contractDetails,
+            ''
+        );
     }
 
     function deployRemoteStaticContracts(RemoteChains[] calldata remoteChainData, bytes32 userSalt) external payable {
-        require(msg.value > 0, 'Gas payment is required');
         _sendRemote(Command.DeployStatic, remoteChainData, userSalt);
     }
 
@@ -58,12 +90,10 @@ contract InterchainDeployer is IInterchainDeployer, AxelarExecutable, Ownable, C
         external
         payable
     {
-        require(msg.value > 0, 'Gas payment is required');
         _sendRemote(Command.DeployUpgradeable, remoteChainData, userSalt);
     }
 
     function upgradeRemoteContracts(RemoteChains[] calldata remoteChainData, bytes32 userSalt) external payable {
-        require(msg.value > 0, 'Gas payment is required');
         _sendRemote(Command.UpgradeUpgradeable, remoteChainData, userSalt);
     }
 
@@ -72,14 +102,11 @@ contract InterchainDeployer is IInterchainDeployer, AxelarExecutable, Ownable, C
         RemoteChains[] calldata remoteChains,
         bytes32 userSalt
     ) internal {
+        require(msg.value > 0, 'Gas payment is required');
+
         for (uint256 i = 0; i < remoteChains.length; i++) {
-            bytes memory payload = abi.encode(
-                command,
-                msg.sender,
-                userSalt,
-                remoteChains[i].implBytecode,
-                remoteChains[i].implSetupParams
-            );
+            bytes memory payload = abi.encode(command, msg.sender, userSalt, remoteChains[i].contractDetails);
+
             if (remoteChains[i].gas > 0) {
                 gasService.payNativeGasForContractCall{ value: remoteChains[i].gas }(
                     address(this),
@@ -89,6 +116,7 @@ contract InterchainDeployer is IInterchainDeployer, AxelarExecutable, Ownable, C
                     msg.sender
                 );
             }
+
             gateway.callContract(remoteChains[i].destinationChain, remoteChains[i].destinationAddress, payload);
         }
     }
@@ -96,15 +124,14 @@ contract InterchainDeployer is IInterchainDeployer, AxelarExecutable, Ownable, C
     function _upgradeUpgradeable(
         address sender,
         bytes32 userSalt,
-        bytes memory newImplementationBytecode,
-        bytes memory setupParams,
+        ImplContractDetails memory contractDetails,
         string memory sourceChain
     ) internal {
         bytes32 deploySalt = keccak256(abi.encode(sender, userSalt));
         address proxy = _create3Address(deploySalt);
-        address newImplementation = _deployImplementation(deploySalt, newImplementationBytecode);
+        address newImplementation = _deployImplementation(deploySalt, contractDetails.implBytecode);
         bytes32 newImplementationCodeHash = newImplementation.codehash;
-        IUpgradable(proxy).upgrade(newImplementation, newImplementationCodeHash, setupParams);
+        IUpgradable(proxy).upgrade(newImplementation, newImplementationCodeHash, contractDetails.implSetupParams);
         emit UpgradedContract(sender, userSalt, proxy, newImplementation, sourceChain);
     }
 
@@ -122,13 +149,14 @@ contract InterchainDeployer is IInterchainDeployer, AxelarExecutable, Ownable, C
     function _deployUpgradeable(
         address sender,
         bytes32 userSalt,
-        bytes memory implementationBytecode,
-        bytes memory setupParams,
+        ImplContractDetails memory contractDetails,
         string memory sourceChain
     ) internal {
         bytes32 deploySalt = keccak256(abi.encode(sender, userSalt));
-        address implementation = _deployImplementation(deploySalt, implementationBytecode);
-        address proxy = _deployProxy(deploySalt, implementation, setupParams);
+        address implementation = _deployImplementation(deploySalt, contractDetails.implBytecode);
+        address proxy = _deployProxy(deploySalt, implementation, contractDetails.implSetupParams);
+
+        if (governanceExecutor != address(0x0) && contractDetails.onlyIGEUpgrades) igeRestrictedProxies[proxy] = sender;
 
         emit DeployedUpgradeableContract(sender, userSalt, proxy, implementation, sourceChain);
     }
@@ -174,34 +202,29 @@ contract InterchainDeployer is IInterchainDeployer, AxelarExecutable, Ownable, C
         Command command = abi.decode(payload, (Command));
 
         if (command == Command.DeployStatic) {
-            (, address sender, bytes32 userSalt, bytes memory bytecode) = abi.decode(
+            (, address sender, bytes32 userSalt, ImplContractDetails memory contractDetails) = abi.decode(
                 payload,
-                (Command, address, bytes32, bytes)
+                (Command, address, bytes32, ImplContractDetails)
             );
-            _deployStatic(sender, userSalt, bytecode, sourceChain);
+            _deployStatic(sender, userSalt, contractDetails.implBytecode, sourceChain);
         } else if (command == Command.DeployUpgradeable) {
-            (, address sender, bytes32 userSalt, bytes memory bytecode, bytes memory setupParams) = abi.decode(
+            (, address sender, bytes32 userSalt, ImplContractDetails memory contractDetails) = abi.decode(
                 payload,
-                (Command, address, bytes32, bytes, bytes)
+                (Command, address, bytes32, ImplContractDetails)
             );
-            _deployUpgradeable(sender, userSalt, bytecode, setupParams, sourceChain);
+
+            _deployUpgradeable(sender, userSalt, contractDetails, sourceChain);
         } else if (command == Command.UpgradeUpgradeable) {
-            (, address sender, bytes32 userSalt, bytes memory bytecode, bytes memory setupParams) = abi.decode(
+            (, address sender, bytes32 userSalt, ImplContractDetails memory contractDetails) = abi.decode(
                 payload,
-                (Command, address, bytes32, bytes, bytes)
+                (Command, address, bytes32, ImplContractDetails)
             );
-            _upgradeUpgradeable(sender, userSalt, bytecode, setupParams, sourceChain);
+            address proxy = _create3Address(keccak256(abi.encode(sender, userSalt)));
+            if (igeRestrictedProxies[proxy] != address(0x0))
+                revert CannotUpgradeFromNonIGEAccount('Only upgradeable via IGE');
+            _upgradeUpgradeable(sender, userSalt, contractDetails, sourceChain);
         } else {
             revert('invalid command');
         }
-    }
-
-    function setWhitelistedSourceAddress(
-        string calldata sourceChain,
-        string calldata sourceSender,
-        bool whitelisted
-    ) external onlyOwner {
-        whitelistedSourceAddresses[sourceChain][sourceSender] = whitelisted;
-        emit WhitelistedSourceAddressSet(sourceChain, sourceSender, whitelisted);
     }
 }

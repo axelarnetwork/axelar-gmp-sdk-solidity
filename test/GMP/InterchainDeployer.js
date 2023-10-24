@@ -14,15 +14,21 @@ describe('InterchainDeployer', () => {
   let gasSvcFactory, srcGasSvc, destGasSvc;
   let IDFactory, srcID, destID;
 
-  let owner, user;
+  let owner, user, igeOwner;
 
   let fixedImplBytecode, impl1Bytecode, impl2Bytecode;
 
-  let destProxyAddr, destProxyContract, srcProxyAddr, srcProxyContract;
+  let destProxyAddr,
+    destProxyContract,
+    srcProxyAddr,
+    srcProxyContract,
+    srcProxyAddr2,
+    srcProxyContract2;
 
   let remoteChains;
 
   const salt = keccak256(defaultAbiCoder.encode(['string'], ['1']));
+  const salt2 = keccak256(defaultAbiCoder.encode(['string'], ['2']));
   const setupParams = defaultAbiCoder.encode(['string'], ['0x']);
   const sourceChain = 'chainA';
   const destinationChain = 'chainB';
@@ -33,7 +39,7 @@ describe('InterchainDeployer', () => {
   ];
 
   before(async () => {
-    [owner, user] = await ethers.getSigners();
+    [owner, user, igeOwner] = await ethers.getSigners();
 
     gatewayFactory = await ethers.getContractFactory('MockGateway', owner);
     gasSvcFactory = await ethers.getContractFactory('MockGasService', owner);
@@ -51,11 +57,13 @@ describe('InterchainDeployer', () => {
       destGateway.address,
       destGasSvc.address,
       owner.address,
+      igeOwner.address,
     ).then((d) => d.deployed());
     srcID = await IDFactory.deploy(
       srcGateway.address,
       srcGasSvc.address,
       owner.address,
+      igeOwner.address,
     ).then((d) => d.deployed());
 
     impl1Bytecode = (
@@ -66,6 +74,8 @@ describe('InterchainDeployer', () => {
     destProxyContract = new ethers.Contract(destProxyAddr, sampleAbi, user);
     srcProxyAddr = await srcID.connect(user).getProxyAddress(salt);
     srcProxyContract = new ethers.Contract(srcProxyAddr, sampleAbi, user);
+    srcProxyAddr2 = await srcID.connect(user).getProxyAddress(salt2);
+    srcProxyContract2 = new ethers.Contract(srcProxyAddr2, sampleAbi, user);
   });
 
   describe('Invoke single-chain deployment of arbitrary contracts, it:', () => {
@@ -85,7 +95,11 @@ describe('InterchainDeployer', () => {
       ).getDeployTransaction().data;
 
       await expect(
-        srcID.connect(user).deployUpgradeableContract(salt, impl1, setupParams),
+        srcID.connect(user).deployUpgradeableContract(salt, {
+          implBytecode: impl1,
+          implSetupParams: setupParams,
+          onlyIGEUpgrades: false,
+        }),
       ).to.emit(srcID, 'DeployedUpgradeableContract');
 
       expect(await srcProxyContract.getDummyMessage()).to.equal(
@@ -99,9 +113,11 @@ describe('InterchainDeployer', () => {
       ).getDeployTransaction().data;
 
       await expect(
-        srcID
-          .connect(user)
-          .upgradeUpgradeableContract(salt, impl2, setupParams),
+        srcID.connect(user).upgradeUpgradeableContract(user.address, salt, {
+          implBytecode: impl2,
+          implSetupParams: setupParams,
+          onlyIGEUpgrades: false,
+        }),
       ).to.emit(srcID, 'UpgradedContract');
 
       expect(await srcProxyContract.getDummyMessage()).to.equal(
@@ -110,11 +126,69 @@ describe('InterchainDeployer', () => {
     });
   });
 
+  describe('Invoke single-chain upgrade of arbitrary contracts via IGE, it:', () => {
+    it('should be able to deploy an upgradeable contract that is only upgradeable via IGE', async () => {
+      const impl1 = (
+        await ethers.getContractFactory('UpgradableTest', owner)
+      ).getDeployTransaction().data;
+
+      await expect(
+        srcID.connect(user).deployUpgradeableContract(salt2, {
+          implBytecode: impl1,
+          implSetupParams: setupParams,
+          onlyIGEUpgrades: true,
+        }),
+      ).to.emit(srcID, 'DeployedUpgradeableContract');
+
+      expect(await srcProxyContract2.getDummyMessage()).to.equal(
+        'Hello from UpgradableTest',
+      );
+    });
+
+    it('should revert if upgrade is called directly from a non-IGE account', async () => {
+      const impl2 = (
+        await ethers.getContractFactory('UpgradableTest2', owner)
+      ).getDeployTransaction().data;
+
+      await expect(
+        srcID.connect(user).upgradeUpgradeableContract(user.address, salt2, {
+          implBytecode: impl2,
+          implSetupParams: setupParams,
+          onlyIGEUpgrades: false,
+        }),
+      ).to.be.revertedWithCustomError(srcID, 'CannotUpgradeFromNonIGEAccount');
+
+      expect(await srcProxyContract2.getDummyMessage()).to.equal(
+        'Hello from UpgradableTest',
+      );
+    });
+
+    it('should upgrade if upgrade is called directly from the IGE account', async () => {
+      const impl2 = (
+        await ethers.getContractFactory('UpgradableTest2', owner)
+      ).getDeployTransaction().data;
+
+      await expect(
+        srcID
+          .connect(igeOwner)
+          .upgradeUpgradeableContract(user.address, salt2, {
+            implBytecode: impl2,
+            implSetupParams: setupParams,
+            onlyIGEUpgrades: false,
+          }),
+      ).to.emit(srcID, 'UpgradedContract');
+
+      expect(await srcProxyContract2.getDummyMessage()).to.equal(
+        'Hello from UpgradableTest2',
+      );
+    });
+  });
+
   describe('Invoke cross-chain deployment of arbitrary contracts, it:', () => {
     it('should revert if caller from the src chain is not whitelisted', async () => {
       const payload = defaultAbiCoder.encode(
-        ['uint8', 'address', 'bytes32', 'bytes', 'bytes'],
-        [1, user.address, salt, impl1Bytecode, setupParams],
+        ['uint8', 'address', 'bytes32', 'tuple(bytes, bytes, bool)'],
+        [1, user.address, salt, [impl1Bytecode, setupParams, false]],
       );
       const payloadHash = keccak256(payload);
 
@@ -163,8 +237,8 @@ describe('InterchainDeployer', () => {
         await ethers.getContractFactory('FixedImplementation', owner)
       ).getDeployTransaction().data;
       const payload = defaultAbiCoder.encode(
-        ['uint8', 'address', 'bytes32', 'bytes', 'bytes'],
-        [0, user.address, salt, fixedImplBytecode, setupParams],
+        ['uint8', 'address', 'bytes32', 'tuple(bytes, bytes, bool)'],
+        [0, user.address, salt, [fixedImplBytecode, setupParams, false]],
       );
       const payloadHash = keccak256(payload);
       const remoteChains = [
@@ -172,8 +246,10 @@ describe('InterchainDeployer', () => {
           destinationChain,
           destinationAddress: destID.address,
           gas,
-          implBytecode: fixedImplBytecode,
-          implSetupParams: setupParams,
+          contractDetails: {
+            implBytecode: fixedImplBytecode,
+            implSetupParams: setupParams,
+          },
         },
       ];
 
@@ -248,17 +324,20 @@ describe('InterchainDeployer', () => {
 
     it('should be able to deploy an upgradeable contract on a destination chain', async () => {
       const payload = defaultAbiCoder.encode(
-        ['uint8', 'address', 'bytes32', 'bytes', 'bytes'],
-        [1, user.address, salt, impl1Bytecode, setupParams],
+        ['uint8', 'address', 'bytes32', 'tuple(bytes, bytes, bool)'],
+        [1, user.address, salt, [impl1Bytecode, setupParams, false]],
       );
       const payloadHash = keccak256(payload);
+
       remoteChains = [
         {
           destinationChain,
           destinationAddress: destID.address,
           gas,
-          implBytecode: impl1Bytecode,
-          implSetupParams: setupParams,
+          contractDetails: {
+            implBytecode: impl1Bytecode,
+            implSetupParams: setupParams,
+          },
         },
       ];
 
@@ -350,9 +429,10 @@ describe('InterchainDeployer', () => {
       impl2Bytecode = (
         await ethers.getContractFactory('UpgradableTest2', owner)
       ).getDeployTransaction().data;
+
       const upgradePayload = defaultAbiCoder.encode(
-        ['uint8', 'address', 'bytes32', 'bytes', 'bytes'],
-        [2, user.address, salt, impl2Bytecode, setupParams],
+        ['uint8', 'address', 'bytes32', 'tuple(bytes, bytes, bool)'],
+        [2, user.address, salt, [impl2Bytecode, setupParams, false]],
       );
       const upgradePayloadHash = keccak256(upgradePayload);
       remoteChains = [
@@ -360,8 +440,10 @@ describe('InterchainDeployer', () => {
           destinationChain,
           destinationAddress: destID.address,
           gas,
-          implBytecode: impl2Bytecode,
-          implSetupParams: setupParams,
+          contractDetails: {
+            implBytecode: impl2Bytecode,
+            implSetupParams: setupParams,
+          },
         },
       ];
 

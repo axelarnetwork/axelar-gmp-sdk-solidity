@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import { AxelarExecutable } from '../executable/AxelarExecutable.sol';
 import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
 import { IAxelarGasService } from '../interfaces/IAxelarGasService.sol';
+import { StringToAddress } from '../libs/AddressString.sol';
 
 import { IInterchainDeployer } from '../interfaces/IInterchainDeployer.sol';
 import { IUpgradable } from '../interfaces/IUpgradable.sol';
@@ -13,10 +14,11 @@ import { Ownable } from '../utils/Ownable.sol';
 import { Create3 } from './Create3.sol';
 
 contract InterchainDeployer is IInterchainDeployer, AxelarExecutable, Ownable, Create3 {
+    using StringToAddress for string;
     IAxelarGasService public immutable gasService;
     address governanceExecutor;
 
-    mapping(string => mapping(string => bool)) public whitelistedSourceAddresses;
+    mapping(address => bool) public whitelistedSourceAddresses;
     mapping(address => address) public igeRestrictedProxies;
 
     constructor(
@@ -27,15 +29,12 @@ contract InterchainDeployer is IInterchainDeployer, AxelarExecutable, Ownable, C
     ) AxelarExecutable(gateway_) Ownable(owner_) {
         gasService = IAxelarGasService(gasService_);
         governanceExecutor = governanceExecutor_;
+        setWhitelistedSourceAddress(address(this), true);
     }
 
-    function setWhitelistedSourceAddress(
-        string calldata sourceChain,
-        string calldata sourceSender,
-        bool whitelisted
-    ) external onlyOwner {
-        whitelistedSourceAddresses[sourceChain][sourceSender] = whitelisted;
-        emit WhitelistedSourceAddressSet(sourceChain, sourceSender, whitelisted);
+    function setWhitelistedSourceAddress(address sourceSender, bool whitelisted) public onlyOwner {
+        whitelistedSourceAddresses[sourceSender] = whitelisted;
+        emit WhitelistedSourceAddressSet(sourceSender, whitelisted);
     }
 
     function deployStaticContract(bytes32 userSalt, bytes memory implementationBytecode) external {
@@ -196,7 +195,7 @@ contract InterchainDeployer is IInterchainDeployer, AxelarExecutable, Ownable, C
         string calldata sourceAddress,
         bytes calldata payload
     ) internal override {
-        if (!whitelistedSourceAddresses[sourceChain][sourceAddress]) {
+        if (!whitelistedSourceAddresses[StringToAddress.toAddress(sourceAddress)]) {
             revert NotWhitelistedSourceAddress();
         }
         Command command = abi.decode(payload, (Command));

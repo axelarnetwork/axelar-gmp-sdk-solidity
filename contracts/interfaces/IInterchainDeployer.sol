@@ -46,7 +46,7 @@ interface IInterchainDeployer is IOwnable, IAxelarExecutable, IDeploy {
         address implementation,
         string sourceChain
     );
-    event WhitelistedSourceAddressSet(string indexed sourceChain, string sourceSender, bool whitelisted);
+    event WhitelistedSourceAddressSet(address sourceSender, bool whitelisted);
     error NotWhitelistedSourceAddress();
     error CannotUpgradeFromNonIGEAccount(string reason);
     error CannotUpgradeForSomeoneElse(string reason);
@@ -71,11 +71,7 @@ interface IInterchainDeployer is IOwnable, IAxelarExecutable, IDeploy {
 
     function getProxyAddress(bytes32 userSalt) external view returns (address);
 
-    function setWhitelistedSourceAddress(
-        string calldata sourceChain,
-        string calldata sourceSender,
-        bool whitelisted
-    ) external;
+    function setWhitelistedSourceAddress(address sourceSender, bool whitelisted) external;
 
     function setGovernanceExecutor(address governanceExecutor_) external;
 }

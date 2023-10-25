@@ -306,11 +306,7 @@ describe('InterchainDeployer', () => {
           sourceEventIndex,
         );
 
-      await destID.setWhitelistedSourceAddress(
-        sourceChain,
-        srcID.address,
-        true,
-      );
+      await destID.setWhitelistedSourceAddress(srcID.address, true);
 
       await expect(
         destID.execute(
@@ -396,11 +392,7 @@ describe('InterchainDeployer', () => {
           sourceEventIndex,
         );
 
-      await destID.setWhitelistedSourceAddress(
-        sourceChain,
-        srcID.address,
-        true,
-      );
+      await destID.setWhitelistedSourceAddress(srcID.address, true);
 
       await expect(
         destID.execute(

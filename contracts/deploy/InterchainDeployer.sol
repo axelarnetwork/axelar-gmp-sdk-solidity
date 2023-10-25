@@ -29,7 +29,7 @@ contract InterchainDeployer is IInterchainDeployer, AxelarExecutable, Ownable, C
     ) AxelarExecutable(gateway_) Ownable(owner_) {
         gasService = IAxelarGasService(gasService_);
         governanceExecutor = governanceExecutor_;
-        setWhitelistedSourceAddress(address(this), true);
+        whitelistedSourceAddresses[address(this)] = true;
     }
 
     function setWhitelistedSourceAddress(address sourceSender, bool whitelisted) public onlyOwner {

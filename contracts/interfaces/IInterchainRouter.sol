@@ -20,7 +20,7 @@ interface IInterchainRouter is IContractIdentifier {
     /**
      * @dev Gets the name of the chain this is deployed at
      */
-    function chainName() external view returns (string memory chainName);
+    function chainName() external view returns (string memory);
 
     /**
      * @dev Gets the trusted address at a remote chain

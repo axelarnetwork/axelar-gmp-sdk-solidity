@@ -20,7 +20,7 @@ interface IInterchainRouter is IContractIdentifier {
     /**
      * @dev Gets the name of the chain this is deployed at
      */
-    function getChainName() external view returns (string memory chainName);
+    function chainName() external view returns (string memory chainName);
 
     /**
      * @dev Gets the trusted address at a remote chain
@@ -30,7 +30,7 @@ interface IInterchainRouter is IContractIdentifier {
     function getTrustedAddress(string memory chain) external view returns (string memory trustedAddress);
 
     /**
-     * @dev Gets  the trusted address hash at a remote chain
+     * @dev Gets the trusted address hash at a remote chain
      * @param chain Chain name of the remote chain
      * @return trustedAddressHash the hash of the trusted address
      */
@@ -56,11 +56,4 @@ interface IInterchainRouter is IContractIdentifier {
      * @param sourceChain Chain name of the interchain token service to be removed
      */
     function removeTrustedAddress(string calldata sourceChain) external;
-
-    /**
-     * @dev Fetches the interchain token service address for the specified chain
-     * @param chainName Name of the chain
-     * @return remoteAddress Interchain token service address for the specified chain
-     */
-    function getRemoteAddress(string calldata chainName) external view returns (string memory remoteAddress);
 }

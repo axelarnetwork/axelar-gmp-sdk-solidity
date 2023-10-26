@@ -3,15 +3,13 @@
 const chai = require('chai');
 const { ethers } = require('hardhat');
 const {
-  Contract,
   utils: { defaultAbiCoder },
 } = ethers;
 const { expect } = chai;
-const InterchainRouter = require('../../artifacts/contracts/utils/InterchainRouter.sol/InterchainRouter.json');
 const { deployContract } = require('../utils.js');
 
 describe('InterchainRouter', () => {
-  let ownerWallet, otherWallet, interchainRouter;
+  let ownerWallet, otherWallet, interchainRouter, interchainRouterFactory;
 
   const otherRemoteAddress = 'any string as an address';
   const otherChain = 'Other Name';
@@ -37,20 +35,19 @@ describe('InterchainRouter', () => {
     );
     interchainRouter = await deployContract(
       ownerWallet,
-      'TestInterchainRouterProxy',
+      'InterchainRouterProxy',
       [implementation.address, ownerWallet.address, params],
     );
-    interchainRouter = new Contract(
-      interchainRouter.address,
-      InterchainRouter.abi,
-      ownerWallet,
+
+    interchainRouterFactory = await ethers.getContractFactory(
+      'InterchainRouter',
     );
+    interchainRouter = interchainRouterFactory
+      .attach(interchainRouter.address)
+      .connect(ownerWallet);
   });
 
   it('Should revert on interchainRouter deployment with invalid chain name', async () => {
-    const interchainRouterFactory = await ethers.getContractFactory(
-      'InterchainRouter',
-    );
     await expect(
       interchainRouterFactory.deploy(''),
     ).to.be.revertedWithCustomError(interchainRouter, 'ZeroStringLength');
@@ -63,7 +60,7 @@ describe('InterchainRouter', () => {
       [chainName],
     );
     const interchainRouterProxyFactory = await ethers.getContractFactory(
-      'TestInterchainRouterProxy',
+      'InterchainRouterProxy',
     );
     const params = defaultAbiCoder.encode(
       ['string[]', 'string[]'],
@@ -78,10 +75,8 @@ describe('InterchainRouter', () => {
     ).to.be.revertedWithCustomError(interchainRouter, 'SetupFailed');
   });
 
-  it('Should revert when querrying the remote address for unregistered chains', async () => {
-    await expect(
-      interchainRouter.getRemoteAddress(otherChain),
-    ).to.be.revertedWithCustomError(interchainRouter, 'UntrustedChain');
+  it('Should get empty strings for the remote address for unregistered chains', async () => {
+    expect(await interchainRouter.getTrustedAddress(otherChain)).to.equal('');
   });
 
   it('Should be able to validate remote addresses properly', async () => {
@@ -104,7 +99,7 @@ describe('InterchainRouter', () => {
     )
       .to.emit(interchainRouter, 'TrustedAddressAdded')
       .withArgs(otherChain, otherRemoteAddress);
-    expect(await interchainRouter.getRemoteAddress(otherChain)).to.equal(
+    expect(await interchainRouter.getTrustedAddress(otherChain)).to.equal(
       otherRemoteAddress,
     );
   });
@@ -137,9 +132,7 @@ describe('InterchainRouter', () => {
     await expect(interchainRouter.removeTrustedAddress(otherChain))
       .to.emit(interchainRouter, 'TrustedAddressRemoved')
       .withArgs(otherChain);
-    await expect(
-      interchainRouter.getRemoteAddress(otherChain),
-    ).to.be.revertedWithCustomError(interchainRouter, 'UntrustedChain');
+    expect(await interchainRouter.getTrustedAddress(otherChain)).to.equal('');
   });
 
   it('Should revert on removing a custom remote address with an empty chain name', async () => {

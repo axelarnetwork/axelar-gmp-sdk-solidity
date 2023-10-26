@@ -2,13 +2,13 @@
 
 pragma solidity ^0.8.0;
 
-import { Proxy } from '../../upgradable/Proxy.sol';
+import { Proxy } from '../upgradable/Proxy.sol';
 
 /**
- * @title TestInterchainRouterProxy
+ * @title InterchainRouterProxy
  * @dev Proxy contract for the InterchainRouter contract. Inherits from the Proxy contract.
  */
-contract TestInterchainRouterProxy is Proxy {
+contract InterchainRouterProxy is Proxy {
     bytes32 private constant CONTRACT_ID = keccak256('interchain-router');
 
     /**

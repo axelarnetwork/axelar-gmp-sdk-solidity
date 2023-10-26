@@ -6,12 +6,13 @@ import { IInterchainRouter } from '../interfaces/IInterchainRouter.sol';
 import { Upgradable } from '../upgradable/Upgradable.sol';
 
 /**
- * @title RemoteAddressValidator
+ * @title InterchainRouter
  * @dev Manages and validates remote addresses, keeps track of addresses supported by the Axelar gateway contract
  */
 contract InterchainRouter is IInterchainRouter, Upgradable {
     bytes32 internal constant PREFIX_ADDRESS_MAPPING = keccak256('interchain-router-address-mapping');
     bytes32 internal constant PREFIX_ADDRESS_HASH_MAPPING = keccak256('interchain-router-address-hash-mapping');
+    // uint256(keccak256('interchain-router-chain-name-slot')) - 1
     uint256 internal constant CHAIN_NAME_SLOT = 0x6406a0b603e31e24a15e9f663879eedde3bef27687f318a9875bafac9d63fc1f;
 
     bytes32 private constant CONTRACT_ID = keccak256('interchain-router');
@@ -21,7 +22,7 @@ contract InterchainRouter is IInterchainRouter, Upgradable {
     }
 
     /**
-     * @dev Constructs the RemoteAddressValidator contract, both array parameters must be equal in length.
+     * @dev Constructs the InterchainRouter contract, both array parameters must be equal in length.
      * @param chainName_ The name of the current chain.
      */
     constructor(string memory chainName_) {
@@ -52,8 +53,8 @@ contract InterchainRouter is IInterchainRouter, Upgradable {
     /**
      * @dev Gets the name of the chain this is deployed at
      */
-    function getChainName() external view returns (string memory chainName) {
-        chainName = _getStringStorage(CHAIN_NAME_SLOT).value;
+    function chainName() external view returns (string memory) {
+        return _getStringStorage(CHAIN_NAME_SLOT).value;
     }
 
     /**
@@ -154,18 +155,5 @@ contract InterchainRouter is IInterchainRouter, Upgradable {
             sstore(slot, 0)
         }
         emit TrustedAddressRemoved(sourceChain);
-    }
-
-    /**
-     * @dev Fetches the interchain token service address for the specified chain
-     * @param chainName Name of the chain
-     * @return remoteAddress Interchain token service address for the specified chain
-     */
-    function getRemoteAddress(string calldata chainName) external view returns (string memory remoteAddress) {
-        remoteAddress = getTrustedAddress(chainName);
-
-        if (bytes(remoteAddress).length == 0) {
-            revert UntrustedChain();
-        }
     }
 }

@@ -168,7 +168,7 @@ contract RolesBase is IRolesBase {
 
         _setRoles(account, accountRoles);
 
-        emit RolesAdded(account, roles);
+        emit RolesAdded(msg.sender, account, roles);
     }
 
     /**
@@ -199,7 +199,7 @@ contract RolesBase is IRolesBase {
 
         _setRoles(account, accountRoles);
 
-        emit RolesRemoved(account, roles);
+        emit RolesRemoved(msg.sender, account, roles);
     }
 
     /**

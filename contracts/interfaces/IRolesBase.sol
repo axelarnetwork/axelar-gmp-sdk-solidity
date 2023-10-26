@@ -15,8 +15,8 @@ interface IRolesBase {
     error InvalidProposedRoles(address fromAccount, address toAccount, uint8[] roles);
 
     event RolesProposed(address indexed fromAccount, address indexed toAccount, uint8[] roles);
-    event RolesAdded(address indexed account, uint8[] roles);
-    event RolesRemoved(address indexed account, uint8[] roles);
+    event RolesAdded(address indexed caller, address indexed account, uint8[] roles);
+    event RolesRemoved(address indexed caller, address indexed account, uint8[] roles);
 
     /**
      * @notice Checks if an account has a role.

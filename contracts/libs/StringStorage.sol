@@ -11,8 +11,12 @@ library StringStorage {
         _getStringStorage(slot).value = str;
     }
 
-    function load(string memory str, uint256 slot) internal view {
+    function load(uint256 slot) internal view returns (string memory str) {
         str = _getStringStorage(slot).value;
+    }
+
+    function del(uint256 slot) internal {
+        delete _getStringStorage(slot).value;
     }
 
     function _getStringStorage(uint256 slot) internal pure returns (Wrapper storage wrapper) {

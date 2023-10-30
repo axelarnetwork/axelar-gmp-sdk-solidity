@@ -17,7 +17,7 @@ contract InterchainAddressTracker is IInterchainAddressTracker, Upgradable {
     bytes32 internal constant PREFIX_ADDRESS_MAPPING = keccak256('interchain-router-address-mapping');
     bytes32 internal constant PREFIX_ADDRESS_HASH_MAPPING = keccak256('interchain-router-address-hash-mapping');
     // uint256(keccak256('interchain-router-chain-name-slot')) - 1
-    uint256 internal constant CHAIN_NAME_SLOT = 0x6406a0b603e31e24a15e9f663879eedde3bef27687f318a9875bafac9d63fc1f;
+    bytes32 internal constant CHAIN_NAME_SLOT = 0x6406a0b603e31e24a15e9f663879eedde3bef27687f318a9875bafac9d63fc1f;
 
     bytes32 private constant CONTRACT_ID = keccak256('interchain-router');
 
@@ -27,7 +27,7 @@ contract InterchainAddressTracker is IInterchainAddressTracker, Upgradable {
      */
     constructor(string memory chainName_) {
         if (bytes(chainName_).length == 0) revert ZeroStringLength();
-        chainName_.store(CHAIN_NAME_SLOT);
+        chainName_.storeString(CHAIN_NAME_SLOT);
     }
 
     /**
@@ -54,7 +54,7 @@ contract InterchainAddressTracker is IInterchainAddressTracker, Upgradable {
      * @dev Gets the name of the chain this is deployed at
      */
     function chainName() external view returns (string memory chainName_) {
-        chainName_ = StringStorage.load(CHAIN_NAME_SLOT);
+        chainName_ = StringStorage.loadString(CHAIN_NAME_SLOT);
     }
 
     /**
@@ -62,8 +62,8 @@ contract InterchainAddressTracker is IInterchainAddressTracker, Upgradable {
      * @param chain Chain name of the remote chain
      * @return slot the slot to store the trusted address in
      */
-    function _getTrustedAddressSlot(string memory chain) internal pure returns (uint256 slot) {
-        slot = uint256(keccak256(abi.encode(PREFIX_ADDRESS_MAPPING, chain)));
+    function _getTrustedAddressSlot(string memory chain) internal pure returns (bytes32 slot) {
+        slot = keccak256(abi.encode(PREFIX_ADDRESS_MAPPING, chain));
     }
 
     /**
@@ -71,8 +71,8 @@ contract InterchainAddressTracker is IInterchainAddressTracker, Upgradable {
      * @param chain Chain name of the remote chain
      * @return slot the slot to store the trusted address hash in
      */
-    function _getTrustedAddressHashSlot(string memory chain) internal pure returns (uint256 slot) {
-        slot = uint256(keccak256(abi.encode(PREFIX_ADDRESS_HASH_MAPPING, chain)));
+    function _getTrustedAddressHashSlot(string memory chain) internal pure returns (bytes32 slot) {
+        slot = keccak256(abi.encode(PREFIX_ADDRESS_HASH_MAPPING, chain));
     }
 
     /**
@@ -81,8 +81,8 @@ contract InterchainAddressTracker is IInterchainAddressTracker, Upgradable {
      * @param trustedAddress the string representation of the trusted address
      */
     function _setTrustedAddress(string memory chain, string memory trustedAddress) internal {
-        trustedAddress.store(_getTrustedAddressSlot(chain));
-        uint256 slot = _getTrustedAddressHashSlot(chain);
+        trustedAddress.storeString(_getTrustedAddressSlot(chain));
+        bytes32 slot = _getTrustedAddressHashSlot(chain);
         bytes32 addressHash = keccak256(bytes(trustedAddress));
         assembly {
             sstore(slot, addressHash)
@@ -95,7 +95,7 @@ contract InterchainAddressTracker is IInterchainAddressTracker, Upgradable {
      * @return trustedAddress the trusted address for the chain. Returns '' if the chain is untrusted
      */
     function getTrustedAddress(string memory chain) public view returns (string memory trustedAddress) {
-        trustedAddress = StringStorage.load(_getTrustedAddressSlot(chain));
+        trustedAddress = StringStorage.loadString(_getTrustedAddressSlot(chain));
     }
 
     /**
@@ -104,7 +104,7 @@ contract InterchainAddressTracker is IInterchainAddressTracker, Upgradable {
      * @return trustedAddressHash the hash of the trusted address
      */
     function getTrustedAddressHash(string memory chain) public view returns (bytes32 trustedAddressHash) {
-        uint256 slot = _getTrustedAddressHashSlot(chain);
+        bytes32 slot = _getTrustedAddressHashSlot(chain);
         assembly {
             trustedAddressHash := sload(slot)
         }
@@ -143,8 +143,8 @@ contract InterchainAddressTracker is IInterchainAddressTracker, Upgradable {
     function removeTrustedAddress(string calldata sourceChain) external onlyOwner {
         if (bytes(sourceChain).length == 0) revert ZeroStringLength();
 
-        StringStorage.del(_getTrustedAddressSlot(sourceChain));
-        uint256 slot = _getTrustedAddressHashSlot(sourceChain);
+        StringStorage.deleteString(_getTrustedAddressSlot(sourceChain));
+        bytes32 slot = _getTrustedAddressHashSlot(sourceChain);
         assembly {
             sstore(slot, 0)
         }

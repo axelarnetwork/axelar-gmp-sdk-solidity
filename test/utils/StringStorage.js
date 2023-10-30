@@ -21,25 +21,25 @@ describe('StringStorage', () => {
     const str = 'hello';
     const slot = keccak256('0x1234');
 
-    await await stringStorage.storeString(slot, str);
+    await stringStorage.set(slot, str).then((tx) => tx.wait());
 
-    expect(await stringStorage.loadString(slot)).to.equal(str);
+    expect(await stringStorage.get(slot)).to.equal(str);
 
-    await await stringStorage.deleteString(slot);
+    await stringStorage.clear(slot).then((tx) => tx.wait());
 
-    expect(await stringStorage.loadString(slot)).to.equal('');
+    expect(await stringStorage.get(slot)).to.equal('');
   });
 
   it('Should store, load and delete a long string properly', async () => {
     const str = keccak256('0x1234') + keccak256('0x5678');
     const slot = keccak256('0x1234');
 
-    await await stringStorage.storeString(slot, str);
+    await stringStorage.set(slot, str).then((tx) => tx.wait());
 
-    expect(await stringStorage.loadString(slot)).to.equal(str);
+    expect(await stringStorage.get(slot)).to.equal(str);
 
-    await await stringStorage.deleteString(slot);
+    await stringStorage.clear(slot).then((tx) => tx.wait());
 
-    expect(await stringStorage.loadString(slot)).to.equal('');
+    expect(await stringStorage.get(slot)).to.equal('');
   });
 });

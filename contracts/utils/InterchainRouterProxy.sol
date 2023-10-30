@@ -5,15 +5,15 @@ pragma solidity ^0.8.0;
 import { Proxy } from '../upgradable/Proxy.sol';
 
 /**
- * @title InterchainRouterProxy
- * @dev Proxy contract for the InterchainRouter contract. Inherits from the Proxy contract.
+ * @title InterchainAddressTrackerProxy
+ * @dev Proxy contract for the InterchainAddressTracker contract. Inherits from the Proxy contract.
  */
-contract InterchainRouterProxy is Proxy {
+contract InterchainAddressTrackerProxy is Proxy {
     bytes32 private constant CONTRACT_ID = keccak256('interchain-router');
 
     /**
-     * @dev Constructs the InterchainRouterProxy contract.
-     * @param implementationAddress Address of the InterchainRouter implementation
+     * @dev Constructs the InterchainAddressTrackerProxy contract.
+     * @param implementationAddress Address of the InterchainAddressTracker implementation
      * @param owner Address of the owner of the proxy
      * @param params The params to be passed to the _setup function of the implementation.
      */

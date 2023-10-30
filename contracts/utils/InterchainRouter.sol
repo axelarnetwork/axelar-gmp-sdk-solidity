@@ -2,16 +2,16 @@
 
 pragma solidity ^0.8.0;
 
-import { IInterchainRouter } from '../interfaces/IInterchainRouter.sol';
+import { IInterchainAddressTracker } from '../interfaces/IInterchainAddressTracker.sol';
 import { Upgradable } from '../upgradable/Upgradable.sol';
 
 import { StringStorage } from '../libs/StringStorage.sol';
 
 /**
- * @title InterchainRouter
+ * @title InterchainAddressTracker
  * @dev Manages and validates remote addresses, keeps track of addresses supported by the Axelar gateway contract
  */
-contract InterchainRouter is IInterchainRouter, Upgradable {
+contract InterchainAddressTracker is IInterchainAddressTracker, Upgradable {
     using StringStorage for string;
 
     bytes32 internal constant PREFIX_ADDRESS_MAPPING = keccak256('interchain-router-address-mapping');
@@ -22,7 +22,7 @@ contract InterchainRouter is IInterchainRouter, Upgradable {
     bytes32 private constant CONTRACT_ID = keccak256('interchain-router');
 
     /**
-     * @dev Constructs the InterchainRouter contract, both array parameters must be equal in length.
+     * @dev Constructs the InterchainAddressTracker contract, both array parameters must be equal in length.
      * @param chainName_ The name of the current chain.
      */
     constructor(string memory chainName_) {

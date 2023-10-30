@@ -8,8 +8,8 @@ const {
 const { expect } = chai;
 const { deployContract } = require('../utils.js');
 
-describe('InterchainRouter', () => {
-  let ownerWallet, otherWallet, interchainRouter, interchainRouterFactory;
+describe('InterchainAddressTracker', () => {
+  let ownerWallet, otherWallet, interchainAddressTracker, interchainAddressTrackerFactory;
 
   const otherRemoteAddress = 'any string as an address';
   const otherChain = 'Other Name';
@@ -26,124 +26,124 @@ describe('InterchainRouter', () => {
     defaultAddresses.push('another address format');
     const implementation = await deployContract(
       ownerWallet,
-      'InterchainRouter',
+      'InterchainAddressTracker',
       [chainName],
     );
     const params = defaultAbiCoder.encode(
       ['string[]', 'string[]'],
       [defaultChains, defaultAddresses],
     );
-    interchainRouter = await deployContract(
+    interchainAddressTracker = await deployContract(
       ownerWallet,
-      'InterchainRouterProxy',
+      'InterchainAddressTrackerProxy',
       [implementation.address, ownerWallet.address, params],
     );
 
-    interchainRouterFactory = await ethers.getContractFactory(
-      'InterchainRouter',
+    interchainAddressTrackerFactory = await ethers.getContractFactory(
+      'InterchainAddressTracker',
     );
-    interchainRouter = interchainRouterFactory
-      .attach(interchainRouter.address)
+    interchainAddressTracker = interchainAddressTrackerFactory
+      .attach(interchainAddressTracker.address)
       .connect(ownerWallet);
   });
 
-  it('Should revert on interchainRouter deployment with invalid chain name', async () => {
+  it('Should revert on interchainAddressTracker deployment with invalid chain name', async () => {
     await expect(
-      interchainRouterFactory.deploy(''),
-    ).to.be.revertedWithCustomError(interchainRouter, 'ZeroStringLength');
+      interchainAddressTrackerFactory.deploy(''),
+    ).to.be.revertedWithCustomError(interchainAddressTracker, 'ZeroStringLength');
   });
 
-  it('Should revert on interchainRouter deployment with length mismatch between chains and trusted addresses arrays', async () => {
-    const interchainRouterImpl = await deployContract(
+  it('Should revert on interchainAddressTracker deployment with length mismatch between chains and trusted addresses arrays', async () => {
+    const interchainAddressTrackerImpl = await deployContract(
       ownerWallet,
-      'InterchainRouter',
+      'InterchainAddressTracker',
       [chainName],
     );
-    const interchainRouterProxyFactory = await ethers.getContractFactory(
-      'InterchainRouterProxy',
+    const interchainAddressTrackerProxyFactory = await ethers.getContractFactory(
+      'InterchainAddressTrackerProxy',
     );
     const params = defaultAbiCoder.encode(
       ['string[]', 'string[]'],
       [['Chain A'], []],
     );
     await expect(
-      interchainRouterProxyFactory.deploy(
-        interchainRouterImpl.address,
+      interchainAddressTrackerProxyFactory.deploy(
+        interchainAddressTrackerImpl.address,
         ownerWallet.address,
         params,
       ),
-    ).to.be.revertedWithCustomError(interchainRouter, 'SetupFailed');
+    ).to.be.revertedWithCustomError(interchainAddressTracker, 'SetupFailed');
   });
 
   it('Should get empty strings for the remote address for unregistered chains', async () => {
-    expect(await interchainRouter.getTrustedAddress(otherChain)).to.equal('');
+    expect(await interchainAddressTracker.getTrustedAddress(otherChain)).to.equal('');
   });
 
   it('Should be able to validate remote addresses properly', async () => {
     expect(
-      await interchainRouter.validateSender(otherChain, otherRemoteAddress),
+      await interchainAddressTracker.validateSender(otherChain, otherRemoteAddress),
     ).to.equal(false);
   });
 
   it('Should not be able to add a custom remote address as not the owner', async () => {
     await expect(
-      interchainRouter
+      interchainAddressTracker
         .connect(otherWallet)
         .addTrustedAddress(otherChain, otherRemoteAddress),
-    ).to.be.revertedWithCustomError(interchainRouter, 'NotOwner');
+    ).to.be.revertedWithCustomError(interchainAddressTracker, 'NotOwner');
   });
 
   it('Should be able to add a custom remote address as the owner', async () => {
     await expect(
-      interchainRouter.addTrustedAddress(otherChain, otherRemoteAddress),
+      interchainAddressTracker.addTrustedAddress(otherChain, otherRemoteAddress),
     )
-      .to.emit(interchainRouter, 'TrustedAddressAdded')
+      .to.emit(interchainAddressTracker, 'TrustedAddressAdded')
       .withArgs(otherChain, otherRemoteAddress);
-    expect(await interchainRouter.getTrustedAddress(otherChain)).to.equal(
+    expect(await interchainAddressTracker.getTrustedAddress(otherChain)).to.equal(
       otherRemoteAddress,
     );
   });
 
   it('Should revert on adding a custom remote address with an empty chain name', async () => {
     await expect(
-      interchainRouter.addTrustedAddress('', otherRemoteAddress),
-    ).to.be.revertedWithCustomError(interchainRouter, 'ZeroStringLength');
+      interchainAddressTracker.addTrustedAddress('', otherRemoteAddress),
+    ).to.be.revertedWithCustomError(interchainAddressTracker, 'ZeroStringLength');
   });
 
   it('Should revert on adding a custom remote address with an invalid remote address', async () => {
     await expect(
-      interchainRouter.addTrustedAddress(otherChain, ''),
-    ).to.be.revertedWithCustomError(interchainRouter, 'ZeroStringLength');
+      interchainAddressTracker.addTrustedAddress(otherChain, ''),
+    ).to.be.revertedWithCustomError(interchainAddressTracker, 'ZeroStringLength');
   });
 
   it('Should be able to validate remote addresses properly.', async () => {
     expect(
-      await interchainRouter.validateSender(otherChain, otherRemoteAddress),
+      await interchainAddressTracker.validateSender(otherChain, otherRemoteAddress),
     ).to.equal(true);
   });
 
   it('Should not be able to remove a custom remote address as not the owner', async () => {
     await expect(
-      interchainRouter.connect(otherWallet).removeTrustedAddress(otherChain),
-    ).to.be.revertedWithCustomError(interchainRouter, 'NotOwner');
+      interchainAddressTracker.connect(otherWallet).removeTrustedAddress(otherChain),
+    ).to.be.revertedWithCustomError(interchainAddressTracker, 'NotOwner');
   });
 
   it('Should be able to remove a custom remote address as the owner', async () => {
-    await expect(interchainRouter.removeTrustedAddress(otherChain))
-      .to.emit(interchainRouter, 'TrustedAddressRemoved')
+    await expect(interchainAddressTracker.removeTrustedAddress(otherChain))
+      .to.emit(interchainAddressTracker, 'TrustedAddressRemoved')
       .withArgs(otherChain);
-    expect(await interchainRouter.getTrustedAddress(otherChain)).to.equal('');
+    expect(await interchainAddressTracker.getTrustedAddress(otherChain)).to.equal('');
   });
 
   it('Should revert on removing a custom remote address with an empty chain name', async () => {
     await expect(
-      interchainRouter.removeTrustedAddress(''),
-    ).to.be.revertedWithCustomError(interchainRouter, 'ZeroStringLength');
+      interchainAddressTracker.removeTrustedAddress(''),
+    ).to.be.revertedWithCustomError(interchainAddressTracker, 'ZeroStringLength');
   });
 
   it('Should be able to validate remote addresses properly.', async () => {
     expect(
-      await interchainRouter.validateSender(otherChain, otherRemoteAddress),
+      await interchainAddressTracker.validateSender(otherChain, otherRemoteAddress),
     ).to.equal(false);
   });
 });

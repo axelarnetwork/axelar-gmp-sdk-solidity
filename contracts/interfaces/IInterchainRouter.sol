@@ -8,7 +8,7 @@ import { IContractIdentifier } from './IContractIdentifier.sol';
  * @title IRemoteAddressValidator
  * @dev Manages and validates remote addresses, keeps track of addresses supported by the Axelar gateway contract
  */
-interface IInterchainRouter is IContractIdentifier {
+interface IInterchainAddressTracker is IContractIdentifier {
     error ZeroAddress();
     error LengthMismatch();
     error ZeroStringLength();

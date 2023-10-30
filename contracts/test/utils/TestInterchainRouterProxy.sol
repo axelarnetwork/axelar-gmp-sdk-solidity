@@ -2,14 +2,14 @@
 
 pragma solidity ^0.8.0;
 
-import { InterchainRouterProxy } from '../../utils/InterchainRouterProxy.sol';
+import { InterchainAddressTrackerProxy } from '../../utils/InterchainAddressTrackerProxy.sol';
 
-contract TestInterchainRouterProxy is InterchainRouterProxy {
+contract TestInterchainAddressTrackerProxy is InterchainAddressTrackerProxy {
     constructor(
         address implementationAddress,
         address owner,
         bytes memory params
-    ) InterchainRouterProxy(implementationAddress, owner, params) {
+    ) InterchainAddressTrackerProxy(implementationAddress, owner, params) {
         contractId();
     }
 }

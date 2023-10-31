@@ -41,4 +41,19 @@ describe('Pausable', () => {
       .withArgs(ownerWallet.address);
     await expect(test.testPaused()).to.emit(test, 'TestEvent');
   });
+
+  it('Should be able to execute paused functions only when paused', async () => {
+    await expect(test.pause())
+      .to.emit(test, 'Paused')
+      .withArgs(ownerWallet.address);
+    await expect(test.testNotPaused()).to.emit(test, 'TestEvent');
+
+    await expect(test.unpause())
+      .to.emit(test, 'Unpaused')
+      .withArgs(ownerWallet.address);
+    await expect(test.testNotPaused()).to.be.revertedWithCustomError(
+      test,
+      'NotPaused',
+    );
+  });
 });

@@ -17,5 +17,9 @@ contract TestReentrancyGuard is ReentrancyGuard {
         value = 2;
     }
 
+    function testFunction2() external noReEntrancy {
+        value = 2;
+    }
+
     function callback() external noReEntrancy {}
 }

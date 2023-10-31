@@ -22,6 +22,11 @@ contract TestMulticall is Multicall {
         return nonce_;
     }
 
+    function function3() external pure {
+        // solhint-disable-next-line reason-string
+        revert();
+    }
+
     function multicallTest(bytes[] calldata data) external {
         lastMulticallReturns = multicall(data);
     }

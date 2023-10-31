@@ -22,4 +22,8 @@ describe('ReentrancyGuard', () => {
       'ReentrantCall',
     );
   });
+
+  it('Should set internal state back to NOT_ENTERED after noReEntrancy modified contract call', async function () {
+    await expect(guard.testFunction2()).to.not.be.reverted;
+  });
 });

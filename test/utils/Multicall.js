@@ -10,6 +10,7 @@ describe('Mutlicall', () => {
   let test;
   let function1Data;
   let function2Data;
+  let function3Data;
   let ownerWallet;
 
   before(async () => {
@@ -19,6 +20,7 @@ describe('Mutlicall', () => {
     test = await deployContract(ownerWallet, 'TestMulticall');
     function1Data = (await test.populateTransaction.function1()).data;
     function2Data = (await test.populateTransaction.function2()).data;
+    function3Data = (await test.populateTransaction.function3()).data;
   });
 
   it('Shoult test the multicall', async () => {
@@ -65,5 +67,22 @@ describe('Mutlicall', () => {
       const val = Number(defaultAbiCoder.decode(['uint256'], lastReturns[i]));
       expect(val).to.equal(nonce + i);
     }
+  });
+
+  it('Shoult revert if any of the calls fail', async () => {
+    const nonce = Number(await test.nonce());
+
+    await expect(
+      test.multicall([
+        function1Data,
+        function2Data,
+        function3Data,
+        function1Data,
+      ]),
+    )
+      .to.emit(test, 'Function1Called')
+      .withArgs(nonce + 0)
+      .and.to.emit(test, 'Function2Called')
+      .withArgs(nonce + 1).to.be.reverted;
   });
 });

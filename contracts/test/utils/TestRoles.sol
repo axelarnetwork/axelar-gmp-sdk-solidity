@@ -42,4 +42,20 @@ contract TestRoles is Roles {
     function removeRole(address account, uint8 role) external {
         _removeRole(account, role);
     }
+
+    function transferRole(
+        address from,
+        address to,
+        uint8 role
+    ) external {
+        _transferRole(from, to, role);
+    }
+
+    function proposeRole(address account, uint8 role) external {
+        _proposeRole(msg.sender, account, role);
+    }
+
+    function acceptRole(address account, uint8 role) external {
+        _acceptRole(account, msg.sender, role);
+    }
 }

@@ -14,7 +14,7 @@ function toAccountRoles(roles) {
   for (const role of roles) {
     accountRoles |= 1 << role;
   }
-  
+
   return accountRoles;
 }
 
@@ -422,6 +422,62 @@ describe('Roles', () => {
         .withArgs(userWallet.address, 1 << role);
 
       expect(await testRoles.getAccountRoles(userWallet.address)).to.equal(0);
+    });
+
+    it('should transfer a single role in one step', async () => {
+      const role = 2;
+      const accountRoles = toAccountRoles([role]);
+
+      await expect(
+        testRoles.transferRole(ownerWallet.address, userWallet.address, role),
+      )
+        .to.emit(testRoles, 'RolesRemoved')
+        .withArgs(ownerWallet.address, accountRoles)
+        .to.emit(testRoles, 'RolesAdded')
+        .withArgs(userWallet.address, accountRoles);
+
+      expect(await testRoles.getAccountRoles(userWallet.address)).to.equal(
+        accountRoles,
+      );
+      expect(await testRoles.getAccountRoles(ownerWallet.address)).to.equal(
+        toAccountRoles([1, 3]),
+      );
+    });
+
+    it('should propose a new role and accept it', async () => {
+      const role = 2;
+      const accountRoles = toAccountRoles([role]);
+
+      await expect(testRoles.proposeRole(userWallet.address, role))
+        .to.emit(testRoles, 'RolesProposed')
+        .withArgs(ownerWallet.address, userWallet.address, accountRoles);
+
+      expect(
+        await testRoles.getProposedRoles(
+          ownerWallet.address,
+          userWallet.address,
+        ),
+      ).to.equal(accountRoles);
+
+      expect(await testRoles.getAccountRoles(userWallet.address)).to.equal(0);
+
+      await testRoles
+        .connect(userWallet)
+        .acceptRole(ownerWallet.address, role)
+        .then((tx) => tx.wait());
+
+      expect(
+        await testRoles.getProposedRoles(
+          ownerWallet.address,
+          userWallet.address,
+        ),
+      ).to.equal(0); // cleared proposed roles
+      expect(await testRoles.getAccountRoles(userWallet.address)).to.equal(
+        accountRoles,
+      ); // 12 is the binary representation of roles [2, 3]
+      expect(await testRoles.getAccountRoles(ownerWallet.address)).to.equal(
+        toAccountRoles([1, 3]),
+      );
     });
   });
 });

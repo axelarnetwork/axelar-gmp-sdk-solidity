@@ -25,7 +25,7 @@ interface IInterchainDeployer is IOwnable, IAxelarExecutable, IDeploy {
     struct ImplContractDetails {
         bytes implBytecode;
         bytes implSetupParams;
-        bool onlyIGEUpgrades;
+        address governanceExecutorAddress;
     }
 
     // an enum used to declare the type of cross-chain function to execute
@@ -73,6 +73,8 @@ interface IInterchainDeployer is IOwnable, IAxelarExecutable, IDeploy {
     // an error emitted when an upgrade to a contract is attempted by a non-owner
     error CannotUpgradeForSomeoneElse(string reason);
 
+    error NoProxyFound(string reason);
+
     /**
      * @dev Deploy a fixed implementation contract on a chain. Not an interchain call.
      * @param userSalt Unique salt used to deploy the contract
@@ -107,16 +109,10 @@ interface IInterchainDeployer is IOwnable, IAxelarExecutable, IDeploy {
     /**
      * @dev Upgrades the implementation of an upgradeable contract. Not an interchain call. This method can only be called
      * by either the owner of the proxy contract in question or via the approved interchain governance executor contract
-     * @param proxyOwner The owner of the proxy address whose implementation needs to be updated
      * @param userSalt Unique salt used to deploy the contract
      * @param contractDetails The details of the implementation, including the implementation bytecode and setup parameters
-     * (The 'onlyIGEUpgrades' boolean is ignored here)
      */
-    function upgradeUpgradeableContract(
-        address proxyOwner,
-        bytes32 userSalt,
-        ImplContractDetails memory contractDetails
-    ) external;
+    function upgradeUpgradeableContract(bytes32 userSalt, ImplContractDetails memory contractDetails) external;
 
     /**
      * @dev Upgrade an upgradeable contract to an array of specified destination chains. This is an interchain call.
@@ -138,10 +134,4 @@ interface IInterchainDeployer is IOwnable, IAxelarExecutable, IDeploy {
      * @param whitelisted The whitelist status
      */
     function setWhitelistedSourceAddress(address sourceSender, bool whitelisted) external;
-
-    /**
-     * @dev Set the whitelisted governance executor contract.
-     * @param governanceExecutor_ Address of the deployed Interchain Governance Executor
-     */
-    function setGovernanceExecutor(address governanceExecutor_) external;
 }

@@ -27,23 +27,20 @@ import { Create3 } from './Create3.sol';
 contract InterchainDeployer is IInterchainDeployer, AxelarExecutable, Ownable, Create3 {
     using StringToAddress for string;
     IAxelarGasService public immutable gasService;
-    address governanceExecutor;
 
     // The `InterchainDeployer` contract address at the source chain is set as a whitelisted source address by default
     mapping(address => bool) public whitelistedSourceAddresses;
 
-    // A mapping of upgradeable proxy contract addresses and their owners. If a proxy contract is a key in this mapping,
-    // it can only be upgraded via governance executor.
-    mapping(address => address) public igeRestrictedProxies;
+    // A mapping of upgradeable proxy contract addresses and their owners.
+    // The owner can be the governance executor when specified by the user in the initial deployment.
+    mapping(address => address) public proxyOwner;
 
     constructor(
         address gateway_,
         address gasService_,
-        address owner_,
-        address governanceExecutor_
+        address owner_
     ) AxelarExecutable(gateway_) Ownable(owner_) {
         gasService = IAxelarGasService(gasService_);
-        governanceExecutor = governanceExecutor_;
         whitelistedSourceAddresses[address(this)] = true;
     }
 
@@ -67,14 +64,6 @@ contract InterchainDeployer is IInterchainDeployer, AxelarExecutable, Ownable, C
     }
 
     /**
-     * @dev Set the whitelisted governance executor contract.
-     * @param governanceExecutor_ Address of the deployed Interchain Governance Executor
-     */
-    function setGovernanceExecutor(address governanceExecutor_) external onlyOwner {
-        governanceExecutor = governanceExecutor_;
-    }
-
-    /**
      * @dev Utility method that returns an address derived from the msg.sender and its unique salt
      * @param userSalt Unique salt used to deploy the contract
      */
@@ -95,37 +84,18 @@ contract InterchainDeployer is IInterchainDeployer, AxelarExecutable, Ownable, C
     /**
      * @dev Upgrades the implementation of an upgradeable contract. Not an interchain call. This method can only be called
      * by either the owner of the proxy contract in question or via the approved interchain governance executor contract
-     * @param proxyOwner The owner of the proxy address whose implementation needs to be updated
      * @param userSalt Unique salt used to deploy the contract
      * @param contractDetails The details of the implementation, including the implementation bytecode and setup parameters
-     * (The 'onlyIGEUpgrades' boolean is ignored here)
      */
-    function upgradeUpgradeableContract(
-        address proxyOwner,
-        bytes32 userSalt,
-        ImplContractDetails memory contractDetails
-    ) external {
-        address proxy;
+    function upgradeUpgradeableContract(bytes32 userSalt, ImplContractDetails memory contractDetails) external {
+        // address proxy = _create3Address(keccak256(abi.encode(msg.sender, userSalt)));
+        // address approvedOwner = proxyOwner[proxy];
 
-        if (msg.sender == governanceExecutor) {
-            proxy = _create3Address(keccak256(abi.encode(proxyOwner, userSalt)));
-        } else if (msg.sender == proxyOwner) {
-            proxy = _create3Address(keccak256(abi.encode(msg.sender, userSalt)));
-        } else {
-            revert CannotUpgradeForSomeoneElse('cannot upgrade for someone else');
-        }
+        // if (approvedOwner == address(0x0)) revert NoProxyFound('No proxy found');
 
-        address ownerInMapping = igeRestrictedProxies[proxy];
+        // if (msg.sender != approvedOwner) revert CannotUpgradeForSomeoneElse('Cannot upgrade for someone else');
 
-        if (ownerInMapping != address(0x0) && msg.sender != governanceExecutor)
-            revert CannotUpgradeFromNonIGEAccount('Only upgradeable via IGE');
-
-        _upgradeUpgradeable(
-            ownerInMapping != address(0x0) ? ownerInMapping : msg.sender,
-            userSalt,
-            contractDetails,
-            ''
-        );
+        _upgradeUpgradeable(msg.sender, userSalt, contractDetails, '');
     }
 
     /**
@@ -151,7 +121,7 @@ contract InterchainDeployer is IInterchainDeployer, AxelarExecutable, Ownable, C
 
     /**
      * @dev Upgrade an upgradeable contract to an array of specified destination chains. This is an interchain call.
-     * Note this will only work if in the initial deployment of the contract, 'onlyIGEUpgrades' was not configured to 'true'.
+     * Note this will only work if the sender is the owner of the originally-deployed proxy contract.
      * @param userSalt Unique salt used to deploy the contract
      * @param remoteChainData Details of the remote chains that should deploy the contracts
      */
@@ -201,9 +171,15 @@ contract InterchainDeployer is IInterchainDeployer, AxelarExecutable, Ownable, C
     ) internal {
         bytes32 deploySalt = keccak256(abi.encode(sender, userSalt));
         address proxy = _create3Address(deploySalt);
+        address approvedOwner = proxyOwner[proxy];
+
+        if (approvedOwner == address(0x0)) revert NoProxyFound('No proxy found');
+        if (sender != approvedOwner) revert CannotUpgradeForSomeoneElse('Cannot upgrade for someone else');
+
         address newImplementation = _deployImplementation(deploySalt, contractDetails.implBytecode);
         bytes32 newImplementationCodeHash = newImplementation.codehash;
         IUpgradable(proxy).upgrade(newImplementation, newImplementationCodeHash, contractDetails.implSetupParams);
+
         emit UpgradedContract(sender, userSalt, proxy, newImplementation, sourceChain);
     }
 
@@ -223,7 +199,8 @@ contract InterchainDeployer is IInterchainDeployer, AxelarExecutable, Ownable, C
 
     /**
      * @dev Internal method that deploys an upgradeable contract
-     * If the user specifies 'onlyIGEUpgrades', then the contract can only be upgraded via IGE
+     * If the user specifies 'governanceExecutorAddress',
+     * then that address is the owner of the contract
      */
     function _deployUpgradeable(
         address sender,
@@ -231,13 +208,17 @@ contract InterchainDeployer is IInterchainDeployer, AxelarExecutable, Ownable, C
         ImplContractDetails memory contractDetails,
         string memory sourceChain
     ) internal {
-        bytes32 deploySalt = keccak256(abi.encode(sender, userSalt));
+        address owner = contractDetails.governanceExecutorAddress != address(0x0)
+            ? contractDetails.governanceExecutorAddress
+            : sender;
+        bytes32 deploySalt = keccak256(abi.encode(owner, userSalt));
+
         address implementation = _deployImplementation(deploySalt, contractDetails.implBytecode);
         address proxy = _deployProxy(deploySalt, implementation, contractDetails.implSetupParams);
 
-        if (governanceExecutor != address(0x0) && contractDetails.onlyIGEUpgrades) igeRestrictedProxies[proxy] = sender;
+        proxyOwner[proxy] = owner;
 
-        emit DeployedUpgradeableContract(sender, userSalt, proxy, implementation, sourceChain);
+        emit DeployedUpgradeableContract(owner, userSalt, proxy, implementation, sourceChain);
     }
 
     /**
@@ -311,9 +292,6 @@ contract InterchainDeployer is IInterchainDeployer, AxelarExecutable, Ownable, C
                 payload,
                 (Command, address, bytes32, ImplContractDetails)
             );
-            address proxy = _create3Address(keccak256(abi.encode(sender, userSalt)));
-            if (igeRestrictedProxies[proxy] != address(0x0))
-                revert CannotUpgradeFromNonIGEAccount('Only upgradeable via IGE');
             _upgradeUpgradeable(sender, userSalt, contractDetails, sourceChain);
         } else {
             revert('invalid command');

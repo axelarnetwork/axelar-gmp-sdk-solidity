@@ -3,6 +3,7 @@
 const chai = require('chai');
 const {
   utils: { defaultAbiCoder, keccak256, id },
+  constants: { AddressZero },
 } = require('ethers');
 const { expect } = chai;
 const { ethers } = require('hardhat');
@@ -57,13 +58,11 @@ describe('InterchainDeployer', () => {
       destGateway.address,
       destGasSvc.address,
       owner.address,
-      igeOwner.address,
     ).then((d) => d.deployed());
     srcID = await IDFactory.deploy(
       srcGateway.address,
       srcGasSvc.address,
       owner.address,
-      igeOwner.address,
     ).then((d) => d.deployed());
 
     impl1Bytecode = (
@@ -74,7 +73,7 @@ describe('InterchainDeployer', () => {
     destProxyContract = new ethers.Contract(destProxyAddr, sampleAbi, user);
     srcProxyAddr = await srcID.connect(user).getProxyAddress(salt);
     srcProxyContract = new ethers.Contract(srcProxyAddr, sampleAbi, user);
-    srcProxyAddr2 = await srcID.connect(user).getProxyAddress(salt2);
+    srcProxyAddr2 = await srcID.connect(igeOwner).getProxyAddress(salt2);
     srcProxyContract2 = new ethers.Contract(srcProxyAddr2, sampleAbi, user);
   });
 
@@ -98,7 +97,7 @@ describe('InterchainDeployer', () => {
         srcID.connect(user).deployUpgradeableContract(salt, {
           implBytecode: impl1,
           implSetupParams: setupParams,
-          onlyIGEUpgrades: false,
+          governanceExecutorAddress: AddressZero,
         }),
       ).to.emit(srcID, 'DeployedUpgradeableContract');
 
@@ -113,10 +112,10 @@ describe('InterchainDeployer', () => {
       ).getDeployTransaction().data;
 
       await expect(
-        srcID.connect(user).upgradeUpgradeableContract(user.address, salt, {
+        srcID.connect(user).upgradeUpgradeableContract(salt, {
           implBytecode: impl2,
           implSetupParams: setupParams,
-          onlyIGEUpgrades: false,
+          governanceExecutorAddress: AddressZero,
         }),
       ).to.emit(srcID, 'UpgradedContract');
 
@@ -136,27 +135,35 @@ describe('InterchainDeployer', () => {
         srcID.connect(user).deployUpgradeableContract(salt2, {
           implBytecode: impl1,
           implSetupParams: setupParams,
-          onlyIGEUpgrades: true,
+          governanceExecutorAddress: igeOwner.address,
         }),
-      ).to.emit(srcID, 'DeployedUpgradeableContract');
+      )
+        .to.emit(srcID, 'DeployedUpgradeableContract')
+        .withArgs(
+          igeOwner.address,
+          salt2,
+          '0x06670bA84DE6Abb1dD9442dC2A62a8671D8bDD6D',
+          '0x9802F84fA5344130C9d03Ff4CA60B25273e2bB7E',
+          '',
+        );
 
       expect(await srcProxyContract2.getDummyMessage()).to.equal(
         'Hello from UpgradableTest',
       );
     });
 
-    it('should revert if upgrade is called directly from a non-IGE account', async () => {
+    it('should revert if upgrade is called directly from a non-owner', async () => {
       const impl2 = (
         await ethers.getContractFactory('UpgradableTest2', owner)
       ).getDeployTransaction().data;
 
       await expect(
-        srcID.connect(user).upgradeUpgradeableContract(user.address, salt2, {
+        srcID.connect(user).upgradeUpgradeableContract(salt2, {
           implBytecode: impl2,
           implSetupParams: setupParams,
-          onlyIGEUpgrades: false,
+          governanceExecutorAddress: igeOwner.address,
         }),
-      ).to.be.revertedWithCustomError(srcID, 'CannotUpgradeFromNonIGEAccount');
+      ).to.be.revertedWithCustomError(srcID, 'NoProxyFound');
 
       expect(await srcProxyContract2.getDummyMessage()).to.equal(
         'Hello from UpgradableTest',
@@ -169,13 +176,11 @@ describe('InterchainDeployer', () => {
       ).getDeployTransaction().data;
 
       await expect(
-        srcID
-          .connect(igeOwner)
-          .upgradeUpgradeableContract(user.address, salt2, {
-            implBytecode: impl2,
-            implSetupParams: setupParams,
-            onlyIGEUpgrades: false,
-          }),
+        srcID.connect(igeOwner).upgradeUpgradeableContract(salt2, {
+          implBytecode: impl2,
+          implSetupParams: setupParams,
+          governanceExecutorAddress: igeOwner.address,
+        }),
       ).to.emit(srcID, 'UpgradedContract');
 
       expect(await srcProxyContract2.getDummyMessage()).to.equal(
@@ -237,8 +242,8 @@ describe('InterchainDeployer', () => {
         await ethers.getContractFactory('FixedImplementation', owner)
       ).getDeployTransaction().data;
       const payload = defaultAbiCoder.encode(
-        ['uint8', 'address', 'bytes32', 'tuple(bytes, bytes, bool)'],
-        [0, user.address, salt, [fixedImplBytecode, setupParams, false]],
+        ['uint8', 'address', 'bytes32', 'tuple(bytes, bytes, address)'],
+        [0, user.address, salt, [fixedImplBytecode, setupParams, AddressZero]],
       );
       const payloadHash = keccak256(payload);
       const remoteChains = [
@@ -249,6 +254,7 @@ describe('InterchainDeployer', () => {
           contractDetails: {
             implBytecode: fixedImplBytecode,
             implSetupParams: setupParams,
+            governanceExecutorAddress: AddressZero,
           },
         },
       ];
@@ -320,8 +326,8 @@ describe('InterchainDeployer', () => {
 
     it('should be able to deploy an upgradeable contract on a destination chain', async () => {
       const payload = defaultAbiCoder.encode(
-        ['uint8', 'address', 'bytes32', 'tuple(bytes, bytes, bool)'],
-        [1, user.address, salt, [impl1Bytecode, setupParams, false]],
+        ['uint8', 'address', 'bytes32', 'tuple(bytes, bytes, address)'],
+        [1, user.address, salt, [impl1Bytecode, setupParams, AddressZero]],
       );
       const payloadHash = keccak256(payload);
 
@@ -333,6 +339,7 @@ describe('InterchainDeployer', () => {
           contractDetails: {
             implBytecode: impl1Bytecode,
             implSetupParams: setupParams,
+            governanceExecutorAddress: AddressZero,
           },
         },
       ];
@@ -423,8 +430,8 @@ describe('InterchainDeployer', () => {
       ).getDeployTransaction().data;
 
       const upgradePayload = defaultAbiCoder.encode(
-        ['uint8', 'address', 'bytes32', 'tuple(bytes, bytes, bool)'],
-        [2, user.address, salt, [impl2Bytecode, setupParams, false]],
+        ['uint8', 'address', 'bytes32', 'tuple(bytes, bytes, address)'],
+        [2, user.address, salt, [impl2Bytecode, setupParams, AddressZero]],
       );
       const upgradePayloadHash = keccak256(upgradePayload);
       remoteChains = [
@@ -435,6 +442,7 @@ describe('InterchainDeployer', () => {
           contractDetails: {
             implBytecode: impl2Bytecode,
             implSetupParams: setupParams,
+            governanceExecutorAddress: AddressZero,
           },
         },
       ];

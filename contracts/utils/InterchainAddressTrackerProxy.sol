@@ -9,7 +9,7 @@ import { Proxy } from '../upgradable/Proxy.sol';
  * @dev Proxy contract for the InterchainAddressTracker contract. Inherits from the Proxy contract.
  */
 contract InterchainAddressTrackerProxy is Proxy {
-    bytes32 private constant CONTRACT_ID = keccak256('interchain-router');
+    bytes32 private constant CONTRACT_ID = keccak256('interchain-address-tracker');
 
     /**
      * @dev Constructs the InterchainAddressTrackerProxy contract.

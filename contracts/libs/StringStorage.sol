@@ -7,19 +7,19 @@ library StringStorage {
         string value;
     }
 
-    function set(string memory str, bytes32 slot) internal {
-        _getStringStorage(slot).value = str;
+    function set(bytes32 slot, string memory value) internal {
+        _getStorageStruct(slot).value = value;
     }
 
-    function get(bytes32 slot) internal view returns (string memory str) {
-        str = _getStringStorage(slot).value;
+    function get(bytes32 slot) internal view returns (string memory value) {
+        value = _getStorageStruct(slot).value;
     }
 
-    function del(bytes32 slot) internal {
-        delete _getStringStorage(slot).value;
+    function clear(bytes32 slot) internal {
+        delete _getStorageStruct(slot).value;
     }
 
-    function _getStringStorage(bytes32 slot) internal pure returns (Wrapper storage wrapper) {
+    function _getStorageStruct(bytes32 slot) internal pure returns (Wrapper storage wrapper) {
         assembly {
             wrapper.slot := slot
         }

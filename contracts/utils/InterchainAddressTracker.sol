@@ -3,23 +3,21 @@
 pragma solidity ^0.8.0;
 
 import { IInterchainAddressTracker } from '../interfaces/IInterchainAddressTracker.sol';
-import { Upgradable } from '../upgradable/Upgradable.sol';
-
 import { StringStorage } from '../libs/StringStorage.sol';
+import { Upgradable } from '../upgradable/Upgradable.sol';
 
 /**
  * @title InterchainAddressTracker
- * @dev Manages and validates remote addresses, keeps track of addresses supported by the Axelar gateway contract
+ * @dev Manages and validates trusted interchain addresses of an application.
  */
 contract InterchainAddressTracker is IInterchainAddressTracker, Upgradable {
-    using StringStorage for string;
+    bytes32 internal constant PREFIX_ADDRESS_MAPPING = keccak256('interchain-address-tracker-address-mapping');
+    bytes32 internal constant PREFIX_ADDRESS_HASH_MAPPING =
+        keccak256('interchain-address-tracker-address-hash-mapping');
+    // bytes32(uint256(keccak256('interchain-address-tracker-chain-name')) - 1)
+    bytes32 internal constant _CHAIN_NAME_SLOT = 0x0e2c162a1f4b5cff9fdbd6b34678a9bcb9898a0b9fbca695b112d61688d8b2ac;
 
-    bytes32 internal constant PREFIX_ADDRESS_MAPPING = keccak256('interchain-router-address-mapping');
-    bytes32 internal constant PREFIX_ADDRESS_HASH_MAPPING = keccak256('interchain-router-address-hash-mapping');
-    // uint256(keccak256('interchain-router-chain-name-slot')) - 1
-    bytes32 internal constant CHAIN_NAME_SLOT = 0x6406a0b603e31e24a15e9f663879eedde3bef27687f318a9875bafac9d63fc1f;
-
-    bytes32 private constant CONTRACT_ID = keccak256('interchain-router');
+    bytes32 private constant CONTRACT_ID = keccak256('interchain-address-tracker');
 
     /**
      * @dev Constructs the InterchainAddressTracker contract, both array parameters must be equal in length.
@@ -27,7 +25,8 @@ contract InterchainAddressTracker is IInterchainAddressTracker, Upgradable {
      */
     constructor(string memory chainName_) {
         if (bytes(chainName_).length == 0) revert ZeroStringLength();
-        chainName_.set(CHAIN_NAME_SLOT);
+
+        StringStorage.set(_CHAIN_NAME_SLOT, chainName_);
     }
 
     /**
@@ -43,6 +42,7 @@ contract InterchainAddressTracker is IInterchainAddressTracker, Upgradable {
             (string[], string[])
         );
         uint256 length = trustedChainNames.length;
+
         if (length != trustedAddresses.length) revert LengthMismatch();
 
         for (uint256 i; i < length; ++i) {
@@ -54,7 +54,7 @@ contract InterchainAddressTracker is IInterchainAddressTracker, Upgradable {
      * @dev Gets the name of the chain this is deployed at
      */
     function chainName() external view returns (string memory chainName_) {
-        chainName_ = StringStorage.get(CHAIN_NAME_SLOT);
+        chainName_ = StringStorage.get(_CHAIN_NAME_SLOT);
     }
 
     /**
@@ -81,7 +81,8 @@ contract InterchainAddressTracker is IInterchainAddressTracker, Upgradable {
      * @param trustedAddress_ the string representation of the trusted address
      */
     function _setTrustedAddress(string memory chain, string memory trustedAddress_) internal {
-        trustedAddress_.set(_getTrustedAddressSlot(chain));
+        StringStorage.set(_getTrustedAddressSlot(chain), trustedAddress_);
+
         bytes32 slot = _getTrustedAddressHashSlot(chain);
         bytes32 addressHash = keccak256(bytes(trustedAddress_));
         assembly {
@@ -92,16 +93,16 @@ contract InterchainAddressTracker is IInterchainAddressTracker, Upgradable {
     /**
      * @dev Gets the trusted address at a remote chain
      * @param chain Chain name of the remote chain
-     * @return trustedAddress_ the trusted address for the chain. Returns '' if the chain is untrusted
+     * @return trustedAddress_ The trusted address for the chain. Returns '' if the chain is untrusted
      */
     function trustedAddress(string memory chain) public view returns (string memory trustedAddress_) {
         trustedAddress_ = StringStorage.get(_getTrustedAddressSlot(chain));
     }
 
     /**
-     * @dev Gets  the trusted address hash at a remote chain
-     * @param chain Chain name of the remote chain
-     * @return trustedAddressHash_ the hash of the trusted address
+     * @dev Gets the trusted address hash for a chain
+     * @param chain Chain name
+     * @return trustedAddressHash_ the hash of the trusted address for that chain
      */
     function trustedAddressHash(string memory chain) public view returns (bytes32 trustedAddressHash_) {
         bytes32 slot = _getTrustedAddressHashSlot(chain);
@@ -111,43 +112,45 @@ contract InterchainAddressTracker is IInterchainAddressTracker, Upgradable {
     }
 
     /**
-     * @dev Validates that the sender is a valid interchain token service address
-     * @param sourceChain Source chain of the transaction
-     * @param sourceAddress Source address of the transaction
-     * @return bool true if the sender is validated, false otherwise
+     * @dev Checks whether the interchain sender is a trusted address
+     * @param chain Chain name of the sender
+     * @param address_ Address of the sender
+     * @return bool true if the sender chain/address are trusted, false otherwise
      */
-    function isTrustedAddress(string calldata sourceChain, string calldata sourceAddress) external view returns (bool) {
-        bytes32 sourceAddressHash = keccak256(bytes(sourceAddress));
+    function isTrustedAddress(string calldata chain, string calldata address_) external view returns (bool) {
+        bytes32 addressHash = keccak256(bytes(address_));
 
-        return sourceAddressHash == trustedAddressHash(sourceChain);
+        return addressHash == trustedAddressHash(chain);
     }
 
     /**
-     * @dev Adds a trusted interchain token service address for the specified chain
-     * @param sourceChain Chain name of the interchain token service
-     * @param sourceAddress Interchain token service address to be added
+     * @dev Sets the trusted address for the specified chain
+     * @param chain Chain name to be trusted
+     * @param address_ Trusted address to be added for the chain
      */
-    function setTrustedAddress(string memory sourceChain, string memory sourceAddress) public onlyOwner {
-        if (bytes(sourceChain).length == 0) revert ZeroStringLength();
-        if (bytes(sourceAddress).length == 0) revert ZeroStringLength();
+    function setTrustedAddress(string memory chain, string memory address_) public onlyOwner {
+        if (bytes(chain).length == 0) revert ZeroStringLength();
+        if (bytes(address_).length == 0) revert ZeroStringLength();
 
-        _setTrustedAddress(sourceChain, sourceAddress);
+        _setTrustedAddress(chain, address_);
 
-        emit TrustedAddressAdded(sourceChain, sourceAddress);
+        emit TrustedAddressSet(chain, address_);
     }
 
     /**
-     * @dev Removes a trusted interchain token service address
-     * @param sourceChain Chain name of the interchain token service to be removed
+     * @dev Remove the trusted address of the chain.
+     * @param chain Chain name that should be made untrusted
      */
-    function removeTrustedAddress(string calldata sourceChain) external onlyOwner {
-        if (bytes(sourceChain).length == 0) revert ZeroStringLength();
+    function removeTrustedAddress(string calldata chain) external onlyOwner {
+        if (bytes(chain).length == 0) revert ZeroStringLength();
 
-        StringStorage.del(_getTrustedAddressSlot(sourceChain));
-        bytes32 slot = _getTrustedAddressHashSlot(sourceChain);
+        StringStorage.clear(_getTrustedAddressSlot(chain));
+
+        bytes32 slot = _getTrustedAddressHashSlot(chain);
         assembly {
             sstore(slot, 0)
         }
-        emit TrustedAddressRemoved(sourceChain);
+
+        emit TrustedAddressRemoved(chain);
     }
 }

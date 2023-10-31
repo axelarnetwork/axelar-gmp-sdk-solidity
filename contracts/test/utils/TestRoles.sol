@@ -39,8 +39,16 @@ contract TestRoles is Roles {
         _addRole(account, role);
     }
 
+    function addRoles(address account, uint8[] calldata roles) external {
+        _addRoles(account, roles);
+    }
+
     function removeRole(address account, uint8 role) external {
         _removeRole(account, role);
+    }
+
+    function removeRoles(address account, uint8[] calldata roles) external {
+        _removeRoles(account, roles);
     }
 
     function transferRole(

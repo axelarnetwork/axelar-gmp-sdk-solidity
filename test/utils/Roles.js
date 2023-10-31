@@ -358,6 +358,25 @@ describe('Roles', () => {
       expect(hasAnyRolesNegative).to.be.false;
     });
 
+    it('should add and remove roles', async () => {
+      const roles = [1, 2];
+      const accountRoles = toAccountRoles(roles);
+
+      await expect(testRoles.addRoles(userWallet.address, roles))
+        .to.emit(testRoles, 'RolesAdded')
+        .withArgs(userWallet.address, accountRoles);
+
+      expect(await testRoles.getAccountRoles(userWallet.address)).to.equal(
+        accountRoles,
+      );
+
+      await expect(testRoles.removeRoles(userWallet.address, roles))
+        .to.emit(testRoles, 'RolesRemoved')
+        .withArgs(userWallet.address, accountRoles);
+
+      expect(await testRoles.getAccountRoles(userWallet.address)).to.equal(0);
+    });
+
     it('should transfer roles in one step', async () => {
       const roles = [1, 2];
       const accountRoles = toAccountRoles(roles);

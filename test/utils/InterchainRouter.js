@@ -76,12 +76,12 @@ describe('InterchainAddressTracker', () => {
   });
 
   it('Should get empty strings for the remote address for unregistered chains', async () => {
-    expect(await interchainAddressTracker.getTrustedAddress(otherChain)).to.equal('');
+    expect(await interchainAddressTracker.trustedAddress(otherChain)).to.equal('');
   });
 
   it('Should be able to validate remote addresses properly', async () => {
     expect(
-      await interchainAddressTracker.validateSender(otherChain, otherRemoteAddress),
+      await interchainAddressTracker.isTrustedAddress(otherChain, otherRemoteAddress),
     ).to.equal(false);
   });
 
@@ -89,36 +89,36 @@ describe('InterchainAddressTracker', () => {
     await expect(
       interchainAddressTracker
         .connect(otherWallet)
-        .addTrustedAddress(otherChain, otherRemoteAddress),
+        .setTrustedAddress(otherChain, otherRemoteAddress),
     ).to.be.revertedWithCustomError(interchainAddressTracker, 'NotOwner');
   });
 
   it('Should be able to add a custom remote address as the owner', async () => {
     await expect(
-      interchainAddressTracker.addTrustedAddress(otherChain, otherRemoteAddress),
+      interchainAddressTracker.setTrustedAddress(otherChain, otherRemoteAddress),
     )
       .to.emit(interchainAddressTracker, 'TrustedAddressAdded')
       .withArgs(otherChain, otherRemoteAddress);
-    expect(await interchainAddressTracker.getTrustedAddress(otherChain)).to.equal(
+    expect(await interchainAddressTracker.trustedAddress(otherChain)).to.equal(
       otherRemoteAddress,
     );
   });
 
   it('Should revert on adding a custom remote address with an empty chain name', async () => {
     await expect(
-      interchainAddressTracker.addTrustedAddress('', otherRemoteAddress),
+      interchainAddressTracker.setTrustedAddress('', otherRemoteAddress),
     ).to.be.revertedWithCustomError(interchainAddressTracker, 'ZeroStringLength');
   });
 
   it('Should revert on adding a custom remote address with an invalid remote address', async () => {
     await expect(
-      interchainAddressTracker.addTrustedAddress(otherChain, ''),
+      interchainAddressTracker.setTrustedAddress(otherChain, ''),
     ).to.be.revertedWithCustomError(interchainAddressTracker, 'ZeroStringLength');
   });
 
   it('Should be able to validate remote addresses properly.', async () => {
     expect(
-      await interchainAddressTracker.validateSender(otherChain, otherRemoteAddress),
+      await interchainAddressTracker.isTrustedAddress(otherChain, otherRemoteAddress),
     ).to.equal(true);
   });
 
@@ -132,7 +132,7 @@ describe('InterchainAddressTracker', () => {
     await expect(interchainAddressTracker.removeTrustedAddress(otherChain))
       .to.emit(interchainAddressTracker, 'TrustedAddressRemoved')
       .withArgs(otherChain);
-    expect(await interchainAddressTracker.getTrustedAddress(otherChain)).to.equal('');
+    expect(await interchainAddressTracker.trustedAddress(otherChain)).to.equal('');
   });
 
   it('Should revert on removing a custom remote address with an empty chain name', async () => {
@@ -143,7 +143,7 @@ describe('InterchainAddressTracker', () => {
 
   it('Should be able to validate remote addresses properly.', async () => {
     expect(
-      await interchainAddressTracker.validateSender(otherChain, otherRemoteAddress),
+      await interchainAddressTracker.isTrustedAddress(otherChain, otherRemoteAddress),
     ).to.equal(false);
   });
 });

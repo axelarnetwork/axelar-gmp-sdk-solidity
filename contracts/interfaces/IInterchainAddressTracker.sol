@@ -27,14 +27,14 @@ interface IInterchainAddressTracker is IContractIdentifier {
      * @param chain Chain name of the remote chain
      * @return trustedAddress the trusted address for the chain. Returns '' if the chain is untrusted
      */
-    function getTrustedAddress(string memory chain) external view returns (string memory trustedAddress);
+    function trustedAddress(string memory chain) external view returns (string memory trustedAddress);
 
     /**
      * @dev Gets the trusted address hash at a remote chain
      * @param chain Chain name of the remote chain
      * @return trustedAddressHash the hash of the trusted address
      */
-    function getTrustedAddressHash(string memory chain) external view returns (bytes32 trustedAddressHash);
+    function trustedAddressHash(string memory chain) external view returns (bytes32 trustedAddressHash);
 
     /**
      * @dev Validates that the sender is a valid interchain token service address
@@ -42,14 +42,14 @@ interface IInterchainAddressTracker is IContractIdentifier {
      * @param sourceAddress Source address of the transaction
      * @return bool true if the sender is validated, false otherwise
      */
-    function validateSender(string calldata sourceChain, string calldata sourceAddress) external view returns (bool);
+    function isTrustedAddress(string calldata sourceChain, string calldata sourceAddress) external view returns (bool);
 
     /**
      * @dev Adds a trusted interchain token service address for the specified chain
      * @param sourceChain Chain name of the interchain token service
      * @param sourceAddress Interchain token service address to be added
      */
-    function addTrustedAddress(string memory sourceChain, string memory sourceAddress) external;
+    function setTrustedAddress(string memory sourceChain, string memory sourceAddress) external;
 
     /**
      * @dev Removes a trusted interchain token service address

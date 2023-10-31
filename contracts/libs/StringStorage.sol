@@ -7,15 +7,15 @@ library StringStorage {
         string value;
     }
 
-    function storeString(string memory str, bytes32 slot) internal {
+    function set(string memory str, bytes32 slot) internal {
         _getStringStorage(slot).value = str;
     }
 
-    function loadString(bytes32 slot) internal view returns (string memory str) {
+    function get(bytes32 slot) internal view returns (string memory str) {
         str = _getStringStorage(slot).value;
     }
 
-    function deleteString(bytes32 slot) internal {
+    function del(bytes32 slot) internal {
         delete _getStringStorage(slot).value;
     }
 

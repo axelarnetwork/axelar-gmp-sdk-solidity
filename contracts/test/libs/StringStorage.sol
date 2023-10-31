@@ -7,15 +7,15 @@ import { StringStorage } from '../../libs/StringStorage.sol';
 contract TestStringStorage {
     using StringStorage for string;
 
-    function storeString(bytes32 slot, string calldata str) external {
-        str.storeString(slot);
+    function setString(bytes32 slot, string calldata str) external {
+        StringStorage.set(str, slot);
     }
 
-    function loadString(bytes32 slot) external view returns (string memory str) {
-        str = StringStorage.loadString(slot);
+    function getString(bytes32 slot) external view returns (string memory str) {
+        str = StringStorage.get(slot);
     }
 
     function deleteString(bytes32 slot) external {
-        StringStorage.deleteString(slot);
+        StringStorage.del(slot);
     }
 }

@@ -22,7 +22,7 @@ contract Roles is RolesBase, IRoles {
      * @return True if the account has all the roles, false otherwise
      */
     function hasAllTheRoles(address account, uint8[] memory roles) public view returns (bool) {
-        return _hasAllTheRoles(_getRoles(account), roles);
+        return _hasAllTheRoles(_getRoles(account), _toAccountRoles(roles));
     }
 
     /**
@@ -32,7 +32,7 @@ contract Roles is RolesBase, IRoles {
      * @return True if the account has any of the roles, false otherwise
      */
     function hasAnyOfRoles(address account, uint8[] memory roles) public view returns (bool) {
-        return _hasAnyOfRoles(_getRoles(account), roles);
+        return _hasAnyOfRoles(_getRoles(account), _toAccountRoles(roles));
     }
 
     /**

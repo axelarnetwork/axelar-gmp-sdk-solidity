@@ -8,6 +8,16 @@ const {
 } = require('ethers');
 const { expectRevert } = require('../utils');
 
+function toAccountRoles(roles) {
+  let accountRoles = 0;
+
+  for (const role of roles) {
+    accountRoles |= 1 << role;
+  }
+  
+  return accountRoles;
+}
+
 describe('Roles', () => {
   let testRolesFactory;
   let testRoles;
@@ -350,30 +360,34 @@ describe('Roles', () => {
 
     it('should transfer roles in one step', async () => {
       const roles = [1, 2];
+      const accountRoles = toAccountRoles(roles);
 
       await expect(testRoles.transferRoles(userWallet.address, roles))
         .to.emit(testRoles, 'RolesRemoved')
-        .withArgs(ownerWallet.address, roles)
+        .withArgs(ownerWallet.address, accountRoles)
         .to.emit(testRoles, 'RolesAdded')
-        .withArgs(userWallet.address, roles);
+        .withArgs(userWallet.address, accountRoles);
 
-      expect(await testRoles.getAccountRoles(userWallet.address)).to.equal(6); // 6 is the binary representation of roles [1, 2]
+      expect(await testRoles.getAccountRoles(userWallet.address)).to.equal(
+        accountRoles,
+      ); // 6 is the binary representation of roles [1, 2]
       expect(await testRoles.getAccountRoles(ownerWallet.address)).to.equal(8); // 8 is a binary representation of role 3, other roles transferred
     });
 
     it('should propose new roles and accept roles', async () => {
       const roles = [2, 3];
+      const accountRoles = toAccountRoles(roles);
 
       await expect(testRoles.proposeRoles(userWallet.address, roles))
         .to.emit(testRoles, 'RolesProposed')
-        .withArgs(ownerWallet.address, userWallet.address, roles);
+        .withArgs(ownerWallet.address, userWallet.address, accountRoles);
 
       expect(
         await testRoles.getProposedRoles(
           ownerWallet.address,
           userWallet.address,
         ),
-      ).to.equal(12); // 12 is the binary representation of roles [2, 3]
+      ).to.equal(accountRoles); // 12 is the binary representation of roles [2, 3]
 
       expect(await testRoles.getAccountRoles(userWallet.address)).to.equal(0);
 
@@ -397,13 +411,15 @@ describe('Roles', () => {
 
       await expect(testRoles.addRole(userWallet.address, role))
         .to.emit(testRoles, 'RolesAdded')
-        .withArgs(userWallet.address, [role]);
+        .withArgs(userWallet.address, 1 << role);
 
-      expect(await testRoles.getAccountRoles(userWallet.address)).to.equal(4); // 4 is the binary representation of roles [2]
+      expect(await testRoles.getAccountRoles(userWallet.address)).to.equal(
+        1 << role,
+      ); // 4 is the binary representation of roles [2]
 
       await expect(testRoles.removeRole(userWallet.address, role))
         .to.emit(testRoles, 'RolesRemoved')
-        .withArgs(userWallet.address, [role]);
+        .withArgs(userWallet.address, 1 << role);
 
       expect(await testRoles.getAccountRoles(userWallet.address)).to.equal(0);
     });

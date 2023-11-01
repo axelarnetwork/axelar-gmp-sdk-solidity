@@ -18,4 +18,8 @@ contract TestPausable is Pausable {
     function testPaused() external whenNotPaused {
         emit TestEvent();
     }
+
+    function testNotPaused() external whenPaused {
+        emit TestEvent();
+    }
 }

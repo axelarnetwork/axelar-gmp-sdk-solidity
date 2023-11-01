@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import { Ownable } from "../../utils/Ownable.sol";
+import { Ownable } from '../../utils/Ownable.sol';
 import { InterchainAddressTracker } from '../../utils/InterchainAddressTracker.sol';
 
 contract TestInterchainAddressTracker is InterchainAddressTracker, Ownable {

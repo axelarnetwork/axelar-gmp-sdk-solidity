@@ -2,9 +2,6 @@
 
 const chai = require('chai');
 const { ethers } = require('hardhat');
-const {
-  utils: { defaultAbiCoder },
-} = ethers;
 const { expect } = chai;
 const { deployContract } = require('../utils.js');
 
@@ -27,34 +24,22 @@ describe('InterchainAddressTracker', () => {
     otherWallet = wallets[1];
     defaultAddresses.push(wallets[2].address);
     defaultAddresses.push('another address format');
-    const implementation = await deployContract(
-      ownerWallet,
-      'InterchainAddressTracker',
-      [chainName],
-    );
-    const params = defaultAbiCoder.encode(
-      ['string[]', 'string[]'],
-      [defaultChains, defaultAddresses],
-    );
     interchainAddressTracker = await deployContract(
-      ownerWallet,
-      'InterchainAddressTrackerProxy',
-      [implementation.address, ownerWallet.address, params],
+        ownerWallet,
+        'TestInterchainAddressTracker',
+        [chainName, defaultChains, defaultAddresses],
     );
 
     interchainAddressTrackerFactory = await ethers.getContractFactory(
       'InterchainAddressTracker',
     );
-    interchainAddressTracker = interchainAddressTrackerFactory
-      .attach(interchainAddressTracker.address)
-      .connect(ownerWallet);
   });
 
   it('check internal constants', async () => {
     const interchainAddressTracker = await deployContract(
       ownerWallet,
       'TestInterchainAddressTracker',
-      [chainName],
+      [chainName, [], []],
     );
 
     expect(await interchainAddressTracker.chainName()).to.equal(chainName);
@@ -67,27 +52,6 @@ describe('InterchainAddressTracker', () => {
       interchainAddressTracker,
       'ZeroStringLength',
     );
-  });
-
-  it('Should revert on interchainAddressTracker deployment with length mismatch between chains and trusted addresses arrays', async () => {
-    const interchainAddressTrackerImpl = await deployContract(
-      ownerWallet,
-      'InterchainAddressTracker',
-      [chainName],
-    );
-    const interchainAddressTrackerProxyFactory =
-      await ethers.getContractFactory('InterchainAddressTrackerProxy');
-    const params = defaultAbiCoder.encode(
-      ['string[]', 'string[]'],
-      [['Chain A'], []],
-    );
-    await expect(
-      interchainAddressTrackerProxyFactory.deploy(
-        interchainAddressTrackerImpl.address,
-        ownerWallet.address,
-        params,
-      ),
-    ).to.be.revertedWithCustomError(interchainAddressTracker, 'SetupFailed');
   });
 
   it('Should get empty strings for the trusted address for unregistered chains', async () => {

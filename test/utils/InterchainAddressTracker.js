@@ -25,9 +25,9 @@ describe('InterchainAddressTracker', () => {
     defaultAddresses.push(wallets[2].address);
     defaultAddresses.push('another address format');
     interchainAddressTracker = await deployContract(
-        ownerWallet,
-        'TestInterchainAddressTracker',
-        [chainName, defaultChains, defaultAddresses],
+      ownerWallet,
+      'TestInterchainAddressTracker',
+      [chainName, defaultChains, defaultAddresses],
     );
 
     interchainAddressTrackerFactory = await ethers.getContractFactory(

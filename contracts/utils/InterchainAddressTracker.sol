@@ -26,20 +26,6 @@ contract InterchainAddressTracker is IInterchainAddressTracker {
         StringStorage.set(_CHAIN_NAME_SLOT, chainName_);
     }
 
-    function _setupTrustedAddresses(bytes calldata params) internal {
-        (string[] memory trustedChainNames, string[] memory trustedAddresses) = abi.decode(
-            params,
-            (string[], string[])
-        );
-        uint256 length = trustedChainNames.length;
-
-        if (length != trustedAddresses.length) revert LengthMismatch();
-
-        for (uint256 i; i < length; ++i) {
-            _setTrustedAddress(trustedChainNames[i], trustedAddresses[i]);
-        }
-    }
-
     /**
      * @dev Gets the name of the chain this is deployed at
      */

@@ -31,8 +31,8 @@ contract InterchainDeployer is IInterchainDeployer, AxelarExecutable, Ownable, C
     // The `InterchainDeployer` contract address at the source chain is set as a whitelisted source address by default
     mapping(address => bool) public whitelistedSourceAddresses;
 
-    // A mapping of upgradeable proxy contract addresses and their owners.
-    // The owner can be the governance executor when specified by the user in the initial deployment.
+    // A mapping of upgradeable proxy contract addresses and their owners,
+    // as specified by the user initially deploying the contract.
     mapping(address => address) public proxyOwner;
 
     constructor(
@@ -88,13 +88,6 @@ contract InterchainDeployer is IInterchainDeployer, AxelarExecutable, Ownable, C
      * @param contractDetails The details of the implementation, including the implementation bytecode and setup parameters
      */
     function upgradeUpgradeableContract(bytes32 userSalt, ImplContractDetails memory contractDetails) external {
-        // address proxy = _create3Address(keccak256(abi.encode(msg.sender, userSalt)));
-        // address approvedOwner = proxyOwner[proxy];
-
-        // if (approvedOwner == address(0x0)) revert NoProxyFound('No proxy found');
-
-        // if (msg.sender != approvedOwner) revert CannotUpgradeForSomeoneElse('Cannot upgrade for someone else');
-
         _upgradeUpgradeable(msg.sender, userSalt, contractDetails, '');
     }
 

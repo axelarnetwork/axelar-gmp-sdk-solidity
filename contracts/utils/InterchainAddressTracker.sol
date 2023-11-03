@@ -54,7 +54,7 @@ contract InterchainAddressTracker is IInterchainAddressTracker {
      * @param address_ Address of the sender
      * @return bool true if the sender chain/address are trusted, false otherwise
      */
-    function isTrustedAddress(string calldata chain, string calldata address_) external view returns (bool) {
+    function isTrustedAddress(string calldata chain, string calldata address_) public view returns (bool) {
         bytes32 addressHash = keccak256(bytes(address_));
 
         return addressHash == trustedAddressHash(chain);

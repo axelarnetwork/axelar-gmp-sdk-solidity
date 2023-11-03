@@ -8,8 +8,7 @@ const { deployContract } = require('../utils.js');
 describe('InterchainAddressTracker', () => {
   let ownerWallet,
     otherWallet,
-    interchainAddressTracker,
-    interchainAddressTrackerFactory;
+    interchainAddressTracker;
 
   const otherRemoteAddress = 'any string as an address';
   const otherChain = 'Other Name';
@@ -28,10 +27,6 @@ describe('InterchainAddressTracker', () => {
       ownerWallet,
       'TestInterchainAddressTracker',
       [chainName, defaultChains, defaultAddresses],
-    );
-
-    interchainAddressTrackerFactory = await ethers.getContractFactory(
-      'InterchainAddressTracker',
     );
   });
 

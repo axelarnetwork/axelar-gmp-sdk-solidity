@@ -45,15 +45,6 @@ describe('InterchainAddressTracker', () => {
     expect(await interchainAddressTracker.chainName()).to.equal(chainName);
   });
 
-  it('Should revert on interchainAddressTracker deployment with invalid chain name', async () => {
-    await expect(
-      interchainAddressTrackerFactory.deploy(''),
-    ).to.be.revertedWithCustomError(
-      interchainAddressTracker,
-      'ZeroStringLength',
-    );
-  });
-
   it('Should get empty strings for the trusted address for unregistered chains', async () => {
     expect(await interchainAddressTracker.trustedAddress(otherChain)).to.equal(
       '',

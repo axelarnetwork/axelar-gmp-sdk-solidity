@@ -14,7 +14,9 @@ contract TestInterchainAddressTracker is InterchainAddressTracker, Ownable {
         string memory chainName_,
         string[] memory trustedChainNames,
         string[] memory trustedAddresses
-    ) InterchainAddressTracker(chainName_) Ownable(msg.sender) {
+    ) Ownable(msg.sender) {
+        _setChainName(chainName_);
+        
         if (_CHAIN_NAME_SLOT != bytes32(uint256(keccak256('interchain-address-tracker-chain-name')) - 1))
             revert Invalid();
 

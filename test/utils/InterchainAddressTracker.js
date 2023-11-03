@@ -8,8 +8,7 @@ const { deployContract } = require('../utils.js');
 describe('InterchainAddressTracker', () => {
   let ownerWallet,
     otherWallet,
-    interchainAddressTracker,
-    interchainAddressTrackerFactory;
+    interchainAddressTracker;
 
   const otherRemoteAddress = 'any string as an address';
   const otherChain = 'Other Name';
@@ -29,10 +28,6 @@ describe('InterchainAddressTracker', () => {
       'TestInterchainAddressTracker',
       [chainName, defaultChains, defaultAddresses],
     );
-
-    interchainAddressTrackerFactory = await ethers.getContractFactory(
-      'InterchainAddressTracker',
-    );
   });
 
   it('check internal constants', async () => {
@@ -43,15 +38,6 @@ describe('InterchainAddressTracker', () => {
     );
 
     expect(await interchainAddressTracker.chainName()).to.equal(chainName);
-  });
-
-  it('Should revert on interchainAddressTracker deployment with invalid chain name', async () => {
-    await expect(
-      interchainAddressTrackerFactory.deploy(''),
-    ).to.be.revertedWithCustomError(
-      interchainAddressTracker,
-      'ZeroStringLength',
-    );
   });
 
   it('Should get empty strings for the trusted address for unregistered chains', async () => {

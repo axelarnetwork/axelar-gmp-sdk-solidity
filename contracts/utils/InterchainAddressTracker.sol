@@ -16,15 +16,9 @@ contract InterchainAddressTracker is IInterchainAddressTracker {
     // bytes32(uint256(keccak256('interchain-address-tracker-chain-name')) - 1)
     bytes32 internal constant _CHAIN_NAME_SLOT = 0x0e2c162a1f4b5cff9fdbd6b34678a9bcb9898a0b9fbca695b112d61688d8b2ac;
 
-    /**
-     * @dev Constructs the InterchainAddressTracker contract.
-     * @param chainName_ The name of the current chain.
-     */
-    constructor(string memory chainName_) {
-        if (bytes(chainName_).length == 0) revert ZeroStringLength();
-
+    function _setChainName(string memory chainName_) internal {
         StringStorage.set(_CHAIN_NAME_SLOT, chainName_);
-    }
+    } 
 
     /**
      * @dev Gets the name of the chain this is deployed at
@@ -60,7 +54,7 @@ contract InterchainAddressTracker is IInterchainAddressTracker {
      * @param address_ Address of the sender
      * @return bool true if the sender chain/address are trusted, false otherwise
      */
-    function isTrustedAddress(string calldata chain, string calldata address_) external view returns (bool) {
+    function isTrustedAddress(string calldata chain, string calldata address_) public view returns (bool) {
         bytes32 addressHash = keccak256(bytes(address_));
 
         return addressHash == trustedAddressHash(chain);

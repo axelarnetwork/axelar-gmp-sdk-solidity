@@ -34,6 +34,8 @@ interface IBaseMultisig {
 
     event SignersRotated(address[] newAccounts, uint256 newThreshold);
 
+    event Voted(address indexed signer, bytes32 topic, uint256 signerEpoch);
+
     /***********\
     |* Getters *|
     \***********/

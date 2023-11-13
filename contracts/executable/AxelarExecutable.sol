@@ -9,7 +9,7 @@ contract AxelarExecutable is IAxelarExecutable {
     IAxelarGateway public immutable gateway;
 
     constructor(address gateway_) {
-        if (gateway_ == address(0)) revert InvalidAddress();
+        if (gateway_ == address(0)) revert InvalidAddress(gateway_);
 
         gateway = IAxelarGateway(gateway_);
     }

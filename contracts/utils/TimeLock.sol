@@ -40,7 +40,7 @@ contract TimeLock is ITimeLock {
      * @return uint The Unix timestamp (in secs) after which the new timelock can be executed
      */
     function _scheduleTimeLock(bytes32 hash, uint256 eta) internal returns (uint256) {
-        if (hash == 0) revert InvalidTimeLockHash();
+        if (hash == 0) revert InvalidTimeLockHash(hash);
         if (_getTimeLockEta(hash) != 0) revert TimeLockAlreadyScheduled();
 
         uint256 minimumEta = block.timestamp + minimumTimeLockDelay;
@@ -57,7 +57,7 @@ contract TimeLock is ITimeLock {
      * @param hash The hash of the timelock to cancel
      */
     function _cancelTimeLock(bytes32 hash) internal {
-        if (hash == 0) revert InvalidTimeLockHash();
+        if (hash == 0) revert InvalidTimeLockHash(hash);
 
         _setTimeLockEta(hash, 0);
     }
@@ -71,7 +71,7 @@ contract TimeLock is ITimeLock {
     function _finalizeTimeLock(bytes32 hash) internal {
         uint256 eta = _getTimeLockEta(hash);
 
-        if (hash == 0 || eta == 0) revert InvalidTimeLockHash();
+        if (hash == 0 || eta == 0) revert InvalidTimeLockHash(hash);
 
         if (block.timestamp < eta) revert TimeLockNotReady();
 

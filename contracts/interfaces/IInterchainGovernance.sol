@@ -14,7 +14,7 @@ interface IInterchainGovernance is IAxelarExecutable, ICaller, ITimeLock {
     error NotGovernance();
     error NotSelf();
     error InvalidCommand();
-    error InvalidTarget();
+    error InvalidTarget(address target);
     error TokenNotSupported();
 
     event ProposalScheduled(

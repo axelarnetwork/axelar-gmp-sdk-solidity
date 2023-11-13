@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import { IAxelarGateway } from './IAxelarGateway.sol';
 
 interface IAxelarExecutable {
-    error InvalidAddress();
+    error InvalidAddress(address invalidAddress);
     error NotApprovedByGateway();
 
     function gateway() external view returns (IAxelarGateway);

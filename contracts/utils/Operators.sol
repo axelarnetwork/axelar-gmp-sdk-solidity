@@ -84,7 +84,7 @@ contract Operators is Ownable, IOperators {
 
         (bool success, bytes memory data) = target.call{ value: nativeValue }(callData);
         if (!success) {
-            revert ExecutionFailed();
+            revert ExecutionFailed(data);
         }
 
         return data;

@@ -15,7 +15,7 @@ interface IOperators is IOwnable, IContractExecutor {
     error InvalidOperator();
     error OperatorAlreadyAdded();
     error NotAnOperator();
-    error ExecutionFailed();
+    error ExecutionFailed(bytes data);
 
     event OperatorAdded(address indexed operator);
     event OperatorRemoved(address indexed operator);

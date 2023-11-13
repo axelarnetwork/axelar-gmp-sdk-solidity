@@ -155,6 +155,7 @@ contract BaseMultisig is IBaseMultisig {
         if (voting.hasVoted[msg.sender]) revert AlreadyVoted();
 
         voting.hasVoted[msg.sender] = true;
+        emit Voted(msg.sender, topic, epoch);
 
         // Determine the new vote count.
         uint256 voteCount = voting.voteCount + 1;

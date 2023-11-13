@@ -40,7 +40,7 @@ contract InterchainGovernance is AxelarExecutable, TimeLock, Caller, IInterchain
         uint256 minimumTimeDelay
     ) AxelarExecutable(gateway_) TimeLock(minimumTimeDelay) {
         if (bytes(governanceChain_).length == 0 || bytes(governanceAddress_).length == 0) {
-            revert InvalidAddress();
+            revert InvalidAddress(address(bytes20(bytes(governanceAddress_))));
         }
 
         governanceChain = governanceChain_;
@@ -135,7 +135,7 @@ contract InterchainGovernance is AxelarExecutable, TimeLock, Caller, IInterchain
             (uint256, address, bytes, uint256, uint256)
         );
 
-        if (target == address(0)) revert InvalidTarget();
+        if (target == address(0)) revert InvalidTarget(target);
 
         _processCommand(command, target, callData, nativeValue, eta);
     }

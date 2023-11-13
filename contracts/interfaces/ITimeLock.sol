@@ -7,7 +7,7 @@ pragma solidity ^0.8.0;
  * @dev Interface for a TimeLock that enables function execution after a certain time has passed.
  */
 interface ITimeLock {
-    error InvalidTimeLockHash();
+    error InvalidTimeLockHash(bytes32 hash);
     error TimeLockAlreadyScheduled();
     error TimeLockNotReady();
 

@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import { IERC20 } from '../interfaces/IERC20.sol';
 
-error TokenTransferFailed();
+error TokenTransferFailed(address token);
 
 /*
  * @title SafeTokenCall
@@ -21,7 +21,7 @@ library SafeTokenCall {
         (bool success, bytes memory returnData) = address(token).call(callData);
         bool transferred = success && (returnData.length == uint256(0) || abi.decode(returnData, (bool)));
 
-        if (!transferred || address(token).code.length == 0) revert TokenTransferFailed();
+        if (!transferred || address(token).code.length == 0) revert TokenTransferFailed(address(token));
     }
 }
 

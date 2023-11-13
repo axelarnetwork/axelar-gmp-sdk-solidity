@@ -12,7 +12,7 @@ import { IUpgradable } from '../interfaces/IUpgradable.sol';
  */
 interface IAxelarGasService is IUpgradable {
     error NothingReceived();
-    error InvalidAddress();
+    error InvalidAddress(address invalidAddress);
     error NotCollector();
     error InvalidAmounts();
 

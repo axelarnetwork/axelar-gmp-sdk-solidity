@@ -16,13 +16,13 @@ contract Caller is ICaller {
         bytes calldata callData,
         uint256 nativeValue
     ) internal returns (bytes memory) {
-        if (!target.isContract()) revert InvalidContract(target);
+        if (!target.isContract()) revert InvalidContract(target, callData);
 
-        if (nativeValue > address(this).balance) revert InsufficientBalance();
+        if (nativeValue > address(this).balance) revert InsufficientBalance(nativeValue);
 
         (bool success, bytes memory data) = target.call{ value: nativeValue }(callData);
         if (!success) {
-            revert ExecutionFailed();
+            revert ExecutionFailed(data);
         }
 
         return data;

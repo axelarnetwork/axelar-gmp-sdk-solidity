@@ -10,14 +10,10 @@ import { IImplementation } from '../interfaces/IImplementation.sol';
  * @dev Derived contracts must implement the setup function.
  */
 abstract contract Implementation is IImplementation {
-    address private immutable implementationAddress;
-
     /**
-     * @dev Contract constructor that sets the implementation address to the address of this contract.
+     * @dev Sets the implementation address to the address of this contract.
      */
-    constructor() {
-        implementationAddress = address(this);
-    }
+    address private immutable implementationAddress = address(this);
 
     /**
      * @dev Modifier to require the caller to be the proxy contract.

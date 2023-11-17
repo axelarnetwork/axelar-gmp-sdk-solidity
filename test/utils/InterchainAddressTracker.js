@@ -6,9 +6,7 @@ const { expect } = chai;
 const { deployContract } = require('../utils.js');
 
 describe('InterchainAddressTracker', () => {
-  let ownerWallet,
-    otherWallet,
-    interchainAddressTracker;
+  let ownerWallet, otherWallet, interchainAddressTracker;
 
   const otherRemoteAddress = 'any string as an address';
   const otherChain = 'Other Name';

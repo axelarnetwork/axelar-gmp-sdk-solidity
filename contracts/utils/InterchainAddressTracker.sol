@@ -18,7 +18,7 @@ contract InterchainAddressTracker is IInterchainAddressTracker {
 
     function _setChainName(string memory chainName_) internal {
         StringStorage.set(_CHAIN_NAME_SLOT, chainName_);
-    } 
+    }
 
     /**
      * @dev Gets the name of the chain this is deployed at

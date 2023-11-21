@@ -46,7 +46,7 @@ abstract contract Upgradable is Ownable, Implementation, IUpgradable {
         bytes32 newImplementationCodeHash,
         bytes calldata params
     ) external override onlyOwner {
-        if (IUpgradable(newImplementation).contractId() != IUpgradable(this).contractId())
+        if (IUpgradable(newImplementation).contractId() != IUpgradable(implementation()).contractId())
             revert InvalidImplementation();
 
         if (newImplementationCodeHash != newImplementation.codehash) revert InvalidCodeHash();

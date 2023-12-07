@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
+import { IAxelarGmpWithTokenGateway } from '../interfaces/IAxelarGmpWithTokenGateway.sol';
 import { IERC20 } from '../interfaces/IERC20.sol';
 import { IAxelarValuedExpressExecutable } from '../interfaces/IAxelarValuedExpressExecutable.sol';
 import { SafeTokenTransferFrom, SafeTokenTransfer } from '../libs/SafeTransfer.sol';
@@ -14,12 +14,12 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker, IAxel
     using SafeTokenTransferFrom for IERC20;
     using SafeNativeTransfer for address payable;
 
-    IAxelarGateway public immutable gateway;
+    IAxelarGmpWithTokenGateway public immutable gateway;
 
     constructor(address gateway_) {
         if (gateway_ == address(0)) revert InvalidAddress();
 
-        gateway = IAxelarGateway(gateway_);
+        gateway = IAxelarGmpWithTokenGateway(gateway_);
     }
 
     // Returns the amount of token that this call is worth. If `tokenAddress` is `0`, then value is in terms of the native token, otherwise it's in terms of the token address.

@@ -45,10 +45,6 @@ interface IAxelarGMPGateway is IImplementation, IGovernable {
 
     event ContractCallExecuted(bytes32 indexed commandId);
 
-    event OperatorshipTransferred(bytes newOperatorsData);
-
-    event Upgraded(address indexed implementation);
-
     /********************\
     |* Public Functions *|
     \********************/
@@ -78,21 +74,7 @@ interface IAxelarGMPGateway is IImplementation, IGovernable {
     |* Getters *|
     \***********/
 
-    function authModule() external view returns (address);
-
-    function implementation() external view returns (address);
-
     function isCommandExecuted(bytes32 commandId) external view returns (bool);
-
-    /************************\
-    |* Governance Functions *|
-    \************************/
-
-    function upgrade(
-        address newImplementation,
-        bytes32 newImplementationCodeHash,
-        bytes calldata setupParams
-    ) external;
 
     /**********************\
     |* External Functions *|

@@ -10,12 +10,8 @@ interface IAxelarGMPGatewayWithToken is IAxelarGMPGateway {
     \**********/
 
     error TokenDoesNotExist(string symbol);
-    error TokenAlreadyExists(string symbol);
-    error TokenDeployFailed(string symbol);
-    error TokenContractDoesNotExist(address token);
     error BurnFailed(string symbol);
     error MintFailed(string symbol);
-    error InvalidSetMintLimitsParams();
     error ExceedMintLimit(string symbol);
 
     /**********\
@@ -40,8 +36,6 @@ interface IAxelarGMPGatewayWithToken is IAxelarGMPGateway {
         uint256 amount
     );
 
-    event TokenDeployed(string symbol, address tokenAddresses);
-
     event ContractCallApprovedWithMint(
         bytes32 indexed commandId,
         string sourceChain,
@@ -53,8 +47,6 @@ interface IAxelarGMPGatewayWithToken is IAxelarGMPGateway {
         bytes32 sourceTxHash,
         uint256 sourceEventIndex
     );
-
-    event TokenMintLimitUpdated(string symbol, uint256 limit);
 
     /********************\
     |* Public Functions *|
@@ -98,21 +90,5 @@ interface IAxelarGMPGatewayWithToken is IAxelarGMPGateway {
     |* Getters *|
     \***********/
 
-    function tokenDeployer() external view returns (address);
-
-    function tokenMintLimit(string memory symbol) external view returns (uint256);
-
-    function tokenMintAmount(string memory symbol) external view returns (uint256);
-
-    function allTokensFrozen() external view returns (bool);
-
     function tokenAddresses(string memory symbol) external view returns (address);
-
-    function tokenFrozen(string memory symbol) external view returns (bool);
-
-    /************************\
-    |* Governance Functions *|
-    \************************/
-
-    function setTokenMintLimits(string[] calldata symbols, uint256[] calldata limits) external;
 }

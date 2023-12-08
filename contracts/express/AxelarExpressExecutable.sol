@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import { IAxelarGmpWithTokenGateway } from '../interfaces/IAxelarGmpWithTokenGateway.sol';
+import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
 import { ExpressExecutorTracker } from './ExpressExecutorTracker.sol';
 
 import { SafeTokenTransferFrom, SafeTokenTransfer } from '../libs/SafeTransfer.sol';
@@ -12,12 +12,12 @@ contract AxelarExpressExecutable is ExpressExecutorTracker {
     using SafeTokenTransfer for IERC20;
     using SafeTokenTransferFrom for IERC20;
 
-    IAxelarGmpWithTokenGateway public immutable gateway;
+    IAxelarGateway public immutable gateway;
 
     constructor(address gateway_) {
         if (gateway_ == address(0)) revert InvalidAddress();
 
-        gateway = IAxelarGmpWithTokenGateway(gateway_);
+        gateway = IAxelarGateway(gateway_);
     }
 
     function execute(

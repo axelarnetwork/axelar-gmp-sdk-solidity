@@ -2,13 +2,13 @@
 
 pragma solidity ^0.8.0;
 
-import { IAxelarGmpWithTokenGateway } from './IAxelarGmpWithTokenGateway.sol';
+import { IAxelarGMPGatewayWithToken } from './IAxelarGMPGatewayWithToken.sol';
 
-interface IAxelarGmpWithTokenExecutable {
+interface IAxelarGMPExecutableWithToken {
     error InvalidAddress();
     error NotApprovedByGateway();
 
-    function gateway() external view returns (IAxelarGmpWithTokenGateway);
+    function gateway() external view returns (IAxelarGMPGatewayWithToken);
 
     function execute(
         bytes32 commandId,

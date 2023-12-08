@@ -2,16 +2,16 @@
 
 pragma solidity ^0.8.0;
 
-import { IAxelarGmpGateway } from '../interfaces/IAxelarGmpGateway.sol';
-import { IAxelarGmpExecutable } from '../interfaces/IAxelarGmpExecutable.sol';
+import { IAxelarGMPGateway } from '../interfaces/IAxelarGMPGateway.sol';
+import { IAxelarGMPExecutable } from '../interfaces/IAxelarGMPExecutable.sol';
 
-contract AxelarGmpExecutable is IAxelarGmpExecutable {
-    IAxelarGmpGateway public immutable gateway;
+contract AxelarGMPExecutable is IAxelarGMPExecutable {
+    IAxelarGMPGateway public immutable gateway;
 
     constructor(address gateway_) {
         if (gateway_ == address(0)) revert InvalidAddress();
 
-        gateway = IAxelarGmpGateway(gateway_);
+        gateway = IAxelarGMPGateway(gateway_);
     }
 
     function execute(
@@ -25,10 +25,11 @@ contract AxelarGmpExecutable is IAxelarGmpExecutable {
         if (!gateway.validateContractCall(commandId, sourceChain, sourceAddress, payloadHash))
             revert NotApprovedByGateway();
 
-        _execute(sourceChain, sourceAddress, payload);
+        _execute(commandId, sourceChain, sourceAddress, payload);
     }
 
     function _execute(
+        bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload

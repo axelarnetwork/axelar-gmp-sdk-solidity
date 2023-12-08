@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.0;
 
-import { IAxelarGmpGateway } from './IAxelarGmpGateway.sol';
+import { IAxelarGMPGateway } from './IAxelarGMPGateway.sol';
 
-interface IAxelarGmpWithTokenGateway is IAxelarGmpGateway {
+interface IAxelarGMPGatewayWithToken is IAxelarGMPGateway {
     /**********\
     |* Errors *|
     \**********/

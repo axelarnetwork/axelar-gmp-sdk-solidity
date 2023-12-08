@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import { IGovernable } from './IGovernable.sol';
 import { IImplementation } from './IImplementation.sol';
 
-interface IAxelarGmpGateway is IImplementation, IGovernable {
+interface IAxelarGMPGateway is IImplementation, IGovernable {
     /**********\
     |* Errors *|
     \**********/

@@ -2,16 +2,16 @@
 
 pragma solidity ^0.8.0;
 
-import { IAxelarGmpWithTokenGateway } from '../interfaces/IAxelarGmpWithTokenGateway.sol';
-import { IAxelarGmpWithTokenExecutable } from '../interfaces/IAxelarGmpWithTokenExecutable.sol';
+import { IAxelarGMPGatewayWithToken } from '../interfaces/IAxelarGMPGatewayWithToken.sol';
+import { IAxelarGMPExecutableWithToken } from '../interfaces/IAxelarGMPExecutableWithToken.sol';
 
-contract AxelarGmpWithTokenExecutable is IAxelarGmpWithTokenExecutable {
-    IAxelarGmpWithTokenGateway public immutable gateway;
+contract AxelarGMPExecutableWithToken is IAxelarGMPExecutableWithToken {
+    IAxelarGMPGatewayWithToken public immutable gateway;
 
     constructor(address gateway_) {
         if (gateway_ == address(0)) revert InvalidAddress();
 
-        gateway = IAxelarGmpWithTokenGateway(gateway_);
+        gateway = IAxelarGMPGatewayWithToken(gateway_);
     }
 
     function execute(
@@ -25,7 +25,7 @@ contract AxelarGmpWithTokenExecutable is IAxelarGmpWithTokenExecutable {
         if (!gateway.validateContractCall(commandId, sourceChain, sourceAddress, payloadHash))
             revert NotApprovedByGateway();
 
-        _execute(sourceChain, sourceAddress, payload);
+        _execute(commandId, sourceChain, sourceAddress, payload);
     }
 
     function executeWithToken(
@@ -49,16 +49,18 @@ contract AxelarGmpWithTokenExecutable is IAxelarGmpWithTokenExecutable {
             )
         ) revert NotApprovedByGateway();
 
-        _executeWithToken(sourceChain, sourceAddress, payload, tokenSymbol, amount);
+        _executeWithToken(commandId, sourceChain, sourceAddress, payload, tokenSymbol, amount);
     }
 
     function _execute(
+        bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
     ) internal virtual {}
 
     function _executeWithToken(
+        bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload,

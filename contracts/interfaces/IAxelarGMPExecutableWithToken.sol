@@ -3,20 +3,32 @@
 pragma solidity ^0.8.0;
 
 import { IAxelarGMPGatewayWithToken } from './IAxelarGMPGatewayWithToken.sol';
+import { IAxelarGMPExecutable } from './IAxelarGMPExecutable.sol';
 
-interface IAxelarGMPExecutableWithToken {
-    error InvalidAddress();
-    error NotApprovedByGateway();
+/**
+ * @title IAxelarGMPExecutableWithToken
+ * @dev Interface for a contract that can execute commands from Axelar Gateway involving token transfers.
+ * It extends IAxelarGMPExecutable to include token-related functionality.
+ */
+interface IAxelarGMPExecutableWithToken is IAxelarGMPExecutable {
+    /**
+     * @notice Returns the address of the IAxelarGMPGatewayWithToken contract.
+     * @dev IAxelarGMPGatewayWithToken contains additional functionality for token transfers compared to IAxelarGMPGateway.
+     * @return The address of the Axelar GMP Gateway With Token contract.
+     */
+    function gatewayWithToken() external view returns (IAxelarGMPGatewayWithToken);
 
-    function gateway() external view returns (IAxelarGMPGatewayWithToken);
-
-    function execute(
-        bytes32 commandId,
-        string calldata sourceChain,
-        string calldata sourceAddress,
-        bytes calldata payload
-    ) external;
-
+    /**
+     * @notice Executes the specified command sent from another chain and includes a token transfer.
+     * @dev This function should be implemented to handle incoming commands that include token transfers.
+     * It will be called by an implementation of IAxelarGMPGatewayWithToken.
+     * @param commandId The identifier of the command to execute.
+     * @param sourceChain The name of the source chain from where the command originated.
+     * @param sourceAddress The address on the source chain that sent the command.
+     * @param payload The payload of the command to be executed.
+     * @param tokenSymbol The symbol of the token to be transferred with this command.
+     * @param amount The amount of tokens to be transferred with this command.
+     */
     function executeWithToken(
         bytes32 commandId,
         string calldata sourceChain,

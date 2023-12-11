@@ -12,16 +12,11 @@ import { AxelarGMPExecutable } from './AxelarGMPExecutable.sol';
  * It extends AxelarGMPExecutable and implements the IAxelarGMPExecutableWithToken interface.
  */
 abstract contract AxelarGMPExecutableWithToken is IAxelarGMPExecutableWithToken, AxelarGMPExecutable {
-    /// @dev Reference to the Axelar Gateway With Token contract.
-    IAxelarGMPGatewayWithToken public immutable gatewayWithToken;
-
     /**
      * @dev Contract constructor that sets the Axelar Gateway With Token address and initializes AxelarGMPExecutable.
      * @param gateway_ The address of the Axelar Gateway With Token contract.
      */
-    constructor(address gateway_) AxelarGMPExecutable(gateway_) {
-        gatewayWithToken = IAxelarGMPGatewayWithToken(gateway_);
-    }
+    constructor(address gateway_) AxelarGMPExecutable(gateway_) {}
 
     /**
      * @notice Executes the cross-chain command with token transfer after validating it with the Axelar Gateway.
@@ -46,7 +41,7 @@ abstract contract AxelarGMPExecutableWithToken is IAxelarGMPExecutableWithToken,
         bytes32 payloadHash = keccak256(payload);
 
         if (
-            !gatewayWithToken.validateContractCallAndMint(
+            !gatewayWithToken().validateContractCallAndMint(
             commandId,
             sourceChain,
             sourceAddress,
@@ -77,4 +72,13 @@ abstract contract AxelarGMPExecutableWithToken is IAxelarGMPExecutableWithToken,
         string calldata tokenSymbol,
         uint256 amount
     ) internal virtual;
+
+
+    /**
+     * @notice Returns the address of the IAxelarGMPGatewayWithToken contract.
+     * @return The Axelar GMP Gateway with Token instance.
+     */
+    function gatewayWithToken() internal view returns (IAxelarGMPGatewayWithToken) {
+        return IAxelarGMPGatewayWithToken(gatewayAddress);
+    }
 }

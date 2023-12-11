@@ -12,7 +12,7 @@ import { IAxelarGMPExecutable } from '../interfaces/IAxelarGMPExecutable.sol';
  */
 abstract contract AxelarGMPExecutable is IAxelarGMPExecutable {
     /// @dev Reference to the Axelar Gateway contract.
-    IAxelarGMPGateway public immutable gateway;
+    address public immutable gatewayAddress;
 
     /**
      * @dev Contract constructor that sets the Axelar Gateway address.
@@ -22,7 +22,7 @@ abstract contract AxelarGMPExecutable is IAxelarGMPExecutable {
     constructor(address gateway_) {
         if (gateway_ == address(0)) revert InvalidAddress();
 
-        gateway = IAxelarGMPGateway(gateway_);
+        gatewayAddress = gateway_;
     }
 
     /**
@@ -43,7 +43,7 @@ abstract contract AxelarGMPExecutable is IAxelarGMPExecutable {
     ) external {
         bytes32 payloadHash = keccak256(payload);
 
-        if (!gateway.validateContractCall(commandId, sourceChain, sourceAddress, payloadHash))
+        if (!gateway().validateContractCall(commandId, sourceChain, sourceAddress, payloadHash))
             revert NotApprovedByGateway();
 
         _execute(commandId, sourceChain, sourceAddress, payload);
@@ -63,4 +63,12 @@ abstract contract AxelarGMPExecutable is IAxelarGMPExecutable {
         string calldata sourceAddress,
         bytes calldata payload
     ) internal virtual;
+
+    /**
+     * @notice Returns the address of the AxelarGMPGateway contract.
+     * @return The Axelar GMP Gateway instance.
+     */
+    function gateway() internal view returns (IAxelarGMPGateway) {
+        return IAxelarGMPGateway(gatewayAddress);
+    }
 }

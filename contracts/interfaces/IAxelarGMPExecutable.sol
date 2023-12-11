@@ -24,7 +24,7 @@ interface IAxelarGMPExecutable {
      * @notice Returns the address of the AxelarGMPGateway contract.
      * @return The Axelar GMP Gateway contract associated with this executable contract.
      */
-    function gateway() external view returns (IAxelarGMPGateway);
+    function gatewayAddress() external view returns (address);
 
     /**
      * @notice Executes the specified command sent from another chain.

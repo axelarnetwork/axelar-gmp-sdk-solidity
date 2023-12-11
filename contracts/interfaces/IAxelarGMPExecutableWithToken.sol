@@ -12,13 +12,6 @@ import { IAxelarGMPExecutable } from './IAxelarGMPExecutable.sol';
  */
 interface IAxelarGMPExecutableWithToken is IAxelarGMPExecutable {
     /**
-     * @notice Returns the address of the IAxelarGMPGatewayWithToken contract.
-     * @dev IAxelarGMPGatewayWithToken contains additional functionality for token transfers compared to IAxelarGMPGateway.
-     * @return The address of the Axelar GMP Gateway With Token contract.
-     */
-    function gatewayWithToken() external view returns (IAxelarGMPGatewayWithToken);
-
-    /**
      * @notice Executes the specified command sent from another chain and includes a token transfer.
      * @dev This function should be implemented to handle incoming commands that include token transfers.
      * It will be called by an implementation of IAxelarGMPGatewayWithToken.

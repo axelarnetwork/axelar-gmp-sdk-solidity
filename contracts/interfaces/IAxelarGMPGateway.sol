@@ -2,23 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import { IGovernable } from './IGovernable.sol';
-import { IImplementation } from './IImplementation.sol';
-
-interface IAxelarGMPGateway is IImplementation, IGovernable {
-    /**********\
-    |* Errors *|
-    \**********/
-
-    error NotSelf();
-    error InvalidCodeHash();
-    error SetupFailed();
-    error InvalidAuthModule();
-    error InvalidTokenDeployer();
-    error InvalidAmount();
-    error InvalidChainId();
-    error InvalidCommands();
-
+interface IAxelarGMPGateway {
     /**********\
     |* Events *|
     \**********/
@@ -75,10 +59,4 @@ interface IAxelarGMPGateway is IImplementation, IGovernable {
     \***********/
 
     function isCommandExecuted(bytes32 commandId) external view returns (bool);
-
-    /**********************\
-    |* External Functions *|
-    \**********************/
-
-    function execute(bytes calldata input) external;
 }

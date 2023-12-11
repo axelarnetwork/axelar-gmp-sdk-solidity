@@ -6,15 +6,6 @@ import { IAxelarGMPGateway } from './IAxelarGMPGateway.sol';
 
 interface IAxelarGMPGatewayWithToken is IAxelarGMPGateway {
     /**********\
-    |* Errors *|
-    \**********/
-
-    error TokenDoesNotExist(string symbol);
-    error BurnFailed(string symbol);
-    error MintFailed(string symbol);
-    error ExceedMintLimit(string symbol);
-
-    /**********\
     |* Events *|
     \**********/
 

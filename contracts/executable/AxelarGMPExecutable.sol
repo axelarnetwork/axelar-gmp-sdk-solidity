@@ -68,7 +68,7 @@ abstract contract AxelarGMPExecutable is IAxelarGMPExecutable {
      * @notice Returns the address of the AxelarGMPGateway contract.
      * @return The Axelar GMP Gateway instance.
      */
-    function gateway() internal view returns (IAxelarGMPGateway) {
+    function gateway() public view returns (IAxelarGMPGateway) {
         return IAxelarGMPGateway(gatewayAddress);
     }
 }

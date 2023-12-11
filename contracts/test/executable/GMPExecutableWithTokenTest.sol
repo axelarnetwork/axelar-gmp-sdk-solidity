@@ -19,7 +19,6 @@ contract GMPExecutableWithTokenTest is AxelarGMPExecutableWithToken {
         emit Received(num);
     }
 
-
     function _executeWithToken(
         bytes32, /*commandId*/
         string calldata, /*sourceChain*/

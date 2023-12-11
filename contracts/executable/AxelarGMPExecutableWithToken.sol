@@ -42,13 +42,13 @@ abstract contract AxelarGMPExecutableWithToken is IAxelarGMPExecutableWithToken,
 
         if (
             !gatewayWithToken().validateContractCallAndMint(
-            commandId,
-            sourceChain,
-            sourceAddress,
-            payloadHash,
-            tokenSymbol,
-            amount
-        )
+                commandId,
+                sourceChain,
+                sourceAddress,
+                payloadHash,
+                tokenSymbol,
+                amount
+            )
         ) revert NotApprovedByGateway();
 
         _executeWithToken(commandId, sourceChain, sourceAddress, payload, tokenSymbol, amount);
@@ -72,7 +72,6 @@ abstract contract AxelarGMPExecutableWithToken is IAxelarGMPExecutableWithToken,
         string calldata tokenSymbol,
         uint256 amount
     ) internal virtual;
-
 
     /**
      * @notice Returns the address of the IAxelarGMPGatewayWithToken contract.

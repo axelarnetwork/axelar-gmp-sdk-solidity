@@ -26,7 +26,7 @@ contract GMPExecutableWithTokenTest is AxelarGMPExecutableWithToken {
         bytes calldata payload,
         string calldata, /*tokenSymbol*/
         uint256 /*amount*/
-    ) internal override  {
+    ) internal override {
         uint256 num = abi.decode(payload, (uint256));
         emit Received(num);
     }

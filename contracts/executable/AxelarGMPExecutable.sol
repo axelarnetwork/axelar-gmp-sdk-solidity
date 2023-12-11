@@ -12,7 +12,7 @@ import { IAxelarGMPExecutable } from '../interfaces/IAxelarGMPExecutable.sol';
  */
 abstract contract AxelarGMPExecutable is IAxelarGMPExecutable {
     /// @dev Reference to the Axelar Gateway contract.
-    address public immutable gatewayAddress;
+    address internal immutable gatewayAddress;
 
     /**
      * @dev Contract constructor that sets the Axelar Gateway address.

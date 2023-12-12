@@ -179,7 +179,9 @@ describe('Create3Deployer', () => {
         BurnableMintableCappedERC20,
         key,
         [name, symbol, decimals],
-        { value: amount },
+        {
+          value: amount,
+        },
       );
 
       expect(await ethers.provider.getBalance(contract.address)).to.equal(

@@ -39,4 +39,4 @@ jobs:
           fi
 
       - name: Test
-        run: npm run test-evm-versions
+        run: CHECK_CONTRACT_SIZE=true npm run test-evm-versions

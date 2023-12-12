@@ -1,11 +1,20 @@
 require('@nomicfoundation/hardhat-toolbox');
 require('solidity-coverage');
 
-const env = process.env.ENV || 'testnet';
+if (process.env.STORAGE_LAYOUT) {
+  require('hardhat-storage-layout');
+}
+
+if (process.env.CHECK_CONTRACT_SIZE) {
+  require('hardhat-contract-sizer');
+}
+
 const {
   importNetworks,
   readJSON,
 } = require('@axelar-network/axelar-chains-config');
+
+const env = process.env.ENV || 'testnet';
 const chains = require(`@axelar-network/axelar-chains-config/info/${env}.json`);
 const keys = readJSON(`${__dirname}/keys.json`);
 const { networks, etherscan } = importNetworks(chains, keys);
@@ -58,6 +67,12 @@ module.exports = {
     timeout: 4 * 60 * 60 * 1000, // 4 hrs
   },
   gasReporter: {
-    enabled: process.env.REPORT_GAS ? true : false,
+    enabled: process.env.REPORT_GAS !== undefined,
+    excludeContracts: ['contracts/test'],
+  },
+  contractSizer: {
+    runOnCompile: process.env.CHECK_CONTRACT_SIZE,
+    strict: process.env.CHECK_CONTRACT_SIZE,
+    except: ['contracts/test'],
   },
 };

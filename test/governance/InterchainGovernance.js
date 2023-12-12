@@ -581,7 +581,9 @@ describe('InterchainGovernance', () => {
         target,
         calldata,
         nativeValue,
-        { value: nativeValue },
+        {
+          value: nativeValue,
+        },
       );
       await tx.wait();
 

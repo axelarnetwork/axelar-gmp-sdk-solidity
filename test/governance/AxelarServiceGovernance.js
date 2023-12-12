@@ -8,7 +8,11 @@ const {
   Wallet,
 } = ethers;
 const { expect } = chai;
-const { isHardhat, getPayloadAndProposalHash } = require('../utils');
+const {
+  isHardhat,
+  getPayloadAndProposalHash,
+  getEVMVersion,
+} = require('../utils');
 
 describe('AxelarServiceGovernance', () => {
   let ownerWallet;
@@ -539,5 +543,21 @@ describe('AxelarServiceGovernance', () => {
 
     const newBalance = await ethers.provider.getBalance(target);
     expect(newBalance).to.equal(oldBalance.add(nativeValue));
+  });
+
+  it('should preserve the bytecode [ @skip-on-coverage ]', async () => {
+    const bytecode = serviceGovernanceFactory.bytecode;
+    const bytecodeHash = keccak256(bytecode);
+
+    const expected = {
+      istanbul:
+        '0x319301da0b03f0811bc506a7c251a4a8277de0959a64485ee834b4e33c6be302',
+      berlin:
+        '0x9528162b0e350e8bc3d181949c8b91e41750a7e8740b4b3d69edb49ff1e7e2b1',
+      london:
+        '0xb763a5922bb74458426c83bea5205fd371418c220d896f9f1e500841c6134904',
+    }[getEVMVersion()];
+
+    expect(bytecodeHash).to.be.equal(expected);
   });
 });

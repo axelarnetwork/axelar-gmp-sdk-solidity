@@ -141,9 +141,9 @@ describe('GMPExecutableWithToken', () => {
             beforeEach(async () => {
                 destinationChainGateway = await gatewayFactory.deploy().then((d) => d.deployed());
 
-                GMPExecutableWithToken = await GMPExecutableWithTokenFactory.deploy(destinationChainGateway.address).then((d) =>
-                    d.deployed(),
-                );
+                GMPExecutableWithToken = await GMPExecutableWithTokenFactory.deploy(
+                    destinationChainGateway.address,
+                ).then((d) => d.deployed());
             });
 
             it('should revert without gateway approval', async () => {

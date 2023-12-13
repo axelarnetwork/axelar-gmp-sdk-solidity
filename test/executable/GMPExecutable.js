@@ -6,6 +6,9 @@ const {
 } = require('ethers');
 const { expect } = chai;
 const { ethers } = require('hardhat');
+const {
+    constants: { AddressZero },
+} = ethers;
 const getRandomID = () => id(Math.floor(Math.random() * 1e10).toString());
 
 describe('GMPExecutable', () => {
@@ -37,6 +40,14 @@ describe('GMPExecutable', () => {
                 GMPExecutable = await GMPExecutableFactory.deploy(destinationChainGateway.address).then((d) =>
                     d.deployed(),
                 );
+            });
+
+            it('should revert when deployed with empty gateway', async () => {
+                try {
+                    await GMPExecutableFactory.deploy(AddressZero)
+                } catch (e) {
+                    expect(e.message).to.contain('InvalidAddress');
+                }
             });
 
             it('should revert without gateway approval', async () => {

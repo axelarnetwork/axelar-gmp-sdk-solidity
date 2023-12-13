@@ -91,6 +91,8 @@ describe('GMPExecutable', () => {
             approveCommandId,
           );
 
+        await approveExecute.wait();
+
         await expect(approveExecute)
           .to.emit(destinationChainGateway, 'ContractCallApproved')
           .withArgs(
@@ -103,12 +105,14 @@ describe('GMPExecutable', () => {
             sourceEventIndex,
           );
 
-        const receive = GMPExecutable.execute(
+        const receive = await GMPExecutable.execute(
           approveCommandId,
           sourceChain,
           userWallet.address.toString(),
           payload,
         );
+
+        await receive.wait();
 
         await expect(receive).to.emit(GMPExecutable, 'Received').withArgs(num);
       });

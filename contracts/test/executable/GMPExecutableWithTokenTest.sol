@@ -6,6 +6,7 @@ import { AxelarGMPExecutableWithToken } from '../../executable/AxelarGMPExecutab
 
 contract GMPExecutableWithTokenTest is AxelarGMPExecutableWithToken {
     event Received(uint256 num);
+    event ReceivedWithToken(uint256 num, address tokenAddress, uint256 amount);
 
     constructor(address gatewayAddress) AxelarGMPExecutableWithToken(gatewayAddress) {}
 
@@ -24,10 +25,10 @@ contract GMPExecutableWithTokenTest is AxelarGMPExecutableWithToken {
         string calldata, /*sourceChain*/
         string calldata, /*sourceAddress*/
         bytes calldata payload,
-        string calldata, /*tokenSymbol*/
-        uint256 /*amount*/
+        string calldata tokenSymbol,
+        uint256 amount
     ) internal override {
         uint256 num = abi.decode(payload, (uint256));
-        emit Received(num);
+        emit ReceivedWithToken(num, gatewayWithToken().tokenAddresses(tokenSymbol), amount);
     }
 }

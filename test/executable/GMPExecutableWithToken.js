@@ -12,14 +12,9 @@ describe('GMPExecutableWithToken', () => {
   let gatewayFactory;
   let tokenFactory;
 
-  let sourceChainGateway;
   let destinationChainGateway;
-  let sourceChainSwapCaller;
-  let destinationChainTokenSwapper;
   let tokenA;
-  let tokenB;
 
-  let sourceChainSender;
   let GMPExecutableFactory;
   let GMPExecutable;
   let GMPExecutableWithTokenFactory;
@@ -75,15 +70,11 @@ describe('GMPExecutableWithToken', () => {
           keccak256('0x'),
         );
 
-        GMPExecutableWithToken =
-          await GMPExecutableWithTokenFactory
-            .deploy(
-              destinationChainGateway.address,
-            )
-            .then((d) => d.deployed());
+        GMPExecutableWithToken = await GMPExecutableWithTokenFactory.deploy(
+          destinationChainGateway.address,
+        ).then((d) => d.deployed());
 
         await tokenA.mint(destinationChainGateway.address, 1e9);
-        await tokenB.mint(destinationChainTokenSwapper.address, 1e9);
 
         await (
           await tokenA.connect(ownerWallet).mint(userWallet.address, 1e9)
@@ -92,26 +83,14 @@ describe('GMPExecutableWithToken', () => {
 
       it('should revert without gateway approval', async () => {
         const swapAmount = 1e6;
-        const payload = defaultAbiCoder.encode(
-          ['uint256'],
-          [num],
-        );
-
-        const sourceChainTokenA = tokenFactory
-          .connect(userWallet)
-          .attach(await sourceChainGateway.tokenAddresses(symbolA));
-
-        await sourceChainTokenA.approve(
-          sourceChainSwapCaller.address,
-          swapAmount,
-        );
+        const payload = defaultAbiCoder.encode(['uint256'], [num]);
 
         const approveCommandId = getRandomID();
 
         const swap = GMPExecutableWithToken.executeWithToken(
           approveCommandId,
           sourceChain,
-          sourceChainSwapCaller.address.toString(),
+          userWallet.address.toString(),
           payload,
           symbolA,
           swapAmount,
@@ -144,7 +123,7 @@ describe('GMPExecutableWithToken', () => {
           ],
           [
             sourceChain,
-            sourceChainSwapCaller.address,
+            userWallet.address,
             GMPExecutableWithToken.address,
             payloadHash,
             symbolA,
@@ -165,7 +144,7 @@ describe('GMPExecutableWithToken', () => {
           .withArgs(
             approveCommandId,
             sourceChain,
-            sourceChainSwapCaller.address.toString(),
+            userWallet.address.toString(),
             GMPExecutableWithToken.address,
             payloadHash,
             symbolA,
@@ -174,20 +153,18 @@ describe('GMPExecutableWithToken', () => {
             sourceEventIndex,
           );
 
-        await expect(GMPExecutableWithToken.executeWithToken(
-          approveCommandId,
-          sourceChain,
-          sourceChainSwapCaller.address.toString(),
-          payload,
-          symbolA,
-          swapAmount,
-        ))
-          .to.emit(GMPExecutableWithToken, 'ReceivedWithToken')
-          .withArgs(
-            num,
-            tokenA.address,
+        await expect(
+          GMPExecutableWithToken.executeWithToken(
+            approveCommandId,
+            sourceChain,
+            userWallet.address.toString(),
+            payload,
+            symbolA,
             swapAmount,
-          )
+          ),
+        )
+          .to.emit(GMPExecutableWithToken, 'ReceivedWithToken')
+          .withArgs(num, tokenA.address, swapAmount)
           .to.emit(tokenA, 'Transfer')
           .withArgs(
             destinationChainGateway.address,
@@ -203,9 +180,9 @@ describe('GMPExecutableWithToken', () => {
           .deploy()
           .then((d) => d.deployed());
 
-        GMPExecutable = await GMPExecutableFactory
-          .deploy(destinationChainGateway.address)
-          .then((d) => d.deployed());
+        GMPExecutable = await GMPExecutableFactory.deploy(
+          destinationChainGateway.address,
+        ).then((d) => d.deployed());
       });
 
       it('should revert without gateway approval', async () => {
@@ -216,7 +193,7 @@ describe('GMPExecutableWithToken', () => {
         const receive = GMPExecutable.execute(
           approveCommandId,
           sourceChain,
-          sourceChainSender.address.toString(),
+          userWallet.address.toString(),
           payload,
         );
 
@@ -238,7 +215,7 @@ describe('GMPExecutableWithToken', () => {
           ['string', 'string', 'address', 'bytes32', 'bytes32', 'uint256'],
           [
             sourceChain,
-            sourceChainSender.address,
+            userWallet.address,
             GMPExecutable.address,
             payloadHash,
             sourceTxHash,
@@ -257,7 +234,7 @@ describe('GMPExecutableWithToken', () => {
           .withArgs(
             approveCommandId,
             sourceChain,
-            sourceChainSender.address.toString(),
+            userWallet.address.toString(),
             GMPExecutable.address,
             payloadHash,
             sourceTxHash,
@@ -267,13 +244,11 @@ describe('GMPExecutableWithToken', () => {
         const receive = GMPExecutable.execute(
           approveCommandId,
           sourceChain,
-          sourceChainSender.address.toString(),
+          userWallet.address.toString(),
           payload,
         );
 
-        await expect(receive)
-          .to.emit(GMPExecutable, 'Received')
-          .withArgs(num);
+        await expect(receive).to.emit(GMPExecutable, 'Received').withArgs(num);
       });
     });
   });

@@ -13,17 +13,17 @@ describe('GMPExecutable', () => {
 
   let destinationChainGateway;
 
-  let sourceChainSender;
   let GMPExecutableFactory;
   let GMPExecutable;
 
   let ownerWallet;
+  let userWallet;
 
   const sourceChain = 'chainA';
   const num = 10;
 
   before(async () => {
-    [ownerWallet] = await ethers.getSigners();
+    [ownerWallet, userWallet] = await ethers.getSigners();
 
     gatewayFactory = await ethers.getContractFactory(
       'MockGateway',
@@ -42,9 +42,9 @@ describe('GMPExecutable', () => {
           .deploy()
           .then((d) => d.deployed());
 
-        GMPExecutable = await GMPExecutableFactory
-          .deploy(destinationChainGateway.address)
-          .then((d) => d.deployed());
+        GMPExecutable = await GMPExecutableFactory.deploy(
+          destinationChainGateway.address,
+        ).then((d) => d.deployed());
       });
 
       it('should revert without gateway approval', async () => {
@@ -55,7 +55,7 @@ describe('GMPExecutable', () => {
         const receive = GMPExecutable.execute(
           approveCommandId,
           sourceChain,
-          sourceChainSender.address.toString(),
+          userWallet.address.toString(),
           payload,
         );
 
@@ -77,7 +77,7 @@ describe('GMPExecutable', () => {
           ['string', 'string', 'address', 'bytes32', 'bytes32', 'uint256'],
           [
             sourceChain,
-            sourceChainSender.address,
+            userWallet.address,
             GMPExecutable.address,
             payloadHash,
             sourceTxHash,
@@ -96,7 +96,7 @@ describe('GMPExecutable', () => {
           .withArgs(
             approveCommandId,
             sourceChain,
-            sourceChainSender.address.toString(),
+            userWallet.address.toString(),
             GMPExecutable.address,
             payloadHash,
             sourceTxHash,
@@ -106,13 +106,11 @@ describe('GMPExecutable', () => {
         const receive = GMPExecutable.execute(
           approveCommandId,
           sourceChain,
-          sourceChainSender.address.toString(),
+          userWallet.address.toString(),
           payload,
         );
 
-        await expect(receive)
-          .to.emit(GMPExecutable, 'Received')
-          .withArgs(num);
+        await expect(receive).to.emit(GMPExecutable, 'Received').withArgs(num);
       });
     });
   });

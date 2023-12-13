@@ -1,7 +1,7 @@
 # Axelar GMP SDK Solidity
 
 This repository contains all the necessary ingredients for successful cross-chain development
-utilizing the Axelar General Message Passing protocol.  
+utilizing the Axelar General Message Passing protocol.
 
 ## Documentation
 
@@ -36,6 +36,23 @@ const Upgradable = require('@axelar-network/axelar-cgp-solidity/artifacts/contra
 ```
 
 Unit tests can also be run against live networks for integration testing, see [here](https://github.com/axelarnetwork/axelar-cgp-solidity#live-network-testing).
+
+### Development
+
+Check gas usage
+```bash
+REPORT_GAS=true npm run test
+```
+
+Check storage layout of contracts.
+```bash
+STORAGE_LAYOUT=true npx hardhat check
+```
+
+Check contract bytecode size
+```bash
+CHECK_CONTRACT_SIZE=true npm run build
+```
 
 ## Available contracts
 

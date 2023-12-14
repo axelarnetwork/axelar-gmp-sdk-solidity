@@ -1214,7 +1214,9 @@ describe('GMPE', async () => {
         payload,
         tokenSymbol,
         amount,
-        { value },
+        {
+          value,
+        },
       );
       await expect(expressTx)
         .to.emit(tokenA, 'Transfer')

@@ -82,8 +82,8 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
         bytes[] calldata signatures
     ) external {
         bytes32 dataHash = keccak256(newSignersData);
-        // if not the latest signers, revert
-        if (!_validateProof(dataHash, weightedSigners, signatures)) revert InvalidProof();
+        bool isLatestSigners = _validateProof(dataHash, weightedSigners, signatures);
+        if (!isLatestSigners) revert InvalidProof();
 
         InterchainMultisigStorage storage $ = _interchainMultisigStorage();
         (

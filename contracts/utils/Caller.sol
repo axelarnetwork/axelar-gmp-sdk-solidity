@@ -13,7 +13,7 @@ contract Caller is ICaller {
      */
     function _call(
         address target,
-        bytes calldata callData,
+        bytes memory callData,
         uint256 nativeValue
     ) internal returns (bytes memory) {
         if (!target.isContract()) revert InvalidContract(target);

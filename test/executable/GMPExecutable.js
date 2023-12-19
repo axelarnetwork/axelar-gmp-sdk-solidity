@@ -44,7 +44,7 @@ describe('GMPExecutable', () => {
 
             it('should revert when deployed with empty gateway', async () => {
                 try {
-                    await GMPExecutableFactory.deploy(AddressZero)
+                    await GMPExecutableFactory.deploy(AddressZero);
                 } catch (e) {
                     expect(e.message).to.contain('InvalidAddress');
                 }

@@ -12,21 +12,32 @@ import { ICaller } from './ICaller.sol';
 interface IInterchainMultisig is ICaller, IBaseWeightedMultisig {
     error InvalidProof();
     error AlreadyExecuted();
+    error InvalidPayloadType();
+    error InvalidChainNameHash();
+    error InvalidTarget();
 
     struct InterCall {
         bytes32 chainNameHash;
+        address caller;
         address target;
         bytes callData;
         uint256 nativeValue;
     }
 
     /**
+     * @notice Checks if a payload has been executed
+     * @param payloadHash The hash of the payload payload
+     * @return True if the payload has been executed
+     */
+    function isPayloadExecuted(bytes32 payloadHash) external view returns (bool);
+
+    /**
      * @notice Executes an external contract call.
      * @notice This function is protected by the onlySigners requirement.
      * @dev Calls a target address with specified calldata and passing provided native value.
      * @param batch The batch of calls to execute
-     * @param weightedSigners The weighted signers data
-     * @param signatures The signatures data
+     * @param weightedSigners The weighted signers payload
+     * @param signatures The signatures payload
      */
     function executeCalls(
         bytes calldata batch,
@@ -36,26 +47,26 @@ interface IInterchainMultisig is ICaller, IBaseWeightedMultisig {
 
     /**
      * @notice Rotates the signers of the multisig
-     * @param newSignersData The data to be passed to the rotateSigners function
-     * @param weightedSigners The weighted signers data
-     * @param signatures The signatures data
+     * @param newSignersPayload The payload to be passed to the rotateSigners function
+     * @param weightedSigners The weighted signers payload
+     * @param signatures The signatures payload
      * @dev This function is only callable by the contract itself after passing according proposal
      */
     function rotateSigners(
-        bytes calldata newSignersData,
+        bytes calldata newSignersPayload,
         bytes calldata weightedSigners,
         bytes[] calldata signatures
     ) external;
 
     /**
      * @notice Withdraws native token from the contract
-     * @param transferData The data to be passed to the transfer function
-     * @param weightedSigners The weighted signers data
-     * @param signatures The signatures data
+     * @param transferPayload The payload to be passed to the transfer function
+     * @param weightedSigners The weighted signers payload
+     * @param signatures The signatures payload
      * @dev This function is only callable by the contract itself after passing according proposal
      */
     function withdraw(
-        bytes calldata transferData,
+        bytes calldata transferPayload,
         bytes calldata weightedSigners,
         bytes[] calldata signatures
     ) external payable;

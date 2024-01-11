@@ -21,21 +21,21 @@ interface IBaseWeightedMultisig {
 
     event SignersRotated(WeightedSigners signers);
 
-    /**
-     * @notice Returns the current signers of the multisig
-     * @return The current signers of the multisig
+    /*
+     * @dev This function returns the current signers epoch
+     * @return uint256 The current signers epoch
      */
     function currentSignersEpoch() external view returns (uint256);
 
     /**
-     * @notice Returns the hash for a given signers epoch
+     * @dev Returns the hash for a given signers epoch
      * @param epoch The epoch to get the hash for
      * @return The hash for the given epoch
      */
     function hashForSignersEpoch(uint256 epoch) external view returns (bytes32);
 
     /**
-     * @notice Returns the epoch for a given hash
+     * @dev Returns the epoch for a given hash
      * @param hash The hash to get the epoch for
      * @return The epoch for the given hash
      */

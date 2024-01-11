@@ -10,11 +10,13 @@ import { ICaller } from './ICaller.sol';
  * @notice This interface extends IMultisigBase by adding an execute function for multisignature transactions.
  */
 interface IInterchainMultisig is ICaller, IBaseWeightedMultisig {
+    error NotSelf();
     error InvalidProof();
     error AlreadyExecuted();
     error InvalidPayloadType();
     error InvalidChainNameHash();
     error InvalidTarget();
+    error InvalidRecipient();
 
     struct InterCall {
         bytes32 chainNameHash;
@@ -41,32 +43,6 @@ interface IInterchainMultisig is ICaller, IBaseWeightedMultisig {
      */
     function executeCalls(
         bytes calldata batch,
-        bytes calldata weightedSigners,
-        bytes[] calldata signatures
-    ) external payable;
-
-    /**
-     * @notice Rotates the signers of the multisig
-     * @param newSignersPayload The payload to be passed to the rotateSigners function
-     * @param weightedSigners The weighted signers payload
-     * @param signatures The signatures payload
-     * @dev This function is only callable by the contract itself after passing according proposal
-     */
-    function rotateSigners(
-        bytes calldata newSignersPayload,
-        bytes calldata weightedSigners,
-        bytes[] calldata signatures
-    ) external;
-
-    /**
-     * @notice Withdraws native token from the contract
-     * @param transferPayload The payload to be passed to the transfer function
-     * @param weightedSigners The weighted signers payload
-     * @param signatures The signatures payload
-     * @dev This function is only callable by the contract itself after passing according proposal
-     */
-    function withdraw(
-        bytes calldata transferPayload,
         bytes calldata weightedSigners,
         bytes[] calldata signatures
     ) external payable;

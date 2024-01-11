@@ -23,27 +23,26 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
     \**********************/
 
     /*
-     * @dev This function checks if the provided signers are sorted and contain no duplicates
-     * @param signers The signers to check
-     * @return True if the signers are sorted and contain no duplicates
+     * @notice This function returns the current signers epoch
+     * @return uint256 The current signers epoch
      */
     function currentSignersEpoch() external view returns (uint256) {
         return _baseWeightedStorage().currentSignersEpoch;
     }
 
     /*
-     * @dev This function checks if the provided signers are sorted and contain no duplicates
-     * @param signers The signers to check
-     * @return True if the signers are sorted and contain no duplicates
+     * @notice This function returns the signers hash for a given epoch
+     * @param epoch The given epoch
+     * @return bytes32 The signers hash for the given epoch
      */
     function hashForSignersEpoch(uint256 epoch) external view returns (bytes32) {
         return _baseWeightedStorage().hashForSignersEpoch[epoch];
     }
 
     /*
-     * @dev This function checks if the provided signers are sorted and contain no duplicates
-     * @param signers The signers to check
-     * @return True if the signers are sorted and contain no duplicates
+     * @notice This function returns the epoch for a given signers hash
+     * @param hash The signers hash
+     * @return uint256 The epoch for the given signers hash
      */
     function signersEpochForHash(bytes32 hash) external view returns (uint256) {
         return _baseWeightedStorage().signersEpochForHash[hash];
@@ -53,7 +52,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
     |* Integration Functions *|
     \*************************/
     /*
-     * @dev This function takes messageHash and proof data and reverts if proof is invalid
+     * @notice This function takes messageHash and proof data and reverts if proof is invalid
      * @param messageHash The hash of the message that was signed
      * @param weightedSigners The weighted signers data
      * @param signatures The signatures data
@@ -66,19 +65,21 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
     ) internal view returns (bool isLatestSigners) {
         WeightedMultisigStorage storage $ = _baseWeightedStorage();
         bytes32 signersHash = keccak256(weightedSigners);
-        WeightedSigners memory signers = abi.decode(weightedSigners, (WeightedSigners));
         uint256 signersEpoch = $.signersEpochForHash[signersHash];
         uint256 currentEpoch = $.currentSignersEpoch;
 
         isLatestSigners = signersEpoch == currentEpoch;
 
-        if (signersEpoch == 0 || currentEpoch - signersEpoch >= OLD_SIGNERS_RETENTION) revert InvalidSigners();
+        if (signatures.length == 0) revert MalformedSignatures();
+        if (signersEpoch == 0 || currentEpoch - signersEpoch >= OLD_SIGNERS_RETENTION || weightedSigners.length == 0) revert InvalidSigners();
+
+        WeightedSigners memory signers = abi.decode(weightedSigners, (WeightedSigners));
 
         _validateSignatures(messageHash, signers, signatures);
     }
 
     /*
-     * @dev This function rotates the current signers with a new set of signers
+     * @notice This function rotates the current signers with a new set of signers
      * @param newWeightedSigners The new weighted signers data
      */
     function _rotateSigners(bytes memory newWeightedSigners) internal {
@@ -115,7 +116,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
     \**********************/
 
     /*
-     * @dev This function takes messageHash and proof data and reverts if proof is invalid
+     * @notice This function takes messageHash and proof data and reverts if proof is invalid
      * @param messageHash The hash of the message that was signed
      * @param weighted The weighted signers data
      * @param signatures The signatures data
@@ -149,7 +150,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
     }
 
     /*
-     * @dev This function checks if the provided signers are sorted and contain no duplicates
+     * @notice This function checks if the provided signers are sorted and contain no duplicates
      * @param signers The signers to check
      * @return True if the signers are sorted and contain no duplicates
      */
@@ -173,7 +174,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
     }
 
     /*
-     * @dev Gets the storage slot for the WeightedMultisigStorage struct
+     * @notice Gets the storage slot for the WeightedMultisigStorage struct
      * @return the storage slot
      */
     function _baseWeightedStorage() private pure returns (WeightedMultisigStorage storage $) {

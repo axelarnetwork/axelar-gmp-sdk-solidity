@@ -20,12 +20,6 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
 
     bytes32 public immutable chainNameHash;
 
-    enum PayloadType {
-        ExecuteCalls,
-        RotateSigners,
-        Withdraw
-    }
-
     struct InterchainMultisigStorage {
         mapping(bytes32 => bool) isPayloadExecuted;
     }
@@ -40,6 +34,12 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
         chainNameHash = keccak256(bytes(chainName));
 
         _rotateSigners(weightedSigners);
+    }
+
+    modifier onlySelf() {
+        if (msg.sender != address(this)) revert NotSelf();
+
+        _;
     }
 
     /**
@@ -65,95 +65,57 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
         bytes[] calldata signatures
     ) external payable {
         bytes32 payloadHash = keccak256(batch);
-        _validateProof(payloadHash, weightedSigners, signatures);
+        bool isLatestSigners = _validateProof(payloadHash, weightedSigners, signatures);
 
         InterchainMultisigStorage storage $ = _interchainMultisigStorage();
         (
-            PayloadType payloadType,
-        /* bytes32 salt */
             ,
+            /* bytes32 salt */
             InterCall[] memory calls
-        ) = abi.decode(batch, (PayloadType, bytes32, InterCall[]));
+        ) = abi.decode(batch, (bytes32, InterCall[]));
         uint256 length = calls.length;
 
-        if (payloadType != PayloadType.ExecuteCalls) revert InvalidPayloadType();
         if ($.isPayloadExecuted[payloadHash]) revert AlreadyExecuted();
         $.isPayloadExecuted[payloadHash] = true;
 
         for (uint256 i; i < length; ++i) {
             InterCall memory call = calls[i];
-            if (call.chainNameHash == chainNameHash && call.caller == address(this))
+            // check if the call is for this contract and chain
+            if (call.chainNameHash == chainNameHash && call.caller == address(this)) {
+                bytes4 selector = abi.decode(call.callData, (bytes4));
+                // check if the call is for signers rotation
+                if (call.target == address(this) && selector == InterchainMultisig.rotateSigners.selector)
+                    if (isLatestSigners)
+                        // check if the call is from the latest signers and if so, mark them as not latest
+                        isLatestSigners = false;
+                        // or skip the call
+                    else continue;
+
                 _call(call.target, call.callData, call.nativeValue);
+            }
         }
     }
 
     /**
      * @notice Rotates the signers of the multisig
-     * @param newSignersPayload The payload to be passed to the rotateSigners function
-     * @param weightedSigners The weighted signers payload
-     * @param signatures The signatures payload
-     * @dev This function is only callable by the contract itself after passing according proposal
+     * @notice This function is protected by the onlySelf modifier.
+     * @param newWeightedSigners The new weighted signers encoded as bytes
+     * @dev This function is only callable by the contract itself after signature verification
      */
-    function rotateSigners(
-        bytes calldata newSignersPayload,
-        bytes calldata weightedSigners,
-        bytes[] calldata signatures
-    ) external {
-        bytes32 payloadHash = keccak256(newSignersPayload);
-        bool isLatestSigners = _validateProof(payloadHash, weightedSigners, signatures);
-        if (!isLatestSigners) revert InvalidProof();
-
-        InterchainMultisigStorage storage $ = _interchainMultisigStorage();
-        (
-            PayloadType payloadType,
-            /* bytes32 salt */
-            ,
-            bytes32 chainNameHash_,
-            address target,
-            bytes memory newWeightedSigners
-        ) = abi.decode(newSignersPayload, (PayloadType, bytes32, bytes32, address, bytes));
-
-        if (payloadType != PayloadType.RotateSigners) revert InvalidPayloadType();
-        if (chainNameHash_ != chainNameHash) revert InvalidChainNameHash();
-        if (target != address(this)) revert InvalidTarget();
-        if ($.isPayloadExecuted[payloadHash]) revert AlreadyExecuted();
-        $.isPayloadExecuted[payloadHash] = true;
-
+    function rotateSigners(bytes calldata newWeightedSigners) external onlySelf {
         _rotateSigners(newWeightedSigners);
     }
 
     /**
      * @notice Withdraws native token from the contract.
-     * @notice This function is protected by the onlySigners modifier.
-     * @param transferPayload The payload for the transfer
-     * @param weightedSigners The weighted signers payload
-     * @param signatures The signatures payload
-     * @dev This function is only callable by the contract itself after passing according proposal
+     * @notice This function is protected by the onlySelf modifier.
+     * @param recipient The recipient of the native value
+     * @param amount The amount of native value to withdraw
+     * @dev This function is only callable by the contract itself after signature verification
      */
-    function withdraw(
-        bytes calldata transferPayload,
-        bytes calldata weightedSigners,
-        bytes[] calldata signatures
-    ) external payable {
-        bytes32 payloadHash = keccak256(transferPayload);
-        _validateProof(keccak256(transferPayload), weightedSigners, signatures);
-
-        InterchainMultisigStorage storage $ = _interchainMultisigStorage();
-        (
-            PayloadType payloadType,
-        /* bytes32 salt */
-            ,
-            bytes32 chainNameHash_,
-            address target,
-            address recipient,
-            uint256 amount
-        ) = abi.decode(transferPayload, (PayloadType, bytes32, bytes32, address, address, uint256));
-
-        if (payloadType != PayloadType.Withdraw) revert InvalidPayloadType();
-        if (chainNameHash_ != chainNameHash) revert InvalidChainNameHash();
-        if (target != address(this)) revert InvalidTarget();
-        if ($.isPayloadExecuted[payloadHash]) revert AlreadyExecuted();
-        $.isPayloadExecuted[payloadHash] = true;
+    function withdraw(address recipient, uint256 amount) external payable onlySelf {
+        if (recipient == address(0)) revert InvalidRecipient();
+        if (amount > address(this).balance) revert InsufficientBalance();
 
         recipient.safeNativeTransfer(amount);
     }

@@ -91,6 +91,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
 
         uint256 length = newSet.signers.length;
         uint256 totalWeight;
+
         for (uint256 i; i < length; ++i) {
             uint256 weight = newSet.signers[i].weight;
 

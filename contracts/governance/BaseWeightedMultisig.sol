@@ -98,6 +98,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
 
             totalWeight = totalWeight + weight;
         }
+
         if (newSet.threshold == 0 || totalWeight < newSet.threshold) revert InvalidThreshold();
 
         bytes32 newSignersHash = keccak256(newWeightedSigners);

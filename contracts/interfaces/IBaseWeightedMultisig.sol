@@ -25,7 +25,7 @@ interface IBaseWeightedMultisig {
      * @dev This function returns the current signers epoch
      * @return uint256 The current signers epoch
      */
-    function currentSignersEpoch() external view returns (uint256);
+    function signersEpoch() external view returns (uint256);
 
     /**
      * @dev Returns the hash for a given signers epoch
@@ -40,4 +40,17 @@ interface IBaseWeightedMultisig {
      * @return The epoch for the given hash
      */
     function signersEpochForHash(bytes32 hash) external view returns (uint256);
+
+    /*
+     * @notice This function takes messageHash and proof data and reverts if proof is invalid
+     * @param messageHash The hash of the message that was signed
+     * @param weightedSigners The weighted signers data
+     * @param signatures The signatures data
+     * @return isLatestSigners True if provided signers are the current ones
+     */
+    function validateProof(
+        bytes32 messageHash,
+        bytes calldata weightedSigners,
+        bytes[] calldata signatures
+    ) external view returns (bool isLatestSigners);
 }

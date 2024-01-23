@@ -26,7 +26,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      * @notice This function returns the current signers epoch
      * @return uint256 The current signers epoch
      */
-    function currentSignersEpoch() external view returns (uint256) {
+    function signersEpoch() external view returns (uint256) {
         return _baseWeightedStorage().currentSignersEpoch;
     }
 
@@ -48,9 +48,6 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         return _baseWeightedStorage().signersEpochForHash[hash];
     }
 
-    /*************************\
-    |* Integration Functions *|
-    \*************************/
     /*
      * @notice This function takes messageHash and proof data and reverts if proof is invalid
      * @param messageHash The hash of the message that was signed
@@ -58,33 +55,37 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      * @param signatures The signatures data
      * @return isLatestSigners True if provided signers are the current ones
      */
-    function _validateProof(
+    function validateProof(
         bytes32 messageHash,
         bytes calldata weightedSigners,
         bytes[] calldata signatures
-    ) internal view returns (bool isLatestSigners) {
-        WeightedMultisigStorage storage $ = _baseWeightedStorage();
+    ) public view returns (bool isLatestSigners) {
+        WeightedMultisigStorage storage slot = _baseWeightedStorage();
         bytes32 signersHash = keccak256(weightedSigners);
-        uint256 signersEpoch = $.signersEpochForHash[signersHash];
-        uint256 currentEpoch = $.currentSignersEpoch;
+        uint256 epoch = slot.signersEpochForHash[signersHash];
+        uint256 currentEpoch = slot.currentSignersEpoch;
 
-        isLatestSigners = signersEpoch == currentEpoch;
+        isLatestSigners = epoch == currentEpoch;
 
         if (signatures.length == 0) revert MalformedSignatures();
-        if (signersEpoch == 0 || currentEpoch - signersEpoch >= OLD_SIGNERS_RETENTION || weightedSigners.length == 0) revert InvalidSigners();
+        if (epoch == 0 || currentEpoch - epoch >= OLD_SIGNERS_RETENTION || weightedSigners.length == 0)
+            revert InvalidSigners();
 
         WeightedSigners memory signers = abi.decode(weightedSigners, (WeightedSigners));
 
         _validateSignatures(messageHash, signers, signatures);
     }
 
+    /*************************\
+    |* Integration Functions *|
+    \*************************/
+
     /*
      * @notice This function rotates the current signers with a new set of signers
      * @param newWeightedSigners The new weighted signers data
      */
-    function _rotateSigners(bytes memory newWeightedSigners) internal {
-        WeightedMultisigStorage storage $ = _baseWeightedStorage();
-        WeightedSigners memory newSet = abi.decode(newWeightedSigners, (WeightedSigners));
+    function _rotateSigners(WeightedSigners memory newSet) internal {
+        WeightedMultisigStorage storage slot = _baseWeightedStorage();
 
         // signers must be sorted binary or alphabetically in lower case
         if (newSet.signers.length == 0 || !_isSortedAscAndContainsNoDuplicate(newSet.signers)) revert InvalidSigners();
@@ -102,13 +103,13 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
 
         if (newSet.threshold == 0 || totalWeight < newSet.threshold) revert InvalidThreshold();
 
-        bytes32 newSignersHash = keccak256(newWeightedSigners);
+        bytes32 newSignersHash = keccak256(abi.encode(newSet));
 
-        uint256 epoch = $.currentSignersEpoch + 1;
+        uint256 epoch = slot.currentSignersEpoch + 1;
         // slither-disable-next-line costly-loop
-        $.currentSignersEpoch = epoch;
-        $.hashForSignersEpoch[epoch] = newSignersHash;
-        $.signersEpochForHash[newSignersHash] = epoch;
+        slot.currentSignersEpoch = epoch;
+        slot.hashForSignersEpoch[epoch] = newSignersHash;
+        slot.signersEpochForHash[newSignersHash] = epoch;
 
         emit SignersRotated(newSet);
     }
@@ -157,19 +158,19 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      * @return True if the signers are sorted and contain no duplicates
      */
     function _isSortedAscAndContainsNoDuplicate(WeightedSigner[] memory signers) internal pure returns (bool) {
-        uint256 accountsLength = signers.length;
-        address prevAccount = signers[0].account;
+        uint256 signersLength = signers.length;
+        address prevSigner = signers[0].account;
 
-        if (prevAccount == address(0)) return false;
+        if (prevSigner == address(0)) return false;
 
-        for (uint256 i = 1; i < accountsLength; ++i) {
-            address currAccount = signers[i].account;
+        for (uint256 i = 1; i < signersLength; ++i) {
+            address currSigner = signers[i].account;
 
-            if (prevAccount >= currAccount) {
+            if (prevSigner >= currSigner) {
                 return false;
             }
 
-            prevAccount = currAccount;
+            prevSigner = currSigner;
         }
 
         return true;
@@ -179,9 +180,9 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      * @notice Gets the storage slot for the WeightedMultisigStorage struct
      * @return the storage slot
      */
-    function _baseWeightedStorage() private pure returns (WeightedMultisigStorage storage $) {
+    function _baseWeightedStorage() private pure returns (WeightedMultisigStorage storage slot) {
         assembly {
-            $.slot := BASE_WEIGHTED_STORAGE_LOCATION
+            slot.slot := BASE_WEIGHTED_STORAGE_LOCATION
         }
     }
 }

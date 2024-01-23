@@ -13,7 +13,7 @@ import { Caller } from '../utils/Caller.sol';
  */
 contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig {
     // keccak256('InterchainMultisig.Storage')
-    bytes32 private constant INTERCHAIN_MULTISIG_INTERCHAINMULTISIGSTORAGE_LOCATION =
+    bytes32 private constant INTERCHAIN_MULTISIG_STORAGE =
         0x5a9dc2248a56f285e6221da431581a5990380ebfa07727563571b2be1517a23e;
 
     using SafeNativeTransfer for address;
@@ -30,7 +30,7 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
      * @param chainName The name of the chain
      * @param weightedSigners The weighted signers payload
      */
-    constructor(string memory chainName, bytes memory weightedSigners) {
+    constructor(string memory chainName, WeightedSigners memory weightedSigners) {
         chainNameHash = keccak256(bytes(chainName));
 
         _rotateSigners(weightedSigners);
@@ -65,9 +65,9 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
         bytes[] calldata signatures
     ) external payable {
         bytes32 payloadHash = keccak256(batch);
-        bool isLatestSigners = _validateProof(payloadHash, weightedSigners, signatures);
+        bool isLatestSigners = validateProof(payloadHash, weightedSigners, signatures);
 
-        InterchainMultisigStorage storage $ = _interchainMultisigStorage();
+        InterchainMultisigStorage storage slot = _interchainMultisigStorage();
         (
             ,
             /* bytes32 salt */
@@ -75,8 +75,8 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
         ) = abi.decode(batch, (bytes32, InterCall[]));
         uint256 length = calls.length;
 
-        if ($.isPayloadExecuted[payloadHash]) revert AlreadyExecuted();
-        $.isPayloadExecuted[payloadHash] = true;
+        if (slot.isPayloadExecuted[payloadHash]) revert AlreadyExecuted();
+        slot.isPayloadExecuted[payloadHash] = true;
 
         for (uint256 i; i < length; ++i) {
             InterCall memory call = calls[i];
@@ -102,7 +102,7 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
      * @param newWeightedSigners The new weighted signers encoded as bytes
      * @dev This function is only callable by the contract itself after signature verification
      */
-    function rotateSigners(bytes calldata newWeightedSigners) external onlySelf {
+    function rotateSigners(WeightedSigners memory newWeightedSigners) external onlySelf {
         _rotateSigners(newWeightedSigners);
     }
 
@@ -128,9 +128,9 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
     /**
      * @notice Get the storage slot for the InterchainMultisigStorage struct
      */
-    function _interchainMultisigStorage() private pure returns (InterchainMultisigStorage storage $) {
+    function _interchainMultisigStorage() private pure returns (InterchainMultisigStorage storage slot) {
         assembly {
-            $.slot := INTERCHAIN_MULTISIG_INTERCHAINMULTISIGSTORAGE_LOCATION
+            slot.slot := INTERCHAIN_MULTISIG_STORAGE
         }
     }
 }

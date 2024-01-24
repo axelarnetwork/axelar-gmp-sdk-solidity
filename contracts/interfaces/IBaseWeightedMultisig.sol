@@ -21,6 +21,12 @@ interface IBaseWeightedMultisig {
 
     event SignersRotated(WeightedSigners signers);
 
+    /**
+     * @dev This function returns the old signers retention period
+     * @return uint256 The old signers retention period
+     */
+    function OLD_SIGNERS_RETENTION() external view returns (uint256);
+
     /*
      * @dev This function returns the current signers epoch
      * @return uint256 The current signers epoch

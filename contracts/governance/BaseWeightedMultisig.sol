@@ -16,7 +16,11 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         mapping(bytes32 => uint256) signersEpochForHash;
     }
 
-    uint256 internal constant OLD_SIGNERS_RETENTION = 16;
+    uint256 public immutable OLD_SIGNERS_RETENTION;
+
+    constructor(uint256 oldSignersRetention) {
+        OLD_SIGNERS_RETENTION = oldSignersRetention;
+    }
 
     /**********************\
     |* External Functions *|
@@ -68,7 +72,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         isLatestSigners = epoch == currentEpoch;
 
         if (signatures.length == 0) revert MalformedSignatures();
-        if (epoch == 0 || currentEpoch - epoch >= OLD_SIGNERS_RETENTION || weightedSigners.length == 0)
+        if (epoch == 0 || currentEpoch - epoch > OLD_SIGNERS_RETENTION || weightedSigners.length == 0)
             revert InvalidSigners();
 
         WeightedSigners memory signers = abi.decode(weightedSigners, (WeightedSigners));

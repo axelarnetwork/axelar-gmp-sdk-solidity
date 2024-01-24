@@ -30,7 +30,7 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
      * @param chainName The name of the chain
      * @param weightedSigners The weighted signers payload
      */
-    constructor(string memory chainName, WeightedSigners memory weightedSigners) {
+    constructor(string memory chainName, WeightedSigners memory weightedSigners) BaseWeightedMultisig(0) {
         chainNameHash = keccak256(bytes(chainName));
 
         _rotateSigners(weightedSigners);

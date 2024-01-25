@@ -130,7 +130,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      */
     function _validateSignatures(
         bytes32 messageHash,
-        WeightedSigners memory weighted,
+        WeightedSigners memory weightedSigners,
         bytes[] memory signatures
     ) internal pure {
         uint256 signersLength = weighted.signers.length;

@@ -18,7 +18,7 @@ interface IInterchainMultisig is ICaller, IBaseWeightedMultisig {
     error InvalidTarget();
     error InvalidRecipient();
 
-    struct InterCall {
+    struct Call {
         bytes32 chainNameHash;
         address caller;
         address target;

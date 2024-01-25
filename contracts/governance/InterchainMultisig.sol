@@ -121,7 +121,7 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
     }
 
     /**
-     * @notice Making contact able to receive native value
+     * @notice Allow contract to be able to receive native value
      */
     receive() external payable {}
 

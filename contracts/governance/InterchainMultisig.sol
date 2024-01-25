@@ -60,7 +60,7 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
      * @param signatures The signatures payload
      */
     function executeCalls(
-        bytes calldata batch,
+        bytes calldata callBatch,
         bytes calldata weightedSigners,
         bytes[] calldata signatures
     ) external payable {

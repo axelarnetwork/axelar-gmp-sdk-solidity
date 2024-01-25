@@ -20,7 +20,7 @@ interface IInterchainMultisig is ICaller, IBaseWeightedMultisig {
 
     struct Call {
         bytes32 chainNameHash;
-        address caller;
+        address executor;
         address target;
         bytes callData;
         uint256 nativeValue;

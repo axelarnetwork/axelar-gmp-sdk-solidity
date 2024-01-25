@@ -64,7 +64,7 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
         bytes calldata weightedSigners,
         bytes[] calldata signatures
     ) external payable {
-        bytes32 payloadHash = keccak256(batch);
+        bytes32 messageHash = ECDSA.toEthSignedMessageHash(keccak256(batch));
         bool isLatestSigners = validateProof(payloadHash, weightedSigners, signatures);
 
         InterchainMultisigStorage storage slot = _interchainMultisigStorage();

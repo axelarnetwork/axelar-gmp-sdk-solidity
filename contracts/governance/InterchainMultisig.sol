@@ -3,13 +3,14 @@
 pragma solidity ^0.8.0;
 
 import { IInterchainMultisig } from '../interfaces/IInterchainMultisig.sol';
-import { BaseWeightedMultisig } from './BaseWeightedMultisig.sol';
 import { SafeNativeTransfer } from '../libs/SafeNativeTransfer.sol';
+import { ECDSA } from '../libs/ECDSA.sol';
 import { Caller } from '../utils/Caller.sol';
+import { BaseWeightedMultisig } from './BaseWeightedMultisig.sol';
 
 /**
- * @title Multisig Contract
- * @notice An extension of MultisigBase that can call functions on any contract.
+ * @title InterchainMultisig Contract
+ * @notice Weighted Multisig executor to call functions on any contract
  */
 contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig {
     // keccak256('InterchainMultisig.Storage')
@@ -55,7 +56,7 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
      * @notice Executes an external contract call.
      * @notice This function is protected by the onlySigners requirement.
      * @dev Calls a target address with specified calldata and passing provided native value.
-     * @param batch The batch of calls to execute
+     * @param callBatch The batch of calls to execute
      * @param weightedSigners The weighted signers payload
      * @param signatures The signatures payload
      */
@@ -64,32 +65,29 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
         bytes calldata weightedSigners,
         bytes[] calldata signatures
     ) external payable {
-        bytes32 messageHash = ECDSA.toEthSignedMessageHash(keccak256(batch));
-        bool isLatestSigners = validateProof(payloadHash, weightedSigners, signatures);
+        bytes32 messageHash = ECDSA.toEthSignedMessageHash(keccak256(callBatch));
+        validateProof(messageHash, weightedSigners, signatures);
 
         InterchainMultisigStorage storage slot = _interchainMultisigStorage();
         (
-            ,
-            /* bytes32 salt */
-            InterCall[] memory calls
-        ) = abi.decode(batch, (bytes32, InterCall[]));
+            bytes32 salt,
+            Call[] memory calls
+        ) = abi.decode(callBatch, (bytes32, Call[]));
         uint256 length = calls.length;
 
-        if (slot.isPayloadExecuted[payloadHash]) revert AlreadyExecuted();
-        slot.isPayloadExecuted[payloadHash] = true;
+        emit BatchExecuted(messageHash, salt, length);
+
+        if (slot.isPayloadExecuted[messageHash]) revert AlreadyExecuted();
+        slot.isPayloadExecuted[messageHash] = true;
 
         for (uint256 i; i < length; ++i) {
-            InterCall memory call = calls[i];
+            Call memory call = calls[i];
+
             // check if the call is for this contract and chain
-            if (call.chainNameHash == chainNameHash && call.caller == address(this)) {
-                bytes4 selector = abi.decode(call.callData, (bytes4));
-                // check if the call is for signers rotation
-                if (call.target == address(this) && selector == InterchainMultisig.rotateSigners.selector)
-                    if (isLatestSigners)
-                        // check if the call is from the latest signers and if so, mark them as not latest
-                        isLatestSigners = false;
-                        // or skip the call
-                    else continue;
+            if (keccak256(bytes(call.chainName)) == chainNameHash && call.executor == address(this)) {
+                if (call.target == address(0)) revert InvalidTarget();
+
+                emit CallExecuted(messageHash, call.target, call.callData, call.nativeValue);
 
                 _call(call.target, call.callData, call.nativeValue);
             }

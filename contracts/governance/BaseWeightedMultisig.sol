@@ -39,8 +39,8 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      * @param epoch The given epoch
      * @return bytes32 The signers hash for the given epoch
      */
-    function signerHashByEpoch(uint256 epoch) external view returns (bytes32) {
-        return _baseWeightedStorage().signerHashByEpoch[epoch];
+    function hashForSignersEpoch(uint256 epoch) external view returns (bytes32) {
+        return _baseWeightedStorage().hashForSignersEpoch[epoch];
     }
 
     /*
@@ -48,8 +48,8 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      * @param hash The signers hash
      * @return uint256 The epoch for the given signers hash
      */
-    function epochBySignerHash(bytes32 signerHash) external view returns (uint256) {
-        return _baseWeightedStorage().signersEpochForHash[hash];
+    function signersEpochForHash(bytes32 signerHash) external view returns (uint256) {
+        return _baseWeightedStorage().signersEpochForHash[signerHash];
     }
 
     /*
@@ -126,29 +126,36 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      * @notice This function takes messageHash and proof data and reverts if proof is invalid
      * @param messageHash The hash of the message that was signed
      * @param weighted The weighted signers data
-     * @param signatures The signatures data
+     * @param signatures The sorted signatures data
      */
     function _validateSignatures(
         bytes32 messageHash,
         WeightedSigners memory weightedSigners,
         bytes[] memory signatures
     ) internal pure {
-        uint256 signersLength = weighted.signers.length;
+        uint256 signersLength = weightedSigners.signers.length;
         uint256 signaturesLength = signatures.length;
         uint256 signerIndex;
         uint256 totalWeight;
+
         // looking for signers within signers
-        // assuming that both signers and signatures are sorted
+        // this requires both signers and signatures to be sorted
+        // having it sorted allows us to avoid the full inner loop to find a match
         for (uint256 i; i < signaturesLength; ++i) {
             address signer = ECDSA.recover(messageHash, signatures[i]);
+
             // looping through remaining signers to find a match
-            for (; signerIndex < signersLength && signer != weighted.signers[signerIndex].account; ++signerIndex) {}
+            for (; signerIndex < signersLength && signer != weightedSigners.signers[signerIndex].account; ++signerIndex) {}
+
             // checking if we are out of signers
             if (signerIndex == signersLength) revert MalformedSignatures();
+
             // accumulating signatures weight
-            totalWeight = totalWeight + weighted.signers[signerIndex].weight;
+            totalWeight = totalWeight + weightedSigners.signers[signerIndex].weight;
+
             // weight needs to reach or surpass threshold
-            if (totalWeight >= weighted.threshold) return;
+            if (totalWeight >= weightedSigners.threshold) return;
+
             // increasing signers index if match was found
             ++signerIndex;
         }

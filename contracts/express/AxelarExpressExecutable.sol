@@ -4,11 +4,11 @@ pragma solidity ^0.8.0;
 
 import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
 import { ExpressExecutorTracker } from './ExpressExecutorTracker.sol';
-
 import { SafeTokenTransferFrom, SafeTokenTransfer } from '../libs/SafeTransfer.sol';
+import { AxelarExecutableErrors } from '../../contracts/executable/AxelarExecutableErrors.sol';
 import { IERC20 } from '../interfaces/IERC20.sol';
 
-contract AxelarExpressExecutable is ExpressExecutorTracker {
+contract AxelarExpressExecutable is ExpressExecutorTracker, AxelarExecutableErrors {
     using SafeTokenTransfer for IERC20;
     using SafeTokenTransferFrom for IERC20;
 

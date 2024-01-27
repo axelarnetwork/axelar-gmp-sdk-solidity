@@ -7,9 +7,14 @@ import { IERC20 } from '../interfaces/IERC20.sol';
 import { IAxelarValuedExpressExecutable } from '../interfaces/IAxelarValuedExpressExecutable.sol';
 import { SafeTokenTransferFrom, SafeTokenTransfer } from '../libs/SafeTransfer.sol';
 import { SafeNativeTransfer } from '../libs/SafeNativeTransfer.sol';
+import { AxelarExecutableErrors } from '../../contracts/executable/AxelarExecutableErrors.sol';
 import { ExpressExecutorTracker } from './ExpressExecutorTracker.sol';
 
-abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker, IAxelarValuedExpressExecutable {
+abstract contract AxelarValuedExpressExecutable is
+    ExpressExecutorTracker,
+    IAxelarValuedExpressExecutable,
+    AxelarExecutableErrors
+{
     using SafeTokenTransfer for IERC20;
     using SafeTokenTransferFrom for IERC20;
     using SafeNativeTransfer for address payable;
@@ -203,11 +208,7 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker, IAxel
         _executeWithToken(sourceChain, sourceAddress, payload, symbol, amount);
     }
 
-    function _transferToExecutor(
-        address expressExecutor,
-        address tokenAddress,
-        uint256 value
-    ) internal {
+    function _transferToExecutor(address expressExecutor, address tokenAddress, uint256 value) internal {
         if (value == 0) return;
 
         if (tokenAddress == address(0)) {
@@ -217,11 +218,7 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker, IAxel
         }
     }
 
-    function _transferFromExecutor(
-        address expressExecutor,
-        address tokenAddress,
-        uint256 value
-    ) internal {
+    function _transferFromExecutor(address expressExecutor, address tokenAddress, uint256 value) internal {
         if (value == 0) return;
 
         if (tokenAddress == address(0)) {

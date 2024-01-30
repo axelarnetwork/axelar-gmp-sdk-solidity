@@ -145,7 +145,11 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
             address signer = ECDSA.recover(messageHash, signatures[i]);
 
             // looping through remaining signers to find a match
-            for (; signerIndex < signersLength && signer != weightedSigners.signers[signerIndex].account; ++signerIndex) {}
+            for (
+                ;
+                signerIndex < signersLength && signer != weightedSigners.signers[signerIndex].account;
+                ++signerIndex
+            ) {}
 
             // checking if we are out of signers
             if (signerIndex == signersLength) revert MalformedSignatures();

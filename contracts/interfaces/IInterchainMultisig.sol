@@ -26,18 +26,9 @@ interface IInterchainMultisig is ICaller, IBaseWeightedMultisig {
         uint256 nativeValue;
     }
 
-    event BatchExecuted(
-        bytes32 indexed messageHash,
-        bytes32 indexed salt,
-        uint256 indexed length
-    );
+    event BatchExecuted(bytes32 indexed messageHash, bytes32 indexed salt, uint256 indexed length);
 
-    event CallExecuted(
-        bytes32 indexed messageHash,
-        address indexed target,
-        bytes callData,
-        uint256 nativeValue
-    );
+    event CallExecuted(bytes32 indexed messageHash, address indexed target, bytes callData, uint256 nativeValue);
 
     /**
      * @notice Checks if a payload has been executed

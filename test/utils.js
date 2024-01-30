@@ -67,6 +67,22 @@ const expectRevert = async (txFunc, contract, error, args) => {
     }
 };
 
+const getAddresses = (wallets) => wallets.map(({ address }) => address);
+
+const getWeightedSignersSet = (operators, weights, operatorThresholds) =>
+    defaultAbiCoder.encode(
+        ['tuple(tuple(address, uint256)[], uint256)'],
+        [[operators.map((op, i) => [op, weights[i]]), operatorThresholds]],
+    );
+
+const getSortedSignatures = async (data, signers) => {
+    const hash = arrayify(keccak256(data));
+    const signatures = await Promise.all(
+        sortBy(signers, (wallet) => wallet.address.toLowerCase()).map((wallet) => wallet.signMessage(hash)),
+    );
+    return signatures;
+};
+
 module.exports = {
     bigNumberToNumber: (bigNumber) => bigNumber.toNumber(),
 
@@ -101,4 +117,10 @@ module.exports = {
     deployContract,
 
     expectRevert,
+
+    getAddresses,
+
+    getWeightedSignersSet,
+
+    getSortedSignatures,
 };

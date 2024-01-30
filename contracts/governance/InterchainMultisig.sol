@@ -69,10 +69,7 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
         validateProof(messageHash, weightedSigners, signatures);
 
         InterchainMultisigStorage storage slot = _interchainMultisigStorage();
-        (
-            bytes32 salt,
-            Call[] memory calls
-        ) = abi.decode(callBatch, (bytes32, Call[]));
+        (bytes32 salt, Call[] memory calls) = abi.decode(callBatch, (bytes32, Call[]));
         uint256 length = calls.length;
 
         emit BatchExecuted(messageHash, salt, length);

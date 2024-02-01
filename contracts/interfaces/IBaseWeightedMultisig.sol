@@ -10,7 +10,7 @@ interface IBaseWeightedMultisig {
     error InvalidWeights();
 
     struct WeightedSigners {
-        address[] accounts;
+        address[] signers;
         uint256[] weights;
         uint256 threshold;
     }

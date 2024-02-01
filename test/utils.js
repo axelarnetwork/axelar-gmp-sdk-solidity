@@ -69,18 +69,18 @@ const expectRevert = async (txFunc, contract, error, args) => {
 
 const getAddresses = (wallets) => wallets.map(({ address }) => address);
 
-const getWeightedSignersSet = (operators, weights, operatorThresholds) =>
-    defaultAbiCoder.encode(
-        ['tuple(tuple(address, uint256)[], uint256)'],
-        [[operators.map((op, i) => [op, weights[i]]), operatorThresholds]],
-    );
+const getWeightedSignersSet = (accounts, weights, signerThresholds) =>
+    defaultAbiCoder.encode(['address[]', 'uint256[]', 'uint256'], [accounts, weights, signerThresholds]);
 
-const getSortedSignatures = async (data, signers) => {
+const getWeightedSignaturesProof = async (data, accounts, weights, threshold, signers) => {
     const hash = arrayify(keccak256(data));
     const signatures = await Promise.all(
         sortBy(signers, (wallet) => wallet.address.toLowerCase()).map((wallet) => wallet.signMessage(hash)),
     );
-    return signatures;
+    return defaultAbiCoder.encode(
+        ['address[]', 'uint256[]', 'uint256', 'bytes[]'],
+        [getAddresses(accounts), weights, threshold, signatures],
+    );
 };
 
 module.exports = {
@@ -122,5 +122,5 @@ module.exports = {
 
     getWeightedSignersSet,
 
-    getSortedSignatures,
+    getWeightedSignaturesProof,
 };

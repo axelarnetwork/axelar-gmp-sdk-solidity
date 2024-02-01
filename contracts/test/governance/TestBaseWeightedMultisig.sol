@@ -7,7 +7,7 @@ import { BaseWeightedMultisig } from '../../governance/BaseWeightedMultisig.sol'
 contract TestBaseWeightedMultisig is BaseWeightedMultisig {
     constructor(uint256 oldSignersRetention) BaseWeightedMultisig(oldSignersRetention) {}
 
-    function rotateSigners(WeightedSigners memory newSet) external {
-        _rotateSigners(newSet);
+    function rotateSigners(WeightedSigners memory newSigners) external {
+        _rotateSigners(newSigners);
     }
 }

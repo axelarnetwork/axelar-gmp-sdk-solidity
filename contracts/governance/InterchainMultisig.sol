@@ -57,16 +57,11 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
      * @notice This function is protected by the onlySigners requirement.
      * @dev Calls a target address with specified calldata and passing provided native value.
      * @param callBatch The batch of calls to execute
-     * @param weightedSigners The weighted signers payload
-     * @param signatures The signatures payload
+     * @param proof The multisig proof data
      */
-    function executeCalls(
-        bytes calldata callBatch,
-        bytes calldata weightedSigners,
-        bytes[] calldata signatures
-    ) external payable {
+    function executeCalls(bytes calldata callBatch, bytes calldata proof) external payable {
         bytes32 messageHash = ECDSA.toEthSignedMessageHash(keccak256(callBatch));
-        validateProof(messageHash, weightedSigners, signatures);
+        validateProof(messageHash, proof);
 
         InterchainMultisigStorage storage slot = _interchainMultisigStorage();
         (bytes32 salt, Call[] memory calls) = abi.decode(callBatch, (bytes32, Call[]));

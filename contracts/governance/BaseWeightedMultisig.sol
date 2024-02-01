@@ -59,23 +59,27 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      * @param signatures The signatures data
      * @return isLatestSigners True if provided signers are the current ones
      */
-    function validateProof(
-        bytes32 messageHash,
-        bytes calldata weightedSigners,
-        bytes[] calldata signatures
-    ) public view returns (bool isLatestSigners) {
+    function validateProof(bytes32 messageHash, bytes calldata proof) public view returns (bool isLatestSigners) {
         WeightedMultisigStorage storage slot = _baseWeightedStorage();
-        bytes32 signersHash = keccak256(weightedSigners);
+
+        if (proof.length < 32) revert InvalidSigners();
+
+        WeightedSigners memory signers;
+        bytes[] memory signatures;
+
+        (signers.accounts, signers.weights, signers.threshold, signatures) = abi.decode(
+            proof,
+            (address[], uint256[], uint256, bytes[])
+        );
+
+        bytes32 signersHash = keccak256(abi.encode(signers.accounts, signers.weights, signers.threshold));
         uint256 epoch = slot.signersEpochForHash[signersHash];
         uint256 currentEpoch = slot.currentSignersEpoch;
 
         isLatestSigners = epoch == currentEpoch;
 
         if (signatures.length == 0) revert MalformedSignatures();
-        if (epoch == 0 || currentEpoch - epoch > OLD_SIGNERS_RETENTION || weightedSigners.length == 0)
-            revert InvalidSigners();
-
-        WeightedSigners memory signers = abi.decode(weightedSigners, (WeightedSigners));
+        if (epoch == 0 || currentEpoch - epoch > OLD_SIGNERS_RETENTION) revert InvalidSigners();
 
         _validateSignatures(messageHash, signers, signatures);
     }
@@ -88,26 +92,29 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      * @notice This function rotates the current signers with a new set of signers
      * @param newWeightedSigners The new weighted signers data
      */
-    function _rotateSigners(WeightedSigners memory newSet) internal {
+    function _rotateSigners(WeightedSigners memory newSigners) internal {
         WeightedMultisigStorage storage slot = _baseWeightedStorage();
 
-        // signers must be sorted binary or alphabetically in lower case
-        if (newSet.signers.length == 0 || !_isSortedAscAndContainsNoDuplicate(newSet.signers)) revert InvalidSigners();
-
-        uint256 length = newSet.signers.length;
+        uint256 length = newSigners.accounts.length;
         uint256 totalWeight;
 
+        // signers must be sorted binary or alphabetically in lower case
+        if (newSigners.accounts.length == 0 || !_isSortedAscAndContainsNoDuplicate(newSigners.accounts))
+            revert InvalidSigners();
+
+        if (newSigners.weights.length != length) revert InvalidWeights();
+
         for (uint256 i; i < length; ++i) {
-            uint256 weight = newSet.signers[i].weight;
+            uint256 weight = newSigners.weights[i];
 
             if (weight == 0) revert InvalidWeights();
 
             totalWeight = totalWeight + weight;
         }
 
-        if (newSet.threshold == 0 || totalWeight < newSet.threshold) revert InvalidThreshold();
+        if (newSigners.threshold == 0 || totalWeight < newSigners.threshold) revert InvalidThreshold();
 
-        bytes32 newSignersHash = keccak256(abi.encode(newSet));
+        bytes32 newSignersHash = keccak256(abi.encode(newSigners.accounts, newSigners.weights, newSigners.threshold));
 
         uint256 epoch = slot.currentSignersEpoch + 1;
         // slither-disable-next-line costly-loop
@@ -115,7 +122,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         slot.hashForSignersEpoch[epoch] = newSignersHash;
         slot.signersEpochForHash[newSignersHash] = epoch;
 
-        emit SignersRotated(newSet);
+        emit SignersRotated(newSigners);
     }
 
     /**********************\
@@ -133,7 +140,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         WeightedSigners memory weightedSigners,
         bytes[] memory signatures
     ) internal pure {
-        uint256 signersLength = weightedSigners.signers.length;
+        uint256 signersLength = weightedSigners.accounts.length;
         uint256 signaturesLength = signatures.length;
         uint256 signerIndex;
         uint256 totalWeight;
@@ -145,17 +152,13 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
             address signer = ECDSA.recover(messageHash, signatures[i]);
 
             // looping through remaining signers to find a match
-            for (
-                ;
-                signerIndex < signersLength && signer != weightedSigners.signers[signerIndex].account;
-                ++signerIndex
-            ) {}
+            for (; signerIndex < signersLength && signer != weightedSigners.accounts[signerIndex]; ++signerIndex) {}
 
             // checking if we are out of signers
             if (signerIndex == signersLength) revert MalformedSignatures();
 
             // accumulating signatures weight
-            totalWeight = totalWeight + weightedSigners.signers[signerIndex].weight;
+            totalWeight = totalWeight + weightedSigners.weights[signerIndex];
 
             // weight needs to reach or surpass threshold
             if (totalWeight >= weightedSigners.threshold) return;
@@ -172,14 +175,14 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      * @param signers The signers to check
      * @return True if the signers are sorted and contain no duplicates
      */
-    function _isSortedAscAndContainsNoDuplicate(WeightedSigner[] memory signers) internal pure returns (bool) {
+    function _isSortedAscAndContainsNoDuplicate(address[] memory signers) internal pure returns (bool) {
         uint256 signersLength = signers.length;
-        address prevSigner = signers[0].account;
+        address prevSigner = signers[0];
 
         if (prevSigner == address(0)) return false;
 
         for (uint256 i = 1; i < signersLength; ++i) {
-            address currSigner = signers[i].account;
+            address currSigner = signers[i];
 
             if (prevSigner >= currSigner) {
                 return false;

@@ -9,13 +9,9 @@ interface IBaseWeightedMultisig {
     error LowSignaturesWeight();
     error InvalidWeights();
 
-    struct WeightedSigner {
-        address account;
-        uint256 weight;
-    }
-
     struct WeightedSigners {
-        WeightedSigner[] signers;
+        address[] accounts;
+        uint256[] weights;
         uint256 threshold;
     }
 
@@ -54,9 +50,5 @@ interface IBaseWeightedMultisig {
      * @param signatures The signatures data
      * @return isLatestSigners True if provided signers are the current ones
      */
-    function validateProof(
-        bytes32 messageHash,
-        bytes calldata weightedSigners,
-        bytes[] calldata signatures
-    ) external view returns (bool isLatestSigners);
+    function validateProof(bytes32 messageHash, bytes calldata proof) external view returns (bool isLatestSigners);
 }

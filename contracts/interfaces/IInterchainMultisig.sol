@@ -42,12 +42,7 @@ interface IInterchainMultisig is ICaller, IBaseWeightedMultisig {
      * @notice This function is protected by the onlySigners requirement.
      * @dev Calls a target address with specified calldata and passing provided native value.
      * @param batch The batch of calls to execute
-     * @param weightedSigners The weighted signers payload
-     * @param signatures The signatures payload
+     * @param proof The multisig proof data
      */
-    function executeCalls(
-        bytes calldata batch,
-        bytes calldata weightedSigners,
-        bytes[] calldata signatures
-    ) external payable;
+    function executeCalls(bytes calldata batch, bytes calldata proof) external payable;
 }

@@ -69,7 +69,7 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
 
         emit BatchExecuted(messageHash, salt, length);
 
-        if (slot.isPayloadExecuted[messageHash]) revert AlreadyExecuted();
+        if (slot.isBatchExecuted[messageHash]) revert AlreadyExecuted();
         slot.isPayloadExecuted[messageHash] = true;
 
         for (uint256 i; i < length; ++i) {

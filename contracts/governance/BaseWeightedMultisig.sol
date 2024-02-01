@@ -11,9 +11,9 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         0xa233fbcae4dcfad00091a9d8ff9561f12b3db9ec7227470684b4617d40a38746;
 
     struct WeightedMultisigStorage {
-        uint256 currentSignersEpoch;
-        mapping(uint256 => bytes32) hashForSignersEpoch;
-        mapping(bytes32 => uint256) signersEpochForHash;
+        uint256 epoch;
+        mapping(uint256 => bytes32) signerHashByEpoch;
+        mapping(bytes32 => uint256) epochBySignerHash;
     }
 
     uint256 public immutable OLD_SIGNERS_RETENTION;

@@ -35,7 +35,7 @@ interface IInterchainMultisig is ICaller, IBaseWeightedMultisig {
      * @param payloadHash The hash of the payload payload
      * @return True if the payload has been executed
      */
-    function isPayloadExecuted(bytes32 payloadHash) external view returns (bool);
+    function isBatchExecuted(bytes32 batchHash) external view returns (bool);
 
     /**
      * @notice Executes an external contract call.

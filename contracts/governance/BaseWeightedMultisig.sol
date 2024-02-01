@@ -30,7 +30,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      * @notice This function returns the current signers epoch
      * @return uint256 The current signers epoch
      */
-    function signersEpoch() external view returns (uint256) {
+    function epoch() external view returns (uint256) {
         return _baseWeightedStorage().currentSignersEpoch;
     }
 

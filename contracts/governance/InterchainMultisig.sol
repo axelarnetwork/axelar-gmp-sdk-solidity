@@ -105,6 +105,7 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
      */
     function withdraw(address recipient, uint256 amount) external payable onlySelf {
         if (recipient == address(0)) revert InvalidRecipient();
+
         if (amount > address(this).balance) revert InsufficientBalance();
 
         recipient.safeNativeTransfer(amount);

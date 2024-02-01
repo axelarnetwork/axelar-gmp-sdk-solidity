@@ -99,7 +99,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         uint256 totalWeight;
 
         // signers must be sorted binary or alphabetically in lower case
-        if (newSigners.accounts.length == 0 || !_isSortedAscAndContainsNoDuplicate(newSigners.accounts))
+        if (length == 0 || !_isSortedAscAndContainsNoDuplicate(newSigners.accounts))
             revert InvalidSigners();
 
         if (newSigners.weights.length != length) revert InvalidWeights();

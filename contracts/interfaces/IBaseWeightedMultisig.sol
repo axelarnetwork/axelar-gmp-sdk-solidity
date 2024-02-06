@@ -26,17 +26,17 @@ interface IBaseWeightedMultisig {
 
     /**
      * @dev Returns the hash for a given signers epoch
-     * @param epoch The epoch to get the hash for
+     * @param signerEpoch The epoch to get the hash for
      * @return The hash for the given epoch
      */
-    function signerHashByEpoch(uint256 epoch) external view returns (bytes32);
+    function signerHashByEpoch(uint256 signerEpoch) external view returns (bytes32);
 
     /**
      * @dev Returns the epoch for a given hash
-     * @param hash The hash to get the epoch for
+     * @param signerHash The hash to get the epoch for
      * @return The epoch for the given hash
      */
-    function epochBySignerHash(bytes32 hash) external view returns (uint256);
+    function epochBySignerHash(bytes32 signerHash) external view returns (uint256);
 
     /*
      * @notice This function takes messageHash and proof data and reverts if proof is invalid

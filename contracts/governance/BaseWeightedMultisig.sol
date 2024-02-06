@@ -45,7 +45,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
 
     /*
      * @notice This function returns the signers hash for a given epoch
-     * @param epoch The given epoch
+     * @param signerEpoch The given epoch
      * @return bytes32 The signers hash for the given epoch
      */
     function signerHashByEpoch(uint256 signerEpoch) external view returns (bytes32) {
@@ -54,7 +54,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
 
     /*
      * @notice This function returns the epoch for a given signers hash
-     * @param hash The signers hash
+     * @param signerHash The signers hash
      * @return uint256 The epoch for the given signers hash
      */
     function epochBySignerHash(bytes32 signerHash) external view returns (uint256) {
@@ -72,6 +72,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         if (proof.length < 32 * 4) revert InvalidProof();
 
         WeightedMultisigStorage storage slot = _baseWeightedStorage();
+        // slither-disable-next-line uninitialized-local
         WeightedSigners memory weightedSet;
         bytes[] memory signatures;
 

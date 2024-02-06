@@ -20,6 +20,7 @@ contract Caller is ICaller {
 
         if (nativeValue > address(this).balance) revert InsufficientBalance();
 
+        // slither-disable-next-line calls-loop
         (bool success, bytes memory data) = target.call{ value: nativeValue }(callData);
         if (!success) {
             revert ExecutionFailed();

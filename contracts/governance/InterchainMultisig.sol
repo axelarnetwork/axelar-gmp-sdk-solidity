@@ -83,6 +83,7 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
             if (keccak256(bytes(call.chainName)) == chainNameHash && call.executor == address(this)) {
                 if (call.target == address(0)) revert InvalidTarget();
 
+                // slither-disable-next-line reentrancy-events
                 emit CallExecuted(messageHash, call.target, call.callData, call.nativeValue);
 
                 _call(call.target, call.callData, call.nativeValue);

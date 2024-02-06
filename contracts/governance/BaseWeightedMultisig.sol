@@ -10,16 +10,25 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
     bytes32 private constant BASE_WEIGHTED_STORAGE_LOCATION =
         0xa233fbcae4dcfad00091a9d8ff9561f12b3db9ec7227470684b4617d40a38746;
 
+    struct WeightedSigners {
+        address[] signers;
+        uint256[] weights;
+        uint256 threshold;
+    }
+
     struct WeightedMultisigStorage {
         uint256 epoch;
         mapping(uint256 => bytes32) signerHashByEpoch;
         mapping(bytes32 => uint256) epochBySignerHash;
     }
 
-    uint256 public immutable OLD_SIGNERS_RETENTION;
+    // @dev Previous signers retention. 0 means only the current signers are valid
+    // @return The number of epochs to keep the signers valid for signature verification
+    uint256 public immutable previousSignersRetention;
 
-    constructor(uint256 oldSignersRetention) {
-        OLD_SIGNERS_RETENTION = oldSignersRetention;
+    // @param previousSignersRetentionEpochs The number of epochs to keep previous signers valid for signature verification
+    constructor(uint256 previousSignersRetentionEpochs) {
+        previousSignersRetention = previousSignersRetentionEpochs;
     }
 
     /**********************\
@@ -31,7 +40,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      * @return uint256 The current signers epoch
      */
     function epoch() external view returns (uint256) {
-        return _baseWeightedStorage().currentSignersEpoch;
+        return _baseWeightedStorage().epoch;
     }
 
     /*
@@ -39,8 +48,8 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      * @param epoch The given epoch
      * @return bytes32 The signers hash for the given epoch
      */
-    function signerHashByEpoch(uint256 epoch) external view returns (bytes32) {
-        return _baseWeightedStorage().signerHashByEpoch[epoch];
+    function signerHashByEpoch(uint256 signerEpoch) external view returns (bytes32) {
+        return _baseWeightedStorage().signerHashByEpoch[signerEpoch];
     }
 
     /*
@@ -49,7 +58,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      * @return uint256 The epoch for the given signers hash
      */
     function epochBySignerHash(bytes32 signerHash) external view returns (uint256) {
-        return _baseWeightedStorage().signersEpochForHash[signerHash];
+        return _baseWeightedStorage().epochBySignerHash[signerHash];
     }
 
     /*
@@ -60,28 +69,27 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      * @return isLatestSigners True if provided signers are the current ones
      */
     function validateProof(bytes32 messageHash, bytes calldata proof) public view returns (bool isLatestSigners) {
+        if (proof.length < 32 * 4) revert InvalidProof();
+
         WeightedMultisigStorage storage slot = _baseWeightedStorage();
-
-        if (proof.length < 32) revert InvalidSigners();
-
-        WeightedSigners memory signers;
+        WeightedSigners memory weightedSet;
         bytes[] memory signatures;
 
-        (signers.accounts, signers.weights, signers.threshold, signatures) = abi.decode(
+        (weightedSet.signers, weightedSet.weights, weightedSet.threshold, signatures) = abi.decode(
             proof,
             (address[], uint256[], uint256, bytes[])
         );
 
-        bytes32 signersHash = keccak256(abi.encode(signers.accounts, signers.weights, signers.threshold));
-        uint256 epoch = slot.signersEpochForHash[signersHash];
-        uint256 currentEpoch = slot.currentSignersEpoch;
+        bytes32 signersHash = keccak256(abi.encode(weightedSet.signers, weightedSet.weights, weightedSet.threshold));
+        uint256 signerEpoch = slot.epochBySignerHash[signersHash];
+        uint256 currentEpoch = slot.epoch;
 
-        isLatestSigners = epoch == currentEpoch;
+        isLatestSigners = signerEpoch == currentEpoch;
 
         if (signatures.length == 0) revert MalformedSignatures();
-        if (epoch == 0 || currentEpoch - epoch > OLD_SIGNERS_RETENTION) revert InvalidSigners();
+        if (signerEpoch == 0 || currentEpoch - signerEpoch > previousSignersRetention) revert InvalidSigners();
 
-        _validateSignatures(messageHash, signers, signatures);
+        _validateSignatures(messageHash, weightedSet, signatures);
     }
 
     /*************************\
@@ -95,12 +103,11 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
     function _rotateSigners(WeightedSigners memory newSigners) internal {
         WeightedMultisigStorage storage slot = _baseWeightedStorage();
 
-        uint256 length = newSigners.accounts.length;
+        uint256 length = newSigners.signers.length;
         uint256 totalWeight;
 
         // signers must be sorted binary or alphabetically in lower case
-        if (length == 0 || !_isSortedAscAndContainsNoDuplicate(newSigners.accounts))
-            revert InvalidSigners();
+        if (length == 0 || !_isSortedAscAndContainsNoDuplicate(newSigners.signers)) revert InvalidSigners();
 
         if (newSigners.weights.length != length) revert InvalidWeights();
 
@@ -114,15 +121,16 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
 
         if (newSigners.threshold == 0 || totalWeight < newSigners.threshold) revert InvalidThreshold();
 
-        bytes32 newSignersHash = keccak256(abi.encode(newSigners.accounts, newSigners.weights, newSigners.threshold));
+        bytes32 newSignersHash = keccak256(abi.encode(newSigners.signers, newSigners.weights, newSigners.threshold));
 
-        uint256 epoch = slot.currentSignersEpoch + 1;
+        uint256 newEpoch = slot.epoch + 1;
         // slither-disable-next-line costly-loop
-        slot.currentSignersEpoch = epoch;
-        slot.hashForSignersEpoch[epoch] = newSignersHash;
-        slot.signersEpochForHash[newSignersHash] = epoch;
+        slot.epoch = newEpoch;
+        slot.signerHashByEpoch[newEpoch] = newSignersHash;
+        // if signer set is the same, old epoch will be overwritten
+        slot.epochBySignerHash[newSignersHash] = newEpoch;
 
-        emit SignersRotated(newSigners);
+        emit SignersRotated(newSigners.signers, newSigners.weights, newSigners.threshold);
     }
 
     /**********************\
@@ -140,7 +148,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         WeightedSigners memory weightedSigners,
         bytes[] memory signatures
     ) internal pure {
-        uint256 signersLength = weightedSigners.accounts.length;
+        uint256 signersLength = weightedSigners.signers.length;
         uint256 signaturesLength = signatures.length;
         uint256 signerIndex;
         uint256 totalWeight;
@@ -152,7 +160,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
             address signer = ECDSA.recover(messageHash, signatures[i]);
 
             // looping through remaining signers to find a match
-            for (; signerIndex < signersLength && signer != weightedSigners.accounts[signerIndex]; ++signerIndex) {}
+            for (; signerIndex < signersLength && signer != weightedSigners.signers[signerIndex]; ++signerIndex) {}
 
             // checking if we are out of signers
             if (signerIndex == signersLength) revert MalformedSignatures();

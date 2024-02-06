@@ -22,7 +22,7 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
     bytes32 public immutable chainNameHash;
 
     struct InterchainMultisigStorage {
-        mapping(bytes32 => bool) isPayloadExecuted;
+        mapping(bytes32 => bool) isBatchExecuted;
     }
 
     /**
@@ -45,32 +45,36 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
 
     /**
      * @notice Checks if a payload has been executed
-     * @param payloadHash The hash of the payload payload
+     * @param batchHash The hash of the payload payload
      * @return True if the payload has been executed
      */
-    function isPayloadExecuted(bytes32 payloadHash) external view returns (bool) {
-        return _interchainMultisigStorage().isPayloadExecuted[payloadHash];
+    function isBatchExecuted(bytes32 batchHash) external view returns (bool) {
+        return _interchainMultisigStorage().isBatchExecuted[batchHash];
     }
 
     /**
      * @notice Executes an external contract call.
      * @notice This function is protected by the onlySigners requirement.
      * @dev Calls a target address with specified calldata and passing provided native value.
-     * @param callBatch The batch of calls to execute
+     * @param nonce The nonce of the multisig
+     * @param calls The batch of calls to execute
      * @param proof The multisig proof data
      */
-    function executeCalls(bytes calldata callBatch, bytes calldata proof) external payable {
-        bytes32 messageHash = ECDSA.toEthSignedMessageHash(keccak256(callBatch));
-        validateProof(messageHash, proof);
-
+    function executeCalls(
+        uint256 nonce,
+        Call[] memory calls,
+        bytes calldata proof
+    ) external payable {
         InterchainMultisigStorage storage slot = _interchainMultisigStorage();
-        (bytes32 salt, Call[] memory calls) = abi.decode(callBatch, (bytes32, Call[]));
+        bytes32 messageHash = ECDSA.toEthSignedMessageHash(keccak256(abi.encode(nonce, calls)));
         uint256 length = calls.length;
 
-        emit BatchExecuted(messageHash, salt, length);
+        validateProof(messageHash, proof);
 
         if (slot.isBatchExecuted[messageHash]) revert AlreadyExecuted();
-        slot.isPayloadExecuted[messageHash] = true;
+        slot.isBatchExecuted[messageHash] = true;
+
+        emit BatchExecuted(messageHash, nonce, length);
 
         for (uint256 i; i < length; ++i) {
             Call memory call = calls[i];

@@ -340,7 +340,7 @@ describe('BaseWeightedMultisig', () => {
         });
     });
 
-    describe('hashForSignersEpoch and signersEpochForHash', () => {
+    describe('signerHashByEpoch and epochBySignerHash', () => {
         it('should expose correct hashes and epoch', async () => {
             const signersHistory = [...previousSigners, signers];
 
@@ -353,8 +353,8 @@ describe('BaseWeightedMultisig', () => {
                             threshold,
                         ),
                     );
-                    expect(await multisig.hashForSignersEpoch(i + 1)).to.be.equal(hash);
-                    expect(await multisig.signersEpochForHash(hash)).to.be.equal(i + 1);
+                    expect(await multisig.signerHashByEpoch(i + 1)).to.be.equal(hash);
+                    expect(await multisig.epochBySignerHash(hash)).to.be.equal(i + 1);
                 }),
             );
         });

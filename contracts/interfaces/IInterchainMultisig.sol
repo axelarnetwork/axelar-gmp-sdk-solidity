@@ -11,7 +11,6 @@ import { ICaller } from './ICaller.sol';
  */
 interface IInterchainMultisig is ICaller, IBaseWeightedMultisig {
     error NotSelf();
-    error InvalidProof();
     error AlreadyExecuted();
     error InvalidPayloadType();
     error InvalidChainNameHash();
@@ -26,13 +25,13 @@ interface IInterchainMultisig is ICaller, IBaseWeightedMultisig {
         uint256 nativeValue;
     }
 
-    event BatchExecuted(bytes32 indexed messageHash, bytes32 indexed salt, uint256 indexed length);
+    event BatchExecuted(bytes32 indexed messageHash, uint256 indexed nonce, uint256 indexed length);
 
     event CallExecuted(bytes32 indexed messageHash, address indexed target, bytes callData, uint256 nativeValue);
 
     /**
      * @notice Checks if a payload has been executed
-     * @param payloadHash The hash of the payload payload
+     * @param batchHash The hash of the payload payload
      * @return True if the payload has been executed
      */
     function isBatchExecuted(bytes32 batchHash) external view returns (bool);
@@ -41,8 +40,13 @@ interface IInterchainMultisig is ICaller, IBaseWeightedMultisig {
      * @notice Executes an external contract call.
      * @notice This function is protected by the onlySigners requirement.
      * @dev Calls a target address with specified calldata and passing provided native value.
-     * @param batch The batch of calls to execute
+     * @param nonce The nonce of the multisig
+     * @param calls The batch of calls to execute
      * @param proof The multisig proof data
      */
-    function executeCalls(bytes calldata batch, bytes calldata proof) external payable;
+    function executeCalls(
+        uint256 nonce,
+        Call[] memory calls,
+        bytes calldata proof
+    ) external payable;
 }

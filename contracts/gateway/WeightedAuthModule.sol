@@ -34,6 +34,7 @@ contract WeightedAuthModule is Ownable, BaseWeightedMultisig, IWeightedAuthModul
      * @param params The new set of signers encoded as (address[], uint256[], uint256)
      */
     function transferOperatorship(bytes calldata params) external onlyOwner {
+        // slither-disable-next-line uninitialized-local
         WeightedSigners memory newSigners;
 
         (newSigners.signers, newSigners.weights, newSigners.threshold) = abi.decode(

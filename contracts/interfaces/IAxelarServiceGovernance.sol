@@ -9,8 +9,10 @@ import { IBaseMultisig } from './IBaseMultisig.sol';
  * @title IAxelarServiceGovernance Interface
  * @dev This interface extends IInterchainGovernance and IMultisigBase for multisig proposal actions
  */
-interface IAxelarServiceGovernance is IBaseMultisig, IInterchainGovernance {
+interface IAxelarServiceGovernance is IInterchainGovernance {
+    error InvalidMultisigAddress();
     error NotApproved();
+    error NotAuthorized();
 
     event MultisigApproved(
         bytes32 indexed proposalHash,

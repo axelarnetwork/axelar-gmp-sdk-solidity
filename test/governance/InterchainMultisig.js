@@ -28,7 +28,7 @@ describe('InterchainMultisig', () => {
         signers = sortBy(wallets.slice(1, 3), (wallet) => wallet.address.toLowerCase());
         newSigners = sortBy(wallets.slice(0, 2), (wallet) => wallet.address.toLowerCase());
 
-        interchainMultisigFactory = await ethers.getContractFactory('InterchainMultisig', owner);
+        interchainMultisigFactory = await ethers.getContractFactory('TestInterchainMultisig', owner);
         targetFactory = await ethers.getContractFactory('Target', owner);
 
         const targetInterface = new Interface(['function callTarget() external']);

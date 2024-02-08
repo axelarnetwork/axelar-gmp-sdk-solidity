@@ -7,7 +7,7 @@ import { ECDSA } from '../libs/ECDSA.sol';
 
 abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
     // keccak256('WeightedMultisig.Storage');
-    bytes32 private constant BASE_WEIGHTED_STORAGE_LOCATION =
+    bytes32 internal constant BASE_WEIGHTED_STORAGE_LOCATION =
         0xa233fbcae4dcfad00091a9d8ff9561f12b3db9ec7227470684b4617d40a38746;
 
     struct WeightedSigners {

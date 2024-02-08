@@ -14,7 +14,7 @@ import { BaseWeightedMultisig } from './BaseWeightedMultisig.sol';
  */
 contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig {
     // keccak256('InterchainMultisig.Storage')
-    bytes32 private constant INTERCHAIN_MULTISIG_STORAGE =
+    bytes32 internal constant INTERCHAIN_MULTISIG_STORAGE =
         0x5a9dc2248a56f285e6221da431581a5990380ebfa07727563571b2be1517a23e;
 
     using SafeNativeTransfer for address;

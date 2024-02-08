@@ -91,6 +91,85 @@ describe('InterchainMultisig', () => {
         ).to.be.revertedWithCustomError(interchainMultisig, 'ExecutionFailed');
     });
 
+    it('should not execute if different chain or executor', async () => {
+        const nativeValue = 100;
+        const call1 = ['Ethereum', targetContract.address, targetContract.address, calldata, nativeValue];
+        const call2 = ['Polygon', interchainMultisig.address, targetContract.address, calldata, nativeValue];
+
+        await expect(
+            interchainMultisig.executeCalls(
+                1,
+                [call1],
+                getWeightedSignaturesProof(
+                    encodeInterchainCallsBatch(1, [call1]),
+                    signers,
+                    signers.map(() => 1),
+                    2,
+                    signers,
+                ),
+                {
+                    value: nativeValue,
+                },
+            ),
+        ).not.to.emit(targetContract, 'TargetCalled');
+
+        await expect(
+            interchainMultisig.executeCalls(
+                2,
+                [call2],
+                getWeightedSignaturesProof(
+                    encodeInterchainCallsBatch(2, [call2]),
+                    signers,
+                    signers.map(() => 1),
+                    2,
+                    signers,
+                ),
+                {
+                    value: nativeValue,
+                },
+            ),
+        ).not.to.emit(targetContract, 'TargetCalled');
+    });
+
+    it('should not execute same batch twice', async () => {
+        const nativeValue = 100;
+        const call = ['Ethereum', interchainMultisig.address, targetContract.address, calldata, nativeValue];
+
+        await expect(
+            interchainMultisig.executeCalls(
+                1,
+                [call],
+                getWeightedSignaturesProof(
+                    encodeInterchainCallsBatch(1, [call]),
+                    signers,
+                    signers.map(() => 1),
+                    2,
+                    signers,
+                ),
+                {
+                    value: nativeValue,
+                },
+            ),
+        ).to.emit(targetContract, 'TargetCalled');
+
+        await expect(
+            interchainMultisig.executeCalls(
+                1,
+                [call],
+                getWeightedSignaturesProof(
+                    encodeInterchainCallsBatch(1, [call]),
+                    signers,
+                    signers.map(() => 1),
+                    2,
+                    signers,
+                ),
+                {
+                    value: nativeValue,
+                },
+            ),
+        ).to.be.revertedWithCustomError(interchainMultisig, 'AlreadyExecuted');
+    });
+
     it('should execute function on target contract', async () => {
         const nativeValue = 100;
         const call = ['Ethereum', interchainMultisig.address, targetContract.address, calldata, nativeValue];

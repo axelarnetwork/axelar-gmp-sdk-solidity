@@ -3,7 +3,7 @@ const { ethers, network } = require('hardhat');
 const { sortBy } = require('lodash');
 const { getAddresses, encodeInterchainCallsBatch, getWeightedSignaturesProof } = require('../utils');
 const {
-    utils: { Interface, keccak256, hashMessage, arrayify },
+    utils: { Interface },
 } = ethers;
 const { expect } = chai;
 
@@ -150,8 +150,6 @@ describe('InterchainMultisig', () => {
     });
 
     it('should rotate signers', async () => {
-        const recipient = signers[0].address;
-        const nativeValue = 100;
         const call = [
             'Ethereum',
             interchainMultisig.address,

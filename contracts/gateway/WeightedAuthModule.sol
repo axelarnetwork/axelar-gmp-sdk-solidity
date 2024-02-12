@@ -21,7 +21,7 @@ contract WeightedAuthModule is Ownable, BaseWeightedMultisig, IWeightedAuthModul
      * @dev Ownership of this contract should be transferred to the Gateway contract after deployment.
      * @param recentOperatorSets The recent operator sets to be added to the multisig as initial signers
      */
-    constructor(WeightedSigners[] memory recentOperatorSets) Ownable(msg.sender) BaseWeightedMultisig(PREVIOUS_SIGNERS_RETENTION) {
+    constructor(WeightedSigners[] memory initialOperatorSets) Ownable(msg.sender) BaseWeightedMultisig(PREVIOUS_SIGNERS_RETENTION) {
         uint256 length = recentOperatorSets.length;
 
         for (uint256 i; i < length; ++i) {

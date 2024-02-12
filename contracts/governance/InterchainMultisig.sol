@@ -83,6 +83,8 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
 
             // check if the call is for this contract and chain
             if (keccak256(bytes(call.chainName)) == chainNameHash && call.executor == address(this)) {
+                ++executedCalls;
+
                 if (call.target == address(0)) revert InvalidTarget();
 
                 if (call.target == address(this) && bytes4(call.callData) == InterchainMultisig.voidBatch.selector)
@@ -97,8 +99,6 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
                 emit CallExecuted(batchId, call.target, call.callData, call.nativeValue);
 
                 _call(call.target, call.callData, call.nativeValue);
-
-                ++executedCalls;
             }
         }
 

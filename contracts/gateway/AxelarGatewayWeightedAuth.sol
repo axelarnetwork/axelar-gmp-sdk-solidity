@@ -21,8 +21,8 @@ contract AxelarGatewayWeightedAuth is Ownable, BaseWeightedMultisig, IAxelarGate
      * @dev Ownership of this contract should be transferred to the Gateway contract after deployment.
      * @param initialOperatorSets The recent operator sets to be added to the multisig as initial signers
      */
-    constructor(address owner, bytes[] memory initialOperatorSets)
-        Ownable(owner)
+    constructor(address owner_, bytes[] memory initialOperatorSets)
+        Ownable(owner_)
         BaseWeightedMultisig(PREVIOUS_SIGNERS_RETENTION)
     {
         uint256 length = initialOperatorSets.length;

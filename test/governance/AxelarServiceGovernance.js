@@ -5,7 +5,6 @@ const { ethers } = require('hardhat');
 const {
     utils: { defaultAbiCoder, Interface, keccak256 },
     constants: { HashZero },
-    Wallet,
 } = ethers;
 const { expect } = chai;
 const { isHardhat, getPayloadAndProposalHash, getEVMVersion } = require('../utils');
@@ -14,8 +13,7 @@ describe('AxelarServiceGovernance', () => {
     let ownerWallet;
     let governanceAddress;
     let gateway;
-    let signer1, signer2, signer3;
-    let signers;
+    let multisig;
 
     let serviceGovernanceFactory;
     let serviceGovernance;
@@ -29,13 +27,9 @@ describe('AxelarServiceGovernance', () => {
 
     const governanceChain = 'Governance Chain';
     const timeDelay = isHardhat ? 12 * 60 * 60 : 45;
-    const threshold = 2;
 
     before(async () => {
-        [ownerWallet, signer1, signer2] = await ethers.getSigners();
-        signer3 = Wallet.createRandom().connect(ethers.provider);
-        signers = [signer1, signer2, signer3].map((signer) => signer.address);
-        governanceAddress = signer1;
+        [ownerWallet, governanceAddress, multisig] = await ethers.getSigners();
 
         serviceGovernanceFactory = await ethers.getContractFactory('AxelarServiceGovernance', ownerWallet);
         targetFactory = await ethers.getContractFactory('Target', ownerWallet);
@@ -53,7 +47,7 @@ describe('AxelarServiceGovernance', () => {
         const minimumTimeDelay = isHardhat ? 10 * 60 * 60 : 15;
 
         serviceGovernance = await serviceGovernanceFactory
-            .deploy(gateway.address, governanceChain, governanceAddress.address, minimumTimeDelay, signers, threshold)
+            .deploy(gateway.address, governanceChain, governanceAddress.address, minimumTimeDelay, multisig.address)
             .then((d) => d.deployed());
     });
 
@@ -61,8 +55,7 @@ describe('AxelarServiceGovernance', () => {
         expect(await serviceGovernance.gateway()).to.equal(gateway.address);
         expect(await serviceGovernance.governanceChain()).to.equal(governanceChain);
         expect(await serviceGovernance.governanceAddress()).to.equal(governanceAddress.address);
-        expect(await serviceGovernance.signerThreshold()).to.equal(threshold);
-        expect(await serviceGovernance.signerAccounts()).to.deep.equal(signers);
+        expect(await serviceGovernance.multisig()).to.equal(multisig.address);
     });
 
     it('should revert on invalid command', async () => {
@@ -179,24 +172,19 @@ describe('AxelarServiceGovernance', () => {
             .withArgs(proposalHash, target, calldata, nativeValue);
     });
 
-    it('should revert on executing a multisig proposal if called by non-signer', async () => {
+    it('should revert on executing a multisig proposal if called by non-multisig', async () => {
         const target = targetContract.address;
 
         await expect(
             serviceGovernance.connect(ownerWallet).executeMultisigProposal(target, calldata, 0),
-        ).to.be.revertedWithCustomError(serviceGovernance, 'NotSigner');
+        ).to.be.revertedWithCustomError(serviceGovernance, 'NotAuthorized');
     });
 
     it('should revert on executing a multisig proposal if proposal is not approved', async () => {
         const target = targetContract.address;
 
-        await serviceGovernance
-            .connect(signer1)
-            .executeMultisigProposal(target, calldata, 0)
-            .then((tx) => tx.wait());
-
         await expect(
-            serviceGovernance.connect(signer2).executeMultisigProposal(target, calldata, 0),
+            serviceGovernance.connect(multisig).executeMultisigProposal(target, calldata, 0),
         ).to.be.revertedWithCustomError(serviceGovernance, 'NotApproved');
     });
 
@@ -220,31 +208,9 @@ describe('AxelarServiceGovernance', () => {
             .to.emit(serviceGovernance, 'MultisigApproved')
             .withArgs(proposalHash, target, invalidCalldata, nativeValue);
 
-        await serviceGovernance
-            .connect(signer1)
-            .executeMultisigProposal(target, invalidCalldata, nativeValue)
-            .then((tx) => tx.wait());
-
         await expect(
-            serviceGovernance.connect(signer2).executeMultisigProposal(target, invalidCalldata, nativeValue),
+            serviceGovernance.connect(multisig).executeMultisigProposal(target, invalidCalldata, nativeValue),
         ).to.be.revertedWithCustomError(serviceGovernance, 'ExecutionFailed');
-    });
-
-    it('should not execute a multisig proposal if only one signer votes', async () => {
-        const commandID = 2;
-        const target = targetContract.address;
-        const nativeValue = 0;
-
-        const [payload, proposalHash] = await getPayloadAndProposalHash(commandID, target, nativeValue, calldata);
-
-        await expect(serviceGovernance.execute(govCommandID, governanceChain, governanceAddress.address, payload))
-            .to.emit(serviceGovernance, 'MultisigApproved')
-            .withArgs(proposalHash, target, calldata, nativeValue);
-
-        await expect(serviceGovernance.connect(signer1).executeMultisigProposal(target, calldata, 0)).to.not.emit(
-            serviceGovernance,
-            'MultisigExecuted',
-        );
     });
 
     it('should execute a multisig proposal', async () => {
@@ -254,37 +220,11 @@ describe('AxelarServiceGovernance', () => {
 
         const [payload, proposalHash] = await getPayloadAndProposalHash(commandID, target, nativeValue, calldata);
 
-        const msgData = serviceGovernance.interface.encodeFunctionData('executeMultisigProposal', [
-            target,
-            calldata,
-            nativeValue,
-        ]);
-        const msgDataHash = keccak256(msgData);
-
-        expect(await serviceGovernance.getSignerVotesCount(msgDataHash)).to.equal(0);
-        expect(await serviceGovernance.hasSignerVoted(signer1.address, msgDataHash)).to.equal(false);
-
-        await serviceGovernance
-            .connect(signer1)
-            .executeMultisigProposal(target, calldata, nativeValue)
-            .then((tx) => tx.wait());
-
-        expect(await serviceGovernance.getSignerVotesCount(msgDataHash)).to.equal(1);
-        expect(await serviceGovernance.hasSignerVoted(signer1.address, msgDataHash)).to.equal(true);
-
         await expect(serviceGovernance.execute(govCommandID, governanceChain, governanceAddress.address, payload))
             .to.emit(serviceGovernance, 'MultisigApproved')
             .withArgs(proposalHash, target, calldata, nativeValue);
 
-        expect(await serviceGovernance.getSignerVotesCount(msgDataHash)).to.equal(0);
-        expect(await serviceGovernance.hasSignerVoted(signer1.address, msgDataHash)).to.equal(false);
-
-        await serviceGovernance
-            .connect(signer1)
-            .executeMultisigProposal(target, calldata, nativeValue)
-            .then((tx) => tx.wait());
-
-        await expect(serviceGovernance.connect(signer2).executeMultisigProposal(target, calldata, nativeValue))
+        await expect(serviceGovernance.connect(multisig).executeMultisigProposal(target, calldata, nativeValue))
             .to.emit(serviceGovernance, 'MultisigExecuted')
             .withArgs(proposalHash, target, calldata, nativeValue)
             .and.to.emit(targetContract, 'TargetCalled');
@@ -318,11 +258,6 @@ describe('AxelarServiceGovernance', () => {
             .to.emit(serviceGovernance, 'MultisigApproved')
             .withArgs(proposalHash, target, calldata, nativeValue);
 
-        await serviceGovernance
-            .connect(signer1)
-            .executeMultisigProposal(target, calldata, nativeValue)
-            .then((tx) => tx.wait());
-
         await ownerWallet
             .sendTransaction({
                 to: serviceGovernance.address,
@@ -332,7 +267,7 @@ describe('AxelarServiceGovernance', () => {
 
         const oldBalance = await ethers.provider.getBalance(target);
 
-        const tx = await serviceGovernance.connect(signer2).executeMultisigProposal(target, calldata, nativeValue);
+        const tx = await serviceGovernance.connect(multisig).executeMultisigProposal(target, calldata, nativeValue);
 
         await expect(tx)
             .to.emit(serviceGovernance, 'MultisigExecuted')
@@ -343,14 +278,25 @@ describe('AxelarServiceGovernance', () => {
         expect(newBalance).to.equal(oldBalance.add(nativeValue));
     });
 
+    it('should trasfer multisig address to new address', async () => {
+        const newMultisig = governanceAddress.address;
+        await serviceGovernance.connect(multisig).transferMultisig(newMultisig);
+        await expect(await serviceGovernance.multisig()).to.equal(newMultisig);
+
+        await expect( serviceGovernance.connect(multisig).transferMultisig(newMultisig)).to.revertedWithCustomError(
+            serviceGovernance,
+            'NotAuthorized',
+        );
+    });
+
     it('should preserve the bytecode [ @skip-on-coverage ]', async () => {
         const bytecode = serviceGovernanceFactory.bytecode;
         const bytecodeHash = keccak256(bytecode);
 
         const expected = {
-            istanbul: '0x5caba7cf479f4a3da20d9b0d6b5bfea319e021600338797ecd0789de268f33d1',
-            berlin: '0x7e7d65e6f13d127ea5f4b2fead620bd02c6b07fbd767c701f09e8e22881fca1d',
-            london: '0x68e44a757efe441f98af0a0d0612efc28cd29933a05c71eded9b0c2a28ce51ad',
+            istanbul: '0x68e3335cf11fcd79e5183e1d099bdbed0fbbd3316cdbae9784d7a6e39d77ec47',
+            berlin: '0xe39dde9c44fe928c82ff019f5799eec83ac0390c5c5558ed7a86ff9daa3bff6c',
+            london: '0xdcfbd1c0d741bc98b7aecfaeb40c043e02daf9323cb9849368f17cbbd993781b',
         }[getEVMVersion()];
 
         expect(bytecodeHash).to.be.equal(expected);

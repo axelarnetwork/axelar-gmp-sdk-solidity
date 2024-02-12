@@ -19,12 +19,12 @@ contract AxelarServiceGovernance is InterchainGovernance, IAxelarServiceGovernan
         CancelMultisigApproval
     }
 
-    address public immutable interchainMultisig;
+    address public multisig;
 
     mapping(bytes32 => bool) public multisigApprovals;
 
     modifier onlyMultisig() {
-        if (msg.sender != interchainMultisig) revert NotAuthorized();
+        if (msg.sender != multisig) revert NotAuthorized();
         _;
     }
 
@@ -34,19 +34,17 @@ contract AxelarServiceGovernance is InterchainGovernance, IAxelarServiceGovernan
      * @param governanceChain_ The name of the governance chain
      * @param governanceAddress_ The address of the governance contract
      * @param minimumTimeDelay The minimum time delay for timelock operations
-     * @param interchainMultisig_ The list of initial signers
+     * @param multisig_ The list of initial signers
      */
     constructor(
         address gateway_,
         string memory governanceChain_,
         string memory governanceAddress_,
         uint256 minimumTimeDelay,
-        address interchainMultisig_
-    )
-        InterchainGovernance(gateway_, governanceChain_, governanceAddress_, minimumTimeDelay)
-    {
-        if (interchainMultisig_ == address(0)) revert InvalidMultisigAddress();
-        interchainMultisig = interchainMultisig_;
+        address multisig_
+    ) InterchainGovernance(gateway_, governanceChain_, governanceAddress_, minimumTimeDelay) {
+        if (multisig_ == address(0)) revert InvalidMultisigAddress();
+        multisig = multisig_;
     }
 
     /**
@@ -84,6 +82,12 @@ contract AxelarServiceGovernance is InterchainGovernance, IAxelarServiceGovernan
         emit MultisigExecuted(proposalHash, target, callData, nativeValue);
 
         _call(target, callData, nativeValue);
+    }
+
+    function transferMultisig(address newMultisig) external onlyMultisig {
+        if (newMultisig == address(0)) revert InvalidMultisigAddress();
+
+        multisig = newMultisig;
     }
 
     /**

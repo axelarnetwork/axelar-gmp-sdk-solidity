@@ -13,7 +13,7 @@ import { Ownable } from '../utils/Ownable.sol';
  * with added functionality to approve and execute multisig proposals.
  */
 contract WeightedAuthModule is Ownable, BaseWeightedMultisig, IWeightedAuthModule {
-    // @notice The number of previous signers to authorize batches of commands
+    // @notice The number of previous signers whose messages will be considered valid. This gives some time for signed messages to be relayed.
     uint256 public constant PREVIOUS_SIGNERS_RETENTION = 15;
 
     /**

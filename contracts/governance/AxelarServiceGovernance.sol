@@ -87,6 +87,8 @@ contract AxelarServiceGovernance is InterchainGovernance, IAxelarServiceGovernan
     function transferMultisig(address newMultisig) external onlyMultisig {
         if (newMultisig == address(0)) revert InvalidMultisigAddress();
 
+        emit MultisigTransferred(multisig, newMultisig);
+
         multisig = newMultisig;
     }
 

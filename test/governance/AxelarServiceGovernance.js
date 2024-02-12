@@ -280,10 +280,12 @@ describe('AxelarServiceGovernance', () => {
 
     it('should trasfer multisig address to new address', async () => {
         const newMultisig = governanceAddress.address;
-        await serviceGovernance.connect(multisig).transferMultisig(newMultisig);
+        await expect(serviceGovernance.connect(multisig).transferMultisig(newMultisig))
+            .to.emit(serviceGovernance, 'MultisigTransferred')
+            .withArgs(multisig.address, newMultisig);
         await expect(await serviceGovernance.multisig()).to.equal(newMultisig);
 
-        await expect( serviceGovernance.connect(multisig).transferMultisig(newMultisig)).to.revertedWithCustomError(
+        await expect(serviceGovernance.connect(multisig).transferMultisig(newMultisig)).to.revertedWithCustomError(
             serviceGovernance,
             'NotAuthorized',
         );
@@ -294,9 +296,9 @@ describe('AxelarServiceGovernance', () => {
         const bytecodeHash = keccak256(bytecode);
 
         const expected = {
-            istanbul: '0x68e3335cf11fcd79e5183e1d099bdbed0fbbd3316cdbae9784d7a6e39d77ec47',
-            berlin: '0xe39dde9c44fe928c82ff019f5799eec83ac0390c5c5558ed7a86ff9daa3bff6c',
-            london: '0xdcfbd1c0d741bc98b7aecfaeb40c043e02daf9323cb9849368f17cbbd993781b',
+            istanbul: '0xfc92aa2eb5252df742a3def252849a64ecff81f90f7ddb582402b9a98297b50c',
+            berlin: '0xed5b5847ffab15d65656ec15155b9659a33066b79baaf1607341e8cc9564edf3',
+            london: '0x1c5a0d5d253dcd81a4513cff87bf7dbbc4c739c390213bd410e3b92be7b5ab25',
         }[getEVMVersion()];
 
         expect(bytecodeHash).to.be.equal(expected);

@@ -20,18 +20,22 @@ interface IAxelarServiceGovernance is IInterchainGovernance {
         bytes callData,
         uint256 nativeValue
     );
+
     event MultisigCancelled(
         bytes32 indexed proposalHash,
         address indexed targetContract,
         bytes callData,
         uint256 nativeValue
     );
+
     event MultisigExecuted(
         bytes32 indexed proposalHash,
         address indexed targetContract,
         bytes callData,
         uint256 nativeValue
     );
+
+    event MultisigTransferred(address indexed oldMultisig, address indexed newMultisig);
 
     /**
      * @notice Returns whether a multisig proposal has been approved

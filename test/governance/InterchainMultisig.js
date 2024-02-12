@@ -2,13 +2,11 @@ const chai = require('chai');
 const { ethers, network } = require('hardhat');
 const { sortBy } = require('lodash');
 const { getAddresses, encodeInterchainCallsBatch, getWeightedSignaturesProof } = require('../utils');
-const {
-    utils: { Interface },
-} = ethers;
 const { expect } = chai;
 
 describe('InterchainMultisig', () => {
     const threshold = 2;
+    const nativeValue = 100;
 
     let wallets;
     let owner;
@@ -28,14 +26,9 @@ describe('InterchainMultisig', () => {
         signers = sortBy(wallets.slice(1, 3), (wallet) => wallet.address.toLowerCase());
         newSigners = sortBy(wallets.slice(0, 2), (wallet) => wallet.address.toLowerCase());
 
-        interchainMultisigFactory = await ethers.getContractFactory('TestInterchainMultisig', owner);
+        interchainMultisigFactory = await ethers.getContractFactory('InterchainMultisig', owner);
         targetFactory = await ethers.getContractFactory('Target', owner);
 
-        const targetInterface = new Interface(['function callTarget() external']);
-        calldata = targetInterface.encodeFunctionData('callTarget');
-    });
-
-    beforeEach(async () => {
         // new multisig and target contracts for each test
         interchainMultisig = await interchainMultisigFactory.deploy('Ethereum', [
             getAddresses(signers),
@@ -46,10 +39,17 @@ describe('InterchainMultisig', () => {
         await interchainMultisig.deployTransaction.wait(network.config.confirmations);
 
         targetContract = await targetFactory.deploy().then((d) => d.deployed());
+
+        calldata = targetContract.interface.encodeFunctionData('callTarget');
+    });
+
+    it('should validate storage constants', async () => {
+        const testMultisigFactory = await ethers.getContractFactory('TestInterchainMultisig', owner);
+
+        await testMultisigFactory.deploy('Ethereum', [getAddresses(signers), signers.map(() => 1), threshold]);
     });
 
     it('should revert on execute with insufficient value sent', async () => {
-        const nativeValue = 100;
         const call = ['Ethereum', interchainMultisig.address, targetContract.address, calldata, nativeValue];
 
         await expect(
@@ -70,7 +70,7 @@ describe('InterchainMultisig', () => {
     it('should revert on execute if call to target fails', async () => {
         // Invalid function selector that does not exist on target
         const invalidCalldata = '0x12345678';
-        const nativeValue = 100;
+
         const call = ['Ethereum', interchainMultisig.address, targetContract.address, invalidCalldata, nativeValue];
 
         await expect(
@@ -92,7 +92,6 @@ describe('InterchainMultisig', () => {
     });
 
     it('should not execute if different chain or executor', async () => {
-        const nativeValue = 100;
         const call1 = ['Ethereum', targetContract.address, targetContract.address, calldata, nativeValue];
         const call2 = ['Polygon', interchainMultisig.address, targetContract.address, calldata, nativeValue];
 
@@ -132,7 +131,6 @@ describe('InterchainMultisig', () => {
     });
 
     it('should not execute same batch twice', async () => {
-        const nativeValue = 100;
         const call = ['Ethereum', interchainMultisig.address, targetContract.address, calldata, nativeValue];
 
         await expect(
@@ -171,15 +169,14 @@ describe('InterchainMultisig', () => {
     });
 
     it('should execute function on target contract', async () => {
-        const nativeValue = 100;
         const call = ['Ethereum', interchainMultisig.address, targetContract.address, calldata, nativeValue];
 
         await expect(
             await interchainMultisig.executeCalls(
-                1,
+                11,
                 [call],
                 getWeightedSignaturesProof(
-                    encodeInterchainCallsBatch(1, [call]),
+                    encodeInterchainCallsBatch(11, [call]),
                     signers,
                     signers.map(() => 1),
                     2,
@@ -194,7 +191,7 @@ describe('InterchainMultisig', () => {
 
     it('should withdraw native value', async () => {
         const recipient = signers[0].address;
-        const nativeValue = 100;
+
         const call = [
             'Ethereum',
             interchainMultisig.address,
@@ -252,5 +249,19 @@ describe('InterchainMultisig', () => {
                 ),
             ),
         ).to.emit(interchainMultisig, 'SignersRotated');
+
+        await expect(
+            interchainMultisig.executeCalls(
+                2,
+                [call],
+                getWeightedSignaturesProof(
+                    encodeInterchainCallsBatch(2, [call]),
+                    signers,
+                    signers.map(() => 1),
+                    2,
+                    signers,
+                ),
+            ),
+        ).to.be.revertedWithCustomError(interchainMultisig, 'InvalidSigners');
     });
 });

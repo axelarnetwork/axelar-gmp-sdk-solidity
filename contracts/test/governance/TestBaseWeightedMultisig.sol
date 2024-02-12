@@ -7,7 +7,7 @@ import { BaseWeightedMultisig } from '../../governance/BaseWeightedMultisig.sol'
 contract TestBaseWeightedMultisig is BaseWeightedMultisig {
     constructor(uint256 oldSignersRetention) BaseWeightedMultisig(oldSignersRetention) {
         if (BASE_WEIGHTED_STORAGE_LOCATION != keccak256('WeightedMultisig.Storage')) {
-            revert('Invalid WeightedMultisig.Storage location');
+            revert('WeightedMultisig.Storage');
         }
     }
 

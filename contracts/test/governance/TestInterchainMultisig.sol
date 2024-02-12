@@ -9,7 +9,7 @@ contract TestInterchainMultisig is InterchainMultisig {
         InterchainMultisig(chainName, weightedSigners)
     {
         if (INTERCHAIN_MULTISIG_STORAGE != keccak256('InterchainMultisig.Storage')) {
-            revert('Invalid InterchainMultisig.Storage location');
+            revert('InterchainMultisig.Storage');
         }
     }
 }

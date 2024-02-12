@@ -4,6 +4,6 @@ pragma solidity ^0.8.0;
 
 import { IBaseWeightedMultisig } from './IBaseWeightedMultisig.sol';
 
-interface IWeightedAuthModule is IBaseWeightedMultisig {
+interface IAxelarGatewayWeightedAuth is IBaseWeightedMultisig {
     function transferOperatorship(bytes calldata params) external;
 }

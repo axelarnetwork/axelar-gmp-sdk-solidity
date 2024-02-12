@@ -2,30 +2,41 @@
 
 pragma solidity ^0.8.0;
 
-import { IWeightedAuthModule } from '../interfaces/IWeightedAuthModule.sol';
+import { IAxelarGatewayWeightedAuth } from '../interfaces/IAxelarGatewayWeightedAuth.sol';
 
 import { BaseWeightedMultisig } from '../governance/BaseWeightedMultisig.sol';
 import { Ownable } from '../utils/Ownable.sol';
 
 /**
- * @title WeightedAuthModule Contract
+ * @title AxelarGatewayWeightedAuth Contract
  * @dev This contract is used by the Axelar Gateway to verify signed commands. It inherits the BaseWeightedMultisig contract
  * with added functionality to approve and execute multisig proposals.
  */
-contract WeightedAuthModule is Ownable, BaseWeightedMultisig, IWeightedAuthModule {
+contract AxelarGatewayWeightedAuth is Ownable, BaseWeightedMultisig, IAxelarGatewayWeightedAuth {
     // @notice The number of previous signers whose messages will be considered valid. This gives some time for signed messages to be relayed.
     uint256 public constant PREVIOUS_SIGNERS_RETENTION = 15;
 
     /**
      * @notice Initializes the contract.
      * @dev Ownership of this contract should be transferred to the Gateway contract after deployment.
-     * @param recentOperatorSets The recent operator sets to be added to the multisig as initial signers
+     * @param initialOperatorSets The recent operator sets to be added to the multisig as initial signers
      */
-    constructor(WeightedSigners[] memory initialOperatorSets) Ownable(msg.sender) BaseWeightedMultisig(PREVIOUS_SIGNERS_RETENTION) {
-        uint256 length = recentOperatorSets.length;
+    constructor(address owner, bytes[] memory initialOperatorSets)
+        Ownable(owner)
+        BaseWeightedMultisig(PREVIOUS_SIGNERS_RETENTION)
+    {
+        uint256 length = initialOperatorSets.length;
 
         for (uint256 i; i < length; ++i) {
-            _rotateSigners(recentOperatorSets[i]);
+            // slither-disable-next-line uninitialized-local
+            WeightedSigners memory signerSet;
+
+            (signerSet.signers, signerSet.weights, signerSet.threshold) = abi.decode(
+                initialOperatorSets[i],
+                (address[], uint256[], uint256)
+            );
+
+            _rotateSigners(signerSet);
         }
     }
 

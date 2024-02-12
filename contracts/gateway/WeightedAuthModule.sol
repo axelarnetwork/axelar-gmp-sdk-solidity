@@ -9,7 +9,7 @@ import { Ownable } from '../utils/Ownable.sol';
 
 /**
  * @title WeightedAuthModule Contract
- * @dev This contract is part of the Axelar Governance system, it inherits the BaseWeightedMultisig contract
+ * @dev This contract is used by the Axelar Gateway to verify signed commands. It inherits the BaseWeightedMultisig contract
  * with added functionality to approve and execute multisig proposals.
  */
 contract WeightedAuthModule is Ownable, BaseWeightedMultisig, IWeightedAuthModule {

@@ -2,6 +2,9 @@ const chai = require('chai');
 const { ethers, network } = require('hardhat');
 const { sortBy } = require('lodash');
 const { getAddresses, encodeInterchainCallsBatch, getWeightedSignaturesProof } = require('../utils');
+const {
+    utils: { formatBytes32String },
+} = ethers;
 const { expect } = chai;
 
 describe('InterchainMultisig', () => {
@@ -54,10 +57,10 @@ describe('InterchainMultisig', () => {
 
         await expect(
             interchainMultisig.executeCalls(
-                1,
+                formatBytes32String('5'),
                 [call],
                 getWeightedSignaturesProof(
-                    encodeInterchainCallsBatch(1, [call]),
+                    encodeInterchainCallsBatch(formatBytes32String('5'), [call]),
                     signers,
                     signers.map(() => 1),
                     2,
@@ -75,10 +78,10 @@ describe('InterchainMultisig', () => {
 
         await expect(
             interchainMultisig.executeCalls(
-                1,
+                formatBytes32String('6'),
                 [call],
                 getWeightedSignaturesProof(
-                    encodeInterchainCallsBatch(1, [call]),
+                    encodeInterchainCallsBatch(formatBytes32String('6'), [call]),
                     signers,
                     signers.map(() => 1),
                     2,
@@ -97,10 +100,10 @@ describe('InterchainMultisig', () => {
 
         await expect(
             interchainMultisig.executeCalls(
-                1,
+                formatBytes32String('7'),
                 [call1],
                 getWeightedSignaturesProof(
-                    encodeInterchainCallsBatch(1, [call1]),
+                    encodeInterchainCallsBatch(formatBytes32String('7'), [call1]),
                     signers,
                     signers.map(() => 1),
                     2,
@@ -110,14 +113,14 @@ describe('InterchainMultisig', () => {
                     value: nativeValue,
                 },
             ),
-        ).not.to.emit(targetContract, 'TargetCalled');
+        ).to.be.revertedWithCustomError(interchainMultisig, 'EmptyBatch');
 
         await expect(
             interchainMultisig.executeCalls(
-                2,
+                formatBytes32String('8'),
                 [call2],
                 getWeightedSignaturesProof(
-                    encodeInterchainCallsBatch(2, [call2]),
+                    encodeInterchainCallsBatch(formatBytes32String('8'), [call2]),
                     signers,
                     signers.map(() => 1),
                     2,
@@ -127,7 +130,7 @@ describe('InterchainMultisig', () => {
                     value: nativeValue,
                 },
             ),
-        ).not.to.emit(targetContract, 'TargetCalled');
+        ).to.be.revertedWithCustomError(interchainMultisig, 'EmptyBatch');
     });
 
     it('should not execute same batch twice', async () => {
@@ -135,10 +138,10 @@ describe('InterchainMultisig', () => {
 
         await expect(
             interchainMultisig.executeCalls(
-                1,
+                formatBytes32String('9'),
                 [call],
                 getWeightedSignaturesProof(
-                    encodeInterchainCallsBatch(1, [call]),
+                    encodeInterchainCallsBatch(formatBytes32String('9'), [call]),
                     signers,
                     signers.map(() => 1),
                     2,
@@ -152,10 +155,10 @@ describe('InterchainMultisig', () => {
 
         await expect(
             interchainMultisig.executeCalls(
-                1,
+                formatBytes32String('9'),
                 [call],
                 getWeightedSignaturesProof(
-                    encodeInterchainCallsBatch(1, [call]),
+                    encodeInterchainCallsBatch(formatBytes32String('9'), [call]),
                     signers,
                     signers.map(() => 1),
                     2,
@@ -173,10 +176,10 @@ describe('InterchainMultisig', () => {
 
         await expect(
             await interchainMultisig.executeCalls(
-                11,
+                formatBytes32String('10'),
                 [call],
                 getWeightedSignaturesProof(
-                    encodeInterchainCallsBatch(11, [call]),
+                    encodeInterchainCallsBatch(formatBytes32String('10'), [call]),
                     signers,
                     signers.map(() => 1),
                     2,
@@ -210,10 +213,10 @@ describe('InterchainMultisig', () => {
         const oldBalance = await ethers.provider.getBalance(recipient);
 
         await interchainMultisig.executeCalls(
-            1,
+            formatBytes32String('11'),
             [call],
             getWeightedSignaturesProof(
-                encodeInterchainCallsBatch(1, [call]),
+                encodeInterchainCallsBatch(formatBytes32String('11'), [call]),
                 signers,
                 signers.map(() => 1),
                 2,
@@ -223,6 +226,69 @@ describe('InterchainMultisig', () => {
 
         const newBalance = await ethers.provider.getBalance(recipient);
         expect(newBalance).to.equal(oldBalance.add(nativeValue));
+    });
+
+    it('should void a batch id', async () => {
+        const call = [
+            'Ethereum',
+            interchainMultisig.address,
+            interchainMultisig.address,
+            interchainMultisig.interface.encodeFunctionData('voidBatch'),
+            0,
+        ];
+        const anotherCall = [
+            'Ethereum',
+            interchainMultisig.address,
+            interchainMultisig.address,
+            interchainMultisig.interface.encodeFunctionData('rotateSigners', [
+                [getAddresses(newSigners), newSigners.map(() => 1), threshold],
+            ]),
+            0,
+        ];
+
+        await expect(
+            interchainMultisig.executeCalls(
+                formatBytes32String('23'),
+                [call, anotherCall],
+                getWeightedSignaturesProof(
+                    encodeInterchainCallsBatch(formatBytes32String('23'), [call, anotherCall]),
+                    signers,
+                    signers.map(() => 1),
+                    2,
+                    signers,
+                ),
+            ),
+        ).to.be.revertedWithCustomError(interchainMultisig, 'InvalidVoidBatch');
+
+        await expect(
+            interchainMultisig.executeCalls(
+                formatBytes32String('24'),
+                [call],
+                getWeightedSignaturesProof(
+                    encodeInterchainCallsBatch(formatBytes32String('24'), [call]),
+                    signers,
+                    signers.map(() => 1),
+                    2,
+                    signers,
+                ),
+            ),
+        )
+            .to.emit(interchainMultisig, 'BatchVoided')
+            .withArgs(formatBytes32String('24'));
+
+        await expect(
+            interchainMultisig.executeCalls(
+                formatBytes32String('24'),
+                [anotherCall],
+                getWeightedSignaturesProof(
+                    encodeInterchainCallsBatch(formatBytes32String('24'), [anotherCall]),
+                    signers,
+                    signers.map(() => 1),
+                    2,
+                    signers,
+                ),
+            ),
+        ).to.be.revertedWithCustomError(interchainMultisig, 'AlreadyExecuted');
     });
 
     it('should rotate signers', async () => {
@@ -238,10 +304,10 @@ describe('InterchainMultisig', () => {
 
         await expect(
             interchainMultisig.executeCalls(
-                1,
+                formatBytes32String('21'),
                 [call],
                 getWeightedSignaturesProof(
-                    encodeInterchainCallsBatch(1, [call]),
+                    encodeInterchainCallsBatch(formatBytes32String('21'), [call]),
                     signers,
                     signers.map(() => 1),
                     2,
@@ -252,10 +318,10 @@ describe('InterchainMultisig', () => {
 
         await expect(
             interchainMultisig.executeCalls(
-                2,
+                formatBytes32String('22'),
                 [call],
                 getWeightedSignaturesProof(
-                    encodeInterchainCallsBatch(2, [call]),
+                    encodeInterchainCallsBatch(formatBytes32String('22'), [call]),
                     signers,
                     signers.map(() => 1),
                     2,

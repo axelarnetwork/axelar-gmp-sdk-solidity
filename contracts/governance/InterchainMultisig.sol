@@ -45,36 +45,38 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
 
     /**
      * @notice Checks if a payload has been executed
-     * @param batchHash The hash of the payload payload
+     * @param batchId The hash of the payload payload
      * @return True if the payload has been executed
      */
-    function isBatchExecuted(bytes32 batchHash) external view returns (bool) {
-        return _interchainMultisigStorage().isBatchExecuted[batchHash];
+    function isBatchExecuted(bytes32 batchId) external view returns (bool) {
+        return _interchainMultisigStorage().isBatchExecuted[batchId];
     }
 
     /**
      * @notice Executes an external contract call.
      * @notice This function is protected by the onlySigners requirement.
      * @dev Calls a target address with specified calldata and passing provided native value.
-     * @param nonce The nonce of the multisig
+     * @param batchId The batchId of the multisig
      * @param calls The batch of calls to execute
      * @param proof The multisig proof data
      */
     function executeCalls(
-        uint256 nonce,
-        Call[] memory calls,
+        bytes32 batchId,
+        Call[] calldata calls,
         bytes calldata proof
     ) external payable {
         InterchainMultisigStorage storage slot = _interchainMultisigStorage();
-        bytes32 messageHash = ECDSA.toEthSignedMessageHash(keccak256(abi.encode(nonce, calls)));
+        bytes32 messageHash = ECDSA.toEthSignedMessageHash(keccak256(abi.encode(batchId, calls)));
         uint256 length = calls.length;
 
         validateProof(messageHash, proof);
 
-        if (slot.isBatchExecuted[messageHash]) revert AlreadyExecuted();
-        slot.isBatchExecuted[messageHash] = true;
+        if (slot.isBatchExecuted[batchId]) revert AlreadyExecuted();
+        slot.isBatchExecuted[batchId] = true;
 
-        emit BatchExecuted(messageHash, nonce, length);
+        emit BatchExecuted(batchId, messageHash, length);
+
+        uint256 executedCalls;
 
         for (uint256 i; i < length; ++i) {
             Call memory call = calls[i];
@@ -83,12 +85,24 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
             if (keccak256(bytes(call.chainName)) == chainNameHash && call.executor == address(this)) {
                 if (call.target == address(0)) revert InvalidTarget();
 
+                if (call.target == address(this) && bytes4(call.callData) == InterchainMultisig.voidBatch.selector)
+                    if (length == 1) {
+                        emit BatchVoided(batchId);
+                        return;
+                    } else {
+                        revert InvalidVoidBatch();
+                    }
+
                 // slither-disable-next-line reentrancy-events
-                emit CallExecuted(messageHash, call.target, call.callData, call.nativeValue);
+                emit CallExecuted(batchId, call.target, call.callData, call.nativeValue);
 
                 _call(call.target, call.callData, call.nativeValue);
+
+                ++executedCalls;
             }
         }
+
+        if (executedCalls == 0) revert EmptyBatch();
     }
 
     /**
@@ -115,6 +129,13 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
 
         recipient.safeNativeTransfer(amount);
     }
+
+    /**
+     * @notice Voids the batch id from being executed in the future.
+     * @notice This function is protected by the onlySelf modifier.
+     * @dev This function is only callable by the contract itself after signature verification
+     */
+    function voidBatch() external payable onlySelf {}
 
     /**
      * @notice Allow contract to be able to receive native value

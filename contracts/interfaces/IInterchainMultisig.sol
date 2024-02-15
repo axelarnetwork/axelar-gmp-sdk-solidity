@@ -15,6 +15,8 @@ interface IInterchainMultisig is ICaller, IBaseWeightedMultisig {
     error InvalidPayloadType();
     error InvalidChainNameHash();
     error InvalidTarget();
+    error InvalidVoidBatch();
+    error EmptyBatch();
     error InvalidRecipient();
 
     struct Call {
@@ -25,9 +27,11 @@ interface IInterchainMultisig is ICaller, IBaseWeightedMultisig {
         uint256 nativeValue;
     }
 
-    event BatchExecuted(bytes32 indexed messageHash, uint256 indexed nonce, uint256 indexed length);
+    event BatchExecuted(bytes32 indexed batchId, bytes32 indexed messageHash, uint256 indexed length);
 
-    event CallExecuted(bytes32 indexed messageHash, address indexed target, bytes callData, uint256 nativeValue);
+    event CallExecuted(bytes32 indexed batchId, address indexed target, bytes callData, uint256 nativeValue);
+
+    event BatchVoided(bytes32 indexed batchId);
 
     /**
      * @notice Checks if a payload has been executed
@@ -40,13 +44,13 @@ interface IInterchainMultisig is ICaller, IBaseWeightedMultisig {
      * @notice Executes an external contract call.
      * @notice This function is protected by the onlySigners requirement.
      * @dev Calls a target address with specified calldata and passing provided native value.
-     * @param nonce The nonce of the multisig
+     * @param batchId The batchId of the multisig
      * @param calls The batch of calls to execute
      * @param proof The multisig proof data
      */
     function executeCalls(
-        uint256 nonce,
-        Call[] memory calls,
+        bytes32 batchId,
+        Call[] calldata calls,
         bytes calldata proof
     ) external payable;
 }

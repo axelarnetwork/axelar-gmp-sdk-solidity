@@ -2,6 +2,7 @@ const { sortBy } = require('lodash');
 const chai = require('chai');
 const { ethers, network } = require('hardhat');
 const {
+    constants: { AddressZero },
     utils: { arrayify, keccak256, hashMessage },
 } = ethers;
 const { expect } = chai;

@@ -3,6 +3,7 @@ const chai = require('chai');
 const { ethers, network } = require('hardhat');
 const {
     utils: { arrayify, keccak256, hashMessage },
+    constants: { AddressZero },
 } = ethers;
 const { expect } = chai;
 
@@ -153,7 +154,7 @@ describe('BaseWeightedMultisig', () => {
                 ),
             );
 
-            await expect(isCurrentSigners).to.be.equal(true);
+            await expect(isCurrentSigners).to.be.true;
         });
     });
 

@@ -1,7 +1,7 @@
 const chai = require('chai');
 const { ethers, network } = require('hardhat');
 const { sortBy } = require('lodash');
-const { getAddresses, encodeInterchainCallsBatch, getWeightedSignaturesProof } = require('../utils');
+const { getAddresses, encodeInterchainCallsBatch, getWeightedSignaturesProof, expectRevert } = require('../utils');
 const {
     utils: { formatBytes32String },
 } = ethers;
@@ -55,19 +55,23 @@ describe('InterchainMultisig', () => {
     it('should revert on execute with insufficient value sent', async () => {
         const call = ['Ethereum', interchainMultisig.address, targetContract.address, calldata, nativeValue];
 
-        await expect(
-            interchainMultisig.executeCalls(
-                formatBytes32String('5'),
-                [call],
-                getWeightedSignaturesProof(
-                    encodeInterchainCallsBatch(formatBytes32String('5'), [call]),
-                    signers,
-                    signers.map(() => 1),
-                    2,
-                    signers,
+        await expectRevert(
+            async (gasOptions) =>
+                interchainMultisig.executeCalls(
+                    formatBytes32String('5'),
+                    [call],
+                    getWeightedSignaturesProof(
+                        encodeInterchainCallsBatch(formatBytes32String('5'), [call]),
+                        signers,
+                        signers.map(() => 1),
+                        2,
+                        signers,
+                    ),
+                    gasOptions,
                 ),
-            ),
-        ).to.be.revertedWithCustomError(interchainMultisig, 'InsufficientBalance');
+            interchainMultisig,
+            'InsufficientBalance',
+        );
     });
 
     it('should revert on execute if call to target fails', async () => {
@@ -76,61 +80,73 @@ describe('InterchainMultisig', () => {
 
         const call = ['Ethereum', interchainMultisig.address, targetContract.address, invalidCalldata, nativeValue];
 
-        await expect(
-            interchainMultisig.executeCalls(
-                formatBytes32String('6'),
-                [call],
-                getWeightedSignaturesProof(
-                    encodeInterchainCallsBatch(formatBytes32String('6'), [call]),
-                    signers,
-                    signers.map(() => 1),
-                    2,
-                    signers,
+        await expectRevert(
+            async (gasOptions) =>
+                interchainMultisig.executeCalls(
+                    formatBytes32String('6'),
+                    [call],
+                    getWeightedSignaturesProof(
+                        encodeInterchainCallsBatch(formatBytes32String('6'), [call]),
+                        signers,
+                        signers.map(() => 1),
+                        2,
+                        signers,
+                    ),
+                    {
+                        ...gasOptions,
+                        value: nativeValue,
+                    },
                 ),
-                {
-                    value: nativeValue,
-                },
-            ),
-        ).to.be.revertedWithCustomError(interchainMultisig, 'ExecutionFailed');
+            interchainMultisig,
+            'ExecutionFailed',
+        );
     });
 
     it('should not execute if different chain or executor', async () => {
         const call1 = ['Ethereum', targetContract.address, targetContract.address, calldata, nativeValue];
         const call2 = ['Polygon', interchainMultisig.address, targetContract.address, calldata, nativeValue];
 
-        await expect(
-            interchainMultisig.executeCalls(
-                formatBytes32String('7'),
-                [call1],
-                getWeightedSignaturesProof(
-                    encodeInterchainCallsBatch(formatBytes32String('7'), [call1]),
-                    signers,
-                    signers.map(() => 1),
-                    2,
-                    signers,
+        await expectRevert(
+            async (gasOptions) =>
+                interchainMultisig.executeCalls(
+                    formatBytes32String('7'),
+                    [call1],
+                    getWeightedSignaturesProof(
+                        encodeInterchainCallsBatch(formatBytes32String('7'), [call1]),
+                        signers,
+                        signers.map(() => 1),
+                        2,
+                        signers,
+                    ),
+                    {
+                        ...gasOptions,
+                        value: nativeValue,
+                    },
                 ),
-                {
-                    value: nativeValue,
-                },
-            ),
-        ).to.be.revertedWithCustomError(interchainMultisig, 'EmptyBatch');
+            interchainMultisig,
+            'EmptyBatch',
+        );
 
-        await expect(
-            interchainMultisig.executeCalls(
-                formatBytes32String('8'),
-                [call2],
-                getWeightedSignaturesProof(
-                    encodeInterchainCallsBatch(formatBytes32String('8'), [call2]),
-                    signers,
-                    signers.map(() => 1),
-                    2,
-                    signers,
+        await expectRevert(
+            async (gasOptions) =>
+                interchainMultisig.executeCalls(
+                    formatBytes32String('8'),
+                    [call2],
+                    getWeightedSignaturesProof(
+                        encodeInterchainCallsBatch(formatBytes32String('8'), [call2]),
+                        signers,
+                        signers.map(() => 1),
+                        2,
+                        signers,
+                    ),
+                    {
+                        ...gasOptions,
+                        value: nativeValue,
+                    },
                 ),
-                {
-                    value: nativeValue,
-                },
-            ),
-        ).to.be.revertedWithCustomError(interchainMultisig, 'EmptyBatch');
+            interchainMultisig,
+            'EmptyBatch',
+        );
     });
 
     it('should not execute same batch twice', async () => {
@@ -153,22 +169,26 @@ describe('InterchainMultisig', () => {
             ),
         ).to.emit(targetContract, 'TargetCalled');
 
-        await expect(
-            interchainMultisig.executeCalls(
-                formatBytes32String('9'),
-                [call],
-                getWeightedSignaturesProof(
-                    encodeInterchainCallsBatch(formatBytes32String('9'), [call]),
-                    signers,
-                    signers.map(() => 1),
-                    2,
-                    signers,
+        await expectRevert(
+            async (gasOptions) =>
+                interchainMultisig.executeCalls(
+                    formatBytes32String('9'),
+                    [call],
+                    getWeightedSignaturesProof(
+                        encodeInterchainCallsBatch(formatBytes32String('9'), [call]),
+                        signers,
+                        signers.map(() => 1),
+                        2,
+                        signers,
+                    ),
+                    {
+                        ...gasOptions,
+                        value: nativeValue,
+                    },
                 ),
-                {
-                    value: nativeValue,
-                },
-            ),
-        ).to.be.revertedWithCustomError(interchainMultisig, 'AlreadyExecuted');
+            interchainMultisig,
+            'AlreadyExecuted',
+        );
     });
 
     it('should execute function on target contract', async () => {
@@ -246,19 +266,23 @@ describe('InterchainMultisig', () => {
             0,
         ];
 
-        await expect(
-            interchainMultisig.executeCalls(
-                formatBytes32String('23'),
-                [call, anotherCall],
-                getWeightedSignaturesProof(
-                    encodeInterchainCallsBatch(formatBytes32String('23'), [call, anotherCall]),
-                    signers,
-                    signers.map(() => 1),
-                    2,
-                    signers,
+        await expectRevert(
+            async (gasOptions) =>
+                interchainMultisig.executeCalls(
+                    formatBytes32String('23'),
+                    [call, anotherCall],
+                    getWeightedSignaturesProof(
+                        encodeInterchainCallsBatch(formatBytes32String('23'), [call, anotherCall]),
+                        signers,
+                        signers.map(() => 1),
+                        2,
+                        signers,
+                    ),
+                    gasOptions,
                 ),
-            ),
-        ).to.be.revertedWithCustomError(interchainMultisig, 'InvalidVoidBatch');
+            interchainMultisig,
+            'InvalidVoidBatch',
+        );
 
         await expect(
             interchainMultisig.executeCalls(
@@ -276,19 +300,23 @@ describe('InterchainMultisig', () => {
             .to.emit(interchainMultisig, 'BatchVoided')
             .withArgs(formatBytes32String('24'));
 
-        await expect(
-            interchainMultisig.executeCalls(
-                formatBytes32String('24'),
-                [anotherCall],
-                getWeightedSignaturesProof(
-                    encodeInterchainCallsBatch(formatBytes32String('24'), [anotherCall]),
-                    signers,
-                    signers.map(() => 1),
-                    2,
-                    signers,
+        await expectRevert(
+            async (gasOptions) =>
+                interchainMultisig.executeCalls(
+                    formatBytes32String('24'),
+                    [anotherCall],
+                    getWeightedSignaturesProof(
+                        encodeInterchainCallsBatch(formatBytes32String('24'), [anotherCall]),
+                        signers,
+                        signers.map(() => 1),
+                        2,
+                        signers,
+                    ),
+                    gasOptions,
                 ),
-            ),
-        ).to.be.revertedWithCustomError(interchainMultisig, 'AlreadyExecuted');
+            interchainMultisig,
+            'AlreadyExecuted',
+        );
     });
 
     it('should rotate signers', async () => {
@@ -316,18 +344,22 @@ describe('InterchainMultisig', () => {
             ),
         ).to.emit(interchainMultisig, 'SignersRotated');
 
-        await expect(
-            interchainMultisig.executeCalls(
-                formatBytes32String('22'),
-                [call],
-                getWeightedSignaturesProof(
-                    encodeInterchainCallsBatch(formatBytes32String('22'), [call]),
-                    signers,
-                    signers.map(() => 1),
-                    2,
-                    signers,
+        await expectRevert(
+            async (gasOptions) =>
+                interchainMultisig.executeCalls(
+                    formatBytes32String('22'),
+                    [call],
+                    getWeightedSignaturesProof(
+                        encodeInterchainCallsBatch(formatBytes32String('22'), [call]),
+                        signers,
+                        signers.map(() => 1),
+                        2,
+                        signers,
+                    ),
+                    gasOptions,
                 ),
-            ),
-        ).to.be.revertedWithCustomError(interchainMultisig, 'InvalidSigners');
+            interchainMultisig,
+            'InvalidSigners',
+        );
     });
 });

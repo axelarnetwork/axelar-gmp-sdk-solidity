@@ -161,7 +161,7 @@ describe('AxelarGatewayWeightedAuth', () => {
                 ),
             );
 
-            await expect(isCurrentSigners).to.be.equal(true);
+            await expect(isCurrentSigners).to.be.true;
         });
     });
 

@@ -259,7 +259,7 @@ describe('BaseWeightedMultisig', () => {
         });
 
         it('should not allow transferring signership to address zero', async () => {
-            const newSigners = [ethers.constants.AddressZero, '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b'];
+            const newSigners = [AddressZero, '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b'];
 
             await expectRevert(
                 (gasOptions) => multisig.rotateSigners([newSigners, newSigners.map(() => 1), 2], gasOptions),

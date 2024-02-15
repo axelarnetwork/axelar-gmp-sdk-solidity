@@ -34,7 +34,7 @@ contract AxelarServiceGovernance is InterchainGovernance, IAxelarServiceGovernan
      * @param governanceChain_ The name of the governance chain
      * @param governanceAddress_ The address of the governance contract
      * @param minimumTimeDelay The minimum time delay for timelock operations
-     * @param multisig_ The list of initial signers
+     * @param multisig_ The multisig contract address
      */
     constructor(
         address gateway_,

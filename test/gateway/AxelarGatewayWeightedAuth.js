@@ -61,7 +61,7 @@ describe('AxelarGatewayWeightedAuth', () => {
                 ),
             );
 
-            expect(isCurrentSigners).to.be.equal(true);
+            expect(isCurrentSigners).to.be.true;
         });
 
         it('reject the proof for a non-existant epoch hash', async () => {

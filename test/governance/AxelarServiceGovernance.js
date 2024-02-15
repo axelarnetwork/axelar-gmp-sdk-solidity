@@ -7,7 +7,7 @@ const {
     constants: { HashZero },
 } = ethers;
 const { expect } = chai;
-const { isHardhat, getPayloadAndProposalHash, getEVMVersion } = require('../utils');
+const { isHardhat, getPayloadAndProposalHash, getEVMVersion, expectRevert } = require('../utils');
 
 describe('AxelarServiceGovernance', () => {
     let ownerWallet;
@@ -65,9 +65,18 @@ describe('AxelarServiceGovernance', () => {
 
         const [payload] = await getPayloadAndProposalHash(commandID, target, nativeValue, calldata, timeDelay);
 
-        await expect(
-            serviceGovernance.execute(govCommandID, governanceChain, governanceAddress.address, payload),
-        ).to.be.revertedWithCustomError(serviceGovernance, 'InvalidCommand');
+        await expectRevert(
+            async (gasOptions) =>
+                serviceGovernance.execute(
+                    govCommandID,
+                    governanceChain,
+                    governanceAddress.address,
+                    payload,
+                    gasOptions,
+                ),
+            serviceGovernance,
+            'InvalidCommand',
+        );
     });
 
     it('should schedule a proposal', async () => {
@@ -175,17 +184,23 @@ describe('AxelarServiceGovernance', () => {
     it('should revert on executing a multisig proposal if called by non-multisig', async () => {
         const target = targetContract.address;
 
-        await expect(
-            serviceGovernance.connect(ownerWallet).executeMultisigProposal(target, calldata, 0),
-        ).to.be.revertedWithCustomError(serviceGovernance, 'NotAuthorized');
+        await expectRevert(
+            async (gasOptions) =>
+                serviceGovernance.connect(ownerWallet).executeMultisigProposal(target, calldata, 0, gasOptions),
+            serviceGovernance,
+            'NotAuthorized',
+        );
     });
 
     it('should revert on executing a multisig proposal if proposal is not approved', async () => {
         const target = targetContract.address;
 
-        await expect(
-            serviceGovernance.connect(multisig).executeMultisigProposal(target, calldata, 0),
-        ).to.be.revertedWithCustomError(serviceGovernance, 'NotApproved');
+        await expectRevert(
+            async (gasOptions) =>
+                serviceGovernance.connect(multisig).executeMultisigProposal(target, calldata, 0, gasOptions),
+            serviceGovernance,
+            'NotApproved',
+        );
     });
 
     it('should revert on executing a multisig proposal if call to target fails', async () => {
@@ -208,9 +223,14 @@ describe('AxelarServiceGovernance', () => {
             .to.emit(serviceGovernance, 'MultisigApproved')
             .withArgs(proposalHash, target, invalidCalldata, nativeValue);
 
-        await expect(
-            serviceGovernance.connect(multisig).executeMultisigProposal(target, invalidCalldata, nativeValue),
-        ).to.be.revertedWithCustomError(serviceGovernance, 'ExecutionFailed');
+        await expectRevert(
+            async (gasOptions) =>
+                serviceGovernance
+                    .connect(multisig)
+                    .executeMultisigProposal(target, invalidCalldata, nativeValue, gasOptions),
+            serviceGovernance,
+            'ExecutionFailed',
+        );
     });
 
     it('should execute a multisig proposal', async () => {
@@ -285,7 +305,8 @@ describe('AxelarServiceGovernance', () => {
             .withArgs(multisig.address, newMultisig);
         await expect(await serviceGovernance.multisig()).to.equal(newMultisig);
 
-        await expect(serviceGovernance.connect(multisig).transferMultisig(newMultisig)).to.revertedWithCustomError(
+        await expectRevert(
+            async (gasOptions) => serviceGovernance.connect(multisig).transferMultisig(newMultisig, gasOptions),
             serviceGovernance,
             'NotAuthorized',
         );
@@ -296,9 +317,9 @@ describe('AxelarServiceGovernance', () => {
         const bytecodeHash = keccak256(bytecode);
 
         const expected = {
-            istanbul: '0xfc92aa2eb5252df742a3def252849a64ecff81f90f7ddb582402b9a98297b50c',
-            berlin: '0xed5b5847ffab15d65656ec15155b9659a33066b79baaf1607341e8cc9564edf3',
-            london: '0x1c5a0d5d253dcd81a4513cff87bf7dbbc4c739c390213bd410e3b92be7b5ab25',
+            istanbul: '0x822333c15344149010ff8a33bb12d460681c7585d302e367820efbddc09bbf0e',
+            berlin: '0x60dcb279614f8daf90b85ccf0418299eeda348b5b912c962f716a875e2dea99f',
+            london: '0xc698cd3f78aad337f11d2711ab771f548e6e43b279f5d6420563a633edec0f90',
         }[getEVMVersion()];
 
         expect(bytecodeHash).to.be.equal(expected);

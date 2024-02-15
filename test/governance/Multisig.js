@@ -33,7 +33,7 @@ describe('Multisig', () => {
         targetContract = await targetFactory.deploy().then((d) => d.deployed());
     });
 
-    it('should initialize the mint limiter with signer accounts and threshold', async () => {
+    it('should initialize the Multisig with signer accounts and threshold', async () => {
         const currentThreshold = 2;
 
         expect(await multisig.signerThreshold()).to.equal(currentThreshold);

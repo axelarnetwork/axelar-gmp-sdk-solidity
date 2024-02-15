@@ -83,6 +83,9 @@ const getWeightedSignaturesProof = async (data, accounts, weights, threshold, si
     );
 };
 
+const encodeInterchainCallsBatch = (batchId, calls) =>
+    defaultAbiCoder.encode(['uint256', 'tuple(string, address, address, bytes, uint256)[]'], [batchId, calls]);
+
 module.exports = {
     bigNumberToNumber: (bigNumber) => bigNumber.toNumber(),
 
@@ -123,4 +126,6 @@ module.exports = {
     getWeightedSignersSet,
 
     getWeightedSignaturesProof,
+
+    encodeInterchainCallsBatch,
 };

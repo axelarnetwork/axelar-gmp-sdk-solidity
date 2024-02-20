@@ -89,14 +89,6 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
             if (keccak256(bytes(call.chainName)) == chainNameHash && call.executor == address(this)) {
                 if (call.target == address(0)) revert InvalidTarget();
 
-                if (call.target == address(this) && bytes4(call.callData) == InterchainMultisig.voidBatch.selector)
-                    if (length == 1) {
-                        emit BatchVoided(batchId);
-                        return;
-                    } else {
-                        revert InvalidVoidBatch();
-                    }
-
                 // slither-disable-next-line reentrancy-events
                 emit CallExecuted(batchId, call.target, call.callData, call.nativeValue);
 
@@ -135,11 +127,11 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
     }
 
     /**
-     * @notice Voids the batch id from being executed in the future.
+     * @notice This functions is used to void a batch id from being executed in the future.
      * @notice This function is protected by the onlySelf modifier.
      * @dev This function is only callable by the contract itself after signature verification
      */
-    function voidBatch() external onlySelf {}
+    function noop() external onlySelf {}
 
     /**
      * @notice Allow contract to be able to receive native value

@@ -253,7 +253,7 @@ describe('InterchainMultisig', () => {
             'Ethereum',
             interchainMultisig.address,
             interchainMultisig.address,
-            interchainMultisig.interface.encodeFunctionData('voidBatch'),
+            interchainMultisig.interface.encodeFunctionData('noop'),
             0,
         ];
         const anotherCall = [
@@ -265,24 +265,6 @@ describe('InterchainMultisig', () => {
             ]),
             0,
         ];
-
-        await expectRevert(
-            async (gasOptions) =>
-                interchainMultisig.executeCalls(
-                    formatBytes32String('23'),
-                    [call, anotherCall],
-                    getWeightedSignaturesProof(
-                        encodeInterchainCallsBatch(formatBytes32String('23'), [call, anotherCall]),
-                        signers,
-                        signers.map(() => 1),
-                        2,
-                        signers,
-                    ),
-                    gasOptions,
-                ),
-            interchainMultisig,
-            'InvalidVoidBatch',
-        );
 
         await expect(
             interchainMultisig.executeCalls(
@@ -296,9 +278,7 @@ describe('InterchainMultisig', () => {
                     signers,
                 ),
             ),
-        )
-            .to.emit(interchainMultisig, 'BatchVoided')
-            .withArgs(formatBytes32String('24'));
+        );
 
         await expectRevert(
             async (gasOptions) =>

@@ -10,6 +10,7 @@ import { ICaller } from './ICaller.sol';
  * @notice This interface extends IMultisigBase by adding an execute function for multisignature transactions.
  */
 interface IInterchainMultisig is ICaller, IBaseWeightedMultisig {
+    error InvalidChainName();
     error NotSelf();
     error AlreadyExecuted();
     error InvalidPayloadType();

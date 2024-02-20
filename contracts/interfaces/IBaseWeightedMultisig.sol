@@ -18,7 +18,7 @@ interface IBaseWeightedMultisig {
      */
     function previousSignersRetention() external view returns (uint256);
 
-    /*
+    /**
      * @dev This function returns the current signers epoch
      * @return uint256 The current signers epoch
      */
@@ -38,7 +38,7 @@ interface IBaseWeightedMultisig {
      */
     function epochBySignerHash(bytes32 signerHash) external view returns (uint256);
 
-    /*
+    /**
      * @notice This function takes messageHash and proof data and reverts if proof is invalid
      * @param messageHash The hash of the message that was signed
      * @param proof The data containing signers with signatures

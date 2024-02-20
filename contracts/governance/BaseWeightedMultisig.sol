@@ -22,11 +22,11 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         mapping(bytes32 => uint256) epochBySignerHash;
     }
 
-    // @dev Previous signers retention. 0 means only the current signers are valid
-    // @return The number of epochs to keep the signers valid for signature verification
+    /// @dev Previous signers retention. 0 means only the current signers are valid
+    /// @return The number of epochs to keep the signers valid for signature verification
     uint256 public immutable previousSignersRetention;
 
-    // @param previousSignersRetentionEpochs The number of epochs to keep previous signers valid for signature verification
+    /// @param previousSignersRetentionEpochs The number of epochs to keep previous signers valid for signature verification
     constructor(uint256 previousSignersRetentionEpochs) {
         previousSignersRetention = previousSignersRetentionEpochs;
     }
@@ -35,7 +35,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
     |* External Functions *|
     \**********************/
 
-    /*
+    /**
      * @notice This function returns the current signers epoch
      * @return uint256 The current signers epoch
      */
@@ -43,7 +43,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         return _baseWeightedStorage().epoch;
     }
 
-    /*
+    /**
      * @notice This function returns the signers hash for a given epoch
      * @param signerEpoch The given epoch
      * @return bytes32 The signers hash for the given epoch
@@ -52,7 +52,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         return _baseWeightedStorage().signerHashByEpoch[signerEpoch];
     }
 
-    /*
+    /**
      * @notice This function returns the epoch for a given signers hash
      * @param signerHash The signers hash
      * @return uint256 The epoch for the given signers hash
@@ -61,15 +61,16 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         return _baseWeightedStorage().epochBySignerHash[signerHash];
     }
 
-    /*
+    /**
      * @notice This function takes messageHash and proof data and reverts if proof is invalid
      * @param messageHash The hash of the message that was signed
-     * @param weightedSigners The weighted signers data
-     * @param signatures The signatures data
-     * @return isLatestSigners True if provided signers are the current ones
+     * @param proof The multisig proof data
+     * @dev The proof data should have signers, weights, threshold and signatures encoded
+     * @dev The signers and signatures should be sorted by signer address in ascending order
+     * @return isLatestSigners True if the signers are the latest
      */
     function validateProof(bytes32 messageHash, bytes calldata proof) public view returns (bool isLatestSigners) {
-        if (proof.length < 32 * 4) revert InvalidProof();
+        if (proof.length < 32 * 7) revert InvalidProof();
 
         WeightedMultisigStorage storage slot = _baseWeightedStorage();
         // slither-disable-next-line uninitialized-local
@@ -97,9 +98,10 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
     |* Integration Functions *|
     \*************************/
 
-    /*
+    /**
      * @notice This function rotates the current signers with a new set of signers
-     * @param newWeightedSigners The new weighted signers data
+     * @param newSigners The new weighted signers data
+     * @dev The signers should be sorted by signer address in ascending order
      */
     function _rotateSigners(WeightedSigners memory newSigners) internal {
         WeightedMultisigStorage storage slot = _baseWeightedStorage();
@@ -138,11 +140,12 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
     |* Internal Functions *|
     \**********************/
 
-    /*
+    /**
      * @notice This function takes messageHash and proof data and reverts if proof is invalid
      * @param messageHash The hash of the message that was signed
-     * @param weighted The weighted signers data
+     * @param weightedSigners The weighted signers data
      * @param signatures The sorted signatures data
+     * @dev The signers and signatures should be sorted by signer address in ascending order
      */
     function _validateSignatures(
         bytes32 messageHash,
@@ -179,10 +182,10 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         revert LowSignaturesWeight();
     }
 
-    /*
+    /**
      * @notice This function checks if the provided signers are sorted and contain no duplicates
      * @param signers The signers to check
-     * @return True if the signers are sorted and contain no duplicates
+     * @return True if the signers are sorted in ascending order and contain no duplicates
      */
     function _isSortedAscAndContainsNoDuplicate(address[] memory signers) internal pure returns (bool) {
         uint256 signersLength = signers.length;
@@ -203,9 +206,9 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         return true;
     }
 
-    /*
-     * @notice Gets the storage slot for the WeightedMultisigStorage struct
-     * @return the storage slot
+    /**
+     * @notice Gets the specific storage location for preventing upgrade collisions
+     * @return slot containing the WeightedMultisigStorage struct
      */
     function _baseWeightedStorage() private pure returns (WeightedMultisigStorage storage slot) {
         assembly {

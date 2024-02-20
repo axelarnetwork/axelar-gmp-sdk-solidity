@@ -32,6 +32,8 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
      * @param weightedSigners The weighted signers payload
      */
     constructor(string memory chainName, WeightedSigners memory weightedSigners) BaseWeightedMultisig(0) {
+        if (bytes(chainName).length == 0) revert InvalidChainName();
+
         chainNameHash = keccak256(bytes(chainName));
 
         _rotateSigners(weightedSigners);
@@ -55,10 +57,12 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
     /**
      * @notice Executes an external contract call.
      * @notice This function is protected by the onlySigners requirement.
-     * @dev Calls a target address with specified calldata and passing provided native value.
+     * @dev Executes a batch of calls with specified target addresses, calldata and native value.
      * @param batchId The batchId of the multisig
      * @param calls The batch of calls to execute
      * @param proof The multisig proof data
+     * @dev The proof data should have signers, weights, threshold and signatures encoded
+     * @dev The signers and signatures should be sorted by signer address in ascending order
      */
     function executeCalls(
         bytes32 batchId,
@@ -122,7 +126,7 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
      * @param amount The amount of native value to withdraw
      * @dev This function is only callable by the contract itself after signature verification
      */
-    function withdraw(address recipient, uint256 amount) external payable onlySelf {
+    function withdraw(address recipient, uint256 amount) external onlySelf {
         if (recipient == address(0)) revert InvalidRecipient();
 
         if (amount > address(this).balance) revert InsufficientBalance();
@@ -135,7 +139,7 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
      * @notice This function is protected by the onlySelf modifier.
      * @dev This function is only callable by the contract itself after signature verification
      */
-    function voidBatch() external payable onlySelf {}
+    function voidBatch() external onlySelf {}
 
     /**
      * @notice Allow contract to be able to receive native value

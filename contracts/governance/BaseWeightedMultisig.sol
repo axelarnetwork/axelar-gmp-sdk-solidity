@@ -67,7 +67,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      * @param proof The multisig proof data
      * @dev The proof data should have signers, weights, threshold and signatures encoded
      * @dev The signers and signatures should be sorted by signer address in ascending order
-     * @return isLatestSigners True if the signers are the latest
+     * @return isLatestSigners True if the proof is from the latest signer set
      */
     function validateProof(bytes32 messageHash, bytes calldata proof) public view returns (bool isLatestSigners) {
         if (proof.length < 32 * 7) revert InvalidProof();

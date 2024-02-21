@@ -3,7 +3,6 @@
 pragma solidity ^0.8.0;
 
 interface IBaseWeightedMultisig {
-    error InvalidProof();
     error InvalidSigners();
     error InvalidThreshold();
     error MalformedSignatures();

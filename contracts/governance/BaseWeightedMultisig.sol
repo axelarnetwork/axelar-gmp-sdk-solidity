@@ -5,6 +5,10 @@ pragma solidity ^0.8.0;
 import { IBaseWeightedMultisig } from '../interfaces/IBaseWeightedMultisig.sol';
 import { ECDSA } from '../libs/ECDSA.sol';
 
+/**
+    @title BaseWeightedMultisig Contract
+    @notice Base contract to build a weighted multisig verification
+*/
 abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
     // keccak256('WeightedMultisig.Storage');
     bytes32 internal constant BASE_WEIGHTED_STORAGE_LOCATION =
@@ -70,8 +74,6 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      * @return isLatestSigners True if the proof is from the latest signer set
      */
     function validateProof(bytes32 messageHash, bytes calldata proof) public view returns (bool isLatestSigners) {
-        if (proof.length < 32 * 7) revert InvalidProof();
-
         WeightedMultisigStorage storage slot = _baseWeightedStorage();
         // slither-disable-next-line uninitialized-local
         WeightedSigners memory weightedSet;

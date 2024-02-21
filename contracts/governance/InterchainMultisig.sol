@@ -83,7 +83,7 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
         uint256 executedCalls = 0;
 
         for (uint256 i; i < length; ++i) {
-            Call memory call = calls[i];
+            Call calldata call = calls[i];
 
             // check if the call is for this contract and chain
             if (keccak256(bytes(call.chainName)) == chainNameHash && call.executor == address(this)) {

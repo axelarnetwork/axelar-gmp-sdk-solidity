@@ -127,7 +127,7 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
     }
 
     /**
-     * @notice This functions is used to void a batch id from being executed in the future.
+     * @notice This function can be used to void a batch id from being executed in the future. This can be helpful to void an already signed but not yet executed batch.
      * @notice This function is protected by the onlySelf modifier.
      * @dev This function is only callable by the contract itself after signature verification
      */

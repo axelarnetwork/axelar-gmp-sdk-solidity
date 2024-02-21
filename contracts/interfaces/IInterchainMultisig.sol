@@ -15,7 +15,6 @@ interface IInterchainMultisig is ICaller, IBaseWeightedMultisig {
     error AlreadyExecuted();
     error InvalidPayloadType();
     error InvalidChainNameHash();
-    error InvalidTarget();
     error InvalidVoidBatch();
     error EmptyBatch();
     error InvalidRecipient();

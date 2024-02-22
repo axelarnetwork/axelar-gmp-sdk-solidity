@@ -3,7 +3,7 @@ const { ethers, network } = require('hardhat');
 const { sortBy } = require('lodash');
 const { getAddresses, encodeInterchainCallsBatch, getWeightedSignaturesProof, expectRevert } = require('../utils');
 const {
-    utils: { formatBytes32String },
+    utils: { keccak256, formatBytes32String },
 } = ethers;
 const { expect } = chai;
 
@@ -152,6 +152,8 @@ describe('InterchainMultisig', () => {
     it('should not execute same batch twice', async () => {
         const call = ['Ethereum', interchainMultisig.address, targetContract.address, calldata, nativeValue];
 
+        await expect(await interchainMultisig.isBatchExecuted(formatBytes32String('9'))).to.be.equal(false);
+
         await expect(
             interchainMultisig.executeCalls(
                 formatBytes32String('9'),
@@ -168,6 +170,8 @@ describe('InterchainMultisig', () => {
                 },
             ),
         ).to.emit(targetContract, 'TargetCalled');
+
+        await expect(await interchainMultisig.isBatchExecuted(formatBytes32String('9'))).to.be.equal(true);
 
         await expectRevert(
             async (gasOptions) =>
@@ -192,14 +196,17 @@ describe('InterchainMultisig', () => {
     });
 
     it('should execute function on target contract', async () => {
-        const call = ['Ethereum', interchainMultisig.address, targetContract.address, calldata, nativeValue];
+        const calls = [
+            ['Ethereum', interchainMultisig.address, targetContract.address, calldata, nativeValue],
+            ['Optimism', interchainMultisig.address, targetContract.address, calldata, nativeValue],
+        ];
 
         await expect(
             await interchainMultisig.executeCalls(
                 formatBytes32String('10'),
-                [call],
+                calls,
                 getWeightedSignaturesProof(
-                    encodeInterchainCallsBatch(formatBytes32String('10'), [call]),
+                    encodeInterchainCallsBatch(formatBytes32String('10'), calls),
                     signers,
                     signers.map(() => 1),
                     2,
@@ -209,7 +216,17 @@ describe('InterchainMultisig', () => {
                     value: nativeValue,
                 },
             ),
-        ).to.emit(targetContract, 'TargetCalled');
+        )
+            .to.emit(targetContract, 'TargetCalled')
+            .and.to.emit(interchainMultisig, 'CallExecuted')
+            .withArgs(formatBytes32String('10'), targetContract.address, calldata, nativeValue)
+            .and.to.emit(interchainMultisig, 'BatchExecuted')
+            .withArgs(
+                formatBytes32String('10'),
+                keccak256(encodeInterchainCallsBatch(formatBytes32String('10'), calls)),
+                1,
+                2,
+            );
     });
 
     it('should withdraw native value', async () => {

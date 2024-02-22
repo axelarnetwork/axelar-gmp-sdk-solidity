@@ -70,19 +70,17 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
         bytes calldata proof
     ) external payable {
         InterchainMultisigStorage storage slot = _interchainMultisigStorage();
-        bytes32 messageHash = ECDSA.toEthSignedMessageHash(keccak256(abi.encode(batchId, calls)));
-        uint256 length = calls.length;
+        bytes32 batchHash = keccak256(abi.encode(batchId, calls));
+        uint256 callsLength = calls.length;
 
-        validateProof(messageHash, proof);
+        validateProof(ECDSA.toEthSignedMessageHash(batchHash), proof);
 
         if (slot.isBatchExecuted[batchId]) revert AlreadyExecuted();
         slot.isBatchExecuted[batchId] = true;
 
-        emit BatchExecuted(batchId, messageHash, length);
+        uint256 callsExecuted = 0;
 
-        uint256 executedCalls = 0;
-
-        for (uint256 i; i < length; ++i) {
+        for (uint256 i; i < callsLength; ++i) {
             Call calldata call = calls[i];
 
             // check if the call is for this contract and chain
@@ -92,11 +90,13 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
 
                 _call(call.target, call.callData, call.nativeValue);
 
-                ++executedCalls;
+                ++callsExecuted;
             }
         }
 
-        if (executedCalls == 0) revert EmptyBatch();
+        if (callsExecuted == 0) revert EmptyBatch();
+
+        emit BatchExecuted(batchId, batchHash, callsExecuted, callsLength);
     }
 
     /**

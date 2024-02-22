@@ -27,7 +27,12 @@ interface IInterchainMultisig is ICaller, IBaseWeightedMultisig {
         uint256 nativeValue;
     }
 
-    event BatchExecuted(bytes32 indexed batchId, bytes32 indexed messageHash, uint256 indexed length);
+    event BatchExecuted(
+        bytes32 indexed batchId,
+        bytes32 indexed batchHash,
+        uint256 callsExecuted,
+        uint256 indexed batchLength
+    );
 
     event CallExecuted(bytes32 indexed batchId, address indexed target, bytes callData, uint256 nativeValue);
 

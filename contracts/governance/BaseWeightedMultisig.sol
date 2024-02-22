@@ -69,9 +69,10 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      * @notice This function takes messageHash and proof data and reverts if proof is invalid
      * @param messageHash The hash of the message that was signed
      * @param proof The multisig proof data
-     * @dev The proof data should have signers, weights, threshold and signatures encoded
-     * @dev The signers and signatures should be sorted by signer address in ascending order
      * @return isLatestSigners True if the proof is from the latest signer set
+     * @dev The proof data should have signers, weights, threshold and signatures encoded
+     *      The signers and signatures should be sorted by signer address in ascending order
+     *      Example: abi.encode([0x11..., 0x22..., 0x33...], [1, 1, 1], 2, [signature1, signature3])
      */
     function validateProof(bytes32 messageHash, bytes calldata proof) public view returns (bool isLatestSigners) {
         WeightedMultisigStorage storage slot = _baseWeightedStorage();

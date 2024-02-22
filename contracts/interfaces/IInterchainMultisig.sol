@@ -10,11 +10,11 @@ import { ICaller } from './ICaller.sol';
  * @notice This interface extends IMultisigBase by adding an execute function for multisignature transactions.
  */
 interface IInterchainMultisig is ICaller, IBaseWeightedMultisig {
+    error InvalidChainName();
     error NotSelf();
     error AlreadyExecuted();
     error InvalidPayloadType();
     error InvalidChainNameHash();
-    error InvalidTarget();
     error InvalidVoidBatch();
     error EmptyBatch();
     error InvalidRecipient();
@@ -27,11 +27,14 @@ interface IInterchainMultisig is ICaller, IBaseWeightedMultisig {
         uint256 nativeValue;
     }
 
-    event BatchExecuted(bytes32 indexed batchId, bytes32 indexed messageHash, uint256 indexed length);
+    event BatchExecuted(
+        bytes32 indexed batchId,
+        bytes32 indexed batchHash,
+        uint256 callsExecuted,
+        uint256 indexed batchLength
+    );
 
     event CallExecuted(bytes32 indexed batchId, address indexed target, bytes callData, uint256 nativeValue);
-
-    event BatchVoided(bytes32 indexed batchId);
 
     /**
      * @notice Checks if a payload has been executed

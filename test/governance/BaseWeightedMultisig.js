@@ -133,6 +133,29 @@ describe('BaseWeightedMultisig', () => {
             );
         });
 
+        it('reject the proof if signatures are missing', async () => {
+            const data = '0x123abc123abc';
+
+            const message = hashMessage(arrayify(keccak256(data)));
+
+            await expectRevert(
+                async (gasOptions) =>
+                    multisig.validateProof(
+                        message,
+                        await getWeightedSignaturesProof(
+                            data,
+                            signers,
+                            signers.map(() => 1),
+                            threshold,
+                            [],
+                        ),
+                        gasOptions,
+                    ),
+                multisig,
+                'MalformedSignatures',
+            );
+        });
+
         it('validate the proof for a single signer', async () => {
             await expect(multisig.rotateSigners([getAddresses(signers), signers.map(() => 1), 1])).to.emit(
                 multisig,
@@ -174,11 +197,9 @@ describe('BaseWeightedMultisig', () => {
             await newMultisig.deployTransaction.wait(network.config.confirmations);
 
             for (let i = 0; i < initialSigners.length; i++) {
-                await newMultisig.rotateSigners([
-                    getAddresses(initialSigners[i]),
-                    initialSigners[i].map(() => i + 1),
-                    (i + 1) * 2,
-                ]);
+                await newMultisig
+                    .rotateSigners([getAddresses(initialSigners[i]), initialSigners[i].map(() => i + 1), (i + 1) * 2])
+                    .then((tx) => tx.wait());
             }
         });
 
@@ -335,12 +356,22 @@ describe('BaseWeightedMultisig', () => {
             ];
 
             await expectRevert(
-                (gasOptions) => multisig.rotateSigners([newSigners, newSigners.map(() => 1), 0], gasOptions),
+                (gasOptions) => multisig.rotateSigners([newSigners, [1], 2], gasOptions),
+                multisig,
+                'InvalidWeights',
+            );
+            await expectRevert(
+                (gasOptions) => multisig.rotateSigners([newSigners, [1, 0], 2], gasOptions),
+                multisig,
+                'InvalidWeights',
+            );
+            await expectRevert(
+                (gasOptions) => multisig.rotateSigners([newSigners, [1, 1], 0], gasOptions),
                 multisig,
                 'InvalidThreshold',
             );
             await expectRevert(
-                (gasOptions) => multisig.rotateSigners([newSigners, newSigners.map(() => 1), 3], gasOptions),
+                (gasOptions) => multisig.rotateSigners([newSigners, [1, 1], 3], gasOptions),
                 multisig,
                 'InvalidThreshold',
             );

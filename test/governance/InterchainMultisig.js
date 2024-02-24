@@ -3,6 +3,7 @@ const { ethers, network } = require('hardhat');
 const { sortBy } = require('lodash');
 const { getAddresses, encodeInterchainCallsBatch, getWeightedSignaturesProof, expectRevert } = require('../utils');
 const {
+    constants: { AddressZero },
     utils: { keccak256, formatBytes32String },
 } = ethers;
 const { expect } = chai;
@@ -52,6 +53,19 @@ describe('InterchainMultisig', () => {
         await testMultisigFactory.deploy('Ethereum', [getAddresses(signers), signers.map(() => 1), threshold]);
     });
 
+    it('should revert on invalid chain name', async () => {
+        await expectRevert(
+            async (gasOptions) =>
+                interchainMultisigFactory.deploy(
+                    '',
+                    [getAddresses(signers), signers.map(() => 1), threshold],
+                    gasOptions,
+                ),
+            interchainMultisigFactory,
+            'InvalidChainName',
+        );
+    });
+
     it('should revert on execute with insufficient value sent', async () => {
         const call = ['Ethereum', interchainMultisig.address, targetContract.address, calldata, nativeValue];
 
@@ -96,6 +110,81 @@ describe('InterchainMultisig', () => {
                         ...gasOptions,
                         value: nativeValue,
                     },
+                ),
+            interchainMultisig,
+            'ExecutionFailed',
+        );
+    });
+
+    it('should revert if onlySelf methods are called directly', async () => {
+        await expectRevert(
+            async (gasOptions) =>
+                interchainMultisig.rotateSigners(
+                    [getAddresses(newSigners), newSigners.map(() => 1), threshold],
+                    gasOptions,
+                ),
+            interchainMultisig,
+            'NotSelf',
+        );
+
+        await expectRevert(
+            async (gasOptions) => interchainMultisig.withdraw(owner.address, 100, gasOptions),
+            interchainMultisig,
+            'NotSelf',
+        );
+
+        await expectRevert(async (gasOptions) => interchainMultisig.noop(gasOptions), interchainMultisig, 'NotSelf');
+    });
+
+    it('should revert on invalid withdraw', async () => {
+        const recipient = signers[0].address;
+
+        const call = [
+            'Ethereum',
+            interchainMultisig.address,
+            interchainMultisig.address,
+            interchainMultisig.interface.encodeFunctionData('withdraw', [recipient, nativeValue]),
+            0,
+        ];
+        const invalidCall = [
+            'Ethereum',
+            interchainMultisig.address,
+            interchainMultisig.address,
+            interchainMultisig.interface.encodeFunctionData('withdraw', [AddressZero, nativeValue]),
+            0,
+        ];
+
+        await expectRevert(
+            async (gasOptions) =>
+                await interchainMultisig.executeCalls(
+                    formatBytes32String('7'),
+                    [call],
+                    getWeightedSignaturesProof(
+                        encodeInterchainCallsBatch(formatBytes32String('7'), [call]),
+                        signers,
+                        signers.map(() => 1),
+                        2,
+                        signers,
+                    ),
+                    gasOptions,
+                ),
+            interchainMultisig,
+            'ExecutionFailed',
+        );
+
+        await expectRevert(
+            async (gasOptions) =>
+                await interchainMultisig.executeCalls(
+                    formatBytes32String('7'),
+                    [invalidCall],
+                    getWeightedSignaturesProof(
+                        encodeInterchainCallsBatch(formatBytes32String('7'), [invalidCall]),
+                        signers,
+                        signers.map(() => 1),
+                        2,
+                        signers,
+                    ),
+                    gasOptions,
                 ),
             interchainMultisig,
             'ExecutionFailed',

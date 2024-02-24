@@ -33,6 +33,7 @@ const optimizerSettings = {
         },
     },
 };
+
 const compilerSettings = {
     version: '0.8.19',
     settings: {

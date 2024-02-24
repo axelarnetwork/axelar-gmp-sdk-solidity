@@ -10,9 +10,9 @@ import { ECDSA } from '../libs/ECDSA.sol';
     @notice Base contract to build a weighted multisig verification
 */
 abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
-    // keccak256('WeightedMultisig.Storage');
-    bytes32 internal constant BASE_WEIGHTED_STORAGE_LOCATION =
-        0xa233fbcae4dcfad00091a9d8ff9561f12b3db9ec7227470684b4617d40a38746;
+    // keccak256('BaseWeightedMultisig.Slot');
+    bytes32 internal constant BASE_WEIGHTED_MULTISIG_SLOT =
+        0x457f3fc26bf430b020fe76358b1bfaba57e1657ace718da6437cda9934eabfe9;
 
     struct WeightedSigners {
         address[] signers;
@@ -215,7 +215,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      */
     function _baseWeightedStorage() private pure returns (WeightedMultisigStorage storage slot) {
         assembly {
-            slot.slot := BASE_WEIGHTED_STORAGE_LOCATION
+            slot.slot := BASE_WEIGHTED_MULTISIG_SLOT
         }
     }
 }

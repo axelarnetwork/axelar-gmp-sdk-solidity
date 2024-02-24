@@ -29,16 +29,16 @@ describe('BaseWeightedMultisig', () => {
         previousSigners.push(sortBy(wallets.slice(0, 2), (wallet) => wallet.address.toLowerCase()));
 
         multisigFactory = await ethers.getContractFactory('TestBaseWeightedMultisig', owner);
-    });
 
-    beforeEach(async () => {
         const initialSigners = [...previousSigners, signers];
 
         multisig = await multisigFactory.deploy(0);
         await multisig.deployTransaction.wait(network.config.confirmations);
 
         for (let i = 0; i < initialSigners.length; i++) {
-            await multisig.rotateSigners([getAddresses(initialSigners[i]), initialSigners[i].map(() => 1), threshold]);
+            await multisig
+                .rotateSigners([getAddresses(initialSigners[i]), initialSigners[i].map(() => 1), threshold])
+                .then((tx) => tx.wait());
         }
     });
 
@@ -245,14 +245,14 @@ describe('BaseWeightedMultisig', () => {
                 '0xb7900E8Ec64A1D1315B6D4017d4b1dcd36E6Ea88',
             ];
 
-            await expect(await multisig.epoch()).to.be.equal(2);
+            await expect(await multisig.epoch()).to.be.equal(3);
 
             await expect(multisig.rotateSigners([newSigners, newSigners.map(() => 1), 2])).to.emit(
                 multisig,
                 'SignersRotated',
             );
 
-            await expect(await multisig.epoch()).to.be.equal(3);
+            await expect(await multisig.epoch()).to.be.equal(4);
         });
 
         it('should revert if new signers length is zero', async () => {
@@ -351,7 +351,7 @@ describe('BaseWeightedMultisig', () => {
         it('should expose correct hashes and epoch', async () => {
             const signersHistory = [...previousSigners, signers];
 
-            await expect(await multisig.epoch()).to.be.equal(2);
+            await expect(await multisig.epoch()).to.be.equal(5);
 
             await Promise.all(
                 signersHistory.map(async (signers, i) => {

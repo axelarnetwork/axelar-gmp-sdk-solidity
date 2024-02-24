@@ -249,17 +249,19 @@ describe('InterchainMultisig', () => {
 
         const oldBalance = await ethers.provider.getBalance(recipient);
 
-        await interchainMultisig.executeCalls(
-            formatBytes32String('11'),
-            [call],
-            getWeightedSignaturesProof(
-                encodeInterchainCallsBatch(formatBytes32String('11'), [call]),
-                signers,
-                signers.map(() => 1),
-                2,
-                signers,
-            ),
-        );
+        await interchainMultisig
+            .executeCalls(
+                formatBytes32String('11'),
+                [call],
+                getWeightedSignaturesProof(
+                    encodeInterchainCallsBatch(formatBytes32String('11'), [call]),
+                    signers,
+                    signers.map(() => 1),
+                    2,
+                    signers,
+                ),
+            )
+            .then((tx) => tx.wait());
 
         const newBalance = await ethers.provider.getBalance(recipient);
         expect(newBalance).to.equal(oldBalance.add(nativeValue));
@@ -283,8 +285,8 @@ describe('InterchainMultisig', () => {
             0,
         ];
 
-        await expect(
-            interchainMultisig.executeCalls(
+        await interchainMultisig
+            .executeCalls(
                 formatBytes32String('24'),
                 [call],
                 getWeightedSignaturesProof(
@@ -294,8 +296,8 @@ describe('InterchainMultisig', () => {
                     2,
                     signers,
                 ),
-            ),
-        );
+            )
+            .then((tx) => tx.wait());
 
         await expectRevert(
             async (gasOptions) =>

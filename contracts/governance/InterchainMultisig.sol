@@ -13,9 +13,9 @@ import { BaseWeightedMultisig } from './BaseWeightedMultisig.sol';
  * @notice Weighted Multisig executor to call functions on any contract
  */
 contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig {
-    // keccak256('InterchainMultisig.Storage')
-    bytes32 internal constant INTERCHAIN_MULTISIG_STORAGE =
-        0x5a9dc2248a56f285e6221da431581a5990380ebfa07727563571b2be1517a23e;
+    // keccak256('InterchainMultisig.Slot')
+    bytes32 internal constant INTERCHAIN_MULTISIG_SLOT =
+        0xee4c79745c2938ff2a269d76f8921d82df3b09446024c758a2e0e593fb2a65a8;
 
     using SafeNativeTransfer for address;
 
@@ -141,7 +141,7 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
      */
     function _interchainMultisigStorage() private pure returns (InterchainMultisigStorage storage slot) {
         assembly {
-            slot.slot := INTERCHAIN_MULTISIG_STORAGE
+            slot.slot := INTERCHAIN_MULTISIG_SLOT
         }
     }
 }

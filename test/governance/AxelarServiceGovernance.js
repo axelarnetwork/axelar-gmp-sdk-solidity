@@ -232,12 +232,10 @@ describe('AxelarServiceGovernance', () => {
 
         await expectRevert(
             async (gasOptions) =>
-                serviceGovernance
-                    .connect(multisig)
-                    .executeMultisigProposal(target, invalidCalldata, nativeValue, {
-                        value: nativeValue,
-                        ...gasOptions,
-                    }),
+                serviceGovernance.connect(multisig).executeMultisigProposal(target, invalidCalldata, nativeValue, {
+                    value: nativeValue,
+                    ...gasOptions,
+                }),
             serviceGovernance,
             'ExecutionFailed',
         );
@@ -258,7 +256,11 @@ describe('AxelarServiceGovernance', () => {
             .to.emit(serviceGovernance, 'MultisigApproved')
             .withArgs(proposalHash, target, calldata, nativeValue);
 
-        await expect(serviceGovernance.connect(multisig).executeMultisigProposal(target, calldata, nativeValue, {value: nativeValue}))
+        await expect(
+            serviceGovernance
+                .connect(multisig)
+                .executeMultisigProposal(target, calldata, nativeValue, { value: nativeValue }),
+        )
             .to.emit(serviceGovernance, 'MultisigExecuted')
             .withArgs(proposalHash, target, calldata, nativeValue)
             .and.to.emit(targetContract, 'TargetCalled');

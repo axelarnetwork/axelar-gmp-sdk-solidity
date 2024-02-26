@@ -17,9 +17,9 @@ describe('AxelarGatewayWeightedAuth', () => {
     let signers;
     const previousSigners = [];
 
-    let multisigFactory;
+    let gatewayAuthFactory;
 
-    let multisig;
+    let gatewayAuth;
 
     before(async () => {
         wallets = await ethers.getSigners();
@@ -28,7 +28,7 @@ describe('AxelarGatewayWeightedAuth', () => {
         signers = sortBy(wallets.slice(1, 3), (wallet) => wallet.address.toLowerCase());
         previousSigners.push(sortBy(wallets.slice(0, 2), (wallet) => wallet.address.toLowerCase()));
 
-        multisigFactory = await ethers.getContractFactory('AxelarGatewayWeightedAuth', owner);
+        gatewayAuthFactory = await ethers.getContractFactory('AxelarGatewayWeightedAuth', owner);
 
         const initialSigners = [...previousSigners, signers];
         const initialSignerSets = initialSigners.map((signers) =>
@@ -39,8 +39,8 @@ describe('AxelarGatewayWeightedAuth', () => {
             ),
         );
 
-        multisig = await multisigFactory.deploy(owner.address, initialSignerSets);
-        await multisig.deployTransaction.wait(network.config.confirmations);
+        gatewayAuth = await gatewayAuthFactory.deploy(owner.address, initialSignerSets);
+        await gatewayAuth.deployTransaction.wait(network.config.confirmations);
     });
 
     describe('validateProof', () => {
@@ -49,7 +49,7 @@ describe('AxelarGatewayWeightedAuth', () => {
 
             const message = hashMessage(arrayify(keccak256(data)));
 
-            const isCurrentSigners = await multisig.validateProof(
+            const isCurrentSigners = await gatewayAuth.validateProof(
                 message,
                 await getWeightedSignaturesProof(
                     data,
@@ -72,7 +72,7 @@ describe('AxelarGatewayWeightedAuth', () => {
 
             await expectRevert(
                 async (gasOptions) =>
-                    multisig.validateProof(
+                    gatewayAuth.validateProof(
                         message,
                         await getWeightedSignaturesProof(
                             data,
@@ -83,7 +83,7 @@ describe('AxelarGatewayWeightedAuth', () => {
                         ),
                         gasOptions,
                     ),
-                multisig,
+                gatewayAuth,
                 'InvalidSigners',
             );
         });
@@ -95,7 +95,7 @@ describe('AxelarGatewayWeightedAuth', () => {
 
             await expectRevert(
                 async (gasOptions) =>
-                    multisig.validateProof(
+                    gatewayAuth.validateProof(
                         message,
                         await getWeightedSignaturesProof(
                             data,
@@ -106,7 +106,7 @@ describe('AxelarGatewayWeightedAuth', () => {
                         ),
                         gasOptions,
                     ),
-                multisig,
+                gatewayAuth,
                 'LowSignaturesWeight',
             );
         });
@@ -118,7 +118,7 @@ describe('AxelarGatewayWeightedAuth', () => {
 
             await expectRevert(
                 async (gasOptions) =>
-                    multisig.validateProof(
+                    gatewayAuth.validateProof(
                         message,
                         await getWeightedSignaturesProof(
                             data,
@@ -129,27 +129,27 @@ describe('AxelarGatewayWeightedAuth', () => {
                         ),
                         gasOptions,
                     ),
-                multisig,
+                gatewayAuth,
                 'MalformedSignatures',
             );
         });
 
         it('validate the proof for a single signer', async () => {
             await expect(
-                multisig.transferOperatorship(
+                gatewayAuth.transferOperatorship(
                     getWeightedSignersSet(
                         getAddresses(signers),
                         signers.map(() => 1),
                         1,
                     ),
                 ),
-            ).to.emit(multisig, 'SignersRotated');
+            ).to.emit(gatewayAuth, 'SignersRotated');
 
             const data = '0x123abc123abc';
 
             const message = hashMessage(arrayify(keccak256(data)));
 
-            const isCurrentSigners = await multisig.validateProof(
+            const isCurrentSigners = await gatewayAuth.validateProof(
                 message,
                 await getWeightedSignaturesProof(
                     data,
@@ -171,15 +171,20 @@ describe('AxelarGatewayWeightedAuth', () => {
                 '0xb7900E8Ec64A1D1315B6D4017d4b1dcd36E6Ea88',
             ];
 
+            const prevEpoch = Number(await gatewayAuth.epoch());
+
             await expect(
-                multisig.transferOperatorship(
+                gatewayAuth.transferOperatorship(
                     getWeightedSignersSet(
                         newSigners,
                         newSigners.map(() => 1),
                         2,
                     ),
                 ),
-            ).to.emit(multisig, 'SignersRotated');
+            ).to.emit(gatewayAuth, 'SignersRotated');
+
+            const currentEpoch = Number(await gatewayAuth.epoch());
+            expect(currentEpoch).to.be.equal(prevEpoch + 1);
         });
 
         it('should revert if new signers length is zero', async () => {
@@ -187,7 +192,7 @@ describe('AxelarGatewayWeightedAuth', () => {
 
             await expectRevert(
                 (gasOptions) =>
-                    multisig.transferOperatorship(
+                    gatewayAuth.transferOperatorship(
                         getWeightedSignersSet(
                             newSigners,
                             newSigners.map(() => 1),
@@ -195,7 +200,7 @@ describe('AxelarGatewayWeightedAuth', () => {
                         ),
                         gasOptions,
                     ),
-                multisig,
+                gatewayAuth,
                 'InvalidSigners',
             );
         });
@@ -205,7 +210,7 @@ describe('AxelarGatewayWeightedAuth', () => {
 
             await expectRevert(
                 (gasOptions) =>
-                    multisig.transferOperatorship(
+                    gatewayAuth.transferOperatorship(
                         getWeightedSignersSet(
                             newSigners,
                             newSigners.map(() => 1),
@@ -213,7 +218,7 @@ describe('AxelarGatewayWeightedAuth', () => {
                         ),
                         gasOptions,
                     ),
-                multisig,
+                gatewayAuth,
                 'InvalidSigners',
             );
         });
@@ -226,7 +231,7 @@ describe('AxelarGatewayWeightedAuth', () => {
 
             await expectRevert(
                 (gasOptions) =>
-                    multisig.transferOperatorship(
+                    gatewayAuth.transferOperatorship(
                         getWeightedSignersSet(
                             newSigners,
                             newSigners.map(() => 1),
@@ -234,7 +239,7 @@ describe('AxelarGatewayWeightedAuth', () => {
                         ),
                         gasOptions,
                     ),
-                multisig,
+                gatewayAuth,
                 'InvalidSigners',
             );
         });
@@ -247,7 +252,7 @@ describe('AxelarGatewayWeightedAuth', () => {
 
             await expectRevert(
                 (gasOptions) =>
-                    multisig.transferOperatorship(
+                    gatewayAuth.transferOperatorship(
                         getWeightedSignersSet(
                             newSigners,
                             newSigners.map(() => 1),
@@ -255,7 +260,7 @@ describe('AxelarGatewayWeightedAuth', () => {
                         ),
                         gasOptions,
                     ),
-                multisig,
+                gatewayAuth,
                 'InvalidSigners',
             );
         });
@@ -264,14 +269,14 @@ describe('AxelarGatewayWeightedAuth', () => {
             const updatedSigners = getAddresses(signers.slice(0, threshold));
 
             await expect(
-                multisig.transferOperatorship(
+                gatewayAuth.transferOperatorship(
                     getWeightedSignersSet(
                         updatedSigners,
                         updatedSigners.map(() => 2),
                         threshold,
                     ),
                 ),
-            ).to.emit(multisig, 'SignersRotated');
+            ).to.emit(gatewayAuth, 'SignersRotated');
         });
 
         it('should not allow transferring signers with invalid threshold', async () => {
@@ -282,7 +287,7 @@ describe('AxelarGatewayWeightedAuth', () => {
 
             await expectRevert(
                 (gasOptions) =>
-                    multisig.transferOperatorship(
+                    gatewayAuth.transferOperatorship(
                         getWeightedSignersSet(
                             newSigners,
                             newSigners.map(() => 1),
@@ -290,12 +295,12 @@ describe('AxelarGatewayWeightedAuth', () => {
                         ),
                         gasOptions,
                     ),
-                multisig,
+                gatewayAuth,
                 'InvalidThreshold',
             );
             await expectRevert(
                 (gasOptions) =>
-                    multisig.transferOperatorship(
+                    gatewayAuth.transferOperatorship(
                         getWeightedSignersSet(
                             newSigners,
                             newSigners.map(() => 1),
@@ -303,7 +308,7 @@ describe('AxelarGatewayWeightedAuth', () => {
                         ),
                         gasOptions,
                     ),
-                multisig,
+                gatewayAuth,
                 'InvalidThreshold',
             );
         });
@@ -316,7 +321,7 @@ describe('AxelarGatewayWeightedAuth', () => {
 
             await expectRevert(
                 (gasOptions) =>
-                    multisig.transferOperatorship(
+                    gatewayAuth.transferOperatorship(
                         getWeightedSignersSet(
                             newSigners,
                             newSigners.map(() => 1),
@@ -324,12 +329,12 @@ describe('AxelarGatewayWeightedAuth', () => {
                         ),
                         gasOptions,
                     ),
-                multisig,
+                gatewayAuth,
                 'InvalidThreshold',
             );
             await expectRevert(
                 (gasOptions) =>
-                    multisig.transferOperatorship(
+                    gatewayAuth.transferOperatorship(
                         getWeightedSignersSet(
                             newSigners,
                             newSigners.map(() => 1),
@@ -337,7 +342,7 @@ describe('AxelarGatewayWeightedAuth', () => {
                         ),
                         gasOptions,
                     ),
-                multisig,
+                gatewayAuth,
                 'InvalidThreshold',
             );
         });
@@ -356,8 +361,8 @@ describe('AxelarGatewayWeightedAuth', () => {
                             threshold,
                         ),
                     );
-                    expect(await multisig.signerHashByEpoch(i + 1)).to.be.equal(hash);
-                    expect(await multisig.epochBySignerHash(hash)).to.be.equal(i + 1);
+                    expect(await gatewayAuth.signerHashByEpoch(i + 1)).to.be.equal(hash);
+                    expect(await gatewayAuth.epochBySignerHash(hash)).to.be.equal(i + 1);
                 }),
             );
         });
@@ -365,7 +370,7 @@ describe('AxelarGatewayWeightedAuth', () => {
 
     describe('validateProof with OLD_KEY_RETENTION as 15', () => {
         const OLD_KEY_RETENTION = 15;
-        let newMultisig;
+        let newGatewayAuth;
         const previousSigners = [];
 
         before(async () => {
@@ -383,8 +388,8 @@ describe('AxelarGatewayWeightedAuth', () => {
                 ),
             );
 
-            newMultisig = await multisigFactory.deploy(owner.address, initialSignerSets);
-            await newMultisig.deployTransaction.wait(network.config.confirmations);
+            newGatewayAuth = await gatewayAuthFactory.deploy(owner.address, initialSignerSets);
+            await newGatewayAuth.deployTransaction.wait(network.config.confirmations);
         });
 
         it('validate the proof from the recent signers', async () => {
@@ -398,7 +403,7 @@ describe('AxelarGatewayWeightedAuth', () => {
 
             await Promise.all(
                 validPreviousSigners.map(async (signers, index) => {
-                    const isCurrentSigners = await newMultisig.validateProof(
+                    const isCurrentSigners = await newGatewayAuth.validateProof(
                         message,
                         await getWeightedSignaturesProof(
                             data,
@@ -422,7 +427,7 @@ describe('AxelarGatewayWeightedAuth', () => {
                 invalidPreviousSigners.map(async (signers) => {
                     await expectRevert(
                         async (gasOptions) =>
-                            newMultisig.validateProof(
+                            newGatewayAuth.validateProof(
                                 message,
                                 await getWeightedSignaturesProof(
                                     data,
@@ -433,7 +438,7 @@ describe('AxelarGatewayWeightedAuth', () => {
                                 ),
                                 gasOptions,
                             ),
-                        multisig,
+                        gatewayAuth,
                         'InvalidSigners',
                     );
                 }),

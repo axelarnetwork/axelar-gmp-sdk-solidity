@@ -29,9 +29,7 @@ describe('AxelarGatewayWeightedAuth', () => {
         previousSigners.push(sortBy(wallets.slice(0, 2), (wallet) => wallet.address.toLowerCase()));
 
         multisigFactory = await ethers.getContractFactory('AxelarGatewayWeightedAuth', owner);
-    });
 
-    beforeEach(async () => {
         const initialSigners = [...previousSigners, signers];
         const initialSignerSets = initialSigners.map((signers) =>
             getWeightedSignersSet(
@@ -166,6 +164,205 @@ describe('AxelarGatewayWeightedAuth', () => {
         });
     });
 
+    describe('transferSigners', () => {
+        it('should allow owner to transfer signers', async () => {
+            const newSigners = [
+                '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b',
+                '0xb7900E8Ec64A1D1315B6D4017d4b1dcd36E6Ea88',
+            ];
+
+            await expect(
+                multisig.transferOperatorship(
+                    getWeightedSignersSet(
+                        newSigners,
+                        newSigners.map(() => 1),
+                        2,
+                    ),
+                ),
+            ).to.emit(multisig, 'SignersRotated');
+        });
+
+        it('should revert if new signers length is zero', async () => {
+            const newSigners = [];
+
+            await expectRevert(
+                (gasOptions) =>
+                    multisig.transferOperatorship(
+                        getWeightedSignersSet(
+                            newSigners,
+                            newSigners.map(() => 1),
+                            2,
+                        ),
+                        gasOptions,
+                    ),
+                multisig,
+                'InvalidSigners',
+            );
+        });
+
+        it('should not allow transferring signers to address zero', async () => {
+            const newSigners = [AddressZero, '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b'];
+
+            await expectRevert(
+                (gasOptions) =>
+                    multisig.transferOperatorship(
+                        getWeightedSignersSet(
+                            newSigners,
+                            newSigners.map(() => 1),
+                            2,
+                        ),
+                        gasOptions,
+                    ),
+                multisig,
+                'InvalidSigners',
+            );
+        });
+
+        it('should not allow transferring signers to duplicated signers', async () => {
+            const newSigners = [
+                '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b',
+                '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b',
+            ];
+
+            await expectRevert(
+                (gasOptions) =>
+                    multisig.transferOperatorship(
+                        getWeightedSignersSet(
+                            newSigners,
+                            newSigners.map(() => 1),
+                            2,
+                        ),
+                        gasOptions,
+                    ),
+                multisig,
+                'InvalidSigners',
+            );
+        });
+
+        it('should not allow transferring signers to unsorted signers', async () => {
+            const newSigners = [
+                '0xb7900E8Ec64A1D1315B6D4017d4b1dcd36E6Ea88',
+                '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b',
+            ];
+
+            await expectRevert(
+                (gasOptions) =>
+                    multisig.transferOperatorship(
+                        getWeightedSignersSet(
+                            newSigners,
+                            newSigners.map(() => 1),
+                            2,
+                        ),
+                        gasOptions,
+                    ),
+                multisig,
+                'InvalidSigners',
+            );
+        });
+
+        it('should not allow signers transfer to the previous signers ', async () => {
+            const updatedSigners = getAddresses(signers.slice(0, threshold));
+
+            await expect(
+                multisig.transferOperatorship(
+                    getWeightedSignersSet(
+                        updatedSigners,
+                        updatedSigners.map(() => 2),
+                        threshold,
+                    ),
+                ),
+            ).to.emit(multisig, 'SignersRotated');
+        });
+
+        it('should not allow transferring signers with invalid threshold', async () => {
+            const newSigners = [
+                '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b',
+                '0xb7900E8Ec64A1D1315B6D4017d4b1dcd36E6Ea88',
+            ];
+
+            await expectRevert(
+                (gasOptions) =>
+                    multisig.transferOperatorship(
+                        getWeightedSignersSet(
+                            newSigners,
+                            newSigners.map(() => 1),
+                            0,
+                        ),
+                        gasOptions,
+                    ),
+                multisig,
+                'InvalidThreshold',
+            );
+            await expectRevert(
+                (gasOptions) =>
+                    multisig.transferOperatorship(
+                        getWeightedSignersSet(
+                            newSigners,
+                            newSigners.map(() => 1),
+                            3,
+                        ),
+                        gasOptions,
+                    ),
+                multisig,
+                'InvalidThreshold',
+            );
+        });
+
+        it('should not allow transferring signers with invalid number of weights', async () => {
+            const newSigners = [
+                '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b',
+                '0xb7900E8Ec64A1D1315B6D4017d4b1dcd36E6Ea88',
+            ];
+
+            await expectRevert(
+                (gasOptions) =>
+                    multisig.transferOperatorship(
+                        getWeightedSignersSet(
+                            newSigners,
+                            newSigners.map(() => 1),
+                            0,
+                        ),
+                        gasOptions,
+                    ),
+                multisig,
+                'InvalidThreshold',
+            );
+            await expectRevert(
+                (gasOptions) =>
+                    multisig.transferOperatorship(
+                        getWeightedSignersSet(
+                            newSigners,
+                            newSigners.map(() => 1),
+                            3,
+                        ),
+                        gasOptions,
+                    ),
+                multisig,
+                'InvalidThreshold',
+            );
+        });
+    });
+
+    describe('signerHashByEpoch and epochBySignerHash', () => {
+        it('should expose correct hashes and epoch', async () => {
+            const signersHistory = [...previousSigners, signers];
+
+            await Promise.all(
+                signersHistory.map(async (signers, i) => {
+                    const hash = keccak256(
+                        getWeightedSignersSet(
+                            getAddresses(signers),
+                            signers.map(() => 1),
+                            threshold,
+                        ),
+                    );
+                    expect(await multisig.signerHashByEpoch(i + 1)).to.be.equal(hash);
+                    expect(await multisig.epochBySignerHash(hash)).to.be.equal(i + 1);
+                }),
+            );
+        });
+    });
+
     describe('validateProof with OLD_KEY_RETENTION as 15', () => {
         const OLD_KEY_RETENTION = 15;
         let newMultisig;
@@ -239,205 +436,6 @@ describe('AxelarGatewayWeightedAuth', () => {
                         multisig,
                         'InvalidSigners',
                     );
-                }),
-            );
-        });
-    });
-
-    describe('transferSignership', () => {
-        it('should allow owner to transfer signership', async () => {
-            const newSigners = [
-                '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b',
-                '0xb7900E8Ec64A1D1315B6D4017d4b1dcd36E6Ea88',
-            ];
-
-            await expect(
-                multisig.transferOperatorship(
-                    getWeightedSignersSet(
-                        newSigners,
-                        newSigners.map(() => 1),
-                        2,
-                    ),
-                ),
-            ).to.emit(multisig, 'SignersRotated');
-        });
-
-        it('should revert if new signers length is zero', async () => {
-            const newSigners = [];
-
-            await expectRevert(
-                (gasOptions) =>
-                    multisig.transferOperatorship(
-                        getWeightedSignersSet(
-                            newSigners,
-                            newSigners.map(() => 1),
-                            2,
-                        ),
-                        gasOptions,
-                    ),
-                multisig,
-                'InvalidSigners',
-            );
-        });
-
-        it('should not allow transferring signership to address zero', async () => {
-            const newSigners = [AddressZero, '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b'];
-
-            await expectRevert(
-                (gasOptions) =>
-                    multisig.transferOperatorship(
-                        getWeightedSignersSet(
-                            newSigners,
-                            newSigners.map(() => 1),
-                            2,
-                        ),
-                        gasOptions,
-                    ),
-                multisig,
-                'InvalidSigners',
-            );
-        });
-
-        it('should not allow transferring signership to duplicated signers', async () => {
-            const newSigners = [
-                '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b',
-                '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b',
-            ];
-
-            await expectRevert(
-                (gasOptions) =>
-                    multisig.transferOperatorship(
-                        getWeightedSignersSet(
-                            newSigners,
-                            newSigners.map(() => 1),
-                            2,
-                        ),
-                        gasOptions,
-                    ),
-                multisig,
-                'InvalidSigners',
-            );
-        });
-
-        it('should not allow transferring signership to unsorted signers', async () => {
-            const newSigners = [
-                '0xb7900E8Ec64A1D1315B6D4017d4b1dcd36E6Ea88',
-                '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b',
-            ];
-
-            await expectRevert(
-                (gasOptions) =>
-                    multisig.transferOperatorship(
-                        getWeightedSignersSet(
-                            newSigners,
-                            newSigners.map(() => 1),
-                            2,
-                        ),
-                        gasOptions,
-                    ),
-                multisig,
-                'InvalidSigners',
-            );
-        });
-
-        it('should not allow signership transfer to the previous signers ', async () => {
-            const updatedSigners = getAddresses(signers.slice(0, threshold));
-
-            await expect(
-                multisig.transferOperatorship(
-                    getWeightedSignersSet(
-                        updatedSigners,
-                        updatedSigners.map(() => 2),
-                        threshold,
-                    ),
-                ),
-            ).to.emit(multisig, 'SignersRotated');
-        });
-
-        it('should not allow transferring signership with invalid threshold', async () => {
-            const newSigners = [
-                '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b',
-                '0xb7900E8Ec64A1D1315B6D4017d4b1dcd36E6Ea88',
-            ];
-
-            await expectRevert(
-                (gasOptions) =>
-                    multisig.transferOperatorship(
-                        getWeightedSignersSet(
-                            newSigners,
-                            newSigners.map(() => 1),
-                            0,
-                        ),
-                        gasOptions,
-                    ),
-                multisig,
-                'InvalidThreshold',
-            );
-            await expectRevert(
-                (gasOptions) =>
-                    multisig.transferOperatorship(
-                        getWeightedSignersSet(
-                            newSigners,
-                            newSigners.map(() => 1),
-                            3,
-                        ),
-                        gasOptions,
-                    ),
-                multisig,
-                'InvalidThreshold',
-            );
-        });
-
-        it('should not allow transferring signership with invalid number of weights', async () => {
-            const newSigners = [
-                '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b',
-                '0xb7900E8Ec64A1D1315B6D4017d4b1dcd36E6Ea88',
-            ];
-
-            await expectRevert(
-                (gasOptions) =>
-                    multisig.transferOperatorship(
-                        getWeightedSignersSet(
-                            newSigners,
-                            newSigners.map(() => 1),
-                            0,
-                        ),
-                        gasOptions,
-                    ),
-                multisig,
-                'InvalidThreshold',
-            );
-            await expectRevert(
-                (gasOptions) =>
-                    multisig.transferOperatorship(
-                        getWeightedSignersSet(
-                            newSigners,
-                            newSigners.map(() => 1),
-                            3,
-                        ),
-                        gasOptions,
-                    ),
-                multisig,
-                'InvalidThreshold',
-            );
-        });
-    });
-
-    describe('signerHashByEpoch and epochBySignerHash', () => {
-        it('should expose correct hashes and epoch', async () => {
-            const signersHistory = [...previousSigners, signers];
-
-            await Promise.all(
-                signersHistory.map(async (signers, i) => {
-                    const hash = keccak256(
-                        getWeightedSignersSet(
-                            getAddresses(signers),
-                            signers.map(() => 1),
-                            threshold,
-                        ),
-                    );
-                    expect(await multisig.signerHashByEpoch(i + 1)).to.be.equal(hash);
-                    expect(await multisig.epochBySignerHash(hash)).to.be.equal(i + 1);
                 }),
             );
         });

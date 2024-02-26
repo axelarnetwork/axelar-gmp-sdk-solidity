@@ -13,14 +13,13 @@ contract Caller is ICaller {
      */
     function _call(
         address target,
-        bytes memory callData,
+        bytes calldata callData,
         uint256 nativeValue
     ) internal returns (bytes memory) {
         if (!target.isContract()) revert InvalidContract(target);
 
         if (nativeValue > address(this).balance) revert InsufficientBalance();
 
-        // slither-disable-next-line calls-loop
         (bool success, bytes memory data) = target.call{ value: nativeValue }(callData);
         if (!success) {
             revert ExecutionFailed();

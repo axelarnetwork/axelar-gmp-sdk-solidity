@@ -71,26 +71,34 @@ const getWeightedSignersSet = (accounts, weights, signerThresholds) =>
     defaultAbiCoder.encode(['address[]', 'uint256[]', 'uint256'], [accounts, weights, signerThresholds]);
 
 const getWeightedSignersProof = async (data, accounts, weights, threshold, signers) => {
+    const signersWithWeights = getAddresses(accounts).map((address, i) => ({ address, weight: weights[i] }));
+    const sortedSignersWithWeights = sortBy(signersWithWeights, (signer) => signer.address.toLowerCase());
+    const sortedAddresses = sortedSignersWithWeights.map(({ address }) => address);
+    const sortedWeights = sortedSignersWithWeights.map(({ weight }) => weight);
+
     const hash = arrayify(keccak256(data));
     const signatures = await Promise.all(
         sortBy(signers, (wallet) => wallet.address.toLowerCase()).map((wallet) => wallet.signMessage(hash)),
     );
-    const addresses = sortBy(getAddresses(accounts), (address) => address.toLowerCase());
 
     return defaultAbiCoder.encode(
         ['address[]', 'uint256[]', 'uint256', 'bytes[]'],
-        [addresses, weights, threshold, signatures],
+        [sortedAddresses, sortedWeights, threshold, signatures],
     );
 };
 
 const sortWeightedSignaturesProof = async (data, signerAddresses, weights, threshold, signatures) => {
+    const signersWithWeights = signerAddresses.map((address, i) => ({ address, weight: weights[i] }));
+    const sortedSignersWithWeights = sortBy(signersWithWeights, (signer) => signer.address.toLowerCase());
+    const sortedAddresses = sortedSignersWithWeights.map(({ address }) => address);
+    const sortedWeights = sortedSignersWithWeights.map(({ weight }) => weight);
+
     const hash = arrayify(keccak256(data));
     signatures = sortBy(signatures, (signature) => recoverAddress(hash, signature).toLowerCase());
-    signerAddresses = sortBy(signerAddresses, (address) => address.toLowerCase());
 
     return defaultAbiCoder.encode(
         ['address[]', 'uint256[]', 'uint256', 'bytes[]'],
-        [signerAddresses, weights, threshold, signatures],
+        [sortedAddresses, sortedWeights, threshold, signatures],
     );
 };
 

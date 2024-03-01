@@ -76,6 +76,7 @@ const getWeightedSignersProof = async (data, accounts, weights, threshold, signe
         sortBy(signers, (wallet) => wallet.address.toLowerCase()).map((wallet) => wallet.signMessage(hash)),
     );
     const addresses = sortBy(getAddresses(accounts), (address) => address.toLowerCase());
+
     return defaultAbiCoder.encode(
         ['address[]', 'uint256[]', 'uint256', 'bytes[]'],
         [addresses, weights, threshold, signatures],
@@ -86,6 +87,7 @@ const sortWeightedSignaturesProof = async (data, signerAddresses, weights, thres
     const hash = arrayify(keccak256(data));
     signatures = sortBy(signatures, (signature) => recoverAddress(hash, signature).toLowerCase());
     signerAddresses = sortBy(signerAddresses, (address) => address.toLowerCase());
+
     return defaultAbiCoder.encode(
         ['address[]', 'uint256[]', 'uint256', 'bytes[]'],
         [signerAddresses, weights, threshold, signatures],

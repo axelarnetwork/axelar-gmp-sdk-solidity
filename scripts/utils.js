@@ -4,6 +4,7 @@ const {
 } = require('ethers');
 const http = require('http');
 const { outputJsonSync } = require('fs-extra');
+const { sortBy } = require('lodash');
 
 const deployContract = async (wallet, contractJson, args = [], options = {}) => {
     const factory = new ContractFactory(contractJson.abi, contractJson.bytecode, wallet);
@@ -64,10 +65,33 @@ const httpGet = (url) => {
     });
 };
 
+const getAddresses = (wallets) => wallets.map(({ address }) => address);
+
+const getWeightedSignersSet = (accounts, weights, signerThresholds) =>
+    defaultAbiCoder.encode(['address[]', 'uint256[]', 'uint256'], [accounts, weights, signerThresholds]);
+
+const getWeightedSignaturesProof = async (data, accounts, weights, threshold, signers) => {
+    const hash = arrayify(keccak256(data));
+    const signatures = await Promise.all(
+        sortBy(signers, (wallet) => wallet.address.toLowerCase()).map((wallet) => wallet.signMessage(hash)),
+    );
+    return defaultAbiCoder.encode(
+        ['address[]', 'uint256[]', 'uint256', 'bytes[]'],
+        [getAddresses(accounts), weights, threshold, signatures],
+    );
+};
+
+const encodeInterchainCallsBatch = (batchId, calls) =>
+    defaultAbiCoder.encode(['uint256', 'tuple(string, address, address, bytes, uint256)[]'], [batchId, calls]);
+
 module.exports = {
     getSaltFromKey,
     deployContract,
     setJSON,
     httpGet,
     printObj,
+    getAddresses,
+    getWeightedSignersSet,
+    getWeightedSignaturesProof,
+    encodeInterchainCallsBatch,
 };

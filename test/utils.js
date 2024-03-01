@@ -10,7 +10,7 @@ const { sortBy } = require('lodash');
 const {
     getAddresses,
     getWeightedSignersSet,
-    getWeightedSignaturesProof,
+    getWeightedSignersProof,
     encodeInterchainCallsBatch,
 } = require('../scripts/utils');
 
@@ -111,6 +111,6 @@ module.exports = {
 
     getAddresses,
     getWeightedSignersSet,
-    getWeightedSignaturesProof,
+    getWeightedSignersProof,
     encodeInterchainCallsBatch,
 };

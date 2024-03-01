@@ -1,6 +1,6 @@
 const {
     ContractFactory,
-    utils: { keccak256, defaultAbiCoder },
+    utils: { keccak256, defaultAbiCoder, recoverAddress },
 } = require('ethers');
 const http = require('http');
 const { outputJsonSync } = require('fs-extra');
@@ -70,11 +70,19 @@ const getAddresses = (wallets) => wallets.map(({ address }) => address);
 const getWeightedSignersSet = (accounts, weights, signerThresholds) =>
     defaultAbiCoder.encode(['address[]', 'uint256[]', 'uint256'], [accounts, weights, signerThresholds]);
 
-const getWeightedSignaturesProof = async (data, accounts, weights, threshold, signers) => {
+const getWeightedSignersProof = async (data, accounts, weights, threshold, signers) => {
     const hash = arrayify(keccak256(data));
     const signatures = await Promise.all(
         sortBy(signers, (wallet) => wallet.address.toLowerCase()).map((wallet) => wallet.signMessage(hash)),
     );
+    return defaultAbiCoder.encode(
+        ['address[]', 'uint256[]', 'uint256', 'bytes[]'],
+        [getAddresses(accounts), weights, threshold, signatures],
+    );
+};
+const sortWeightedSignaturesProof = async (data, accounts, weights, threshold, signatures) => {
+    const hash = arrayify(keccak256(data));
+    signatures = sortBy(signatures, (signature) => recoverAddress(hash, signature).toLowerCase());
     return defaultAbiCoder.encode(
         ['address[]', 'uint256[]', 'uint256', 'bytes[]'],
         [getAddresses(accounts), weights, threshold, signatures],
@@ -92,6 +100,7 @@ module.exports = {
     printObj,
     getAddresses,
     getWeightedSignersSet,
-    getWeightedSignaturesProof,
+    getWeightedSignersProof,
+    sortWeightedSignaturesProof,
     encodeInterchainCallsBatch,
 };

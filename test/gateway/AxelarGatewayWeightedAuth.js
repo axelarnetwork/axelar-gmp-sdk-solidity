@@ -7,7 +7,7 @@ const {
 } = ethers;
 const { expect } = chai;
 
-const { getAddresses, getWeightedSignersSet, getWeightedSignaturesProof, expectRevert } = require('../utils');
+const { getAddresses, getWeightedSignersSet, getWeightedSignersProof, expectRevert } = require('../utils');
 
 describe('AxelarGatewayWeightedAuth', () => {
     const threshold = 2;
@@ -51,7 +51,7 @@ describe('AxelarGatewayWeightedAuth', () => {
 
             const isCurrentSigners = await gatewayAuth.validateProof(
                 message,
-                await getWeightedSignaturesProof(
+                await getWeightedSignersProof(
                     data,
                     signers,
                     signers.map(() => 1),
@@ -74,7 +74,7 @@ describe('AxelarGatewayWeightedAuth', () => {
                 async (gasOptions) =>
                     gatewayAuth.validateProof(
                         message,
-                        await getWeightedSignaturesProof(
+                        await getWeightedSignersProof(
                             data,
                             invalidSigners,
                             invalidSigners.map(() => 1),
@@ -97,7 +97,7 @@ describe('AxelarGatewayWeightedAuth', () => {
                 async (gasOptions) =>
                     gatewayAuth.validateProof(
                         message,
-                        await getWeightedSignaturesProof(
+                        await getWeightedSignersProof(
                             data,
                             signers,
                             signers.map(() => 1),
@@ -120,7 +120,7 @@ describe('AxelarGatewayWeightedAuth', () => {
                 async (gasOptions) =>
                     gatewayAuth.validateProof(
                         message,
-                        await getWeightedSignaturesProof(
+                        await getWeightedSignersProof(
                             data,
                             signers,
                             signers.map(() => 1),
@@ -151,7 +151,7 @@ describe('AxelarGatewayWeightedAuth', () => {
 
             const isCurrentSigners = await gatewayAuth.validateProof(
                 message,
-                await getWeightedSignaturesProof(
+                await getWeightedSignersProof(
                     data,
                     signers,
                     signers.map(() => 1),
@@ -405,7 +405,7 @@ describe('AxelarGatewayWeightedAuth', () => {
                 validPreviousSigners.map(async (signers, index) => {
                     const isCurrentSigners = await newGatewayAuth.validateProof(
                         message,
-                        await getWeightedSignaturesProof(
+                        await getWeightedSignersProof(
                             data,
                             signers,
                             signers.map(() => index + 2),
@@ -429,7 +429,7 @@ describe('AxelarGatewayWeightedAuth', () => {
                         async (gasOptions) =>
                             newGatewayAuth.validateProof(
                                 message,
-                                await getWeightedSignaturesProof(
+                                await getWeightedSignersProof(
                                     data,
                                     signers,
                                     signers.map(() => 1),

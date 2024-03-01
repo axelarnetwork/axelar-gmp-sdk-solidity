@@ -1,6 +1,6 @@
 const {
     ContractFactory,
-    utils: { keccak256, defaultAbiCoder, recoverAddress },
+    utils: { keccak256, defaultAbiCoder, arrayify, recoverAddress },
 } = require('ethers');
 const http = require('http');
 const { outputJsonSync } = require('fs-extra');
@@ -80,6 +80,7 @@ const getWeightedSignersProof = async (data, accounts, weights, threshold, signe
         [getAddresses(accounts), weights, threshold, signatures],
     );
 };
+
 const sortWeightedSignaturesProof = async (data, accounts, weights, threshold, signatures) => {
     const hash = arrayify(keccak256(data));
     signatures = sortBy(signatures, (signature) => recoverAddress(hash, signature).toLowerCase());

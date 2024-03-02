@@ -26,9 +26,8 @@ describe('Upgradable', () => {
         upgradableTestFactory = await ethers.getContractFactory('UpgradableTest', ownerWallet);
 
         create3DeployerFactory = await ethers.getContractFactory('Create3Deployer', ownerWallet);
-    });
 
-    beforeEach(async () => {
+
         const create3Deployer = await create3DeployerFactory.deploy().then((d) => d.deployed());
 
         upgradable = await deployCreate3Upgradable(create3Deployer.address, ownerWallet, Upgradable, Proxy, []);
@@ -93,17 +92,31 @@ describe('Upgradable', () => {
         expect(newImplementation).not.to.be.equal(oldImplementation);
     });
 
-    it('should revert on upgrade if setup fails', async () => {
-        const implementation = await upgradable.implementation();
+    it('should revert on upgrade to the same implementation', async () => {
+        const oldImplementation = await upgradable.implementation();
 
         const setupParams = '0x00';
 
-        const implementationCode = await ethers.provider.getCode(implementation);
+        const implementationCode = await ethers.provider.getCode(oldImplementation);
 
         const implementationCodeHash = keccak256(implementationCode);
 
         await expect(
-            upgradable.upgrade(implementation, implementationCodeHash, setupParams),
+            upgradable.upgrade(oldImplementation, implementationCodeHash, setupParams),
+        ).to.be.revertedWithCustomError(upgradable, 'InvalidImplementation');
+    });
+
+    it('should revert on upgrade if setup fails', async () => {
+        const newImplementation = await upgradableTestFactory.deploy().then((d) => d.deployed());
+
+        const setupParams = '0x00';
+
+        const implementationCode = await ethers.provider.getCode(newImplementation);
+
+        const implementationCodeHash = keccak256(implementationCode);
+
+        await expect(
+            upgradable.upgrade(newImplementation, implementationCodeHash, setupParams),
         ).to.be.revertedWithCustomError(upgradable, 'SetupFailed');
     });
 

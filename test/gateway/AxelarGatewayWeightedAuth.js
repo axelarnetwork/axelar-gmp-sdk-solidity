@@ -3,7 +3,7 @@ const chai = require('chai');
 const { ethers, network } = require('hardhat');
 const {
     constants: { AddressZero },
-    utils: { arrayify, keccak256, hashMessage },
+    utils: { arrayify, keccak256, hashMessage, defaultAbiCoder },
 } = ethers;
 const { expect } = chai;
 
@@ -253,10 +253,9 @@ describe('AxelarGatewayWeightedAuth', () => {
             await expectRevert(
                 (gasOptions) =>
                     gatewayAuth.transferOperatorship(
-                        getWeightedSignersSet(
-                            newSigners,
-                            newSigners.map(() => 1),
-                            2,
+                        defaultAbiCoder.encode(
+                            ['address[]', 'uint256[]', 'uint256'],
+                            [newSigners, newSigners.map(() => 1), 2],
                         ),
                         gasOptions,
                     ),

@@ -111,12 +111,12 @@ describe('Upgradable', () => {
 
         const setupParams = '0x00';
 
-        const implementationCode = await ethers.provider.getCode(newImplementation);
+        const implementationCode = await ethers.provider.getCode(newImplementation.address);
 
         const implementationCodeHash = keccak256(implementationCode);
 
         await expect(
-            upgradable.upgrade(newImplementation, implementationCodeHash, setupParams),
+            upgradable.upgrade(newImplementation.address, implementationCodeHash, setupParams),
         ).to.be.revertedWithCustomError(upgradable, 'SetupFailed');
     });
 

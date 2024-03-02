@@ -129,7 +129,7 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
      * @notice This function is protected by the onlySelf modifier.
      * @dev This function is only callable by the contract itself after signature verification
      */
-    function noop() external onlySelf {}
+    function noop() external view onlySelf {}
 
     /**
      * @notice Allow contract to be able to receive native value

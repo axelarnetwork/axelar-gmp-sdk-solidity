@@ -12,6 +12,18 @@ interface IBaseWeightedMultisig {
     event SignersRotated(address[] signers, uint256[] weights, uint256 threshold);
 
     /**
+     * @notice This struct represents the weighted signers payload
+     * @param signers The list of signers
+     * @param weights The list of weights
+     * @param threshold The threshold for the signers
+     */
+    struct WeightedSigners {
+        address[] signers;
+        uint256[] weights;
+        uint256 threshold;
+    }
+
+    /**
      * @dev This function returns the old signers retention period
      * @return uint256 The old signers retention period
      */

@@ -26,9 +26,8 @@ describe('Upgradable', () => {
         upgradableTestFactory = await ethers.getContractFactory('UpgradableTest', ownerWallet);
 
         create3DeployerFactory = await ethers.getContractFactory('Create3Deployer', ownerWallet);
-    });
 
-    beforeEach(async () => {
+
         const create3Deployer = await create3DeployerFactory.deploy().then((d) => d.deployed());
 
         upgradable = await deployCreate3Upgradable(create3Deployer.address, ownerWallet, Upgradable, Proxy, []);
@@ -94,16 +93,16 @@ describe('Upgradable', () => {
     });
 
     it('should revert on upgrade if setup fails', async () => {
-        const implementation = await upgradable.implementation();
+        const newImplementation = await upgradableTestFactory.deploy().then((d) => d.deployed());
 
         const setupParams = '0x00';
 
-        const implementationCode = await ethers.provider.getCode(implementation);
+        const implementationCode = await ethers.provider.getCode(newImplementation.address);
 
         const implementationCodeHash = keccak256(implementationCode);
 
         await expect(
-            upgradable.upgrade(implementation, implementationCodeHash, setupParams),
+            upgradable.upgrade(newImplementation.address, implementationCodeHash, setupParams),
         ).to.be.revertedWithCustomError(upgradable, 'SetupFailed');
     });
 

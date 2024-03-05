@@ -50,11 +50,6 @@ abstract contract Upgradable is Ownable, Implementation, IUpgradable {
             revert InvalidImplementation();
 
         if (newImplementationCodeHash != newImplementation.codehash) revert InvalidCodeHash();
-        if (newImplementation == implementation()) revert InvalidImplementation();
-
-        assembly {
-            sstore(_IMPLEMENTATION_SLOT, newImplementation)
-        }
 
         emit Upgraded(newImplementation);
 
@@ -63,6 +58,10 @@ abstract contract Upgradable is Ownable, Implementation, IUpgradable {
             (bool success, ) = newImplementation.delegatecall(abi.encodeWithSelector(this.setup.selector, params));
 
             if (!success) revert SetupFailed();
+        }
+
+        assembly {
+            sstore(_IMPLEMENTATION_SLOT, newImplementation)
         }
     }
 

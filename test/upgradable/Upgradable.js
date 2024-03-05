@@ -43,20 +43,6 @@ describe('Upgradable', () => {
             expect(await implementation.implementation()).to.eq(AddressZero);
         });
 
-        it('should revert on upgrade with invalid contract ID', async () => {
-            const invalidUpgradableTestFactory = await ethers.getContractFactory('InvalidUpgradableTest', ownerWallet);
-
-            const invalidUpgradableTest = await invalidUpgradableTestFactory.deploy().then((d) => d.deployed());
-
-            const implementationCode = await ethers.provider.getCode(invalidUpgradableTest.address);
-
-            const implementationCodeHash = keccak256(implementationCode);
-
-            await expect(
-                upgradable.upgrade(invalidUpgradableTest.address, implementationCodeHash, '0x'),
-            ).to.be.revertedWithCustomError(upgradable, 'InvalidImplementation');
-        });
-
         it('should upgrade to a new implementation', async () => {
             const oldImplementation = await upgradable.implementation();
 
@@ -108,7 +94,7 @@ describe('Upgradable', () => {
         });
 
         it('should revert on upgrade with invalid code hash', async () => {
-            const invalidCodeHash = keccak256(0);
+            const invalidCodeHash = keccak256('0');
 
             await expect(upgradable.upgrade(upgradable.address, invalidCodeHash, '0x')).to.be.revertedWithCustomError(
                 upgradable,

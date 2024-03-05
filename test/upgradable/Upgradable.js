@@ -94,7 +94,7 @@ describe('Upgradable', () => {
         });
 
         it('should revert on upgrade with invalid code hash', async () => {
-            const invalidCodeHash = keccak256('0');
+            const invalidCodeHash = keccak256(0);
 
             await expect(upgradable.upgrade(upgradable.address, invalidCodeHash, '0x')).to.be.revertedWithCustomError(
                 upgradable,

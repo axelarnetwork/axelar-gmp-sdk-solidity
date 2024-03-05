@@ -1,7 +1,7 @@
 const chai = require('chai');
 const { ethers, network } = require('hardhat');
 const { sortBy } = require('lodash');
-const { getAddresses, encodeInterchainCallsBatch, getWeightedSignaturesProof, expectRevert } = require('../utils');
+const { getAddresses, encodeInterchainCallsBatch, getWeightedSignersProof, expectRevert } = require('../utils');
 const {
     constants: { AddressZero },
     utils: { keccak256, formatBytes32String },
@@ -74,7 +74,7 @@ describe('InterchainMultisig', () => {
                 interchainMultisig.executeCalls(
                     formatBytes32String('5'),
                     [call],
-                    getWeightedSignaturesProof(
+                    getWeightedSignersProof(
                         encodeInterchainCallsBatch(formatBytes32String('5'), [call]),
                         signers,
                         signers.map(() => 1),
@@ -99,7 +99,7 @@ describe('InterchainMultisig', () => {
                 interchainMultisig.executeCalls(
                     formatBytes32String('6'),
                     [call],
-                    getWeightedSignaturesProof(
+                    getWeightedSignersProof(
                         encodeInterchainCallsBatch(formatBytes32String('6'), [call]),
                         signers,
                         signers.map(() => 1),
@@ -159,7 +159,7 @@ describe('InterchainMultisig', () => {
                 await interchainMultisig.executeCalls(
                     formatBytes32String('7'),
                     [call],
-                    getWeightedSignaturesProof(
+                    getWeightedSignersProof(
                         encodeInterchainCallsBatch(formatBytes32String('7'), [call]),
                         signers,
                         signers.map(() => 1),
@@ -177,7 +177,7 @@ describe('InterchainMultisig', () => {
                 await interchainMultisig.executeCalls(
                     formatBytes32String('7'),
                     [invalidCall],
-                    getWeightedSignaturesProof(
+                    getWeightedSignersProof(
                         encodeInterchainCallsBatch(formatBytes32String('7'), [invalidCall]),
                         signers,
                         signers.map(() => 1),
@@ -200,7 +200,7 @@ describe('InterchainMultisig', () => {
                 interchainMultisig.executeCalls(
                     formatBytes32String('7'),
                     [call1],
-                    getWeightedSignaturesProof(
+                    getWeightedSignersProof(
                         encodeInterchainCallsBatch(formatBytes32String('7'), [call1]),
                         signers,
                         signers.map(() => 1),
@@ -221,7 +221,7 @@ describe('InterchainMultisig', () => {
                 interchainMultisig.executeCalls(
                     formatBytes32String('8'),
                     [call2],
-                    getWeightedSignaturesProof(
+                    getWeightedSignersProof(
                         encodeInterchainCallsBatch(formatBytes32String('8'), [call2]),
                         signers,
                         signers.map(() => 1),
@@ -247,7 +247,7 @@ describe('InterchainMultisig', () => {
             interchainMultisig.executeCalls(
                 formatBytes32String('9'),
                 [call],
-                getWeightedSignaturesProof(
+                getWeightedSignersProof(
                     encodeInterchainCallsBatch(formatBytes32String('9'), [call]),
                     signers,
                     signers.map(() => 1),
@@ -267,7 +267,7 @@ describe('InterchainMultisig', () => {
                 interchainMultisig.executeCalls(
                     formatBytes32String('9'),
                     [call],
-                    getWeightedSignaturesProof(
+                    getWeightedSignersProof(
                         encodeInterchainCallsBatch(formatBytes32String('9'), [call]),
                         signers,
                         signers.map(() => 1),
@@ -294,7 +294,7 @@ describe('InterchainMultisig', () => {
             await interchainMultisig.executeCalls(
                 formatBytes32String('10'),
                 calls,
-                getWeightedSignaturesProof(
+                getWeightedSignersProof(
                     encodeInterchainCallsBatch(formatBytes32String('10'), calls),
                     signers,
                     signers.map(() => 1),
@@ -342,7 +342,7 @@ describe('InterchainMultisig', () => {
             .executeCalls(
                 formatBytes32String('11'),
                 [call],
-                getWeightedSignaturesProof(
+                getWeightedSignersProof(
                     encodeInterchainCallsBatch(formatBytes32String('11'), [call]),
                     signers,
                     signers.map(() => 1),
@@ -378,7 +378,7 @@ describe('InterchainMultisig', () => {
             .executeCalls(
                 formatBytes32String('24'),
                 [call],
-                getWeightedSignaturesProof(
+                getWeightedSignersProof(
                     encodeInterchainCallsBatch(formatBytes32String('24'), [call]),
                     signers,
                     signers.map(() => 1),
@@ -393,7 +393,7 @@ describe('InterchainMultisig', () => {
                 interchainMultisig.executeCalls(
                     formatBytes32String('24'),
                     [anotherCall],
-                    getWeightedSignaturesProof(
+                    getWeightedSignersProof(
                         encodeInterchainCallsBatch(formatBytes32String('24'), [anotherCall]),
                         signers,
                         signers.map(() => 1),
@@ -422,7 +422,7 @@ describe('InterchainMultisig', () => {
             interchainMultisig.executeCalls(
                 formatBytes32String('21'),
                 [call],
-                getWeightedSignaturesProof(
+                getWeightedSignersProof(
                     encodeInterchainCallsBatch(formatBytes32String('21'), [call]),
                     signers,
                     signers.map(() => 1),
@@ -437,7 +437,7 @@ describe('InterchainMultisig', () => {
                 interchainMultisig.executeCalls(
                     formatBytes32String('22'),
                     [call],
-                    getWeightedSignaturesProof(
+                    getWeightedSignersProof(
                         encodeInterchainCallsBatch(formatBytes32String('22'), [call]),
                         signers,
                         signers.map(() => 1),

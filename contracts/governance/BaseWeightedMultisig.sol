@@ -14,12 +14,6 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
     bytes32 internal constant BASE_WEIGHTED_MULTISIG_SLOT =
         0x457f3fc26bf430b020fe76358b1bfaba57e1657ace718da6437cda9934eabfe9;
 
-    struct WeightedSigners {
-        address[] signers;
-        uint256[] weights;
-        uint256 threshold;
-    }
-
     struct WeightedMultisigStorage {
         uint256 epoch;
         mapping(uint256 => bytes32) signerHashByEpoch;

@@ -7,6 +7,13 @@ const {
 } = ethers;
 const { sortBy } = require('lodash');
 
+const {
+    getAddresses,
+    getWeightedSignersSet,
+    getWeightedSignersProof,
+    encodeInterchainCallsBatch,
+} = require('../scripts/utils');
+
 const getRandomInt = (max) => {
     return Math.floor(Math.random() * max);
 };
@@ -67,25 +74,6 @@ const expectRevert = async (txFunc, contract, error, args) => {
     }
 };
 
-const getAddresses = (wallets) => wallets.map(({ address }) => address);
-
-const getWeightedSignersSet = (accounts, weights, signerThresholds) =>
-    defaultAbiCoder.encode(['address[]', 'uint256[]', 'uint256'], [accounts, weights, signerThresholds]);
-
-const getWeightedSignaturesProof = async (data, accounts, weights, threshold, signers) => {
-    const hash = arrayify(keccak256(data));
-    const signatures = await Promise.all(
-        sortBy(signers, (wallet) => wallet.address.toLowerCase()).map((wallet) => wallet.signMessage(hash)),
-    );
-    return defaultAbiCoder.encode(
-        ['address[]', 'uint256[]', 'uint256', 'bytes[]'],
-        [getAddresses(accounts), weights, threshold, signatures],
-    );
-};
-
-const encodeInterchainCallsBatch = (batchId, calls) =>
-    defaultAbiCoder.encode(['uint256', 'tuple(string, address, address, bytes, uint256)[]'], [batchId, calls]);
-
 module.exports = {
     bigNumberToNumber: (bigNumber) => bigNumber.toNumber(),
 
@@ -122,10 +110,7 @@ module.exports = {
     expectRevert,
 
     getAddresses,
-
     getWeightedSignersSet,
-
-    getWeightedSignaturesProof,
-
+    getWeightedSignersProof,
     encodeInterchainCallsBatch,
 };

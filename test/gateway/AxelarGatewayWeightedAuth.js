@@ -3,11 +3,11 @@ const chai = require('chai');
 const { ethers, network } = require('hardhat');
 const {
     constants: { AddressZero },
-    utils: { arrayify, keccak256, hashMessage },
+    utils: { arrayify, keccak256, hashMessage, defaultAbiCoder },
 } = ethers;
 const { expect } = chai;
 
-const { getAddresses, getWeightedSignersSet, getWeightedSignaturesProof, expectRevert } = require('../utils');
+const { getAddresses, getWeightedSignersSet, getWeightedSignersProof, expectRevert } = require('../utils');
 
 describe('AxelarGatewayWeightedAuth', () => {
     const threshold = 2;
@@ -51,7 +51,7 @@ describe('AxelarGatewayWeightedAuth', () => {
 
             const isCurrentSigners = await gatewayAuth.validateProof(
                 message,
-                await getWeightedSignaturesProof(
+                await getWeightedSignersProof(
                     data,
                     signers,
                     signers.map(() => 1),
@@ -74,7 +74,7 @@ describe('AxelarGatewayWeightedAuth', () => {
                 async (gasOptions) =>
                     gatewayAuth.validateProof(
                         message,
-                        await getWeightedSignaturesProof(
+                        await getWeightedSignersProof(
                             data,
                             invalidSigners,
                             invalidSigners.map(() => 1),
@@ -97,7 +97,7 @@ describe('AxelarGatewayWeightedAuth', () => {
                 async (gasOptions) =>
                     gatewayAuth.validateProof(
                         message,
-                        await getWeightedSignaturesProof(
+                        await getWeightedSignersProof(
                             data,
                             signers,
                             signers.map(() => 1),
@@ -120,7 +120,7 @@ describe('AxelarGatewayWeightedAuth', () => {
                 async (gasOptions) =>
                     gatewayAuth.validateProof(
                         message,
-                        await getWeightedSignaturesProof(
+                        await getWeightedSignersProof(
                             data,
                             signers,
                             signers.map(() => 1),
@@ -151,7 +151,7 @@ describe('AxelarGatewayWeightedAuth', () => {
 
             const isCurrentSigners = await gatewayAuth.validateProof(
                 message,
-                await getWeightedSignaturesProof(
+                await getWeightedSignersProof(
                     data,
                     signers,
                     signers.map(() => 1),
@@ -253,10 +253,9 @@ describe('AxelarGatewayWeightedAuth', () => {
             await expectRevert(
                 (gasOptions) =>
                     gatewayAuth.transferOperatorship(
-                        getWeightedSignersSet(
-                            newSigners,
-                            newSigners.map(() => 1),
-                            2,
+                        defaultAbiCoder.encode(
+                            ['address[]', 'uint256[]', 'uint256'],
+                            [newSigners, newSigners.map(() => 1), 2],
                         ),
                         gasOptions,
                     ),
@@ -405,7 +404,7 @@ describe('AxelarGatewayWeightedAuth', () => {
                 validPreviousSigners.map(async (signers, index) => {
                     const isCurrentSigners = await newGatewayAuth.validateProof(
                         message,
-                        await getWeightedSignaturesProof(
+                        await getWeightedSignersProof(
                             data,
                             signers,
                             signers.map(() => index + 2),
@@ -429,7 +428,7 @@ describe('AxelarGatewayWeightedAuth', () => {
                         async (gasOptions) =>
                             newGatewayAuth.validateProof(
                                 message,
-                                await getWeightedSignaturesProof(
+                                await getWeightedSignersProof(
                                     data,
                                     signers,
                                     signers.map(() => 1),

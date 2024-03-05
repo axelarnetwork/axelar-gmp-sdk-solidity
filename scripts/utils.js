@@ -1,9 +1,10 @@
 const {
     ContractFactory,
-    utils: { keccak256, defaultAbiCoder },
+    utils: { keccak256, defaultAbiCoder, arrayify, hashMessage, recoverAddress },
 } = require('ethers');
 const http = require('http');
 const { outputJsonSync } = require('fs-extra');
+const { sortBy } = require('lodash');
 
 const deployContract = async (wallet, contractJson, args = [], options = {}) => {
     const factory = new ContractFactory(contractJson.abi, contractJson.bytecode, wallet);
@@ -64,10 +65,61 @@ const httpGet = (url) => {
     });
 };
 
+const getAddresses = (wallets) => wallets.map(({ address }) => address);
+
+const getWeightedSignersSet = (signerAddresses, weights, threshold) => {
+    const signersWithWeights = signerAddresses.map((address, i) => ({ address, weight: weights[i] }));
+    const sortedSignersWithWeights = sortBy(signersWithWeights, (signer) => signer.address.toLowerCase());
+    const sortedAddresses = sortedSignersWithWeights.map(({ address }) => address);
+    const sortedWeights = sortedSignersWithWeights.map(({ weight }) => weight);
+
+    return defaultAbiCoder.encode(['address[]', 'uint256[]', 'uint256'], [sortedAddresses, sortedWeights, threshold]);
+};
+
+const getWeightedSignersProof = async (data, accounts, weights, threshold, signers) => {
+    const signersWithWeights = getAddresses(accounts).map((address, i) => ({ address, weight: weights[i] }));
+    const sortedSignersWithWeights = sortBy(signersWithWeights, (signer) => signer.address.toLowerCase());
+    const sortedAddresses = sortedSignersWithWeights.map(({ address }) => address);
+    const sortedWeights = sortedSignersWithWeights.map(({ weight }) => weight);
+
+    const hash = arrayify(keccak256(data));
+    const signatures = await Promise.all(
+        sortBy(signers, (wallet) => wallet.address.toLowerCase()).map((wallet) => wallet.signMessage(hash)),
+    );
+
+    return defaultAbiCoder.encode(
+        ['address[]', 'uint256[]', 'uint256', 'bytes[]'],
+        [sortedAddresses, sortedWeights, threshold, signatures],
+    );
+};
+
+const sortWeightedSignaturesProof = async (data, signerAddresses, weights, threshold, signatures) => {
+    const signersWithWeights = signerAddresses.map((address, i) => ({ address, weight: weights[i] }));
+    const sortedSignersWithWeights = sortBy(signersWithWeights, (signer) => signer.address.toLowerCase());
+    const sortedAddresses = sortedSignersWithWeights.map(({ address }) => address);
+    const sortedWeights = sortedSignersWithWeights.map(({ weight }) => weight);
+
+    const hash = arrayify(hashMessage(arrayify(keccak256(data))));
+    signatures = sortBy(signatures, (signature) => recoverAddress(hash, signature).toLowerCase());
+
+    return defaultAbiCoder.encode(
+        ['address[]', 'uint256[]', 'uint256', 'bytes[]'],
+        [sortedAddresses, sortedWeights, threshold, signatures],
+    );
+};
+
+const encodeInterchainCallsBatch = (batchId, calls) =>
+    defaultAbiCoder.encode(['uint256', 'tuple(string, address, address, bytes, uint256)[]'], [batchId, calls]);
+
 module.exports = {
     getSaltFromKey,
     deployContract,
     setJSON,
     httpGet,
     printObj,
+    getAddresses,
+    getWeightedSignersSet,
+    getWeightedSignersProof,
+    sortWeightedSignaturesProof,
+    encodeInterchainCallsBatch,
 };

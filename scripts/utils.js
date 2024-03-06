@@ -109,7 +109,7 @@ const sortWeightedSignaturesProof = async (data, signerAddresses, weights, thres
 };
 
 const encodeInterchainCallsBatch = (batchId, calls) =>
-    defaultAbiCoder.encode(['uint256', 'tuple(string, address, address, bytes, uint256)[]'], [batchId, calls]);
+    defaultAbiCoder.encode(['bytes32', 'tuple(string, address, address, bytes, uint256)[]'], [batchId, calls]);
 
 module.exports = {
     getSaltFromKey,

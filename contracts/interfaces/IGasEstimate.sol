@@ -9,6 +9,8 @@ pragma solidity ^0.8.0;
  * @dev This interface inherits IUpgradable
  */
 interface IGasEstimate {
+    error UnsupportedL2Estimate(string chain);
+
     /**
      * @notice Event emitted when the gas price for a specific chain is updated.
      * @param chain The name of the chain

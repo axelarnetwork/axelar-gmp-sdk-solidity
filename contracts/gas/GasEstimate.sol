@@ -49,7 +49,7 @@ contract GasEstimate is IGasEstimate {
 
         gasEstimate = gasInfo.baseFee + (executionGasLimit * gasInfo.relativeGasPrice);
 
-        // if chain is L2, compute L1 data fee using ethereum gas price info
+        // if chain is L2, compute L1 data fee using L1 gas price info
         if (gasInfo.l1ToL2BaseFee != 0) {
             gasEstimate += computeL1ToL2Fee(
                 payload,

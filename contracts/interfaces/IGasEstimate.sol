@@ -19,7 +19,7 @@ interface IGasEstimate {
     struct GasInfo {
         uint256 baseFee; // destination base_fee (in terms of src native gas token)
         uint256 relativeGasPrice; // dest_gas_price * dest_token_market_price / src_token_market_price
-        uint256 l1ToL2BaseFee; // whether the chain requires an L1 to L2 fee, (L1 is assumed to be ethereum)
+        uint256 l1ToL2BaseFee; // non-zero if the chain is an L2, and requires an L1 data fee overhead, (L1 is assumed to be ethereum)
     }
 
     /**

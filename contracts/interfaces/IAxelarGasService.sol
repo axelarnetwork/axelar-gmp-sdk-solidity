@@ -2,7 +2,8 @@
 
 pragma solidity ^0.8.0;
 
-import { IUpgradable } from '../interfaces/IUpgradable.sol';
+import { IGasEstimate } from './IGasEstimate.sol';
+import { IUpgradable } from './IUpgradable.sol';
 
 /**
  * @title IAxelarGasService Interface
@@ -10,7 +11,7 @@ import { IUpgradable } from '../interfaces/IUpgradable.sol';
  * and refunds for cross-chain communication on the Axelar network.
  * @dev This interface inherits IUpgradable
  */
-interface IAxelarGasService is IUpgradable {
+interface IAxelarGasService is IGasEstimate, IUpgradable {
     error NothingReceived();
     error InvalidAddress();
     error NotCollector();
@@ -360,6 +361,14 @@ interface IAxelarGasService is IUpgradable {
         uint256 logIndex,
         address refundAddress
     ) external payable;
+
+    /**
+     * @notice Updates the gas price for a specific chain.
+     * @dev This function is called by the gas oracle to update the gas price for a specific chain.
+     * @param chain The name of the chain
+     * @param gasInfo The gas info for the chain
+     */
+    function updateGasInfo(string calldata chain, GasInfo calldata gasInfo) external;
 
     /**
      * @notice Allows the gasCollector to collect accumulated fees from the contract.

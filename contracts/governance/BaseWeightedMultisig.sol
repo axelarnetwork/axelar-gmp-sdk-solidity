@@ -18,6 +18,8 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         uint256 epoch;
         mapping(uint256 => bytes32) signerHashByEpoch;
         mapping(bytes32 => uint256) epochBySignerHash;
+        uint256 lastRotationTimestamp;
+        address fastRotationOperator;
     }
 
     /// @dev Previous signers retention. 0 means only the current signers are valid
@@ -42,6 +44,14 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
     }
 
     /**
+     * @notice This function returns the current signers epoch
+     * @return uint256 The current signers epoch
+     */
+    function fastRotationOperator() external view returns (address) {
+        return _baseWeightedStorage().fastRotationOperator;
+    }
+
+    /**
      * @notice This function returns the signers hash for a given epoch
      * @param signerEpoch The given epoch
      * @return bytes32 The signers hash for the given epoch
@@ -57,6 +67,14 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      */
     function epochBySignerHash(bytes32 signerHash) external view returns (uint256) {
         return _baseWeightedStorage().epochBySignerHash[signerHash];
+    }
+
+    /**
+     * @notice This function returns the timestamp for the last signer rotation
+     * @return uint256 The timestamp for the last signer rotation
+     */
+    function lastRotationTimestamp() external view returns (uint256) {
+        return _baseWeightedStorage().lastRotationTimestamp;
     }
 
     /**
@@ -121,6 +139,14 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
 
         if (newSigners.threshold == 0 || totalWeight < newSigners.threshold) revert InvalidThreshold();
 
+        uint256 timestamp = block.timestamp;
+
+        if (slot.fastRotationOperator != msg.sender && slot.fastRotationOperator != address(0)) {
+            if (timestamp - slot.lastRotationTimestamp < 1 days) {
+                revert('');
+            }
+        }
+
         bytes32 newSignersHash = keccak256(abi.encode(newSigners.signers, newSigners.weights, newSigners.threshold));
 
         uint256 newEpoch = slot.epoch + 1;
@@ -129,6 +155,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         slot.signerHashByEpoch[newEpoch] = newSignersHash;
         // if signer set is the same, old epoch will be overwritten
         slot.epochBySignerHash[newSignersHash] = newEpoch;
+        slot.lastRotationTimestamp = timestamp;
 
         emit SignersRotated(newSigners.signers, newSigners.weights, newSigners.threshold);
     }

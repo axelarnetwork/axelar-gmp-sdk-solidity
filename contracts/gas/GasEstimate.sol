@@ -103,8 +103,8 @@ contract GasEstimate is IGasEstimate {
 
         // The new base_fee_scalar is using old dynamic_overhead_multiplier value which is currently 0.684
         // We are setting it to un upper bound of 0.7 to encounter for future fluctuations
-        uint256 scalarPrecision = 1000000;
-        uint256 baseFeeScalar = 700000; // 7e5 : 1e6 = 0.7
+        uint256 scalarPrecision = 10 ** 6;
+        uint256 baseFeeScalar = 7 * 10 ** 5; // 7e5 : 1e6 = 0.7
 
         // The blob_base_fee_scalar is currently set to 0. As the blob gas model is still in development.
         // https://eips.ethereum.org/EIPS/eip-4844

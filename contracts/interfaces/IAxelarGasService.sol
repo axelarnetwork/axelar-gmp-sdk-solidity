@@ -364,11 +364,11 @@ interface IAxelarGasService is IGasEstimate, IUpgradable {
 
     /**
      * @notice Updates the gas price for a specific chain.
-     * @dev This function is called by the gas oracle to update the gas price for a specific chain.
-     * @param chain The name of the chain
-     * @param gasInfo The gas info for the chain
+     * @dev This function is called by the gas oracle to update the gas prices for a specific chains.
+     * @param chains Array of chain names
+     * @param gasUpdates Array of gas updates
      */
-    function updateGasInfo(string calldata chain, GasInfo calldata gasInfo) external;
+    function updateGasInfo(string[] calldata chains, GasInfo[] calldata gasUpdates) external;
 
     /**
      * @notice Allows the gasCollector to collect accumulated fees from the contract.

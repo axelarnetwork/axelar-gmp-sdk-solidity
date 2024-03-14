@@ -93,8 +93,8 @@ contract GasEstimate is IGasEstimate {
         returns (uint256 l1DataFee)
     {
         /* Optimism Ecotone gas model https://docs.optimism.io/stack/transactions/fees#ecotone
-             tx_compressed_size = [(count_zero_bytes(tx_data)*4 + count_non_zero_bytes(tx_data)*16)] / 16
-             weighted_gas_price = 16*base_fee_scalar*base_fee + blob_base_fee_scalar*blob_base_fee
+             tx_compressed_size = ((count_zero_bytes(tx_data) * 4 + count_non_zero_bytes(tx_data) * 16)) / 16
+             weighted_gas_price = 16 * base_fee_scalar*base_fee + blob_base_fee_scalar * blob_base_fee
              l1_data_fee = tx_compressed_size * weighted_gas_price
 
            Reference implementation:
@@ -106,7 +106,7 @@ contract GasEstimate is IGasEstimate {
         uint256 scalarPrecision = 10**6;
         uint256 baseFeeScalar = 7 * 10**5; // 7e5 : 1e6 = 0.7
 
-        // The blob_base_fee_scalar is currently set to 0. As the blob gas model is still in development.
+        // The blob_base_fee_scalar is currently set to 0. The blob gas model is being adopted by OP validators.
         // https://eips.ethereum.org/EIPS/eip-4844
         uint256 blobBaseFeeScalar = 0 * scalarPrecision;
         uint256 blobBaseFee = 0;
@@ -114,7 +114,7 @@ contract GasEstimate is IGasEstimate {
         // Calculating transaction size in bytes that will later be divided by 16 to compress the size
         // 68 bytes for the TX RLP encoding overhead
         uint256 txSize = 68 * 16;
-        // GMP executeWithToken call params
+        // GMP executeWithToken call parameters
         // 32 bytes for the commandId, 96 bytes for the sourceChain, 128 bytes for the sourceAddress, 96 bytes for token symbol, 32 bytes for amount
         // Expecting half of the calldata bytes to be zeroes. So multiplying by 10 as an average of 4 and 16
         txSize += (32 + 96 + 128 + 96 + 32) * 10;

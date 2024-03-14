@@ -9,7 +9,7 @@ pragma solidity ^0.8.0;
  * @dev This interface inherits IUpgradable
  */
 interface IGasEstimate {
-    error UnsupportedL2Estimate(string chain);
+    error UnsupportedExtraFeeType(ExtraFeeType feeType);
 
     /**
      * @notice Event emitted when the gas price for a specific chain is updated.
@@ -18,10 +18,15 @@ interface IGasEstimate {
      */
     event GasInfoUpdated(string chain, GasInfo info);
 
+    enum ExtraFeeType {
+        None,
+        OptimismEcotone
+    }
+
     struct GasInfo {
         uint256 baseFee; // destination base_fee (in terms of src native gas token)
         uint256 relativeGasPrice; // dest_gas_price * dest_token_market_price / src_token_market_price
-        uint256 l1ToL2BaseFee; // non-zero if the chain is an L2, and requires an L1 data fee overhead, (L1 is assumed to be ethereum)
+        ExtraFeeType extraFee; // additional fee type for L1 to L2
     }
 
     /**

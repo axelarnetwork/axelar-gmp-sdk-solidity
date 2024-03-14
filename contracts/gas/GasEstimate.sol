@@ -50,44 +50,41 @@ contract GasEstimate is IGasEstimate {
         gasEstimate = gasInfo.baseFee + (executionGasLimit * gasInfo.relativeGasPrice);
 
         // if chain is L2, compute L1 data fee using L1 gas price info
-        if (gasInfo.l1ToL2BaseFee != 0) {
-            gasEstimate += computeL1ToL2Fee(
-                destinationChain,
+        if (gasInfo.extraFee != ExtraFeeType.None) {
+            gasEstimate += computeExtraFee(
+                gasInfo.extraFee,
                 payload,
-                slot.gasPrices['ethereum'].relativeGasPrice,
-                gasInfo.l1ToL2BaseFee
+                slot.gasPrices['ethereum'].relativeGasPrice
             );
         }
     }
 
     /**
      * @notice Computes the L1 to L2 fee for a contract call on a destination chain.
-     * @param destinationChain Axelar registered name of the destination chain
+     * @param feeType The type of extra fee
      * @param payload The payload of the contract call
-     *  param l1GasPrice The gas price on the source chain
-     * @param l1ToL2BaseFee The base fee for L1 to L2
+     * @param l1GasPrice The gas price on the source chain
      * @return l1DataFee The L1 to L2 data fee
      */
-    function computeL1ToL2Fee(
-        string calldata destinationChain,
+    function computeExtraFee(
+        ExtraFeeType feeType,
         bytes calldata payload,
-        uint256, /* l1GasPrice */
-        uint256 l1ToL2BaseFee
+        uint256 l1GasPrice
     ) internal pure returns (uint256) {
-        if (keccak256(bytes(destinationChain)) == keccak256(bytes('optimism'))) {
-            return optimismL1ToL2Fee(payload, l1ToL2BaseFee);
+        if (feeType == ExtraFeeType.OptimismEcotone) {
+            return optimismEcotoneL1Fee(payload, l1GasPrice);
         }
 
-        revert UnsupportedL2Estimate(destinationChain);
+        revert UnsupportedExtraFeeType(feeType);
     }
 
     /**
      * @notice Computes the L1 to L2 fee for a contract call on the Optimism chain.
      * @param payload The payload of the contract call
-     * @param l1ToL2BaseFee The base fee for L1 to L2
+     * @param l1GasPrice The base fee for L1 to L2
      * @return l1DataFee The L1 to L2 data fee
      */
-    function optimismL1ToL2Fee(bytes calldata payload, uint256 l1ToL2BaseFee)
+    function optimismEcotoneL1Fee(bytes calldata payload, uint256 l1GasPrice)
         internal
         pure
         returns (uint256 l1DataFee)
@@ -101,23 +98,23 @@ contract GasEstimate is IGasEstimate {
              https://github.com/ethereum-optimism/optimism/blob/876e16ad04968f0bb641eb76f98eb77e7e1a3e16/packages/contracts-bedrock/src/L2/GasPriceOracle.sol#L138
         */
 
-        // The new base_fee_scalar is using old dynamic_overhead_multiplier value which is currently 0.684
-        // We are setting it to un upper bound of 0.7 to encounter for future fluctuations
+        // The new base_fee_scalar is currently set to 0.001368
+        // We are setting it to un upper bound of 0.0015 to account for possible fluctuations
         uint256 scalarPrecision = 10**6;
-        uint256 baseFeeScalar = 7 * 10**5; // 7e5 : 1e6 = 0.7
+        uint256 baseFeeScalar = 1500; // 1500 : 1e6 = 0.0015
 
-        // The blob_base_fee_scalar is currently set to 0. The blob gas model is being adopted by OP validators.
+        // The blob_base_fee_scalar is currently set to 0.810949. Setting it to 0.9 as an upper bound
         // https://eips.ethereum.org/EIPS/eip-4844
-        uint256 blobBaseFeeScalar = 0 * scalarPrecision;
-        uint256 blobBaseFee = 0;
+        uint256 blobBaseFeeScalar = 900000; // 0.9 multiplied by scalarPrecision
+        uint256 blobBaseFee = 1;
 
         // Calculating transaction size in bytes that will later be divided by 16 to compress the size
         // 68 bytes for the TX RLP encoding overhead
         uint256 txSize = 68 * 16;
         // GMP executeWithToken call parameters
-        // 32 bytes for the commandId, 96 bytes for the sourceChain, 128 bytes for the sourceAddress, 96 bytes for token symbol, 32 bytes for amount
+        // 4 bytes for method selector, 32 bytes for the commandId, 96 bytes for the sourceChain, 128 bytes for the sourceAddress, 96 bytes for token symbol, 32 bytes for amount
         // Expecting half of the calldata bytes to be zeroes. So multiplying by 10 as an average of 4 and 16
-        txSize += (32 + 96 + 128 + 96 + 32) * 10;
+        txSize += (4 + 32 + 96 + 128 + 96 + 32) * 10;
 
         for (uint256 i; i < payload.length; ++i) {
             if (payload[i] == 0) {
@@ -127,7 +124,7 @@ contract GasEstimate is IGasEstimate {
             }
         }
 
-        uint256 weightedGasPrice = 16 * baseFeeScalar * l1ToL2BaseFee + blobBaseFeeScalar * blobBaseFee;
+        uint256 weightedGasPrice = 16 * baseFeeScalar * l1GasPrice + blobBaseFeeScalar * blobBaseFee;
 
         l1DataFee = (weightedGasPrice * txSize) / (16 * scalarPrecision); // 16 for txSize compression and scalar precision conversion
     }

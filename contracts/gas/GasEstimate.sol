@@ -111,19 +111,25 @@ contract GasEstimate is IGasEstimate {
         uint256 blobBaseFeeScalar = 0 * scalarPrecision;
         uint256 blobBaseFee = 0;
 
-        uint256 txCompressedSize = 0;
+        // Calculating transaction size in bytes that will later be divided by 16 to compress the size
+        // 68 bytes for the TX RLP encoding overhead
+        uint256 txSize = 68 * 16;
+        // GMP executeWithToken call params
+        // 32 bytes for the commandId, 96 bytes for the sourceChain, 128 bytes for the sourceAddress, 96 bytes for token symbol, 32 bytes for amount
+        // Expecting half of the calldata to be zeroes. So multiplying by 10 as an average of 4 and 16
+        txSize += (32 + 96 + 128 + 96 + 32) * 10;
+
         for (uint256 i; i < payload.length; ++i) {
             if (payload[i] == 0) {
-                txCompressedSize += 4;
+                txSize += 4; // 4 for each zero byte
             } else {
-                txCompressedSize += 16;
+                txSize += 16; // 16 for each non-zero byte
             }
         }
-        txCompressedSize += 68 * 16; // 68 bytes for the RLP encoding transaction overhead
 
         uint256 weightedGasPrice = 16 * baseFeeScalar * l1ToL2BaseFee + blobBaseFeeScalar * blobBaseFee;
 
-        l1DataFee = (txCompressedSize * weightedGasPrice) / (16 * scalarPrecision);
+        l1DataFee = (weightedGasPrice * txSize) / (16 * scalarPrecision); // 16 for txSize compression and scalar precision conversion
     }
 
     /**

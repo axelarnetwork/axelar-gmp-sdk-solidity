@@ -15,6 +15,7 @@ interface IAxelarGasService is IGasEstimate, IUpgradable {
     error InvalidAddress();
     error NotCollector();
     error InvalidAmounts();
+    error InvalidGasUpdates();
 
     event GasPaidForContractCall(
         address indexed sourceAddress,

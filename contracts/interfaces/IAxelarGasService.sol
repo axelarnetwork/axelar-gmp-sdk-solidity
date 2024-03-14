@@ -12,7 +12,6 @@ import { IUpgradable } from './IUpgradable.sol';
  * @dev This interface inherits IUpgradable
  */
 interface IAxelarGasService is IGasEstimate, IUpgradable {
-    error NothingReceived();
     error InvalidAddress();
     error NotCollector();
     error InvalidAmounts();
@@ -266,7 +265,7 @@ interface IAxelarGasService is IGasEstimate, IUpgradable {
 
     /**
      * @notice Pay for gas using native currency for an express contract call on a destination chain.
-     * @dev This function is called on the source chain before calling the gateway to express execute a remote contract.
+     * @dev This function is called on the source chain before calling the gateway to execute a remote contract.
      * @param sender The address making the payment
      * @param destinationChain The target chain where the contract call will be made
      * @param destinationAddress The target address on the destination chain
@@ -283,7 +282,7 @@ interface IAxelarGasService is IGasEstimate, IUpgradable {
 
     /**
      * @notice Pay for gas using native currency for an express contract call with tokens on a destination chain.
-     * @dev This function is called on the source chain before calling the gateway to express execute a remote contract.
+     * @dev This function is called on the source chain before calling the gateway to execute a remote contract.
      * @param sender The address making the payment
      * @param destinationChain The target chain where the contract call with tokens will be made
      * @param destinationAddress The target address on the destination chain

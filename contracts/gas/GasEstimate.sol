@@ -51,11 +51,7 @@ contract GasEstimate is IGasEstimate {
 
         // if chain is L2, compute L1 data fee using L1 gas price info
         if (gasInfo.extraFee != ExtraFeeType.None) {
-            gasEstimate += computeExtraFee(
-                gasInfo.extraFee,
-                payload,
-                slot.gasPrices['ethereum'].relativeGasPrice
-            );
+            gasEstimate += computeExtraFee(gasInfo.extraFee, payload, slot.gasPrices['ethereum'].relativeGasPrice);
         }
     }
 

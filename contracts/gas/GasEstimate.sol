@@ -109,8 +109,8 @@ contract GasEstimate is IGasEstimate {
         uint256 txSize = 68 * 16;
         // GMP executeWithToken call parameters
         // 4 bytes for method selector, 32 bytes for the commandId, 96 bytes for the sourceChain, 128 bytes for the sourceAddress, 96 bytes for token symbol, 32 bytes for amount
-        // Expecting half of the calldata bytes to be zeroes. So multiplying by 10 as an average of 4 and 16
-        txSize += (4 + 32 + 96 + 128 + 96 + 32) * 10;
+        // Expecting most of the calldata bytes to be zeroes. So multiplying by 8 as a weighted average of 4 and 16
+        txSize += (4 + 32 + 96 + 128 + 96 + 32) * 8;
 
         for (uint256 i; i < payload.length; ++i) {
             if (payload[i] == 0) {

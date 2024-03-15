@@ -24,7 +24,7 @@ interface IGasEstimate {
     }
 
     struct GasInfo {
-        uint256 baseFee; // destination base_fee (in terms of src native gas token)
+        uint256 baseFee; // destination axelar base fee for cross-chain message approval (in terms of src native gas token)
         uint256 relativeGasPrice; // dest_gas_price * dest_token_market_price / src_token_market_price
         ExtraFeeType extraFee; // additional fee type for L1 to L2
     }

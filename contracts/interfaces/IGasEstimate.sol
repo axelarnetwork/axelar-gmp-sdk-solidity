@@ -8,7 +8,7 @@ pragma solidity ^0.8.0;
  * and refunds for cross-chain communication on the Axelar network.
  * @dev This interface inherits IUpgradable
  */
-interface IGasEstimate {
+interface ICrossChainGasEstimation {
     error UnsupportedExtraFeeType(ExtraFeeType feeType);
 
     /**

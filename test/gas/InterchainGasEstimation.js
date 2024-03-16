@@ -23,7 +23,7 @@ describe('InterchainGasEstimation', () => {
         await gasEstimate.updateGasInfo(destinationChain, [1, 0, 5000, 0]);
     });
 
-    it('should revert when deployed with empty gateway', async () => {
+    it('should compute gas estimate correctly', async () => {
         const estimate = await gasEstimate.estimateGasFee(
             destinationChain,
             destinationChain,

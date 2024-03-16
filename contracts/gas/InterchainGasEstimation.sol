@@ -112,11 +112,11 @@ contract InterchainGasEstimation is IInterchainGasEstimation {
         // The new base_fee_scalar is currently set to 0.001368
         // We are setting it to un upper bound of 0.0015 to account for possible fluctuations
         uint256 scalarPrecision = 10**6;
-        uint256 baseFeeScalar = 1500; // 1500 : 1e6 = 0.0015
+        uint256 baseFeeScalar = 1500; // 0.0015 multiplied by 10^6
 
         // The blob_base_fee_scalar is currently set to 0.810949. Setting it to 0.9 as an upper bound
         // https://eips.ethereum.org/EIPS/eip-4844
-        uint256 blobBaseFeeScalar = 900000; // 0.9 multiplied by scalarPrecision
+        uint256 blobBaseFeeScalar = 9 * 10**5; // 0.9 multiplied by scalarPrecision
 
         // Calculating transaction size in bytes that will later be divided by 16 to compress the size
         // 68 bytes for the TX RLP encoding overhead

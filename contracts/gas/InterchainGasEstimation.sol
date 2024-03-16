@@ -76,7 +76,7 @@ contract InterchainGasEstimation is IInterchainGasEstimation {
      * @param relativeGasPrice The gas price on the source chain
      * @return l1DataFee The L1 to L2 data fee
      */
-    function computeExtraFee(
+    function computeL1DataFee(
         GasEstimationType gasEstimationType,
         bytes calldata payload,
         uint256 relativeGasPrice,

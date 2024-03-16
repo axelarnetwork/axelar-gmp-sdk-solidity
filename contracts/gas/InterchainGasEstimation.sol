@@ -54,12 +54,12 @@ contract InterchainGasEstimation is IInterchainGasEstimation {
         GasServiceStorage storage slot = _gasServiceStorage();
         GasInfo storage gasInfo = slot.gasPrices[destinationChain];
 
-        gasEstimate = gasInfo.baseFee + (executionGasLimit * gasInfo.relativeGasPrice);
+        gasEstimate = gasInfo.axelarBaseFee + (executionGasLimit * gasInfo.relativeGasPrice);
 
         // if chain is L2, compute L1 data fee using L1 gas price info
         if (gasInfo.gasEstimationType != GasEstimationType.None) {
             GasInfo storage l1GasInfo = slot.gasPrices['ethereum'];
-            
+
             gasEstimate += computeExtraFee(
                 gasInfo.gasEstimationType,
                 payload,
@@ -95,11 +95,11 @@ contract InterchainGasEstimation is IInterchainGasEstimation {
      * @param relativeGasPrice The base fee for L1 to L2
      * @return l1DataFee The L1 to L2 data fee
      */
-    function optimismEcotoneL1Fee(bytes calldata payload, uint256 relativeGasPrice, uint256 relativeBlobBaseFee)
-        internal
-        pure
-        returns (uint256 l1DataFee)
-    {
+    function optimismEcotoneL1Fee(
+        bytes calldata payload,
+        uint256 relativeGasPrice,
+        uint256 relativeBlobBaseFee
+    ) internal pure returns (uint256 l1DataFee) {
         /* Optimism Ecotone gas model https://docs.optimism.io/stack/transactions/fees#ecotone
              tx_compressed_size = ((count_zero_bytes(tx_data) * 4 + count_non_zero_bytes(tx_data) * 16)) / 16
              weighted_gas_price = 16 * base_fee_scalar*base_fee + blob_base_fee_scalar * blob_base_fee

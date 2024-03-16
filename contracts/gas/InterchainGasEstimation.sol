@@ -57,7 +57,7 @@ contract InterchainGasEstimation is IInterchainGasEstimation {
         gasEstimate = gasInfo.axelarBaseFee + (executionGasLimit * gasInfo.relativeGasPrice);
 
         // if chain is L2, compute L1 data fee using L1 gas price info
-        if (gasInfo.gasEstimationType != GasEstimationType.None) {
+        if (gasInfo.gasEstimationType != GasEstimationType.Default) {
             GasInfo storage l1GasInfo = slot.gasPrices['ethereum'];
 
             gasEstimate += computeExtraFee(

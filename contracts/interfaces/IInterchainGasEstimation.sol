@@ -18,7 +18,7 @@ interface IInterchainGasEstimation {
     event GasInfoUpdated(string chain, GasInfo info);
 
     enum GasEstimationType {
-        None,
+        Default,
         OptimismEcotone
     }
 

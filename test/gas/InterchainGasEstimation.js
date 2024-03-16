@@ -12,25 +12,25 @@ describe('InterchainGasEstimation', () => {
 
     const sourceChain = 'ethereum';
     const destinationChain = 'optimism';
+    const destinationAddress = '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b';
 
     before(async () => {
         [ownerWallet] = await ethers.getSigners();
 
         gasEstimateFactory = await ethers.getContractFactory('TestInterchainGasEstimation', ownerWallet);
         gasEstimate = await gasEstimateFactory.deploy().then((d) => d.deployed());
-
-        await gasEstimate.updateGasInfo(sourceChain, [0, 0, 50000000000, 1]);
-        await gasEstimate.updateGasInfo(destinationChain, [1, 0, 5000, 0]);
     });
 
     it('should compute gas estimate correctly', async () => {
+        await gasEstimate.updateGasInfo(sourceChain, [0, 90000000000, 50000000000, 1]).then((tx) => tx.wait());
+        await gasEstimate.updateGasInfo(destinationChain, [1, 90000, 5000, 0]).then((tx) => tx.wait());
         const estimate = await gasEstimate.estimateGasFee(
             destinationChain,
-            destinationChain,
+            destinationAddress,
             '0x2534d1533c9ffce84d3174c1f846a4041d07b56d1e7b5cb7138e06fb42086325',
-            0,
+            120000,
         );
 
-        expect(estimate).to.equal(352800000264);
+        expect(estimate).to.equal(353400090264);
     });
 });

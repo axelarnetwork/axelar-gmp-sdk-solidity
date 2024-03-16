@@ -2,7 +2,8 @@
 
 pragma solidity ^0.8.0;
 
-import { IUpgradable } from '../interfaces/IUpgradable.sol';
+import { IInterchainGasEstimation } from './IInterchainGasEstimation.sol';
+import { IUpgradable } from './IUpgradable.sol';
 
 /**
  * @title IAxelarGasService Interface
@@ -10,11 +11,11 @@ import { IUpgradable } from '../interfaces/IUpgradable.sol';
  * and refunds for cross-chain communication on the Axelar network.
  * @dev This interface inherits IUpgradable
  */
-interface IAxelarGasService is IUpgradable {
-    error NothingReceived();
+interface IAxelarGasService is IInterchainGasEstimation, IUpgradable {
     error InvalidAddress();
     error NotCollector();
     error InvalidAmounts();
+    error InvalidGasUpdates();
 
     event GasPaidForContractCall(
         address indexed sourceAddress,
@@ -265,7 +266,7 @@ interface IAxelarGasService is IUpgradable {
 
     /**
      * @notice Pay for gas using native currency for an express contract call on a destination chain.
-     * @dev This function is called on the source chain before calling the gateway to express execute a remote contract.
+     * @dev This function is called on the source chain before calling the gateway to execute a remote contract.
      * @param sender The address making the payment
      * @param destinationChain The target chain where the contract call will be made
      * @param destinationAddress The target address on the destination chain
@@ -282,7 +283,7 @@ interface IAxelarGasService is IUpgradable {
 
     /**
      * @notice Pay for gas using native currency for an express contract call with tokens on a destination chain.
-     * @dev This function is called on the source chain before calling the gateway to express execute a remote contract.
+     * @dev This function is called on the source chain before calling the gateway to execute a remote contract.
      * @param sender The address making the payment
      * @param destinationChain The target chain where the contract call with tokens will be made
      * @param destinationAddress The target address on the destination chain
@@ -360,6 +361,14 @@ interface IAxelarGasService is IUpgradable {
         uint256 logIndex,
         address refundAddress
     ) external payable;
+
+    /**
+     * @notice Updates the gas price for a specific chain.
+     * @dev This function is called by the gas oracle to update the gas prices for a specific chains.
+     * @param chains Array of chain names
+     * @param gasUpdates Array of gas updates
+     */
+    function updateGasInfo(string[] calldata chains, GasInfo[] calldata gasUpdates) external;
 
     /**
      * @notice Allows the gasCollector to collect accumulated fees from the contract.

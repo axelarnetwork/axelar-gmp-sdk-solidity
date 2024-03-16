@@ -70,7 +70,7 @@ contract InterchainGasEstimation is IInterchainGasEstimation {
     }
 
     /**
-     * @notice Computes the L1 to L2 fee for a contract call on a destination chain.
+     * @notice Computes the additional L1 data fee for an L2 destination chain.
      * @param gasEstimationType The gas estimation type
      * @param payload The payload of the contract call
      * @param relativeGasPrice The gas price on the source chain

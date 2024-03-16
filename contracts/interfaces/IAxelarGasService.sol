@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import { IGasEstimate } from './IGasEstimate.sol';
+import { IInterchainGasEstimation } from './IInterchainGasEstimation.sol';
 import { IUpgradable } from './IUpgradable.sol';
 
 /**
@@ -11,7 +11,7 @@ import { IUpgradable } from './IUpgradable.sol';
  * and refunds for cross-chain communication on the Axelar network.
  * @dev This interface inherits IUpgradable
  */
-interface IAxelarGasService is IGasEstimate, IUpgradable {
+interface IAxelarGasService is IInterchainGasEstimation, IUpgradable {
     error InvalidAddress();
     error NotCollector();
     error InvalidAmounts();

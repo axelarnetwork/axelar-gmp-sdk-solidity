@@ -2,20 +2,27 @@
 
 pragma solidity ^0.8.0;
 
-import { IGasEstimate } from '../interfaces/IGasEstimate.sol';
+import { IInterchainGasEstimation } from '../interfaces/IInterchainGasEstimation.sol';
 
 /**
- * @title AxelarGasService
- * @notice This contract manages gas payments and refunds for cross-chain communication on the Axelar network.
- * @dev The owner address of this contract should be the microservice that pays for gas.
- * @dev Users pay gas for cross-chain calls, and the gasCollector can collect accumulated fees and/or refund users if needed.
+ * @title InterchainGasEstimation
+ * @notice This contract allows for estimating gas fees for cross-chain communication on the Axelar network.
  */
-contract GasEstimate is IGasEstimate {
+contract InterchainGasEstimation is IInterchainGasEstimation {
     // keccak256('GasEstimate.Slot') - 1
     bytes32 internal constant GAS_SERVICE_SLOT = 0x2fa150da4c9f4c3a28593398c65313dd42f63d0530ec6db4a2b46e6d837a3902;
 
     struct GasServiceStorage {
         mapping(string => GasInfo) gasPrices;
+    }
+
+    /**
+     * @notice Returns the gas price for a specific chain.
+     * @param chain The name of the chain
+     * @return gasInfo The gas info for the chain
+     */
+    function getGasInfo(string calldata chain) external view returns (GasInfo memory) {
+        return _gasServiceStorage().gasPrices[chain];
     }
 
     /**
@@ -50,37 +57,45 @@ contract GasEstimate is IGasEstimate {
         gasEstimate = gasInfo.baseFee + (executionGasLimit * gasInfo.relativeGasPrice);
 
         // if chain is L2, compute L1 data fee using L1 gas price info
-        if (gasInfo.extraFee != ExtraFeeType.None) {
-            gasEstimate += computeExtraFee(gasInfo.extraFee, payload, slot.gasPrices['ethereum'].relativeGasPrice);
+        if (gasInfo.gasEstimationType != GasEstimationType.None) {
+            GasInfo storage l1GasInfo = slot.gasPrices['ethereum'];
+            
+            gasEstimate += computeExtraFee(
+                gasInfo.gasEstimationType,
+                payload,
+                l1GasInfo.relativeGasPrice,
+                l1GasInfo.relativeBlobBaseFee
+            );
         }
     }
 
     /**
      * @notice Computes the L1 to L2 fee for a contract call on a destination chain.
-     * @param feeType The type of extra fee
+     * @param gasEstimationType The gas estimation type
      * @param payload The payload of the contract call
-     * @param l1GasPrice The gas price on the source chain
+     * @param relativeGasPrice The gas price on the source chain
      * @return l1DataFee The L1 to L2 data fee
      */
     function computeExtraFee(
-        ExtraFeeType feeType,
+        GasEstimationType gasEstimationType,
         bytes calldata payload,
-        uint256 l1GasPrice
+        uint256 relativeGasPrice,
+        uint256 relativeBlobBaseFee
     ) internal pure returns (uint256) {
-        if (feeType == ExtraFeeType.OptimismEcotone) {
-            return optimismEcotoneL1Fee(payload, l1GasPrice);
+        if (gasEstimationType == GasEstimationType.OptimismEcotone) {
+            return optimismEcotoneL1Fee(payload, relativeGasPrice, relativeBlobBaseFee);
         }
 
-        revert UnsupportedExtraFeeType(feeType);
+        revert UnsupportedEstimationType(gasEstimationType);
     }
 
     /**
      * @notice Computes the L1 to L2 fee for a contract call on the Optimism chain.
      * @param payload The payload of the contract call
-     * @param l1GasPrice The base fee for L1 to L2
+     * @param relativeGasPrice The base fee for L1 to L2
      * @return l1DataFee The L1 to L2 data fee
      */
-    function optimismEcotoneL1Fee(bytes calldata payload, uint256 l1GasPrice)
+    function optimismEcotoneL1Fee(bytes calldata payload, uint256 relativeGasPrice, uint256 relativeBlobBaseFee)
         internal
         pure
         returns (uint256 l1DataFee)
@@ -102,7 +117,6 @@ contract GasEstimate is IGasEstimate {
         // The blob_base_fee_scalar is currently set to 0.810949. Setting it to 0.9 as an upper bound
         // https://eips.ethereum.org/EIPS/eip-4844
         uint256 blobBaseFeeScalar = 900000; // 0.9 multiplied by scalarPrecision
-        uint256 blobBaseFee = 1;
 
         // Calculating transaction size in bytes that will later be divided by 16 to compress the size
         // 68 bytes for the TX RLP encoding overhead
@@ -120,7 +134,7 @@ contract GasEstimate is IGasEstimate {
             }
         }
 
-        uint256 weightedGasPrice = 16 * baseFeeScalar * l1GasPrice + blobBaseFeeScalar * blobBaseFee;
+        uint256 weightedGasPrice = 16 * baseFeeScalar * relativeGasPrice + blobBaseFeeScalar * relativeBlobBaseFee;
 
         l1DataFee = (weightedGasPrice * txSize) / (16 * scalarPrecision); // 16 for txSize compression and scalar precision conversion
     }

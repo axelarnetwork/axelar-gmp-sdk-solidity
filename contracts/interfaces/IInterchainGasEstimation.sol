@@ -3,13 +3,12 @@
 pragma solidity ^0.8.0;
 
 /**
- * @title IAxelarGasService Interface
- * @notice This is an interface for the AxelarGasService contract which manages gas payments
- * and refunds for cross-chain communication on the Axelar network.
- * @dev This interface inherits IUpgradable
+ * @title IInterchainGasEstimation Interface
+ * @notice This is an interface for the InterchainGasEstimation contract
+ * which allows for estimating gas fees for cross-chain communication on the Axelar network.
  */
-interface ICrossChainGasEstimation {
-    error UnsupportedExtraFeeType(ExtraFeeType feeType);
+interface IInterchainGasEstimation {
+    error UnsupportedEstimationType(GasEstimationType feeType);
 
     /**
      * @notice Event emitted when the gas price for a specific chain is updated.
@@ -18,16 +17,24 @@ interface ICrossChainGasEstimation {
      */
     event GasInfoUpdated(string chain, GasInfo info);
 
-    enum ExtraFeeType {
+    enum GasEstimationType {
         None,
         OptimismEcotone
     }
 
     struct GasInfo {
+        GasEstimationType gasEstimationType; // Custom gas pricing rule, such as L1 data fee on L2s
         uint256 baseFee; // destination axelar base fee for cross-chain message approval (in terms of src native gas token)
         uint256 relativeGasPrice; // dest_gas_price * dest_token_market_price / src_token_market_price
-        GasEstimationType gasEstimationType; // Custom gas pricing rule, such as L1 data fee on L2s
+        uint256 relativeBlobBaseFee; // dest_blob_base_fee * dest_token_market_price / src_token_market_price
     }
+
+    /**
+     * @notice Returns the gas price for a specific chain.
+     * @param chain The name of the chain
+     * @return gasInfo The gas info for the chain
+     */
+    function getGasInfo(string calldata chain) external view returns (GasInfo memory);
 
     /**
      * @notice Estimates the gas fee for a cross-chain contract call.

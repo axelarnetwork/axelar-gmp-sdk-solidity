@@ -60,7 +60,7 @@ contract InterchainGasEstimation is IInterchainGasEstimation {
         if (gasInfo.gasEstimationType != GasEstimationType.Default) {
             GasInfo storage l1GasInfo = slot.gasPrices['ethereum'];
 
-            gasEstimate += computeExtraFee(
+            gasEstimate += computeL1DataFee(
                 gasInfo.gasEstimationType,
                 payload,
                 l1GasInfo.relativeGasPrice,

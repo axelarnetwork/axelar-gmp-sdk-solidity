@@ -13,9 +13,9 @@ import { BaseWeightedMultisig } from './BaseWeightedMultisig.sol';
  * @notice Weighted Multisig executor to call functions on any contract
  */
 contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig {
-    // keccak256('InterchainMultisig.Slot')
+    // keccak256('InterchainMultisig.Slot') - 1
     bytes32 internal constant INTERCHAIN_MULTISIG_SLOT =
-        0xee4c79745c2938ff2a269d76f8921d82df3b09446024c758a2e0e593fb2a65a8;
+        0xee4c79745c2938ff2a269d76f8921d82df3b09446024c758a2e0e593fb2a65a7;
 
     using SafeNativeTransfer for address;
 

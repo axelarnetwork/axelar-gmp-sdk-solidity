@@ -81,6 +81,8 @@ module.exports = {
 
     getGasOptions,
 
+    getChainId: async () => (await ethers.provider.getNetwork()).chainId,
+
     getSignedExecuteInput: (data, wallet) =>
         wallet
             .signMessage(arrayify(keccak256(data)))

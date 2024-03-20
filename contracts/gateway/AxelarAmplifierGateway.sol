@@ -6,9 +6,8 @@ import { IAxelarAmplifierGateway } from '../interfaces/IAxelarAmplifierGateway.s
 import { IAxelarGatewayWeightedAuth } from '../interfaces/IAxelarGatewayWeightedAuth.sol';
 
 import { ECDSA } from '../libs/ECDSA.sol';
-import { Ownable } from '../utils/Ownable.sol';
 
-contract AxelarAmplifierGateway is Ownable, IAxelarAmplifierGateway {
+contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
     // keccak256('AxelarAmplifierGateway.Slot') - 1;
     bytes32 internal constant AXELAR_AMPLIFIER_GATEWAY_SLOT =
         0xca458dc12368669a3b8c292bc21c1b887ab1aa386fa3fcc1ed972afd74a330ca;
@@ -23,8 +22,7 @@ contract AxelarAmplifierGateway is Ownable, IAxelarAmplifierGateway {
 
     IAxelarGatewayWeightedAuth public immutable authModule;
 
-    constructor(address authModule_) Ownable(msg.sender) {
-        // TODO: change owner to address(1) after adding upgradability
+    constructor(address authModule_) {
         if (authModule_.code.length == 0) revert InvalidAuthModule();
 
         authModule = IAxelarGatewayWeightedAuth(authModule_);

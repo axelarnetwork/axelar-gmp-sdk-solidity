@@ -2,7 +2,7 @@ const { sortBy } = require('lodash');
 const chai = require('chai');
 const { ethers } = require('hardhat');
 const {
-    utils: { arrayify, keccak256, defaultAbiCoder },
+    utils: { id, arrayify, keccak256, defaultAbiCoder },
 } = ethers;
 const { expect } = chai;
 
@@ -10,6 +10,7 @@ const { getAddresses, getChainId, getRandomID, getWeightedSignersSet, getWeighte
 
 describe('AxelarAmplifierGateway', () => {
     const threshold = 2;
+    const commandId = process.env.REPORT_GAS ? id('4') : getRandomID(); // use fixed command id for deterministic gas computation
 
     let wallets;
     let user;
@@ -93,7 +94,6 @@ describe('AxelarAmplifierGateway', () => {
         it('should approve and validate contract call', async () => {
             const payload = defaultAbiCoder.encode(['address'], [user.address]);
             const payloadHash = keccak256(payload);
-            const commandId = getRandomID();
             const sourceChain = 'Source';
             const sourceAddress = 'address0x123';
             const sourceTxHash = keccak256('0x123abc123abc');
@@ -175,7 +175,7 @@ describe('AxelarAmplifierGateway', () => {
 
             const data = buildCommandBatch(
                 await getChainId(),
-                [getRandomID()],
+                [commandId],
                 ['transferOperatorship'],
                 [getTransferWeightedOperatorshipCommand(newOperators, getWeights(newOperators), newOperators.length)],
             );

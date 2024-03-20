@@ -102,8 +102,8 @@ contract AxelarAmplifierGateway is Ownable, IAxelarAmplifierGateway {
     |* External Functions *|
     \**********************/
 
-    function execute(bytes calldata input) external {
-        (bytes memory data, bytes memory proof) = abi.decode(input, (bytes, bytes));
+    function execute(bytes calldata batch) external {
+        (bytes memory data, bytes memory proof) = abi.decode(batch, (bytes, bytes));
 
         bytes32 messageHash = ECDSA.toEthSignedMessageHash(keccak256(data));
 

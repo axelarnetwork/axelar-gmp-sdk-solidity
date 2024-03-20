@@ -15,4 +15,10 @@ interface IAxelarAmplifierGateway is IAxelarGMPGateway {
      * @param newOperatorsData The encoded new operators.
      */
     event OperatorshipTransferred(bytes newOperatorsData);
+
+    /**
+     * @notice Executes a signed batch of commands created by verifiers on Axelar.
+     * @param  batch The signed batch.
+     */
+    function execute(bytes calldata batch) external;
 }

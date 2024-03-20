@@ -32,7 +32,8 @@ contract AxelarAmplifierGateway is Ownable, IAxelarAmplifierGateway {
 
     IAxelarGatewayWeightedAuth public immutable authModule;
 
-    constructor(address authModule_) Ownable(msg.sender) { // TODO: change owner to address(1) after adding upgradability
+    constructor(address authModule_) Ownable(msg.sender) {
+        // TODO: change owner to address(1) after adding upgradability
         if (authModule_.code.length == 0) revert InvalidAuthModule();
 
         authModule = IAxelarGatewayWeightedAuth(authModule_);
@@ -154,7 +155,11 @@ contract AxelarAmplifierGateway is Ownable, IAxelarAmplifierGateway {
     |* Internal Functions *|
     \**********************/
 
-    function _approveContractCall(AxelarAmplifierGatewayStorage storage slot, bytes memory params, bytes32 commandId) internal {
+    function _approveContractCall(
+        AxelarAmplifierGatewayStorage storage slot,
+        bytes memory params,
+        bytes32 commandId
+    ) internal {
         (
             string memory sourceChain,
             string memory sourceAddress,

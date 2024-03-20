@@ -6,10 +6,18 @@ import { IAxelarAmplifierGateway } from '../interfaces/IAxelarAmplifierGateway.s
 import { IAxelarGatewayWeightedAuth } from '../interfaces/IAxelarGatewayWeightedAuth.sol';
 
 import { ECDSA } from '../libs/ECDSA.sol';
-import { EternalStorage } from '../utils/EternalStorage.sol';
 import { Ownable } from '../utils/Ownable.sol';
 
-contract AxelarAmplifierGateway is EternalStorage, Ownable, IAxelarAmplifierGateway {
+contract AxelarAmplifierGateway is Ownable, IAxelarAmplifierGateway {
+    // keccak256('AxelarAmplifierGateway.Slot') - 1;
+    bytes32 internal constant AXELAR_AMPLIFIER_GATEWAY_SLOT =
+        0xca458dc12368669a3b8c292bc21c1b887ab1aa386fa3fcc1ed972afd74a330ca;
+
+    struct AxelarAmplifierGatewayStorage {
+        mapping(bytes32 => bool) commands;
+        mapping(bytes32 => bool) approvals;
+    }
+
     /**********\
     |* Errors *|
     \**********/
@@ -19,13 +27,9 @@ contract AxelarAmplifierGateway is EternalStorage, Ownable, IAxelarAmplifierGate
     error InvalidChainId();
     error InvalidCommands();
 
-    bytes32 internal constant PREFIX_COMMAND_EXECUTED = keccak256('command-executed');
-    bytes32 internal constant PREFIX_CONTRACT_CALL_APPROVED = keccak256('contract-call-approved');
-
     bytes32 internal constant SELECTOR_APPROVE_CONTRACT_CALL = keccak256('approveContractCall');
     bytes32 internal constant SELECTOR_TRANSFER_OPERATORSHIP = keccak256('transferOperatorship');
 
-    // solhint-disable-next-line immutable-vars-naming
     IAxelarGatewayWeightedAuth public immutable authModule;
 
     constructor(address authModule_) Ownable(msg.sender) {
@@ -55,7 +59,8 @@ contract AxelarAmplifierGateway is EternalStorage, Ownable, IAxelarAmplifierGate
         address contractAddress,
         bytes32 payloadHash
     ) external view override returns (bool) {
-        return getBool(_getIsContractCallApprovedKey(commandId, sourceChain, sourceAddress, contractAddress, payloadHash));
+        bytes32 key = _getIsContractCallApprovedKey(commandId, sourceChain, sourceAddress, contractAddress, payloadHash);
+        return _axelarAmplifierGatewayStorage().approvals[key];
     }
 
     function validateContractCall(
@@ -65,9 +70,11 @@ contract AxelarAmplifierGateway is EternalStorage, Ownable, IAxelarAmplifierGate
         bytes32 payloadHash
     ) external override returns (bool valid) {
         bytes32 key = _getIsContractCallApprovedKey(commandId, sourceChain, sourceAddress, msg.sender, payloadHash);
-        valid = getBool(key);
+        AxelarAmplifierGatewayStorage storage slot = _axelarAmplifierGatewayStorage();
+        valid = slot.approvals[key];
+
         if (valid) {
-            _setBool(key, false);
+            delete slot.approvals[key];
 
             emit ContractCallExecuted(commandId);
         }
@@ -78,7 +85,7 @@ contract AxelarAmplifierGateway is EternalStorage, Ownable, IAxelarAmplifierGate
     \***********/
 
     function isCommandExecuted(bytes32 commandId) public view override returns (bool) {
-        return getBool(_getIsCommandExecutedKey(commandId));
+        return _axelarAmplifierGatewayStorage().commands[commandId];
     }
 
     /**********************\
@@ -92,6 +99,8 @@ contract AxelarAmplifierGateway is EternalStorage, Ownable, IAxelarAmplifierGate
 
         // returns true for current operators
         bool allowOperatorshipTransfer = authModule.validateProof(messageHash, proof);
+
+        AxelarAmplifierGatewayStorage storage slot = _axelarAmplifierGatewayStorage();
 
         uint256 chainId;
         bytes32[] memory commandIds;
@@ -126,12 +135,15 @@ contract AxelarAmplifierGateway is EternalStorage, Ownable, IAxelarAmplifierGate
             }
 
             // Prevent a re-entrancy from executing this command before it can be marked as successful.
-            _setCommandExecuted(commandId, true);
-            // solhint-disable-next-line avoid-low-level-calls
+            slot.commands[commandId] = true;
             (bool success, ) = address(this).call(abi.encodeWithSelector(commandSelector, params[i], commandId));
 
-            if (success) emit Executed(commandId);
-            else _setCommandExecuted(commandId, false);
+            if (success) {
+                // slither-disable-next-line reentrancy-events
+                emit Executed(commandId);
+            } else {
+                slot.commands[commandId] = false;
+            }
         }
     }
 
@@ -149,23 +161,21 @@ contract AxelarAmplifierGateway is EternalStorage, Ownable, IAxelarAmplifierGate
             uint256 sourceEventIndex
         ) = abi.decode(params, (string, string, address, bytes32, bytes32, uint256));
 
-        _setContractCallApproved(commandId, sourceChain, sourceAddress, contractAddress, payloadHash);
+        _axelarAmplifierGatewayStorage().approvals[_getIsContractCallApprovedKey(commandId, sourceChain, sourceAddress, contractAddress, payloadHash)] = true;
+
         emit ContractCallApproved(commandId, sourceChain, sourceAddress, contractAddress, payloadHash, sourceTxHash, sourceEventIndex);
     }
 
     function transferOperatorship(bytes calldata newOperatorsData, bytes32) external onlySelf {
         authModule.transferOperatorship(newOperatorsData);
 
+        // slither-disable-next-line reentrancy-events
         emit OperatorshipTransferred(newOperatorsData);
     }
 
     /********************\
     |* Pure Key Getters *|
     \********************/
-
-    function _getIsCommandExecutedKey(bytes32 commandId) internal pure returns (bytes32) {
-        return keccak256(abi.encodePacked(PREFIX_COMMAND_EXECUTED, commandId));
-    }
 
     function _getIsContractCallApprovedKey(
         bytes32 commandId,
@@ -174,24 +184,16 @@ contract AxelarAmplifierGateway is EternalStorage, Ownable, IAxelarAmplifierGate
         address contractAddress,
         bytes32 payloadHash
     ) internal pure returns (bytes32) {
-        return keccak256(abi.encode(PREFIX_CONTRACT_CALL_APPROVED, commandId, sourceChain, sourceAddress, contractAddress, payloadHash));
+        return keccak256(abi.encode(commandId, sourceChain, sourceAddress, contractAddress, payloadHash));
     }
 
-    /********************\
-    |* Internal Setters *|
-    \********************/
-
-    function _setCommandExecuted(bytes32 commandId, bool executed) internal {
-        _setBool(_getIsCommandExecutedKey(commandId), executed);
-    }
-
-    function _setContractCallApproved(
-        bytes32 commandId,
-        string memory sourceChain,
-        string memory sourceAddress,
-        address contractAddress,
-        bytes32 payloadHash
-    ) internal {
-        _setBool(_getIsContractCallApprovedKey(commandId, sourceChain, sourceAddress, contractAddress, payloadHash), true);
+    /**
+     * @notice Gets the specific storage location for preventing upgrade collisions
+     * @return slot containing the WeightedMultisigStorage struct
+     */
+    function _axelarAmplifierGatewayStorage() private pure returns (AxelarAmplifierGatewayStorage storage slot) {
+        assembly {
+            slot.slot := AXELAR_AMPLIFIER_GATEWAY_SLOT
+        }
     }
 }

@@ -14,6 +14,7 @@
     "no-empty-blocks": "off",
     "avoid-low-level-calls": "off",
     "not-rely-on-time": "off",
-    "no-complex-fallback": "off"
+    "no-complex-fallback": "off",
+    "immutable-vars-naming": "off"
   }
 }

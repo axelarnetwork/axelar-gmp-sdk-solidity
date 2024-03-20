@@ -2,7 +2,6 @@
 
 pragma solidity ^0.8.0;
 
-import { IAxelarGMPGatewayWithToken } from './IAxelarGMPGatewayWithToken.sol';
 import { IAxelarGMPExecutable } from './IAxelarGMPExecutable.sol';
 
 /**
@@ -14,7 +13,7 @@ interface IAxelarGMPExecutableWithToken is IAxelarGMPExecutable {
     /**
      * @notice Executes the specified command sent from another chain and includes a token transfer.
      * @dev This function should be implemented to handle incoming commands that include token transfers.
-     * It will be called by an implementation of IAxelarGMPGatewayWithToken.
+     * It will be called by an implementation of `IAxelarGMPGatewayWithToken`.
      * @param commandId The identifier of the command to execute.
      * @param sourceChain The name of the source chain from where the command originated.
      * @param sourceAddress The address on the source chain that sent the command.

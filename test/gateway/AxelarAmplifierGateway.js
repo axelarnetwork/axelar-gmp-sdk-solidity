@@ -1,4 +1,4 @@
-const { sortBy, get } = require('lodash');
+const { sortBy } = require('lodash');
 const chai = require('chai');
 const { ethers } = require('hardhat');
 const {
@@ -6,7 +6,7 @@ const {
 } = ethers;
 const { expect } = chai;
 
-const { getAddresses, getChainId, getRandomID, getRandomInt, getWeightedSignersSet, getWeightedSignersProof, expectRevert } = require('../utils');
+const { getAddresses, getChainId, getRandomID, getWeightedSignersSet, getWeightedSignersProof } = require('../utils');
 
 describe('AxelarAmplifierGateway', () => {
     const threshold = 2;

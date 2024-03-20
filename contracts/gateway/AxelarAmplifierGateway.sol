@@ -18,15 +18,6 @@ contract AxelarAmplifierGateway is Ownable, IAxelarAmplifierGateway {
         mapping(bytes32 => bool) approvals;
     }
 
-    /**********\
-    |* Errors *|
-    \**********/
-
-    error InvalidAuthModule();
-    error NotSelf();
-    error InvalidChainId();
-    error InvalidCommands();
-
     bytes32 internal constant SELECTOR_APPROVE_CONTRACT_CALL = keccak256('approveContractCall');
     bytes32 internal constant SELECTOR_TRANSFER_OPERATORSHIP = keccak256('transferOperatorship');
 
@@ -141,7 +132,7 @@ contract AxelarAmplifierGateway is Ownable, IAxelarAmplifierGateway {
 
                 _transferOperatorship(params[i]);
             } else {
-                continue; /* Ignore if unknown command received */
+                revert InvalidCommand(commandHash);
             }
 
             slot.commands[commandId] = true;

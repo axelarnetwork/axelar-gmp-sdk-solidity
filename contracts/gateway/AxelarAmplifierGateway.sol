@@ -48,7 +48,11 @@ contract AxelarAmplifierGateway is Ownable, IAxelarAmplifierGateway {
     |* Public Methods *|
     \******************/
 
-    function callContract(string calldata destinationChain, string calldata destinationContractAddress, bytes calldata payload) external {
+    function callContract(
+        string calldata destinationChain,
+        string calldata destinationContractAddress,
+        bytes calldata payload
+    ) external {
         emit ContractCall(msg.sender, destinationChain, destinationContractAddress, keccak256(payload), payload);
     }
 
@@ -59,7 +63,13 @@ contract AxelarAmplifierGateway is Ownable, IAxelarAmplifierGateway {
         address contractAddress,
         bytes32 payloadHash
     ) external view override returns (bool) {
-        bytes32 key = _getIsContractCallApprovedKey(commandId, sourceChain, sourceAddress, contractAddress, payloadHash);
+        bytes32 key = _getIsContractCallApprovedKey(
+            commandId,
+            sourceChain,
+            sourceAddress,
+            contractAddress,
+            payloadHash
+        );
         return _axelarAmplifierGatewayStorage().approvals[key];
     }
 
@@ -161,9 +171,24 @@ contract AxelarAmplifierGateway is Ownable, IAxelarAmplifierGateway {
             uint256 sourceEventIndex
         ) = abi.decode(params, (string, string, address, bytes32, bytes32, uint256));
 
-        _axelarAmplifierGatewayStorage().approvals[_getIsContractCallApprovedKey(commandId, sourceChain, sourceAddress, contractAddress, payloadHash)] = true;
+        bytes32 key = _getIsContractCallApprovedKey(
+            commandId,
+            sourceChain,
+            sourceAddress,
+            contractAddress,
+            payloadHash
+        );
+        _axelarAmplifierGatewayStorage().approvals[key] = true;
 
-        emit ContractCallApproved(commandId, sourceChain, sourceAddress, contractAddress, payloadHash, sourceTxHash, sourceEventIndex);
+        emit ContractCallApproved(
+            commandId,
+            sourceChain,
+            sourceAddress,
+            contractAddress,
+            payloadHash,
+            sourceTxHash,
+            sourceEventIndex
+        );
     }
 
     function transferOperatorship(bytes calldata newOperatorsData, bytes32) external onlySelf {

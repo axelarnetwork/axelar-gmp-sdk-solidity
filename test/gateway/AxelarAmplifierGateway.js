@@ -39,11 +39,16 @@ describe('AxelarAmplifierGateway', () => {
             ['string', 'string', 'address', 'bytes32', 'bytes32', 'uint256'],
             [sourceChain, source, destination, payloadHash, sourceTxHash, sourceEventIndex],
         );
-    }
+    };
 
     const buildCommandBatch = (chainId, commandIDs, commandNames, commands) => {
-        return arrayify(defaultAbiCoder.encode(['uint256', 'bytes32[]', 'string[]', 'bytes[]'], [chainId, commandIDs, commandNames, commands]));
-    }
+        return arrayify(
+            defaultAbiCoder.encode(
+                ['uint256', 'bytes32[]', 'string[]', 'bytes[]'],
+                [chainId, commandIDs, commandNames, commands],
+            ),
+        );
+    };
 
     const getTransferWeightedOperatorshipCommand = (newOperators, newWeights, threshold) =>
         defaultAbiCoder.encode(
@@ -52,16 +57,16 @@ describe('AxelarAmplifierGateway', () => {
         );
 
     const getSignedWeightedExecuteInput = async (data, operators, weights, threshold, signers) =>
-        defaultAbiCoder.encode(['bytes', 'bytes'], [data, await getWeightedSignersProof(data, operators, weights, threshold, signers)]);
+        defaultAbiCoder.encode(
+            ['bytes', 'bytes'],
+            [data, await getWeightedSignersProof(data, operators, weights, threshold, signers)],
+        );
 
     const deployGateway = async () => {
         // setup auth contract with a genesis operator set
         auth = await authFactory
-            .deploy(user.address, [getWeightedSignersSet(
-                getAddresses(operators),
-                weights,
-                threshold,
-            )]).then((d) => d.deployed());
+            .deploy(user.address, [getWeightedSignersSet(getAddresses(operators), weights, threshold)])
+            .then((d) => d.deployed());
 
         gateway = await gatewayFactory.deploy(auth.address).then((d) => d.deployed());
 
@@ -74,13 +79,15 @@ describe('AxelarAmplifierGateway', () => {
         });
 
         it('should emit contract call event', async () => {
-            const destinationChain = "Destination";
-            const destinationAddress = "0x123abc";
+            const destinationChain = 'Destination';
+            const destinationAddress = '0x123abc';
             const payload = defaultAbiCoder.encode(['address'], [user.address]);
 
             const tx = await gateway.connect(user).callContract(destinationChain, destinationAddress, payload);
 
-            expect(tx).to.emit(gateway, 'ContractCall').withArgs(user.address, destinationChain, destinationAddress, keccak256(payload), payload);
+            expect(tx)
+                .to.emit(gateway, 'ContractCall')
+                .withArgs(user.address, destinationChain, destinationAddress, keccak256(payload), payload);
         });
 
         it('should approve and validate contract call', async () => {
@@ -96,7 +103,16 @@ describe('AxelarAmplifierGateway', () => {
                 await getChainId(),
                 [commandId],
                 ['approveContractCall'],
-                [getApproveContractCall(sourceChain, sourceAddress, user.address, payloadHash, sourceTxHash, sourceEventIndex)],
+                [
+                    getApproveContractCall(
+                        sourceChain,
+                        sourceAddress,
+                        user.address,
+                        payloadHash,
+                        sourceTxHash,
+                        sourceEventIndex,
+                    ),
+                ],
             );
 
             const approveInput = await getSignedWeightedExecuteInput(
@@ -109,7 +125,15 @@ describe('AxelarAmplifierGateway', () => {
 
             await expect(gateway.execute(approveInput))
                 .to.emit(gateway, 'ContractCallApproved')
-                .withArgs(commandId, sourceChain, sourceAddress, user.address, payloadHash, sourceTxHash, sourceEventIndex);
+                .withArgs(
+                    commandId,
+                    sourceChain,
+                    sourceAddress,
+                    user.address,
+                    payloadHash,
+                    sourceTxHash,
+                    sourceEventIndex,
+                );
 
             const isApprovedBefore = await gateway.isContractCallApproved(
                 commandId,
@@ -121,9 +145,18 @@ describe('AxelarAmplifierGateway', () => {
 
             expect(isApprovedBefore).to.be.true;
 
-            await gateway.connect(user).validateContractCall(commandId, sourceChain, sourceAddress, payloadHash).then((tx) => tx.wait());
+            await gateway
+                .connect(user)
+                .validateContractCall(commandId, sourceChain, sourceAddress, payloadHash)
+                .then((tx) => tx.wait());
 
-            const isApprovedAfter = await gateway.isContractCallApproved(commandId, sourceChain, sourceAddress, user.address, payloadHash);
+            const isApprovedAfter = await gateway.isContractCallApproved(
+                commandId,
+                sourceChain,
+                sourceAddress,
+                user.address,
+                payloadHash,
+            );
 
             expect(isApprovedAfter).to.be.false;
         });
@@ -135,7 +168,10 @@ describe('AxelarAmplifierGateway', () => {
         });
 
         it('should allow operators to transfer operatorship', async () => {
-            const newOperators = ['0xb7900E8Ec64A1D1315B6D4017d4b1dcd36E6Ea88', '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b'];
+            const newOperators = [
+                '0xb7900E8Ec64A1D1315B6D4017d4b1dcd36E6Ea88',
+                '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b',
+            ];
 
             const data = buildCommandBatch(
                 await getChainId(),
@@ -156,8 +192,9 @@ describe('AxelarAmplifierGateway', () => {
 
             await expect(tx)
                 .to.emit(gateway, 'OperatorshipTransferred')
-                .withArgs(getTransferWeightedOperatorshipCommand(newOperators, getWeights(newOperators), newOperators.length));
+                .withArgs(
+                    getTransferWeightedOperatorshipCommand(newOperators, getWeights(newOperators), newOperators.length),
+                );
         });
     });
 });
-

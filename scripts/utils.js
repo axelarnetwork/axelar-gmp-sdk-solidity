@@ -1,6 +1,6 @@
 const {
     ContractFactory,
-    utils: { keccak256, defaultAbiCoder, arrayify, hashMessage, recoverAddress },
+    utils: { keccak256, defaultAbiCoder, arrayify },
 } = require('ethers');
 const http = require('http');
 const { outputJsonSync } = require('fs-extra');
@@ -93,21 +93,6 @@ const getWeightedSignersProof = async (data, accounts, weights, threshold, signe
     );
 };
 
-const sortWeightedSignaturesProof = async (data, signerAddresses, weights, threshold, signatures) => {
-    const signersWithWeights = signerAddresses.map((address, i) => ({ address, weight: weights[i] }));
-    const sortedSignersWithWeights = sortBy(signersWithWeights, (signer) => signer.address.toLowerCase());
-    const sortedAddresses = sortedSignersWithWeights.map(({ address }) => address);
-    const sortedWeights = sortedSignersWithWeights.map(({ weight }) => weight);
-
-    const hash = arrayify(hashMessage(arrayify(keccak256(data))));
-    signatures = sortBy(signatures, (signature) => recoverAddress(hash, signature).toLowerCase());
-
-    return defaultAbiCoder.encode(
-        ['address[]', 'uint256[]', 'uint256', 'bytes[]'],
-        [sortedAddresses, sortedWeights, threshold, signatures],
-    );
-};
-
 const encodeInterchainCallsBatch = (batchId, calls) =>
     defaultAbiCoder.encode(['bytes32', 'tuple(string, address, address, bytes, uint256)[]'], [batchId, calls]);
 
@@ -120,6 +105,5 @@ module.exports = {
     getAddresses,
     getWeightedSignersSet,
     getWeightedSignersProof,
-    sortWeightedSignaturesProof,
     encodeInterchainCallsBatch,
 };

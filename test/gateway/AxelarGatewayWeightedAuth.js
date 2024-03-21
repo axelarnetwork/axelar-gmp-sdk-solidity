@@ -63,7 +63,7 @@ describe('AxelarGatewayWeightedAuth', () => {
             expect(isCurrentSigners).to.be.true;
         });
 
-        it('reject the proof for a non-existant epoch hash', async () => {
+        it('reject the proof for a non-existent epoch hash', async () => {
             const data = '0x123abc123abc';
 
             const message = hashMessage(arrayify(keccak256(data)));
@@ -160,7 +160,7 @@ describe('AxelarGatewayWeightedAuth', () => {
                 ),
             );
 
-            await expect(isCurrentSigners).to.be.true;
+            expect(isCurrentSigners).to.be.true;
         });
     });
 

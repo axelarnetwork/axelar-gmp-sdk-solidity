@@ -5,20 +5,16 @@ on:
 
 jobs:
   test:
-    strategy:
-      matrix:
-        node-version:
-          - 18.x
-        os:
-          - blacksmith-2vcpu-ubuntu-2204
-    runs-on: ${{ matrix.os }}
+    name: Test
+    runs-on: blacksmith-2vcpu-ubuntu-2204
+
     steps:
       - uses: actions/checkout@v4
 
       - name: Install Node.js
         uses: useblacksmith/setup-node@v5
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 18.x
           cache: 'npm'
 
       - name: Install Dependencies

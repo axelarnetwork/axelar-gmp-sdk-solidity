@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import { InterchainGasEstimation } from '../../gas/InterchainGasEstimation.sol';
+import { InterchainGasEstimation } from '../../gas-estimation/InterchainGasEstimation.sol';
 
 contract TestInterchainGasEstimation is InterchainGasEstimation {
     constructor() {

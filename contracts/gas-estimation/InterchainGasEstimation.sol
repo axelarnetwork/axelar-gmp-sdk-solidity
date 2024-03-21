@@ -6,9 +6,9 @@ import { IInterchainGasEstimation } from '../interfaces/IInterchainGasEstimation
 
 /**
  * @title InterchainGasEstimation
- * @notice This contract allows for estimating gas fees for cross-chain communication on the Axelar network.
+ * @notice This is an abstract contract that allows for estimating gas fees for cross-chain communication on the Axelar network.
  */
-contract InterchainGasEstimation is IInterchainGasEstimation {
+abstract contract InterchainGasEstimation is IInterchainGasEstimation {
     // keccak256('GasEstimate.Slot') - 1
     bytes32 internal constant GAS_SERVICE_SLOT = 0x2fa150da4c9f4c3a28593398c65313dd42f63d0530ec6db4a2b46e6d837a3902;
 

@@ -5,10 +5,10 @@ utilizing the Axelar General Message Passing protocol.
 
 ## Documentation
 
-* [Introduction](https://docs.axelar.dev/dev/intro)
-* [General Message Passing](https://docs.axelar.dev/dev/gmp-overview)
-* [Build](https://docs.axelar.dev/dev/build/getting-started)
-* [Video](https://docs.axelar.dev/dev/guides/video-guides)
+-   [Introduction](https://docs.axelar.dev/dev/intro)
+-   [General Message Passing](https://docs.axelar.dev/dev/gmp-overview)
+-   [Build](https://docs.axelar.dev/dev/build/getting-started)
+-   [Video](https://docs.axelar.dev/dev/guides/video-guides)
 
 ## Build
 
@@ -40,16 +40,19 @@ Unit tests can also be run against live networks for integration testing, see [h
 ### Development
 
 Check gas usage
+
 ```bash
 REPORT_GAS=true npm run test
 ```
 
 Check storage layout of contracts.
+
 ```bash
 STORAGE_LAYOUT=true npx hardhat check
 ```
 
 Check contract bytecode size
+
 ```bash
 CHECK_CONTRACT_SIZE=true npm run build
 ```
@@ -88,3 +91,5 @@ Allows conversion between `bytes` and `address` data types
 
 Allows conversion between `string` and `bytes32` data types
 for storing strings under 31 bytes into a single storage slot
+
+TEST

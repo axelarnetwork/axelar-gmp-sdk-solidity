@@ -9,6 +9,16 @@ import { IAxelarGMPGateway } from './IAxelarGMPGateway.sol';
  * @dev Interface for the Axelar Gateway that supports general message passing and contract call execution.
  */
 interface IAxelarAmplifierGateway is IAxelarGMPGateway {
+    /**********\
+    |* Errors *|
+    \**********/
+
+    error InvalidAuthModule();
+    error NotSelf();
+    error InvalidChainId();
+    error InvalidCommands();
+    error InvalidCommand(bytes32 commandHash);
+
     /**
      * @notice Emitted when operatorship is transferred to a new set.
      * @dev Logs the transfer of operatorship to a new set of operators.

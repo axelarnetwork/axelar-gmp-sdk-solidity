@@ -6,9 +6,8 @@ import { IAxelarAmplifierGateway } from '../interfaces/IAxelarAmplifierGateway.s
 import { IAxelarGatewayWeightedAuth } from '../interfaces/IAxelarGatewayWeightedAuth.sol';
 
 import { ECDSA } from '../libs/ECDSA.sol';
-import { Ownable } from '../utils/Ownable.sol';
 
-contract AxelarAmplifierGateway is Ownable, IAxelarAmplifierGateway {
+contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
     // keccak256('AxelarAmplifierGateway.Slot') - 1;
     bytes32 internal constant AXELAR_AMPLIFIER_GATEWAY_SLOT =
         0xca458dc12368669a3b8c292bc21c1b887ab1aa386fa3fcc1ed972afd74a330ca;
@@ -18,30 +17,15 @@ contract AxelarAmplifierGateway is Ownable, IAxelarAmplifierGateway {
         mapping(bytes32 => bool) approvals;
     }
 
-    /**********\
-    |* Errors *|
-    \**********/
-
-    error InvalidAuthModule();
-    error NotSelf();
-    error InvalidChainId();
-    error InvalidCommands();
-
     bytes32 internal constant SELECTOR_APPROVE_CONTRACT_CALL = keccak256('approveContractCall');
     bytes32 internal constant SELECTOR_TRANSFER_OPERATORSHIP = keccak256('transferOperatorship');
 
     IAxelarGatewayWeightedAuth public immutable authModule;
 
-    constructor(address authModule_) Ownable(msg.sender) {
+    constructor(address authModule_) {
         if (authModule_.code.length == 0) revert InvalidAuthModule();
 
         authModule = IAxelarGatewayWeightedAuth(authModule_);
-    }
-
-    modifier onlySelf() {
-        if (msg.sender != address(this)) revert NotSelf();
-
-        _;
     }
 
     /******************\
@@ -80,11 +64,10 @@ contract AxelarAmplifierGateway is Ownable, IAxelarAmplifierGateway {
         bytes32 payloadHash
     ) external override returns (bool valid) {
         bytes32 key = _getIsContractCallApprovedKey(commandId, sourceChain, sourceAddress, msg.sender, payloadHash);
-        AxelarAmplifierGatewayStorage storage slot = _axelarAmplifierGatewayStorage();
-        valid = slot.approvals[key];
+        valid = _axelarAmplifierGatewayStorage().approvals[key];
 
         if (valid) {
-            delete slot.approvals[key];
+            delete _axelarAmplifierGatewayStorage().approvals[key];
 
             emit ContractCallExecuted(commandId);
         }
@@ -110,8 +93,6 @@ contract AxelarAmplifierGateway is Ownable, IAxelarAmplifierGateway {
         // returns true for current operators
         bool allowOperatorshipTransfer = authModule.validateProof(messageHash, proof);
 
-        AxelarAmplifierGatewayStorage storage slot = _axelarAmplifierGatewayStorage();
-
         uint256 chainId;
         bytes32[] memory commandIds;
         string[] memory commands;
@@ -128,40 +109,39 @@ contract AxelarAmplifierGateway is Ownable, IAxelarAmplifierGateway {
         for (uint256 i; i < commandsLength; ++i) {
             bytes32 commandId = commandIds[i];
 
-            if (isCommandExecuted(commandId)) continue; /* Ignore if duplicate commandId received */
+            // Ignore if commandId is already executed
+            if (isCommandExecuted(commandId)) {
+                continue;
+            }
 
-            bytes4 commandSelector;
             bytes32 commandHash = keccak256(abi.encodePacked(commands[i]));
 
             if (commandHash == SELECTOR_APPROVE_CONTRACT_CALL) {
-                commandSelector = AxelarAmplifierGateway.approveContractCall.selector;
+                _approveContractCall(params[i], commandId);
             } else if (commandHash == SELECTOR_TRANSFER_OPERATORSHIP) {
-                if (!allowOperatorshipTransfer) continue;
+                if (!allowOperatorshipTransfer) {
+                    continue;
+                }
 
                 allowOperatorshipTransfer = false;
-                commandSelector = AxelarAmplifierGateway.transferOperatorship.selector;
+
+                _transferOperatorship(params[i]);
             } else {
-                continue; /* Ignore if unknown command received */
+                revert InvalidCommand(commandHash);
             }
 
-            // Prevent a re-entrancy from executing this command before it can be marked as successful.
-            slot.commands[commandId] = true;
-            (bool success, ) = address(this).call(abi.encodeWithSelector(commandSelector, params[i], commandId));
+            _axelarAmplifierGatewayStorage().commands[commandId] = true;
 
-            if (success) {
-                // slither-disable-next-line reentrancy-events
-                emit Executed(commandId);
-            } else {
-                slot.commands[commandId] = false;
-            }
+            // slither-disable-next-line reentrancy-events
+            emit Executed(commandId);
         }
     }
 
-    /******************\
-    |* Self Functions *|
-    \******************/
+    /**********************\
+    |* Internal Functions *|
+    \**********************/
 
-    function approveContractCall(bytes calldata params, bytes32 commandId) external onlySelf {
+    function _approveContractCall(bytes memory params, bytes32 commandId) internal {
         (
             string memory sourceChain,
             string memory sourceAddress,
@@ -191,7 +171,7 @@ contract AxelarAmplifierGateway is Ownable, IAxelarAmplifierGateway {
         );
     }
 
-    function transferOperatorship(bytes calldata newOperatorsData, bytes32) external onlySelf {
+    function _transferOperatorship(bytes memory newOperatorsData) internal {
         authModule.transferOperatorship(newOperatorsData);
 
         // slither-disable-next-line reentrancy-events

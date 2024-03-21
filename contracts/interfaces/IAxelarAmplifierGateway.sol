@@ -9,6 +9,31 @@ import { IAxelarGMPGateway } from './IAxelarGMPGateway.sol';
  * @dev Interface for the Axelar Gateway that supports general message passing and contract call execution.
  */
 interface IAxelarAmplifierGateway is IAxelarGMPGateway {
+    /*********\
+    |* Types *|
+    \*********/
+
+    enum CommandType {
+        ApproveContractCall,
+        TransferOperatorship
+    }
+
+    struct Command {
+        bytes32 commandId;
+        CommandType command;
+        bytes params;
+    }
+
+    struct CommandBatch {
+        string chainName;
+        Command[] commands;
+    }
+
+    struct SignedCommandBatch {
+        CommandBatch batch;
+        bytes proof;
+    }
+
     /**********\
     |* Errors *|
     \**********/
@@ -17,7 +42,8 @@ interface IAxelarAmplifierGateway is IAxelarGMPGateway {
     error NotSelf();
     error InvalidChainId();
     error InvalidCommands();
-    error InvalidCommand(bytes32 commandHash);
+    error InvalidCommand();
+    error InvalidChainName();
 
     /**
      * @notice Emitted when operatorship is transferred to a new set.
@@ -28,7 +54,7 @@ interface IAxelarAmplifierGateway is IAxelarGMPGateway {
 
     /**
      * @notice Executes a signed batch of commands created by verifiers on Axelar.
-     * @param  batch The signed batch.
+     * @param  signedBatch The signed batch.
      */
-    function execute(bytes calldata batch) external;
+    function execute(SignedCommandBatch calldata signedBatch) external;
 }

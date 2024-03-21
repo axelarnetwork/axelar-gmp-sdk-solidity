@@ -8,24 +8,27 @@ import { IAxelarGatewayWeightedAuth } from '../interfaces/IAxelarGatewayWeighted
 import { ECDSA } from '../libs/ECDSA.sol';
 
 contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
+    /// @dev This slot contains all the storage for this contract in an upgrade-compatible manner
     // keccak256('AxelarAmplifierGateway.Slot') - 1;
     bytes32 internal constant AXELAR_AMPLIFIER_GATEWAY_SLOT =
         0xca458dc12368669a3b8c292bc21c1b887ab1aa386fa3fcc1ed972afd74a330ca;
 
     struct AxelarAmplifierGatewayStorage {
+        string chainName;
         mapping(bytes32 => bool) commands;
         mapping(bytes32 => bool) approvals;
     }
 
-    bytes32 internal constant SELECTOR_APPROVE_CONTRACT_CALL = keccak256('approveContractCall');
-    bytes32 internal constant SELECTOR_TRANSFER_OPERATORSHIP = keccak256('transferOperatorship');
-
     IAxelarGatewayWeightedAuth public immutable authModule;
+    bytes32 public immutable chainNameHash;
 
-    constructor(address authModule_) {
+    constructor(string memory chainName, address authModule_) {
         if (authModule_.code.length == 0) revert InvalidAuthModule();
 
         authModule = IAxelarGatewayWeightedAuth(authModule_);
+
+        _axelarAmplifierGatewayStorage().chainName = chainName;
+        chainNameHash = keccak256(bytes(chainName));
     }
 
     /******************\
@@ -85,49 +88,42 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
     |* External Functions *|
     \**********************/
 
-    function execute(bytes calldata batch) external {
-        (bytes memory data, bytes memory proof) = abi.decode(batch, (bytes, bytes));
+    function execute(SignedCommandBatch calldata signedBatch) external {
+        CommandBatch calldata batch = signedBatch.batch;
+        bytes memory data = abi.encode(batch);
 
-        bytes32 messageHash = ECDSA.toEthSignedMessageHash(keccak256(data));
+        // This is the EVM convention for signing non-tx data to domain separate from regular EVM txs.
+        // This should be customized per chain.
+        bytes32 batchHash = ECDSA.toEthSignedMessageHash(keccak256(data));
 
         // returns true for current operators
-        bool allowOperatorshipTransfer = authModule.validateProof(messageHash, proof);
+        bool allowOperatorshipTransfer = authModule.validateProof(batchHash, signedBatch.proof);
 
-        uint256 chainId;
-        bytes32[] memory commandIds;
-        string[] memory commands;
-        bytes[] memory params;
+        if (chainNameHash != keccak256(bytes(signedBatch.batch.chainName))) revert InvalidChainName();
 
-        (chainId, commandIds, commands, params) = abi.decode(data, (uint256, bytes32[], string[], bytes[]));
+        Command[] memory commands = batch.commands;
 
-        if (chainId != block.chainid) revert InvalidChainId();
-
-        uint256 commandsLength = commandIds.length;
-
-        if (commandsLength != commands.length || commandsLength != params.length) revert InvalidCommands();
-
-        for (uint256 i; i < commandsLength; ++i) {
-            bytes32 commandId = commandIds[i];
+        for (uint256 i; i < commands.length; ++i) {
+            Command memory command = commands[i];
+            bytes32 commandId = command.commandId;
 
             // Ignore if commandId is already executed
             if (isCommandExecuted(commandId)) {
                 continue;
             }
 
-            bytes32 commandHash = keccak256(abi.encodePacked(commands[i]));
-
-            if (commandHash == SELECTOR_APPROVE_CONTRACT_CALL) {
-                _approveContractCall(params[i], commandId);
-            } else if (commandHash == SELECTOR_TRANSFER_OPERATORSHIP) {
+            if (command.command == CommandType.ApproveContractCall) {
+                _approveContractCall(command);
+            } else if (command.command == CommandType.TransferOperatorship) {
                 if (!allowOperatorshipTransfer) {
                     continue;
                 }
 
                 allowOperatorshipTransfer = false;
 
-                _transferOperatorship(params[i]);
+                _transferOperatorship(command.params);
             } else {
-                revert InvalidCommand(commandHash);
+                revert InvalidCommand();
             }
 
             _axelarAmplifierGatewayStorage().commands[commandId] = true;
@@ -141,7 +137,9 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
     |* Internal Functions *|
     \**********************/
 
-    function _approveContractCall(bytes memory params, bytes32 commandId) internal {
+    function _approveContractCall(
+        Command memory command
+    ) internal {
         (
             string memory sourceChain,
             string memory sourceAddress,
@@ -149,10 +147,10 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
             bytes32 payloadHash,
             bytes32 sourceTxHash,
             uint256 sourceEventIndex
-        ) = abi.decode(params, (string, string, address, bytes32, bytes32, uint256));
+        ) = abi.decode(command.params, (string, string, address, bytes32, bytes32, uint256));
 
         bytes32 key = _getIsContractCallApprovedKey(
-            commandId,
+            command.commandId,
             sourceChain,
             sourceAddress,
             contractAddress,
@@ -161,7 +159,7 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
         _axelarAmplifierGatewayStorage().approvals[key] = true;
 
         emit ContractCallApproved(
-            commandId,
+            command.commandId,
             sourceChain,
             sourceAddress,
             contractAddress,
@@ -194,7 +192,7 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
 
     /**
      * @notice Gets the specific storage location for preventing upgrade collisions
-     * @return slot containing the WeightedMultisigStorage struct
+     * @return slot containing the AxelarAmplifierGatewayStorage struct
      */
     function _axelarAmplifierGatewayStorage() private pure returns (AxelarAmplifierGatewayStorage storage slot) {
         assembly {

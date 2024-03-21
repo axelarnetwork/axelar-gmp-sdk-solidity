@@ -64,11 +64,10 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
         bytes32 payloadHash
     ) external override returns (bool valid) {
         bytes32 key = _getIsContractCallApprovedKey(commandId, sourceChain, sourceAddress, msg.sender, payloadHash);
-        AxelarAmplifierGatewayStorage storage slot = _axelarAmplifierGatewayStorage();
-        valid = slot.approvals[key];
+        valid = _axelarAmplifierGatewayStorage().approvals[key];
 
         if (valid) {
-            delete slot.approvals[key];
+            delete _axelarAmplifierGatewayStorage().approvals[key];
 
             emit ContractCallExecuted(commandId);
         }
@@ -94,8 +93,6 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
         // returns true for current operators
         bool allowOperatorshipTransfer = authModule.validateProof(messageHash, proof);
 
-        AxelarAmplifierGatewayStorage storage slot = _axelarAmplifierGatewayStorage();
-
         uint256 chainId;
         bytes32[] memory commandIds;
         string[] memory commands;
@@ -120,7 +117,7 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
             bytes32 commandHash = keccak256(abi.encodePacked(commands[i]));
 
             if (commandHash == SELECTOR_APPROVE_CONTRACT_CALL) {
-                _approveContractCall(slot, params[i], commandId);
+                _approveContractCall(params[i], commandId);
             } else if (commandHash == SELECTOR_TRANSFER_OPERATORSHIP) {
                 if (!allowOperatorshipTransfer) {
                     continue;
@@ -133,7 +130,7 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
                 revert InvalidCommand(commandHash);
             }
 
-            slot.commands[commandId] = true;
+            _axelarAmplifierGatewayStorage().commands[commandId] = true;
 
             // slither-disable-next-line reentrancy-events
             emit Executed(commandId);
@@ -144,11 +141,7 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
     |* Internal Functions *|
     \**********************/
 
-    function _approveContractCall(
-        AxelarAmplifierGatewayStorage storage slot,
-        bytes memory params,
-        bytes32 commandId
-    ) internal {
+    function _approveContractCall(bytes memory params, bytes32 commandId) internal {
         (
             string memory sourceChain,
             string memory sourceAddress,
@@ -165,7 +158,7 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
             contractAddress,
             payloadHash
         );
-        slot.approvals[key] = true;
+        _axelarAmplifierGatewayStorage().approvals[key] = true;
 
         emit ContractCallApproved(
             commandId,

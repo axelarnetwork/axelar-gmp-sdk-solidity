@@ -22,13 +22,14 @@ describe('InterchainGasEstimation', () => {
     });
 
     it('should compute gas estimate correctly', async () => {
-        await gasEstimate.updateGasInfo(sourceChain, [0, 90000000000, 50000000000, 1]).then((tx) => tx.wait());
-        await gasEstimate.updateGasInfo(destinationChain, [1, 90000, 5000, 0]).then((tx) => tx.wait());
+        await gasEstimate.updateGasInfo(sourceChain, [0, 90000000000, 190000000000, 50000000000, 1]).then((tx) => tx.wait());
+        await gasEstimate.updateGasInfo(destinationChain, [1, 90000, 190000, 5000, 0]).then((tx) => tx.wait());
         const estimate = await gasEstimate.estimateGasFee(
             destinationChain,
             destinationAddress,
             '0x2534d1533c9ffce84d3174c1f846a4041d07b56d1e7b5cb7138e06fb42086325',
             120000,
+            false,
         );
 
         expect(estimate).to.equal(353400090264);

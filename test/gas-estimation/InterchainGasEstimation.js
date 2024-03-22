@@ -22,7 +22,9 @@ describe('InterchainGasEstimation', () => {
     });
 
     it('should compute gas estimate correctly', async () => {
-        await gasEstimate.updateGasInfo(sourceChain, [0, 90000000000, 190000000000, 50000000000, 1]).then((tx) => tx.wait());
+        await gasEstimate
+            .updateGasInfo(sourceChain, [0, 90000000000, 190000000000, 50000000000, 1])
+            .then((tx) => tx.wait());
         await gasEstimate.updateGasInfo(destinationChain, [1, 90000, 190000, 5000, 0]).then((tx) => tx.wait());
         const estimate = await gasEstimate.estimateGasFee(
             destinationChain,

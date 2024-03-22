@@ -49,15 +49,18 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
         string calldata destinationChain,
         string calldata, /* destinationAddress */
         bytes calldata payload,
-        uint256 executionGasLimit
-    ) external view returns (uint256 gasEstimate) {
+        uint256 executionGasLimit,
+        bool isExpress
+    ) public view returns (uint256 gasEstimate) {
         GasServiceStorage storage slot = _gasServiceStorage();
         GasInfo storage gasInfo = slot.gasPrices[destinationChain];
 
-        gasEstimate = gasInfo.axelarBaseFee + (executionGasLimit * gasInfo.relativeGasPrice);
+        gasEstimate =
+            (executionGasLimit * gasInfo.relativeGasPrice) +
+            (isExpress ? gasInfo.expressFee : gasInfo.axelarBaseFee);
 
         // if chain is L2, compute L1 data fee using L1 gas price info
-        if (gasInfo.gasEstimationType != GasEstimationType.Default) {
+        if (gasInfo.gasEstimationType != 0) {
             GasInfo storage l1GasInfo = slot.gasPrices['ethereum'];
 
             gasEstimate += computeL1DataFee(
@@ -77,12 +80,15 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
      * @return l1DataFee The L1 to L2 data fee
      */
     function computeL1DataFee(
-        GasEstimationType gasEstimationType,
+        uint256 gasEstimationType,
         bytes calldata payload,
         uint256 relativeGasPrice,
         uint256 relativeBlobBaseFee
     ) internal pure returns (uint256) {
-        if (gasEstimationType == GasEstimationType.OptimismEcotone) {
+        if (gasEstimationType > uint256(type(GasEstimationType).max))
+            revert UnsupportedEstimationType(gasEstimationType);
+
+        if (GasEstimationType(gasEstimationType) == GasEstimationType.OptimismEcotone) {
             return optimismEcotoneL1Fee(payload, relativeGasPrice, relativeBlobBaseFee);
         }
 

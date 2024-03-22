@@ -146,7 +146,7 @@ interface IAxelarGasService is IInterchainGasEstimation, IUpgradable {
      * @param executionGasLimit The gas limit for the contract call
      * @param estimateOnChain Flag to enable on-chain gas estimation
      * @param refundAddress The address where refunds, if any, should be sent
-     * @param params Additional parameters for gas payment
+     * @param params Additional parameters for gas payment. This can be left empty for normal contract call payments.
      */
     function payGas(
         address sender,

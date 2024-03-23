@@ -43,7 +43,7 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
      * param destinationAddress Destination contract address being called
      * @param executionGasLimit The gas limit to be used for the destination contract execution,
      *        e.g. pass in 200k if your app consumes needs upto 200k for this contract call
-     * @param params Additional parameters for the gas estimation
+     * param params Additional parameters for the gas estimation
      * @return gasEstimate The cross-chain gas estimate, in terms of source chain's native gas token that should be forwarded to the gas service.
      */
     function estimateGasFee(
@@ -51,7 +51,7 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
         string calldata, /* destinationAddress */
         bytes calldata payload,
         uint256 executionGasLimit,
-        bytes calldata params
+        bytes calldata /* params */
     ) public view returns (uint256 gasEstimate) {
         GasServiceStorage storage slot = _gasServiceStorage();
         GasInfo storage gasInfo = slot.gasPrices[destinationChain];

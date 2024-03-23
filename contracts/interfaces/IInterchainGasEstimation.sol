@@ -8,7 +8,7 @@ pragma solidity ^0.8.0;
  * which allows for estimating gas fees for cross-chain communication on the Axelar network.
  */
 interface IInterchainGasEstimation {
-    error UnsupportedEstimationType(GasEstimationType feeType);
+    error UnsupportedEstimationType(GasEstimationType gasEstimationType);
 
     /**
      * @notice Event emitted when the gas price for a specific chain is updated.

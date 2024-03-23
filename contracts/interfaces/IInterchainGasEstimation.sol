@@ -8,7 +8,7 @@ pragma solidity ^0.8.0;
  * which allows for estimating gas fees for cross-chain communication on the Axelar network.
  */
 interface IInterchainGasEstimation {
-    error UnsupportedEstimationType(GasEstimationType feeType);
+    error UnsupportedEstimationType(GasEstimationType gasEstimationType);
 
     /**
      * @notice Event emitted when the gas price for a specific chain is updated.
@@ -24,9 +24,10 @@ interface IInterchainGasEstimation {
 
     struct GasInfo {
         GasEstimationType gasEstimationType; // Custom gas pricing rule, such as L1 data fee on L2s
-        uint256 axelarBaseFee; // destination axelar base fee for cross-chain message approval (in terms of src native gas token)
-        uint256 relativeGasPrice; // dest_gas_price * dest_token_market_price / src_token_market_price
-        uint256 relativeBlobBaseFee; // dest_blob_base_fee * dest_token_market_price / src_token_market_price
+        uint128 axelarBaseFee; // axelar base fee for cross-chain message approval (in terms of src native gas token)
+        uint128 expressFee; // axelar express fee for cross-chain message approval and express execution
+        uint128 relativeGasPrice; // dest_gas_price * dest_token_market_price / src_token_market_price
+        uint128 relativeBlobBaseFee; // dest_blob_base_fee * dest_token_market_price / src_token_market_price
     }
 
     /**
@@ -42,12 +43,14 @@ interface IInterchainGasEstimation {
      * @param destinationAddress Destination contract address being called
      * @param executionGasLimit The gas limit to be used for the destination contract execution,
      *        e.g. pass in 200k if your app consumes needs upto 200k for this contract call
+     * @param params Additional parameters for the gas estimation
      * @return gasEstimate The cross-chain gas estimate, in terms of source chain's native gas token that should be forwarded to the gas service.
      */
     function estimateGasFee(
         string calldata destinationChain,
         string calldata destinationAddress,
         bytes calldata payload,
-        uint256 executionGasLimit
+        uint256 executionGasLimit,
+        bytes calldata params
     ) external view returns (uint256 gasEstimate);
 }

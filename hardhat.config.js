@@ -35,16 +35,17 @@ const optimizerSettings = {
     },
 };
 
-const compilerSettings = {
-    version: '0.8.19',
+const defaultSettings = {
+    version: '0.8.23',
     settings: {
         evmVersion: process.env.EVM_VERSION || 'london',
         optimizer: optimizerSettings,
     },
 };
 
-const defaultSettings = {
-    version: '0.8.23',
+// Some contracts use fixed compiler settings to ensure deterministic bytecodes across versions
+const compilerSettings = {
+    version: '0.8.19',
     settings: {
         evmVersion: process.env.EVM_VERSION || 'london',
         optimizer: optimizerSettings,
@@ -58,7 +59,8 @@ module.exports = {
     solidity: {
         compilers: [defaultSettings],
         // Fix compiler settings for contracts that aren't being changed
-        overrides: {
+        // Allow skipping overrides for Slither to work correctly
+        overrides: process.env.NO_OVERRIDES ? {} : {
             'contracts/deploy/ConstAddressDeployer.sol': compilerSettings,
             'contracts/deploy/Create2Deployer.sol': compilerSettings,
             'contracts/deploy/Create3Deployer.sol': compilerSettings,

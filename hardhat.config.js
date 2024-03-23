@@ -15,6 +15,7 @@ const env = process.env.ENV || 'testnet';
 const chains = require(`@axelar-network/axelar-chains-config/info/${env}.json`);
 const keys = readJSON(`${__dirname}/keys.json`);
 const { networks, etherscan } = importNetworks(chains, keys);
+networks.hardhat.hardfork = process.env.EVM_VERSION || 'london';
 
 const optimizerSettings = {
     enabled: true,
@@ -34,6 +35,15 @@ const optimizerSettings = {
     },
 };
 
+const defaultSettings = {
+    version: '0.8.23',
+    settings: {
+        evmVersion: process.env.EVM_VERSION || 'london',
+        optimizer: optimizerSettings,
+    },
+};
+
+// Some contracts use fixed compiler settings to ensure deterministic bytecodes across versions
 const compilerSettings = {
     version: '0.8.19',
     settings: {
@@ -47,15 +57,19 @@ const compilerSettings = {
  */
 module.exports = {
     solidity: {
-        compilers: [compilerSettings],
-        // Fix the Proxy bytecodes
-        overrides: {
+        compilers: [defaultSettings],
+        // Fix compiler settings for contracts that aren't being changed
+        // Allow skipping overrides for Slither to work correctly
+        overrides: process.env.NO_OVERRIDES ? {} : {
+            'contracts/deploy/ConstAddressDeployer.sol': compilerSettings,
             'contracts/deploy/Create2Deployer.sol': compilerSettings,
             'contracts/deploy/Create3Deployer.sol': compilerSettings,
             'contracts/upgradable/Proxy.sol': compilerSettings,
             'contracts/upgradable/InitProxy.sol': compilerSettings,
             'contracts/upgradable/FinalProxy.sol': compilerSettings,
             'contracts/upgradable/FixedProxy.sol': compilerSettings,
+            'contracts/governance/InterchainGovernance.sol': compilerSettings,
+            'contracts/governance/Multisig.sol': compilerSettings,
         },
     },
     defaultNetwork: 'hardhat',

@@ -3,7 +3,6 @@
 pragma solidity ^0.8.0;
 
 import { AxelarExpressExecutable } from '../../express/AxelarExpressExecutable.sol';
-import { IAxelarGateway } from '../../interfaces/IAxelarGateway.sol';
 
 contract ExecutableSample is AxelarExpressExecutable {
     string public value;

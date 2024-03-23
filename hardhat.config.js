@@ -15,6 +15,7 @@ const env = process.env.ENV || 'testnet';
 const chains = require(`@axelar-network/axelar-chains-config/info/${env}.json`);
 const keys = readJSON(`${__dirname}/keys.json`);
 const { networks, etherscan } = importNetworks(chains, keys);
+networks.hardhat.hardfork = process.env.EVM_VERSION || 'london';
 
 const optimizerSettings = {
     enabled: true,
@@ -42,20 +43,31 @@ const compilerSettings = {
     },
 };
 
+const defaultSettings = {
+    version: '0.8.23',
+    settings: {
+        evmVersion: process.env.EVM_VERSION || 'london',
+        optimizer: optimizerSettings,
+    },
+};
+
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
     solidity: {
-        compilers: [compilerSettings],
-        // Fix the Proxy bytecodes
+        compilers: [defaultSettings],
+        // Fix compiler settings for contracts that aren't being changed
         overrides: {
+            'contracts/deploy/ConstAddressDeployer.sol': compilerSettings,
             'contracts/deploy/Create2Deployer.sol': compilerSettings,
             'contracts/deploy/Create3Deployer.sol': compilerSettings,
             'contracts/upgradable/Proxy.sol': compilerSettings,
             'contracts/upgradable/InitProxy.sol': compilerSettings,
             'contracts/upgradable/FinalProxy.sol': compilerSettings,
             'contracts/upgradable/FixedProxy.sol': compilerSettings,
+            'contracts/governance/InterchainGovernance.sol': compilerSettings,
+            'contracts/governance/Multisig.sol': compilerSettings,
         },
     },
     defaultNetwork: 'hardhat',

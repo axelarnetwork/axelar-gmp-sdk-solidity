@@ -8,7 +8,7 @@ pragma solidity ^0.8.0;
  * which allows for estimating gas fees for cross-chain communication on the Axelar network.
  */
 interface IInterchainGasEstimation {
-    error UnsupportedEstimationType(uint256 feeType);
+    error UnsupportedEstimationType(GasEstimationType feeType);
 
     /**
      * @notice Event emitted when the gas price for a specific chain is updated.
@@ -23,7 +23,7 @@ interface IInterchainGasEstimation {
     }
 
     struct GasInfo {
-        uint128 gasEstimationType; // Custom gas pricing rule, such as L1 data fee on L2s
+        GasEstimationType gasEstimationType; // Custom gas pricing rule, such as L1 data fee on L2s
         uint128 axelarBaseFee; // axelar base fee for cross-chain message approval (in terms of src native gas token)
         uint128 expressFee; // axelar express fee for cross-chain message approval and express execution
         uint128 relativeGasPrice; // dest_gas_price * dest_token_market_price / src_token_market_price
@@ -43,6 +43,7 @@ interface IInterchainGasEstimation {
      * @param destinationAddress Destination contract address being called
      * @param executionGasLimit The gas limit to be used for the destination contract execution,
      *        e.g. pass in 200k if your app consumes needs upto 200k for this contract call
+     * @param params Additional parameters for the gas estimation
      * @return gasEstimate The cross-chain gas estimate, in terms of source chain's native gas token that should be forwarded to the gas service.
      */
     function estimateGasFee(
@@ -50,6 +51,6 @@ interface IInterchainGasEstimation {
         string calldata destinationAddress,
         bytes calldata payload,
         uint256 executionGasLimit,
-        bool isExpress
+        bytes calldata params
     ) external view returns (uint256 gasEstimate);
 }

@@ -31,7 +31,7 @@ describe('InterchainGasEstimation', () => {
             destinationAddress,
             '0x2534d1533c9ffce84d3174c1f846a4041d07b56d1e7b5cb7138e06fb42086325',
             120000,
-            false,
+            "0x",
         );
 
         expect(estimate).to.equal(353400090264);

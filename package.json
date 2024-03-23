@@ -20,20 +20,20 @@
     "@axelar-network/axelar-chains-config": "^1.0.0",
     "@nomicfoundation/hardhat-toolbox": "^2.0.2",
     "cross-env": "^7.0.3",
-    "eslint": "^8.37.0",
+    "eslint": "^8.57.0",
     "eslint-config-richardpringle": "^2.0.0",
     "fs-extra": "^11.1.1",
-    "hardhat": "^2.18.3",
+    "hardhat": "~2.22.2",
     "hardhat-storage-layout": "^0.1.7",
     "hardhat-contract-sizer": "^2.10.0",
     "lodash": "^4.17.21",
     "mocha": "^10.2.0",
-    "prettier": "^2.8.7",
-    "prettier-plugin-solidity": "^1.0.0-beta.19",
-    "solhint": "^3.4.1"
+    "prettier": "^2.8.8",
+    "prettier-plugin-solidity": "1.0.0-beta.19",
+    "solhint": "^4.5.2"
   },
   "engines": {
-    "node": ">=16"
+    "node": ">=18"
   },
   "files": [
     "artifacts",

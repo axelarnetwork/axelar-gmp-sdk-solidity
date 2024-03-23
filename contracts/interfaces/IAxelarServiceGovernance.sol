@@ -3,7 +3,6 @@
 pragma solidity ^0.8.0;
 
 import { IInterchainGovernance } from './IInterchainGovernance.sol';
-import { IBaseMultisig } from './IBaseMultisig.sol';
 
 /**
  * @title IAxelarServiceGovernance Interface

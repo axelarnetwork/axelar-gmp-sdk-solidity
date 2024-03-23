@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 
 import { IAxelarServiceGovernance } from '../interfaces/IAxelarServiceGovernance.sol';
 import { InterchainGovernance } from './InterchainGovernance.sol';
-import { BaseMultisig } from './BaseMultisig.sol';
 
 /**
  * @title AxelarServiceGovernance Contract

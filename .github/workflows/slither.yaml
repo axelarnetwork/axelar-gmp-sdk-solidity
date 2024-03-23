@@ -24,4 +24,4 @@ jobs:
         run: npm ci
 
       - name: Run Slither
-        uses: crytic/slither-action@v0.3.1
+        uses: crytic/slither-action@v0.3.0

@@ -15,20 +15,28 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
 
     struct AxelarAmplifierGatewayStorage {
         string chainName;
+        string router;
         mapping(bytes32 => bool) commands;
         mapping(bytes32 => bool) approvals;
     }
 
     IAxelarGatewayWeightedAuth public immutable authModule;
     bytes32 public immutable chainNameHash;
+    bytes32 public immutable routerHash;
 
-    constructor(string memory chainName, address authModule_) {
+    constructor(
+        address authModule_,
+        string memory chainName,
+        string memory router
+    ) {
         if (authModule_.code.length == 0) revert InvalidAuthModule();
 
         authModule = IAxelarGatewayWeightedAuth(authModule_);
 
-        _axelarAmplifierGatewayStorage().chainName = chainName;
+        _storage().chainName = chainName;
+        _storage().router = router;
         chainNameHash = keccak256(bytes(chainName));
+        routerHash = keccak256(bytes(router));
     }
 
     /******************\
@@ -50,14 +58,18 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
         address contractAddress,
         bytes32 payloadHash
     ) external view override returns (bool) {
-        bytes32 key = _getIsContractCallApprovedKey(
-            commandId,
-            sourceChain,
-            sourceAddress,
-            contractAddress,
-            payloadHash
-        );
-        return _axelarAmplifierGatewayStorage().approvals[key];
+        return _isContractCallApproved(commandId, sourceChain, sourceAddress, contractAddress, payloadHash);
+    }
+
+    function isMessageApproved(
+        string calldata messageId,
+        string calldata sourceChain,
+        string calldata sourceAddress,
+        address contractAddress,
+        bytes32 payloadHash
+    ) external view override returns (bool) {
+        bytes32 commandId = keccak256(bytes(messageId));
+        return _isContractCallApproved(commandId, sourceChain, sourceAddress, contractAddress, payloadHash);
     }
 
     function validateContractCall(
@@ -66,14 +78,17 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
         string calldata sourceAddress,
         bytes32 payloadHash
     ) external override returns (bool valid) {
-        bytes32 key = _getIsContractCallApprovedKey(commandId, sourceChain, sourceAddress, msg.sender, payloadHash);
-        valid = _axelarAmplifierGatewayStorage().approvals[key];
+        valid = _validateContractCall(commandId, sourceChain, sourceAddress, payloadHash);
+    }
 
-        if (valid) {
-            delete _axelarAmplifierGatewayStorage().approvals[key];
-
-            emit ContractCallExecuted(commandId);
-        }
+    function validateMessage(
+        string calldata messageId,
+        string calldata sourceChain,
+        string calldata sourceAddress,
+        bytes32 payloadHash
+    ) external override returns (bool valid) {
+        bytes32 commandId = keccak256(bytes(messageId));
+        valid = _validateContractCall(commandId, sourceChain, sourceAddress, payloadHash);
     }
 
     /***********\
@@ -81,7 +96,7 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
     \***********/
 
     function isCommandExecuted(bytes32 commandId) public view override returns (bool) {
-        return _axelarAmplifierGatewayStorage().commands[commandId];
+        return _storage().commands[commandId];
     }
 
     /**********************\
@@ -99,22 +114,23 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
         // returns true for current operators
         bool allowOperatorshipTransfer = authModule.validateProof(batchHash, signedBatch.proof);
 
-        if (chainNameHash != keccak256(bytes(signedBatch.batch.chainName))) revert InvalidChainName();
+        if (chainNameHash != signedBatch.batch.chainNameHash) revert InvalidChainName();
+        if (routerHash != signedBatch.batch.routerHash) revert InvalidRouter();
 
         Command[] memory commands = batch.commands;
 
         for (uint256 i; i < commands.length; ++i) {
             Command memory command = commands[i];
-            bytes32 commandId = command.commandId;
+            bytes32 commandId = keccak256(bytes(command.messageId));
 
             // Ignore if commandId is already executed
             if (isCommandExecuted(commandId)) {
                 continue;
             }
 
-            if (command.command == CommandType.ApproveContractCall) {
-                _approveContractCall(command);
-            } else if (command.command == CommandType.TransferOperatorship) {
+            if (command.commandType == CommandType.ApproveContractCall) {
+                _approveContractCall(commandId, command);
+            } else if (command.commandType == CommandType.TransferOperatorship) {
                 if (!allowOperatorshipTransfer) {
                     continue;
                 }
@@ -126,10 +142,10 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
                 revert InvalidCommand();
             }
 
-            _axelarAmplifierGatewayStorage().commands[commandId] = true;
+            _storage().commands[commandId] = true;
 
             // slither-disable-next-line reentrancy-events
-            emit Executed(commandId);
+            emit Executed(commandId, command.messageId);
         }
     }
 
@@ -137,35 +153,59 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
     |* Internal Functions *|
     \**********************/
 
-    function _approveContractCall(
-        Command memory command
-    ) internal {
-        (
-            string memory sourceChain,
-            string memory sourceAddress,
-            address contractAddress,
-            bytes32 payloadHash,
-            bytes32 sourceTxHash,
-            uint256 sourceEventIndex
-        ) = abi.decode(command.params, (string, string, address, bytes32, bytes32, uint256));
-
+    function _isContractCallApproved(
+        bytes32 commandId,
+        string calldata sourceChain,
+        string calldata sourceAddress,
+        address contractAddress,
+        bytes32 payloadHash
+    ) internal view returns (bool) {
         bytes32 key = _getIsContractCallApprovedKey(
-            command.commandId,
+            commandId,
             sourceChain,
             sourceAddress,
             contractAddress,
             payloadHash
         );
-        _axelarAmplifierGatewayStorage().approvals[key] = true;
+        return _storage().approvals[key];
+    }
+
+    function _validateContractCall(
+        bytes32 commandId,
+        string calldata sourceChain,
+        string calldata sourceAddress,
+        bytes32 payloadHash
+    ) internal returns (bool valid) {
+        bytes32 key = _getIsContractCallApprovedKey(commandId, sourceChain, sourceAddress, msg.sender, payloadHash);
+        valid = _storage().approvals[key];
+
+        if (valid) {
+            delete _storage().approvals[key];
+
+            emit ContractCallExecuted(commandId);
+        }
+    }
+
+    function _approveContractCall(bytes32 commandId, Command memory command) internal {
+        (string memory sourceChain, string memory sourceAddress, address contractAddress, bytes32 payloadHash) = abi
+            .decode(command.params, (string, string, address, bytes32));
+
+        bytes32 key = _getIsContractCallApprovedKey(
+            commandId,
+            sourceChain,
+            sourceAddress,
+            contractAddress,
+            payloadHash
+        );
+        _storage().approvals[key] = true;
 
         emit ContractCallApproved(
-            command.commandId,
+            commandId,
             sourceChain,
             sourceAddress,
             contractAddress,
             payloadHash,
-            sourceTxHash,
-            sourceEventIndex
+            command.messageId
         );
     }
 
@@ -194,7 +234,7 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
      * @notice Gets the specific storage location for preventing upgrade collisions
      * @return slot containing the AxelarAmplifierGatewayStorage struct
      */
-    function _axelarAmplifierGatewayStorage() private pure returns (AxelarAmplifierGatewayStorage storage slot) {
+    function _storage() private pure returns (AxelarAmplifierGatewayStorage storage slot) {
         assembly {
             slot.slot := AXELAR_AMPLIFIER_GATEWAY_SLOT
         }

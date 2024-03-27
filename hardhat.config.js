@@ -60,17 +60,19 @@ module.exports = {
         compilers: [defaultSettings],
         // Fix compiler settings for contracts that aren't being changed
         // Allow skipping overrides for Slither to work correctly
-        overrides: process.env.NO_OVERRIDES ? {} : {
-            'contracts/deploy/ConstAddressDeployer.sol': compilerSettings,
-            'contracts/deploy/Create2Deployer.sol': compilerSettings,
-            'contracts/deploy/Create3Deployer.sol': compilerSettings,
-            'contracts/upgradable/Proxy.sol': compilerSettings,
-            'contracts/upgradable/InitProxy.sol': compilerSettings,
-            'contracts/upgradable/FinalProxy.sol': compilerSettings,
-            'contracts/upgradable/FixedProxy.sol': compilerSettings,
-            'contracts/governance/InterchainGovernance.sol': compilerSettings,
-            'contracts/governance/Multisig.sol': compilerSettings,
-        },
+        overrides: process.env.NO_OVERRIDES
+            ? {}
+            : {
+                  'contracts/deploy/ConstAddressDeployer.sol': compilerSettings,
+                  'contracts/deploy/Create2Deployer.sol': compilerSettings,
+                  'contracts/deploy/Create3Deployer.sol': compilerSettings,
+                  'contracts/upgradable/Proxy.sol': compilerSettings,
+                  'contracts/upgradable/InitProxy.sol': compilerSettings,
+                  'contracts/upgradable/FinalProxy.sol': compilerSettings,
+                  'contracts/upgradable/FixedProxy.sol': compilerSettings,
+                  'contracts/governance/InterchainGovernance.sol': compilerSettings,
+                  'contracts/governance/Multisig.sol': compilerSettings,
+              },
     },
     defaultNetwork: 'hardhat',
     networks,

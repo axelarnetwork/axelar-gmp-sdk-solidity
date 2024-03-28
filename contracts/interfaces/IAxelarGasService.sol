@@ -16,6 +16,7 @@ interface IAxelarGasService is IInterchainGasEstimation, IUpgradable {
     error NotCollector();
     error InvalidAmounts();
     error InvalidGasUpdates();
+    error InvalidParams();
     error InsufficientGasPayment(uint256 required, uint256 provided);
 
     event GasPaidForContractCall(

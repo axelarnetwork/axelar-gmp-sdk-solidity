@@ -12,6 +12,13 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
     // keccak256('GasEstimate.Slot') - 1
     bytes32 internal constant GAS_SERVICE_SLOT = 0x2fa150da4c9f4c3a28593398c65313dd42f63d0530ec6db4a2b46e6d837a3902;
 
+    // 68 bytes for the TX RLP encoding overhead
+    uint256 internal constant TX_ENCODING_OVERHEAD = 68;
+    // GMP executeWithToken call parameters
+    // 4 bytes for method selector, 32 bytes for the commandId, 96 bytes for the sourceChain, 128 bytes for the sourceAddress, 96 bytes for token symbol, 32 bytes for amount
+    // Expecting most of the calldata bytes to be zeroes. So multiplying by 8 as a weighted average of 4 and 16
+    uint256 internal constant GMP_CALLDATA_SIZE = 4 + 32 + 96 + 128 + 96 + 32; // 388 bytes
+
     struct GasServiceStorage {
         mapping(string => GasInfo) gasPrices;
     }
@@ -87,6 +94,9 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
         if (gasEstimationType == GasEstimationType.OptimismEcotone) {
             return optimismEcotoneL1Fee(payload, relativeGasPrice, relativeBlobBaseFee);
         }
+        if (gasEstimationType == GasEstimationType.ArbitrumOne) {
+            return arbitrumL1Fee(payload, relativeGasPrice, relativeBlobBaseFee);
+        }
 
         revert UnsupportedEstimationType(gasEstimationType);
     }
@@ -121,12 +131,10 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
         uint256 blobBaseFeeScalar = 9 * 10**5; // 0.9 multiplied by scalarPrecision
 
         // Calculating transaction size in bytes that will later be divided by 16 to compress the size
-        // 68 bytes for the TX RLP encoding overhead
-        uint256 txSize = 68 * 16;
+        uint256 txSize = TX_ENCODING_OVERHEAD * 16;
         // GMP executeWithToken call parameters
-        // 4 bytes for method selector, 32 bytes for the commandId, 96 bytes for the sourceChain, 128 bytes for the sourceAddress, 96 bytes for token symbol, 32 bytes for amount
         // Expecting most of the calldata bytes to be zeroes. So multiplying by 8 as a weighted average of 4 and 16
-        txSize += (4 + 32 + 96 + 128 + 96 + 32) * 8;
+        txSize += GMP_CALLDATA_SIZE * 8;
 
         for (uint256 i; i < payload.length; ++i) {
             if (payload[i] == 0) {
@@ -139,6 +147,35 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
         uint256 weightedGasPrice = 16 * baseFeeScalar * relativeGasPrice + blobBaseFeeScalar * relativeBlobBaseFee;
 
         l1DataFee = (weightedGasPrice * txSize) / (16 * scalarPrecision); // 16 for txSize compression and scalar precision conversion
+    }
+
+    /**
+     * @notice Computes the L1 to L2 fee for a contract call on the Arbitrum chain.
+     * @param payload The payload of the contract call
+     * @param relativeGasPrice The base fee for L1 to L2
+     * param relativeBlobBaseFee The blob base fee for L1 to L2
+     * @return l1DataFee The L1 to L2 data fee
+     */
+    function arbitrumL1Fee(
+        bytes calldata payload,
+        uint256 relativeGasPrice,
+        uint256 /* relativeBlobBaseFee */
+    ) internal pure returns (uint256 l1DataFee) {
+        // https://docs.arbitrum.io/build-decentralized-apps/how-to-estimate-gas
+        // https://docs.arbitrum.io/arbos/l1-pricing
+        // Reference https://github.com/OffchainLabs/nitro/blob/master/arbos/l1pricing/l1pricing.go#L565-L578
+        uint256 OneInBips = 10000;
+        uint256 TxDataNonZeroGasEIP2028 = 16;
+        uint256 estimationPaddingUnits = 16 * TxDataNonZeroGasEIP2028;
+        uint256 estimationPaddingBasisPoints = 100;
+
+        // baseline compression rate is 2.5x
+        uint256 l1Bytes = ((TX_ENCODING_OVERHEAD + GMP_CALLDATA_SIZE + payload.length) * 10) / 25;
+        uint256 units = l1Bytes * TxDataNonZeroGasEIP2028;
+
+        return
+            (relativeGasPrice * (units + estimationPaddingUnits) * (OneInBips + estimationPaddingBasisPoints)) /
+            OneInBips;
     }
 
     /**

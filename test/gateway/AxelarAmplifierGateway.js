@@ -12,13 +12,14 @@ const APPROVE_CONTRACT_CALL = 0;
 const TRANSFER_OPERATORSHIP = 1;
 
 describe('AxelarAmplifierGateway', () => {
-    const threshold = 3;
+    const threshold = 20;
     const messageId = process.env.REPORT_GAS ? '4' : `${getRandomID()}`; // use fixed command id for deterministic gas computation
     const commandId = keccak256(ethers.utils.toUtf8Bytes(messageId));
     const chainName = 'chain';
     const chainNameHash = keccak256(toUtf8Bytes(chainName));
     const router = 'router';
     const routerHash = keccak256(toUtf8Bytes(router));
+    const domainSeparator = keccak256(toUtf8Bytes(chainName + router + 'axelar-1'));
 
     let wallets;
     let user;
@@ -58,7 +59,7 @@ describe('AxelarAmplifierGateway', () => {
 
     const getSignedBatch = async (batch, operators, weights, threshold, signers) => {
         const encodedBatch = arrayify(
-            defaultAbiCoder.encode(['tuple(bytes32,bytes32,tuple(uint8,string,bytes)[])'], [batch]),
+            defaultAbiCoder.encode(['tuple(bytes32,tuple(uint8,string,bytes)[])'], [batch]),
         );
 
         return [batch, await getWeightedSignersProof(encodedBatch, operators, weights, threshold, signers)];
@@ -70,7 +71,7 @@ describe('AxelarAmplifierGateway', () => {
             .deploy(user.address, [getWeightedSignersSet(getAddresses(operators), weights, threshold)])
             .then((d) => d.deployed());
 
-        gateway = await gatewayFactory.deploy(auth.address, chainName, router).then((d) => d.deployed());
+        gateway = await gatewayFactory.deploy(auth.address, domainSeparator).then((d) => d.deployed());
 
         await auth.transferOwnership(gateway.address).then((tx) => tx.wait());
     };
@@ -105,8 +106,7 @@ describe('AxelarAmplifierGateway', () => {
             const sourceAddress = 'address0x123';
 
             const batch = [
-                chainNameHash,
-                routerHash,
+                domainSeparator,
                 [
                     [
                         APPROVE_CONTRACT_CALL,
@@ -180,7 +180,7 @@ describe('AxelarAmplifierGateway', () => {
                 ]);
             }
 
-            const batch = [chainNameHash, routerHash, commands];
+            const batch = [domainSeparator, commands];
 
             const signedBatch = await getSignedBatch(
                 batch,
@@ -261,8 +261,7 @@ describe('AxelarAmplifierGateway', () => {
             ];
 
             const batch = [
-                chainNameHash,
-                routerHash,
+                domainSeparator,
                 [
                     [
                         TRANSFER_OPERATORSHIP,

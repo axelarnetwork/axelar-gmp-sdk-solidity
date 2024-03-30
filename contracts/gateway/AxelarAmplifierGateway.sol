@@ -14,29 +14,21 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
         0xca458dc12368669a3b8c292bc21c1b887ab1aa386fa3fcc1ed972afd74a330ca;
 
     struct AxelarAmplifierGatewayStorage {
-        string chainName;
-        string router;
         mapping(bytes32 => bool) commands;
         mapping(bytes32 => bool) approvals;
     }
 
     IAxelarGatewayWeightedAuth public immutable authModule;
-    bytes32 public immutable chainNameHash;
-    bytes32 public immutable routerHash;
+    bytes32 public immutable domainSeparator;
 
     constructor(
         address authModule_,
-        string memory chainName,
-        string memory router
+        bytes32 domainSeparator_
     ) {
         if (authModule_.code.length == 0) revert InvalidAuthModule();
 
         authModule = IAxelarGatewayWeightedAuth(authModule_);
-
-        _storage().chainName = chainName;
-        _storage().router = router;
-        chainNameHash = keccak256(bytes(chainName));
-        routerHash = keccak256(bytes(router));
+        domainSeparator = domainSeparator_;
     }
 
     /******************\
@@ -114,8 +106,7 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
         // returns true for current operators
         bool allowOperatorshipTransfer = authModule.validateProof(batchHash, signedBatch.proof);
 
-        if (chainNameHash != signedBatch.batch.chainNameHash) revert InvalidChainName();
-        if (routerHash != signedBatch.batch.routerHash) revert InvalidRouter();
+        if (domainSeparator != signedBatch.batch.domainSeparator) revert InvalidDomainSeparator();
 
         Command[] memory commands = batch.commands;
 

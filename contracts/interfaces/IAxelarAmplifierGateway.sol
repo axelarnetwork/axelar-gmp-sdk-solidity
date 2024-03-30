@@ -25,8 +25,9 @@ interface IAxelarAmplifierGateway is IAxelarGMPGateway {
     }
 
     struct CommandBatch {
-        bytes32 chainNameHash;
-        bytes32 routerHash;
+        // Amplifier domain separator
+        // keccak256(chain_name || amplifier_router_address || axelar_chain_id)
+        bytes32 domainSeparator;
         Command[] commands;
     }
 
@@ -44,8 +45,7 @@ interface IAxelarAmplifierGateway is IAxelarGMPGateway {
     error InvalidChainId();
     error InvalidCommands();
     error InvalidCommand();
-    error InvalidChainName();
-    error InvalidRouter();
+    error InvalidDomainSeparator();
 
     /**
      * @notice Emitted when a contract call has been executed.

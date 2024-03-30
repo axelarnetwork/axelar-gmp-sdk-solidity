@@ -130,7 +130,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         // if signer set is the same, old epoch will be overwritten
         slot.epochBySignerHash[newSignersHash] = newEpoch;
 
-        emit SignersRotated(newSigners.signers, newSigners.weights, newSigners.threshold);
+        emit SignersRotated(newEpoch, newSigners.signers, newSigners.weights, newSigners.threshold);
     }
 
     /**********************\

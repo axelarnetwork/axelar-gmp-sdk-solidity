@@ -9,7 +9,7 @@ interface IBaseWeightedMultisig {
     error LowSignaturesWeight();
     error InvalidWeights();
 
-    event SignersRotated(address[] signers, uint256[] weights, uint256 threshold);
+    event SignersRotated(uint256 indexed epoch, address[] signers, uint256[] weights, uint256 threshold);
 
     /**
      * @notice This struct represents the weighted signers payload

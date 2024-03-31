@@ -108,10 +108,10 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
 
         if (domainSeparator != signedBatch.batch.domainSeparator) revert InvalidDomainSeparator();
 
-        Command[] memory commands = batch.commands;
+        Command[] calldata commands = batch.commands;
 
         for (uint256 i; i < commands.length; ++i) {
-            Command memory command = commands[i];
+            Command calldata command = commands[i];
             bytes32 commandId = keccak256(bytes(command.messageId));
 
             // Ignore if commandId is already executed
@@ -177,31 +177,32 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
         }
     }
 
-    function _approveContractCall(bytes32 commandId, Command memory command) internal {
-        (string memory sourceChain, string memory sourceAddress, address contractAddress, bytes32 payloadHash) = abi
-            .decode(command.params, (string, string, address, bytes32));
+    function _approveContractCall(bytes32 commandId, Command calldata command) internal {
+        ContractCallApprovalParams memory params = abi.decode(command.params, (ContractCallApprovalParams));
 
         bytes32 key = _getIsContractCallApprovedKey(
             commandId,
-            sourceChain,
-            sourceAddress,
-            contractAddress,
-            payloadHash
+            params.sourceChain,
+            params.sourceAddress,
+            params.contractAddress,
+            params.payloadHash
         );
         _storage().approvals[key] = true;
 
         emit ContractCallApproved(
             commandId,
-            sourceChain,
-            sourceAddress,
-            contractAddress,
-            payloadHash,
+            params.sourceChain,
+            params.sourceAddress,
+            params.contractAddress,
+            params.payloadHash,
             command.messageId
         );
     }
 
-    function _transferOperatorship(bytes memory newOperatorsData) internal {
-        authModule.transferOperatorship(newOperatorsData);
+    function _transferOperatorship(bytes calldata newOperatorsData) internal {
+        TransferOperatorshipParams memory params = abi.decode(newOperatorsData, (TransferOperatorshipParams));
+
+        authModule.transferOperatorship(params.newOperators);
 
         // slither-disable-next-line reentrancy-events
         emit OperatorshipTransferred(newOperatorsData);

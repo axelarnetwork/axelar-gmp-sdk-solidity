@@ -12,7 +12,7 @@ const APPROVE_CONTRACT_CALL = 0;
 const TRANSFER_OPERATORSHIP = 1;
 
 describe('AxelarAmplifierGateway', () => {
-    const threshold = 20;
+    const threshold = 3;
     const messageId = process.env.REPORT_GAS ? '4' : `${getRandomID()}`; // use fixed command id for deterministic gas computation
     const commandId = keccak256(ethers.utils.toUtf8Bytes(messageId));
     const chainName = 'chain';
@@ -46,16 +46,19 @@ describe('AxelarAmplifierGateway', () => {
 
     const getApproveContractCall = (sourceChain, source, destination, payloadHash) => {
         return defaultAbiCoder.encode(
-            ['string', 'string', 'address', 'bytes32'],
-            [sourceChain, source, destination, payloadHash],
+            ['tuple(string,string,address,bytes32)'],
+            [[sourceChain, source, destination, payloadHash]],
         );
     };
 
-    const getTransferWeightedOperatorshipCommand = (newOperators, newWeights, threshold) =>
-        defaultAbiCoder.encode(
+    const getTransferWeightedOperatorshipCommand = (nonce, newOperators, newWeights, threshold) => {
+        return defaultAbiCoder.encode(
+            ['tuple(uint256,bytes)'],
+            [[nonce, defaultAbiCoder.encode(
             ['address[]', 'uint256[]', 'uint256'],
             [sortBy(newOperators, (address) => address.toLowerCase()), newWeights, threshold],
-        );
+        )]]);
+    }
 
     const getSignedBatch = async (batch, operators, weights, threshold, signers) => {
         const encodedBatch = arrayify(
@@ -259,6 +262,7 @@ describe('AxelarAmplifierGateway', () => {
                 '0xb7900E8Ec64A1D1315B6D4017d4b1dcd36E6Ea88',
                 '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b',
             ];
+            const nonce = 1;
 
             const batch = [
                 domainSeparator,
@@ -267,6 +271,7 @@ describe('AxelarAmplifierGateway', () => {
                         TRANSFER_OPERATORSHIP,
                         messageId,
                         getTransferWeightedOperatorshipCommand(
+                            nonce,
                             newOperators,
                             getWeights(newOperators),
                             newOperators.length,
@@ -288,7 +293,7 @@ describe('AxelarAmplifierGateway', () => {
             await expect(tx)
                 .to.emit(gateway, 'OperatorshipTransferred')
                 .withArgs(
-                    getTransferWeightedOperatorshipCommand(newOperators, getWeights(newOperators), newOperators.length),
+                    getTransferWeightedOperatorshipCommand(nonce, newOperators, getWeights(newOperators), newOperators.length),
                 );
         });
     });

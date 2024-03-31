@@ -18,10 +18,22 @@ interface IAxelarAmplifierGateway is IAxelarGMPGateway {
         TransferOperatorship
     }
 
+    struct ContractCallApprovalParams {
+        string sourceChain;
+        string sourceAddress;
+        address contractAddress;
+        bytes32 payloadHash;
+    }
+
+    struct TransferOperatorshipParams {
+        bytes32 nonce;
+        bytes newOperators;
+    }
+
     struct Command {
         CommandType commandType;
         string messageId;
-        bytes params;
+        bytes params; // ABI encoded ContractCallApprovalParams | TransferOperatorshipParams
     }
 
     struct CommandBatch {

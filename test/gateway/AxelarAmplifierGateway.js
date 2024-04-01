@@ -54,16 +54,20 @@ describe('AxelarAmplifierGateway', () => {
     const getTransferWeightedOperatorshipCommand = (nonce, newOperators, newWeights, threshold) => {
         return defaultAbiCoder.encode(
             ['tuple(uint256,bytes)'],
-            [[nonce, defaultAbiCoder.encode(
-            ['address[]', 'uint256[]', 'uint256'],
-            [sortBy(newOperators, (address) => address.toLowerCase()), newWeights, threshold],
-        )]]);
-    }
+            [
+                [
+                    nonce,
+                    defaultAbiCoder.encode(
+                        ['address[]', 'uint256[]', 'uint256'],
+                        [sortBy(newOperators, (address) => address.toLowerCase()), newWeights, threshold],
+                    ),
+                ],
+            ],
+        );
+    };
 
     const getSignedBatch = async (batch, operators, weights, threshold, signers) => {
-        const encodedBatch = arrayify(
-            defaultAbiCoder.encode(['tuple(bytes32,tuple(uint8,string,bytes)[])'], [batch]),
-        );
+        const encodedBatch = arrayify(defaultAbiCoder.encode(['tuple(bytes32,tuple(uint8,string,bytes)[])'], [batch]));
 
         return [batch, await getWeightedSignersProof(encodedBatch, operators, weights, threshold, signers)];
     };
@@ -293,7 +297,12 @@ describe('AxelarAmplifierGateway', () => {
             await expect(tx)
                 .to.emit(gateway, 'OperatorshipTransferred')
                 .withArgs(
-                    getTransferWeightedOperatorshipCommand(nonce, newOperators, getWeights(newOperators), newOperators.length),
+                    getTransferWeightedOperatorshipCommand(
+                        nonce,
+                        newOperators,
+                        getWeights(newOperators),
+                        newOperators.length,
+                    ),
                 );
         });
     });

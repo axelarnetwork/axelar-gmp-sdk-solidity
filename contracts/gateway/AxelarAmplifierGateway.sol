@@ -21,10 +21,7 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
     IAxelarGatewayWeightedAuth public immutable authModule;
     bytes32 public immutable domainSeparator;
 
-    constructor(
-        address authModule_,
-        bytes32 domainSeparator_
-    ) {
+    constructor(address authModule_, bytes32 domainSeparator_) {
         if (authModule_.code.length == 0) revert InvalidAuthModule();
 
         authModule = IAxelarGatewayWeightedAuth(authModule_);

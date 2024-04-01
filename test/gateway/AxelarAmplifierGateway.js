@@ -2,11 +2,11 @@ const { sortBy } = require('lodash');
 const chai = require('chai');
 const { ethers } = require('hardhat');
 const {
-    utils: { id, arrayify, keccak256, defaultAbiCoder, toUtf8Bytes },
+    utils: { arrayify, keccak256, defaultAbiCoder, toUtf8Bytes },
 } = ethers;
 const { expect } = chai;
 
-const { getAddresses, getChainId, getRandomID, getWeightedSignersSet, getWeightedSignersProof } = require('../utils');
+const { getAddresses, getRandomID, getWeightedSignersSet, getWeightedSignersProof } = require('../utils');
 
 const APPROVE_CONTRACT_CALL = 0;
 const TRANSFER_OPERATORSHIP = 1;
@@ -16,9 +16,7 @@ describe('AxelarAmplifierGateway', () => {
     const messageId = process.env.REPORT_GAS ? '4' : `${getRandomID()}`; // use fixed command id for deterministic gas computation
     const commandId = keccak256(ethers.utils.toUtf8Bytes(messageId));
     const chainName = 'chain';
-    const chainNameHash = keccak256(toUtf8Bytes(chainName));
     const router = 'router';
-    const routerHash = keccak256(toUtf8Bytes(router));
     const domainSeparator = keccak256(toUtf8Bytes(chainName + router + 'axelar-1'));
 
     let wallets;

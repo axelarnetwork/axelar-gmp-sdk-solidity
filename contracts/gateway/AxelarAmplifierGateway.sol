@@ -80,10 +80,6 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
         valid = _validateContractCall(commandId, sourceChain, sourceAddress, payloadHash);
     }
 
-    /***********\
-    |* Getters *|
-    \***********/
-
     function isCommandExecuted(bytes32 commandId) public view override returns (bool) {
         return _storage().commands[commandId];
     }
@@ -92,53 +88,64 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
     |* External Functions *|
     \**********************/
 
-    function execute(SignedCommandBatch calldata signedBatch) external {
-        CommandBatch calldata batch = signedBatch.batch;
-        bytes memory data = abi.encode(batch);
+    function verifyMessages(SignedMessageBatch calldata signedBatch) public {
+        bytes memory data = abi.encode(signedBatch.messages);
 
-        // This is the EVM convention for signing non-tx data to domain separate from regular EVM txs.
-        // This should be customized per chain.
-        bytes32 batchHash = ECDSA.toEthSignedMessageHash(keccak256(data));
+        _validate(CommandType.VerifyMessages, data, signedBatch.proof);
 
-        bool isLatestSigners = authModule.validateProof(batchHash, signedBatch.proof);
+        Message[] calldata messages = signedBatch.messages;
 
-        if (domainSeparator != signedBatch.batch.domainSeparator) revert InvalidDomainSeparator();
-
-        Command[] calldata commands = batch.commands;
-
-        for (uint256 i; i < commands.length; ++i) {
-            Command calldata command = commands[i];
-            bytes32 commandId = keccak256(bytes(command.messageId));
+        for (uint256 i; i < messages.length; ++i) {
+            Message calldata message = messages[i];
+            bytes32 commandId = keccak256(bytes(message.messageId));
 
             // Ignore if commandId is already executed
             if (isCommandExecuted(commandId)) {
                 continue;
             }
 
-            if (command.commandType == CommandType.ApproveContractCall) {
-                _approveContractCall(commandId, command);
-            } else if (command.commandType == CommandType.RotateSigners) {
-                if (!isLatestSigners) {
-                    continue;
-                }
-
-                isLatestSigners = false;
-
-                _rotateSigners(command.params);
-            } else {
-                revert InvalidCommand();
-            }
+            _approveMessage(commandId, message);
 
             _storage().commands[commandId] = true;
 
             // slither-disable-next-line reentrancy-events
-            emit Executed(commandId, command.messageId);
+            emit Executed(commandId);
         }
+    }
+
+    function rotateSigners(SignedRotation calldata signedRotation) public {
+        bytes memory data = abi.encode(signedRotation.rotation);
+        // TODO: prefix with CommandType for domain separation
+        bytes32 commandId = keccak256(data);
+
+        if (isCommandExecuted(commandId)) {
+            revert CommandAlreadyExecuted(commandId);
+        }
+
+        bool isLatestSigners = _validate(CommandType.RotateSigners, data, signedRotation.proof);
+        if (!isLatestSigners) {
+            revert NotLatestSigners();
+        }
+
+        authModule.rotateSigners(signedRotation.rotation.newSigners);
+
+        emit OperatorshipTransferred(data);
     }
 
     /**********************\
     |* Internal Functions *|
     \**********************/
+
+    function _validate(CommandType commandType, bytes memory data, Proof calldata proof) internal view returns (bool) {
+        if (domainSeparator != proof.domainSeparator) revert InvalidDomainSeparator();
+
+        // TODO: use SignData struct
+        data = abi.encode(commandType, proof.domainSeparator, proof.signerCommitment, data);
+        bytes32 dataHash = ECDSA.toEthSignedMessageHash(keccak256(data));
+
+        // TODO: check proof.signerCommitment
+        return authModule.validateProof(dataHash, proof.proof);
+    }
 
     function _isContractCallApproved(
         bytes32 commandId,
@@ -173,35 +180,24 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
         }
     }
 
-    function _approveContractCall(bytes32 commandId, Command calldata command) internal {
-        ContractCallApprovalParams memory params = abi.decode(command.params, (ContractCallApprovalParams));
-
+    function _approveMessage(bytes32 commandId, Message calldata message) internal {
         bytes32 key = _getIsContractCallApprovedKey(
             commandId,
-            params.sourceChain,
-            params.sourceAddress,
-            params.contractAddress,
-            params.payloadHash
+            message.sourceChain,
+            message.sourceAddress,
+            message.contractAddress,
+            message.payloadHash
         );
         _storage().approvals[key] = true;
 
         emit ContractCallApproved(
             commandId,
-            params.sourceChain,
-            params.sourceAddress,
-            params.contractAddress,
-            params.payloadHash,
-            command.messageId
+            message.sourceChain,
+            message.sourceAddress,
+            message.contractAddress,
+            message.payloadHash,
+            message.messageId
         );
-    }
-
-    function _rotateSigners(bytes calldata newSignersData) internal {
-        RotateSignersParams memory params = abi.decode(newSignersData, (RotateSignersParams));
-
-        authModule.rotateSigners(params.newSigners);
-
-        // slither-disable-next-line reentrancy-events
-        emit OperatorshipTransferred(newSignersData);
     }
 
     /********************\

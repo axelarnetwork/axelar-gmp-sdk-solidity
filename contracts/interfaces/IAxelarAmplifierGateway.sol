@@ -14,38 +14,47 @@ interface IAxelarAmplifierGateway is IAxelarGMPGateway {
     \*********/
 
     enum CommandType {
-        ApproveContractCall,
+        VerifyMessages,
         RotateSigners
     }
 
-    struct ContractCallApprovalParams {
+    struct Message {
+        string messageId;
         string sourceChain;
         string sourceAddress;
         address contractAddress;
         bytes32 payloadHash;
     }
 
-    struct RotateSignersParams {
-        bytes32 nonce;
-        bytes newSigners;
-    }
-
-    struct Command {
-        CommandType commandType;
-        string messageId;
-        bytes params; // ABI encoded ContractCallApprovalParams | RotateSignersParams
-    }
-
-    struct CommandBatch {
+    struct Proof {
         // Amplifier domain separator
         // keccak256(chain_name || amplifier_router_address || axelar_chain_id)
         bytes32 domainSeparator;
-        Command[] commands;
+        // Commitment to the signer set
+        bytes32 signerCommitment;
+        bytes proof;
     }
 
-    struct SignedCommandBatch {
-        CommandBatch batch;
-        bytes proof;
+    struct SignData {
+        CommandType commandType;
+        bytes32 domainSeparator;
+        bytes32 signerCommitment;
+        bytes data;
+    }
+
+    struct SignedMessageBatch {
+        Message[] messages;
+        Proof proof;
+    }
+
+    struct Rotation {
+        uint256 nonce;
+        bytes newSigners;
+    }
+
+    struct SignedRotation {
+        Rotation rotation;
+        Proof proof;
     }
 
     /**********\
@@ -58,6 +67,8 @@ interface IAxelarAmplifierGateway is IAxelarGMPGateway {
     error InvalidCommands();
     error InvalidCommand();
     error InvalidDomainSeparator();
+    error NotLatestSigners();
+    error CommandAlreadyExecuted(bytes32 commandId);
 
     /**
      * @notice Emitted when a contract call has been executed.
@@ -70,9 +81,8 @@ interface IAxelarAmplifierGateway is IAxelarGMPGateway {
      * @notice Emitted when a command has been executed.
      * @dev Logs successful execution of a command.
      * @param commandId The identifier of the executed command.
-     * @param messageId The message id for the message.
      */
-    event Executed(bytes32 indexed commandId, string messageId);
+    event Executed(bytes32 indexed commandId);
 
     /**
      * @notice Emitted when a contract call is approved.
@@ -104,7 +114,20 @@ interface IAxelarAmplifierGateway is IAxelarGMPGateway {
      * @notice Executes a signed batch of commands created by verifiers on Axelar.
      * @param  signedBatch The signed batch.
      */
-    function execute(SignedCommandBatch calldata signedBatch) external;
+    function verifyMessages(SignedMessageBatch calldata signedBatch) external;
+
+    /**
+     * @notice Executes a signed batch of commands created by verifiers on Axelar.
+     * @param  signedRotation The signed batch.
+     */
+    function rotateSigners(SignedRotation calldata signedRotation) external;
+
+    /**
+     * @notice Executes a signed batch of commands created by verifiers on Axelar.
+     * @param  signedData The signed data.
+     */
+    // TODO: add a common entrypoint that also receives commandType
+    // function execute(bytes calldata signedData) external;
 
     /**
      * @notice Checks if a contract call is approved.

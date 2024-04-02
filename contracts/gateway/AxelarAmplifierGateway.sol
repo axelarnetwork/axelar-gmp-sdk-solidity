@@ -91,7 +91,7 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
     function verifyMessages(SignedMessageBatch calldata signedBatch) public {
         bytes memory data = abi.encode(signedBatch.messages);
 
-        _validate(CommandType.VerifyMessages, data, signedBatch.proof);
+        _verifyProof(CommandType.VerifyMessages, data, signedBatch.proof);
 
         Message[] calldata messages = signedBatch.messages;
 
@@ -122,7 +122,7 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
             revert CommandAlreadyExecuted(commandId);
         }
 
-        bool isLatestSigners = _validate(CommandType.RotateSigners, data, signedRotation.proof);
+        bool isLatestSigners = _verifyProof(CommandType.RotateSigners, data, signedRotation.proof);
         if (!isLatestSigners) {
             revert NotLatestSigners();
         }
@@ -136,7 +136,7 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
     |* Internal Functions *|
     \**********************/
 
-    function _validate(CommandType commandType, bytes memory data, Proof calldata proof) internal view returns (bool) {
+    function _verifyProof(CommandType commandType, bytes memory data, Proof calldata proof) internal view returns (bool) {
         if (domainSeparator != proof.domainSeparator) revert InvalidDomainSeparator();
 
         // TODO: use SignData struct

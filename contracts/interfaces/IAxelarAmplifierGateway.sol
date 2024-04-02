@@ -15,7 +15,7 @@ interface IAxelarAmplifierGateway is IAxelarGMPGateway {
 
     enum CommandType {
         ApproveContractCall,
-        TransferOperatorship
+        RotateSigners
     }
 
     struct ContractCallApprovalParams {
@@ -25,15 +25,15 @@ interface IAxelarAmplifierGateway is IAxelarGMPGateway {
         bytes32 payloadHash;
     }
 
-    struct TransferOperatorshipParams {
+    struct RotateSignersParams {
         bytes32 nonce;
-        bytes newOperators;
+        bytes newSigners;
     }
 
     struct Command {
         CommandType commandType;
         string messageId;
-        bytes params; // ABI encoded ContractCallApprovalParams | TransferOperatorshipParams
+        bytes params; // ABI encoded ContractCallApprovalParams | RotateSignersParams
     }
 
     struct CommandBatch {
@@ -94,11 +94,11 @@ interface IAxelarAmplifierGateway is IAxelarGMPGateway {
     );
 
     /**
-     * @notice Emitted when operatorship is transferred to a new set.
-     * @dev Logs the transfer of operatorship to a new set of operators.
-     * @param newOperatorsData The encoded new operators.
+     * @notice Emitted when signers are transferred to a new set.
+     * @dev Logs the rotation of signers to a new set.
+     * @param newSignersData The encoded new signers.
      */
-    event OperatorshipTransferred(bytes newOperatorsData);
+    event OperatorshipTransferred(bytes newSignersData);
 
     /**
      * @notice Executes a signed batch of commands created by verifiers on Axelar.

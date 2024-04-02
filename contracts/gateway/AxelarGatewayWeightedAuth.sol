@@ -19,20 +19,20 @@ contract AxelarGatewayWeightedAuth is Ownable, BaseWeightedMultisig, IAxelarGate
     /**
      * @notice Initializes the contract.
      * @dev Ownership of this contract should be transferred to the Gateway contract after deployment.
-     * @param initialOperatorSets The recent operator sets to be added to the multisig as initial signers
+     * @param initialSigners The recent operator sets to be added to the multisig as initial signers
      */
-    constructor(address owner_, bytes[] memory initialOperatorSets)
+    constructor(address owner_, bytes[] memory initialSigners)
         Ownable(owner_)
         BaseWeightedMultisig(PREVIOUS_SIGNERS_RETENTION)
     {
-        uint256 length = initialOperatorSets.length;
+        uint256 length = initialSigners.length;
 
         for (uint256 i; i < length; ++i) {
             // slither-disable-next-line uninitialized-local
             WeightedSigners memory signerSet;
 
             (signerSet.signers, signerSet.weights, signerSet.threshold) = abi.decode(
-                initialOperatorSets[i],
+                initialSigners[i],
                 (address[], uint256[], uint256)
             );
 
@@ -41,10 +41,10 @@ contract AxelarGatewayWeightedAuth is Ownable, BaseWeightedMultisig, IAxelarGate
     }
 
     /**
-     * @notice Transfers operatorship to a new set of signers
+     * @notice Rotate to a new set of signers
      * @param params The new set of signers encoded as (address[], uint256[], uint256)
      */
-    function transferOperatorship(bytes calldata params) external onlyOwner {
+    function rotateSigners(bytes calldata params) external onlyOwner {
         // slither-disable-next-line uninitialized-local
         WeightedSigners memory newSigners;
 

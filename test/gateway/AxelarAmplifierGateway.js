@@ -9,10 +9,10 @@ const { expect } = chai;
 const { getAddresses, getRandomID, getWeightedSignersSet, getWeightedSignersProof } = require('../utils');
 
 const APPROVE_CONTRACT_CALL = 0;
-const TRANSFER_OPERATORSHIP = 1;
+const ROTATE_SIGNERS = 1;
 
 describe('AxelarAmplifierGateway', () => {
-    const threshold = 3;
+    const threshold = 20;
     const messageId = process.env.REPORT_GAS ? '4' : `${getRandomID()}`; // use fixed command id for deterministic gas computation
     const commandId = keccak256(ethers.utils.toUtf8Bytes(messageId));
     const chainName = 'chain';
@@ -21,7 +21,7 @@ describe('AxelarAmplifierGateway', () => {
 
     let wallets;
     let user;
-    let operators;
+    let signers;
     let weights;
 
     let gatewayFactory;
@@ -33,8 +33,8 @@ describe('AxelarAmplifierGateway', () => {
     before(async () => {
         wallets = await ethers.getSigners();
         user = wallets[0];
-        operators = sortBy(wallets.slice(0, threshold), (wallet) => wallet.address.toLowerCase());
-        weights = Array(operators.length).fill(1);
+        signers = sortBy(wallets.slice(0, threshold), (wallet) => wallet.address.toLowerCase());
+        weights = Array(signers.length).fill(1);
 
         gatewayFactory = await ethers.getContractFactory('AxelarAmplifierGateway', user);
         authFactory = await ethers.getContractFactory('AxelarGatewayWeightedAuth', user);
@@ -49,7 +49,7 @@ describe('AxelarAmplifierGateway', () => {
         );
     };
 
-    const getTransferWeightedOperatorshipCommand = (nonce, newOperators, newWeights, threshold) => {
+    const getRotateSignersCommand = (nonce, newSigners, newWeights, threshold) => {
         return defaultAbiCoder.encode(
             ['tuple(uint256,bytes)'],
             [
@@ -57,23 +57,23 @@ describe('AxelarAmplifierGateway', () => {
                     nonce,
                     defaultAbiCoder.encode(
                         ['address[]', 'uint256[]', 'uint256'],
-                        [sortBy(newOperators, (address) => address.toLowerCase()), newWeights, threshold],
+                        [sortBy(newSigners, (address) => address.toLowerCase()), newWeights, threshold],
                     ),
                 ],
             ],
         );
     };
 
-    const getSignedBatch = async (batch, operators, weights, threshold, signers) => {
+    const getSignedBatch = async (batch, signers, weights, threshold, participants) => {
         const encodedBatch = arrayify(defaultAbiCoder.encode(['tuple(bytes32,tuple(uint8,string,bytes)[])'], [batch]));
 
-        return [batch, await getWeightedSignersProof(encodedBatch, operators, weights, threshold, signers)];
+        return [batch, await getWeightedSignersProof(encodedBatch, signers, weights, threshold, participants)];
     };
 
     const deployGateway = async () => {
         // setup auth contract with a genesis operator set
         auth = await authFactory
-            .deploy(user.address, [getWeightedSignersSet(getAddresses(operators), weights, threshold)])
+            .deploy(user.address, [getWeightedSignersSet(getAddresses(signers), weights, threshold)])
             .then((d) => d.deployed());
 
         gateway = await gatewayFactory.deploy(auth.address, domainSeparator).then((d) => d.deployed());
@@ -123,10 +123,10 @@ describe('AxelarAmplifierGateway', () => {
 
             const signedBatch = await getSignedBatch(
                 batch,
-                operators,
+                signers,
                 weights,
                 threshold,
-                operators.slice(0, threshold),
+                signers.slice(0, threshold),
             );
 
             await expect(gateway.execute(signedBatch))
@@ -189,10 +189,10 @@ describe('AxelarAmplifierGateway', () => {
 
             const signedBatch = await getSignedBatch(
                 batch,
-                operators,
+                signers,
                 weights,
                 threshold,
-                operators.slice(0, threshold),
+                signers.slice(0, threshold),
             );
 
             const tx = await gateway.execute(signedBatch);
@@ -254,13 +254,13 @@ describe('AxelarAmplifierGateway', () => {
         });
     });
 
-    describe('transfer operatorship', () => {
+    describe('rotate signers', () => {
         beforeEach(async () => {
             await deployGateway();
         });
 
-        it('should allow operators to transfer operatorship', async () => {
-            const newOperators = [
+        it('should allow signers to rotate', async () => {
+            const newSigners = [
                 '0xb7900E8Ec64A1D1315B6D4017d4b1dcd36E6Ea88',
                 '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b',
             ];
@@ -270,13 +270,13 @@ describe('AxelarAmplifierGateway', () => {
                 domainSeparator,
                 [
                     [
-                        TRANSFER_OPERATORSHIP,
+                        ROTATE_SIGNERS,
                         messageId,
-                        getTransferWeightedOperatorshipCommand(
+                        getRotateSignersCommand(
                             nonce,
-                            newOperators,
-                            getWeights(newOperators),
-                            newOperators.length,
+                            newSigners,
+                            getWeights(newSigners),
+                            newSigners.length,
                         ),
                     ],
                 ],
@@ -284,10 +284,10 @@ describe('AxelarAmplifierGateway', () => {
 
             const signedBatch = await getSignedBatch(
                 batch,
-                operators,
+                signers,
                 weights,
                 threshold,
-                operators.slice(0, threshold),
+                signers.slice(0, threshold),
             );
 
             const tx = await gateway.execute(signedBatch);
@@ -295,11 +295,11 @@ describe('AxelarAmplifierGateway', () => {
             await expect(tx)
                 .to.emit(gateway, 'OperatorshipTransferred')
                 .withArgs(
-                    getTransferWeightedOperatorshipCommand(
+                    getRotateSignersCommand(
                         nonce,
-                        newOperators,
-                        getWeights(newOperators),
-                        newOperators.length,
+                        newSigners,
+                        getWeights(newSigners),
+                        newSigners.length,
                     ),
                 );
         });

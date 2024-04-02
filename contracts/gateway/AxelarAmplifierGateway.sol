@@ -100,8 +100,7 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
         // This should be customized per chain.
         bytes32 batchHash = ECDSA.toEthSignedMessageHash(keccak256(data));
 
-        // returns true for current operators
-        bool allowOperatorshipTransfer = authModule.validateProof(batchHash, signedBatch.proof);
+        bool isLatestSigners = authModule.validateProof(batchHash, signedBatch.proof);
 
         if (domainSeparator != signedBatch.batch.domainSeparator) revert InvalidDomainSeparator();
 
@@ -118,14 +117,14 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
 
             if (command.commandType == CommandType.ApproveContractCall) {
                 _approveContractCall(commandId, command);
-            } else if (command.commandType == CommandType.TransferOperatorship) {
-                if (!allowOperatorshipTransfer) {
+            } else if (command.commandType == CommandType.RotateSigners) {
+                if (!isLatestSigners) {
                     continue;
                 }
 
-                allowOperatorshipTransfer = false;
+                isLatestSigners = false;
 
-                _transferOperatorship(command.params);
+                _rotateSigners(command.params);
             } else {
                 revert InvalidCommand();
             }
@@ -196,13 +195,13 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
         );
     }
 
-    function _transferOperatorship(bytes calldata newOperatorsData) internal {
-        TransferOperatorshipParams memory params = abi.decode(newOperatorsData, (TransferOperatorshipParams));
+    function _rotateSigners(bytes calldata newSignersData) internal {
+        RotateSignersParams memory params = abi.decode(newSignersData, (RotateSignersParams));
 
-        authModule.transferOperatorship(params.newOperators);
+        authModule.rotateSigners(params.newSigners);
 
         // slither-disable-next-line reentrancy-events
-        emit OperatorshipTransferred(newOperatorsData);
+        emit OperatorshipTransferred(newSignersData);
     }
 
     /********************\

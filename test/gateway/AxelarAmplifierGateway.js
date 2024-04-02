@@ -121,13 +121,7 @@ describe('AxelarAmplifierGateway', () => {
                 ],
             ];
 
-            const signedBatch = await getSignedBatch(
-                batch,
-                signers,
-                weights,
-                threshold,
-                signers.slice(0, threshold),
-            );
+            const signedBatch = await getSignedBatch(batch, signers, weights, threshold, signers.slice(0, threshold));
 
             await expect(gateway.execute(signedBatch))
                 .to.emit(gateway, 'ContractCallApproved')
@@ -187,13 +181,7 @@ describe('AxelarAmplifierGateway', () => {
 
             const batch = [domainSeparator, commands];
 
-            const signedBatch = await getSignedBatch(
-                batch,
-                signers,
-                weights,
-                threshold,
-                signers.slice(0, threshold),
-            );
+            const signedBatch = await getSignedBatch(batch, signers, weights, threshold, signers.slice(0, threshold));
 
             const tx = await gateway.execute(signedBatch);
             await tx.wait();
@@ -272,36 +260,18 @@ describe('AxelarAmplifierGateway', () => {
                     [
                         ROTATE_SIGNERS,
                         messageId,
-                        getRotateSignersCommand(
-                            nonce,
-                            newSigners,
-                            getWeights(newSigners),
-                            newSigners.length,
-                        ),
+                        getRotateSignersCommand(nonce, newSigners, getWeights(newSigners), newSigners.length),
                     ],
                 ],
             ];
 
-            const signedBatch = await getSignedBatch(
-                batch,
-                signers,
-                weights,
-                threshold,
-                signers.slice(0, threshold),
-            );
+            const signedBatch = await getSignedBatch(batch, signers, weights, threshold, signers.slice(0, threshold));
 
             const tx = await gateway.execute(signedBatch);
 
             await expect(tx)
                 .to.emit(gateway, 'OperatorshipTransferred')
-                .withArgs(
-                    getRotateSignersCommand(
-                        nonce,
-                        newSigners,
-                        getWeights(newSigners),
-                        newSigners.length,
-                    ),
-                );
+                .withArgs(getRotateSignersCommand(nonce, newSigners, getWeights(newSigners), newSigners.length));
         });
     });
 });

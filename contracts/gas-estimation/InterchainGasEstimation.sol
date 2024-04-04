@@ -169,9 +169,9 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
         uint256 estimationPaddingUnits = 16 * TxDataNonZeroGasEIP2028;
         uint256 estimationPaddingBasisPoints = 100;
 
-        // baseline compression rate is 2.5x
-        uint256 l1Bytes = ((TX_ENCODING_OVERHEAD + GMP_CALLDATA_SIZE + payload.length) * 10) / 25;
-        uint256 units = l1Bytes * TxDataNonZeroGasEIP2028;
+        uint256 l1Bytes = TX_ENCODING_OVERHEAD + GMP_CALLDATA_SIZE + payload.length;
+        // Brotli baseline compression rate as 2x
+        uint256 units = (TxDataNonZeroGasEIP2028 * l1Bytes) / 2;
 
         return
             (relativeGasPrice * (units + estimationPaddingUnits) * (OneInBips + estimationPaddingBasisPoints)) /

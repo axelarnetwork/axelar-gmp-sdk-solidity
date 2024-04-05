@@ -72,8 +72,7 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
             gasEstimate += computeL1DataFee(
                 gasInfo.gasEstimationType,
                 payload,
-                l1GasInfo.relativeGasPrice,
-                l1GasInfo.relativeBlobBaseFee
+                l1GasInfo
             );
         }
     }
@@ -82,20 +81,19 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
      * @notice Computes the additional L1 data fee for an L2 destination chain.
      * @param gasEstimationType The gas estimation type
      * @param payload The payload of the contract call
-     * @param relativeGasPrice The gas price on the source chain
+     * @param l1GasInfo The L1 gas info
      * @return l1DataFee The L1 to L2 data fee
      */
     function computeL1DataFee(
         GasEstimationType gasEstimationType,
         bytes calldata payload,
-        uint256 relativeGasPrice,
-        uint256 relativeBlobBaseFee
-    ) internal pure returns (uint256) {
+        GasInfo storage l1GasInfo
+    ) internal view returns (uint256) {
         if (gasEstimationType == GasEstimationType.OptimismEcotone) {
-            return optimismEcotoneL1Fee(payload, relativeGasPrice, relativeBlobBaseFee);
+            return optimismEcotoneL1Fee(payload, l1GasInfo);
         }
-        if (gasEstimationType == GasEstimationType.ArbitrumOne) {
-            return arbitrumL1Fee(payload, relativeGasPrice, relativeBlobBaseFee);
+        if (gasEstimationType == GasEstimationType.Arbitrum) {
+            return arbitrumL1Fee(payload, l1GasInfo);
         }
 
         revert UnsupportedEstimationType(gasEstimationType);
@@ -104,14 +102,13 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
     /**
      * @notice Computes the L1 to L2 fee for a contract call on the Optimism chain.
      * @param payload The payload of the contract call
-     * @param relativeGasPrice The base fee for L1 to L2
+     * @param l1GasInfo The L1 gas info
      * @return l1DataFee The L1 to L2 data fee
      */
     function optimismEcotoneL1Fee(
         bytes calldata payload,
-        uint256 relativeGasPrice,
-        uint256 relativeBlobBaseFee
-    ) internal pure returns (uint256 l1DataFee) {
+        GasInfo storage l1GasInfo
+    ) internal view returns (uint256 l1DataFee) {
         /* Optimism Ecotone gas model https://docs.optimism.io/stack/transactions/fees#ecotone
              tx_compressed_size = ((count_zero_bytes(tx_data) * 4 + count_non_zero_bytes(tx_data) * 16)) / 16
              weighted_gas_price = 16 * base_fee_scalar*base_fee + blob_base_fee_scalar * blob_base_fee
@@ -144,7 +141,7 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
             }
         }
 
-        uint256 weightedGasPrice = 16 * baseFeeScalar * relativeGasPrice + blobBaseFeeScalar * relativeBlobBaseFee;
+        uint256 weightedGasPrice = 16 * baseFeeScalar * l1GasInfo.relativeGasPrice + blobBaseFeeScalar * l1GasInfo.relativeBlobBaseFee;
 
         l1DataFee = (weightedGasPrice * txSize) / (16 * scalarPrecision); // 16 for txSize compression and scalar precision conversion
     }
@@ -152,15 +149,13 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
     /**
      * @notice Computes the L1 to L2 fee for a contract call on the Arbitrum chain.
      * @param payload The payload of the contract call
-     * @param relativeGasPrice The base fee for L1 to L2
-     * param relativeBlobBaseFee The blob base fee for L1 to L2
+     * @param gasInfo The L1 gas info
      * @return l1DataFee The L1 to L2 data fee
      */
     function arbitrumL1Fee(
         bytes calldata payload,
-        uint256 relativeGasPrice,
-        uint256 /* relativeBlobBaseFee */
-    ) internal pure returns (uint256 l1DataFee) {
+        GasInfo storage gasInfo
+    ) internal view returns (uint256 l1DataFee) {
         // https://docs.arbitrum.io/build-decentralized-apps/how-to-estimate-gas
         // https://docs.arbitrum.io/arbos/l1-pricing
         // Reference https://github.com/OffchainLabs/nitro/blob/master/arbos/l1pricing/l1pricing.go#L565-L578
@@ -174,7 +169,7 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
         uint256 units = (TxDataNonZeroGasEIP2028 * l1Bytes) / 2;
 
         return
-            (relativeGasPrice * (units + estimationPaddingUnits) * (OneInBips + estimationPaddingBasisPoints)) /
+            (gasInfo.relativeGasPrice * (units + estimationPaddingUnits) * (OneInBips + estimationPaddingBasisPoints)) /
             OneInBips;
     }
 

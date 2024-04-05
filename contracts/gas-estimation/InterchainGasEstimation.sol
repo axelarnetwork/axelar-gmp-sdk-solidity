@@ -68,11 +68,7 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
         if (gasInfo.gasEstimationType != GasEstimationType.Default) {
             GasInfo storage l1GasInfo = _storage().gasPrices['ethereum'];
 
-            gasEstimate += computeL1DataFee(
-                gasInfo.gasEstimationType,
-                payload,
-                l1GasInfo
-            );
+            gasEstimate += computeL1DataFee(gasInfo.gasEstimationType, payload, l1GasInfo);
         }
     }
 
@@ -104,10 +100,11 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
      * @param l1GasInfo The L1 gas info
      * @return l1DataFee The L1 to L2 data fee
      */
-    function optimismEcotoneL1Fee(
-        bytes calldata payload,
-        GasInfo storage l1GasInfo
-    ) internal view returns (uint256 l1DataFee) {
+    function optimismEcotoneL1Fee(bytes calldata payload, GasInfo storage l1GasInfo)
+        internal
+        view
+        returns (uint256 l1DataFee)
+    {
         /* Optimism Ecotone gas model https://docs.optimism.io/stack/transactions/fees#ecotone
              tx_compressed_size = ((count_zero_bytes(tx_data) * 4 + count_non_zero_bytes(tx_data) * 16)) / 16
              weighted_gas_price = 16 * base_fee_scalar*base_fee + blob_base_fee_scalar * blob_base_fee
@@ -140,7 +137,11 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
             }
         }
 
-        uint256 weightedGasPrice = 16 * baseFeeScalar * l1GasInfo.relativeGasPrice + blobBaseFeeScalar * l1GasInfo.relativeBlobBaseFee;
+        uint256 weightedGasPrice = 16 *
+            baseFeeScalar *
+            l1GasInfo.relativeGasPrice +
+            blobBaseFeeScalar *
+            l1GasInfo.relativeBlobBaseFee;
 
         l1DataFee = (weightedGasPrice * txSize) / (16 * scalarPrecision); // 16 for txSize compression and scalar precision conversion
     }
@@ -151,10 +152,7 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
      * @param gasInfo The L1 gas info
      * @return l1DataFee The L1 to L2 data fee
      */
-    function arbitrumL1Fee(
-        bytes calldata payload,
-        GasInfo storage gasInfo
-    ) internal view returns (uint256 l1DataFee) {
+    function arbitrumL1Fee(bytes calldata payload, GasInfo storage gasInfo) internal view returns (uint256 l1DataFee) {
         // https://docs.arbitrum.io/build-decentralized-apps/how-to-estimate-gas
         // https://docs.arbitrum.io/arbos/l1-pricing
         // Reference https://github.com/OffchainLabs/nitro/blob/master/arbos/l1pricing/l1pricing.go#L565-L578

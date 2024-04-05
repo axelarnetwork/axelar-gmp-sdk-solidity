@@ -29,7 +29,7 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
      * @return gasInfo The gas info for the chain
      */
     function getGasInfo(string calldata chain) external view returns (GasInfo memory) {
-        return _gasServiceStorage().gasPrices[chain];
+        return _storage().gasPrices[chain];
     }
 
     /**
@@ -41,7 +41,7 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
     function _setGasInfo(string calldata chain, GasInfo calldata gasInfo) internal {
         emit GasInfoUpdated(chain, gasInfo);
 
-        _gasServiceStorage().gasPrices[chain] = gasInfo;
+        _storage().gasPrices[chain] = gasInfo;
     }
 
     /**
@@ -60,14 +60,13 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
         uint256 executionGasLimit,
         bytes calldata /* params */
     ) public view returns (uint256 gasEstimate) {
-        GasServiceStorage storage slot = _gasServiceStorage();
-        GasInfo storage gasInfo = slot.gasPrices[destinationChain];
+        GasInfo storage gasInfo = _storage().gasPrices[destinationChain];
 
         gasEstimate = gasInfo.axelarBaseFee + (executionGasLimit * gasInfo.relativeGasPrice);
 
         // if chain is L2, compute L1 data fee using L1 gas price info
         if (gasInfo.gasEstimationType != GasEstimationType.Default) {
-            GasInfo storage l1GasInfo = slot.gasPrices['ethereum'];
+            GasInfo storage l1GasInfo = _storage().gasPrices['ethereum'];
 
             gasEstimate += computeL1DataFee(
                 gasInfo.gasEstimationType,
@@ -176,7 +175,7 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
     /**
      * @notice Get the storage slot for the GasServiceStorage struct
      */
-    function _gasServiceStorage() private pure returns (GasServiceStorage storage slot) {
+    function _storage() private pure returns (GasServiceStorage storage slot) {
         assembly {
             slot.slot := GAS_SERVICE_SLOT
         }

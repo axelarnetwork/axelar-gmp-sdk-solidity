@@ -90,6 +90,9 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
         if (gasEstimationType == GasEstimationType.Arbitrum) {
             return arbitrumL1Fee(payload, l1GasInfo);
         }
+        if (gasEstimationType == GasEstimationType.Scroll) {
+            return scrollL1Fee(payload, l1GasInfo);
+        }
 
         revert UnsupportedEstimationType(gasEstimationType);
     }
@@ -149,10 +152,14 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
     /**
      * @notice Computes the L1 to L2 fee for a contract call on the Arbitrum chain.
      * @param payload The payload of the contract call
-     * @param gasInfo The L1 gas info
+     * @param l1GasInfo The L1 gas info
      * @return l1DataFee The L1 to L2 data fee
      */
-    function arbitrumL1Fee(bytes calldata payload, GasInfo storage gasInfo) internal view returns (uint256 l1DataFee) {
+    function arbitrumL1Fee(bytes calldata payload, GasInfo storage l1GasInfo)
+        internal
+        view
+        returns (uint256 l1DataFee)
+    {
         // https://docs.arbitrum.io/build-decentralized-apps/how-to-estimate-gas
         // https://docs.arbitrum.io/arbos/l1-pricing
         // Reference https://github.com/OffchainLabs/nitro/blob/master/arbos/l1pricing/l1pricing.go#L565-L578
@@ -166,8 +173,39 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
         uint256 units = (txDataNonZeroGasEIP2028 * l1Bytes) / 2;
 
         return
-            (gasInfo.relativeGasPrice * (units + estimationPaddingUnits) * (oneInBips + estimationPaddingBasisPoints)) /
-            oneInBips;
+            (l1GasInfo.relativeGasPrice *
+                (units + estimationPaddingUnits) *
+                (oneInBips + estimationPaddingBasisPoints)) / oneInBips;
+    }
+
+    /**
+     * @notice Computes the L1 to L2 fee for a contract call on the Scroll chain.
+     * @param payload The payload of the contract call
+     * @param l1GasInfo The L1 gas info
+     * @return l1DataFee The L1 to L2 data fee
+     */
+    function scrollL1Fee(bytes calldata payload, GasInfo storage l1GasInfo) internal view returns (uint256 l1DataFee) {
+        // https://docs.scroll.io/en/developers/guides/estimating-gas-and-tx-fees/
+        // Reference https://github.com/scroll-tech/scroll/blob/af2913903b181f3492af1c62b4da4c1c99cc552d/contracts/src/L2/predeploys/L1GasPriceOracle.sol#L63-L86
+        uint256 overhead = 2500;
+        uint256 l1BaseFee = 15_602_435_409;
+        uint256 scalar = 1_150_000_000;
+        uint256 PRECISION = 1e9;
+
+        // Expecting most of the calldata bytes to be zeroes. So multiplying by 8 as a weighted average of 4 and 16
+        uint256 l1GasUsed = GMP_CALLDATA_SIZE * 8;
+
+        for (uint256 i; i < payload.length; ++i) {
+            if (payload[i] == 0) {
+                l1GasUsed += 4;
+            } else {
+                l1GasUsed += 16;
+            }
+        }
+
+        l1GasUsed = l1GasUsed + overhead + (4 * 16);
+
+        return (l1GasInfo.relativeGasPrice * l1GasUsed * l1BaseFee * scalar) / PRECISION;
     }
 
     /**

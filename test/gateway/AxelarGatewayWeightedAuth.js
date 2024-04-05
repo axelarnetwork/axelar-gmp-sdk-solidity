@@ -136,7 +136,7 @@ describe('AxelarGatewayWeightedAuth', () => {
 
         it('validate the proof for a single signer', async () => {
             await expect(
-                gatewayAuth.transferOperatorship(
+                gatewayAuth.rotateSigners(
                     getWeightedSignersSet(
                         getAddresses(signers),
                         signers.map(() => 1),
@@ -174,7 +174,7 @@ describe('AxelarGatewayWeightedAuth', () => {
             const prevEpoch = Number(await gatewayAuth.epoch());
 
             await expect(
-                gatewayAuth.transferOperatorship(
+                gatewayAuth.rotateSigners(
                     getWeightedSignersSet(
                         newSigners,
                         newSigners.map(() => 1),
@@ -192,7 +192,7 @@ describe('AxelarGatewayWeightedAuth', () => {
 
             await expectRevert(
                 (gasOptions) =>
-                    gatewayAuth.transferOperatorship(
+                    gatewayAuth.rotateSigners(
                         getWeightedSignersSet(
                             newSigners,
                             newSigners.map(() => 1),
@@ -210,7 +210,7 @@ describe('AxelarGatewayWeightedAuth', () => {
 
             await expectRevert(
                 (gasOptions) =>
-                    gatewayAuth.transferOperatorship(
+                    gatewayAuth.rotateSigners(
                         getWeightedSignersSet(
                             newSigners,
                             newSigners.map(() => 1),
@@ -231,7 +231,7 @@ describe('AxelarGatewayWeightedAuth', () => {
 
             await expectRevert(
                 (gasOptions) =>
-                    gatewayAuth.transferOperatorship(
+                    gatewayAuth.rotateSigners(
                         getWeightedSignersSet(
                             newSigners,
                             newSigners.map(() => 1),
@@ -252,7 +252,7 @@ describe('AxelarGatewayWeightedAuth', () => {
 
             await expectRevert(
                 (gasOptions) =>
-                    gatewayAuth.transferOperatorship(
+                    gatewayAuth.rotateSigners(
                         defaultAbiCoder.encode(
                             ['address[]', 'uint256[]', 'uint256'],
                             [newSigners, newSigners.map(() => 1), 2],
@@ -268,7 +268,7 @@ describe('AxelarGatewayWeightedAuth', () => {
             const updatedSigners = getAddresses(signers.slice(0, threshold));
 
             await expect(
-                gatewayAuth.transferOperatorship(
+                gatewayAuth.rotateSigners(
                     getWeightedSignersSet(
                         updatedSigners,
                         updatedSigners.map(() => 2),
@@ -286,7 +286,7 @@ describe('AxelarGatewayWeightedAuth', () => {
 
             await expectRevert(
                 (gasOptions) =>
-                    gatewayAuth.transferOperatorship(
+                    gatewayAuth.rotateSigners(
                         getWeightedSignersSet(
                             newSigners,
                             newSigners.map(() => 1),
@@ -299,7 +299,7 @@ describe('AxelarGatewayWeightedAuth', () => {
             );
             await expectRevert(
                 (gasOptions) =>
-                    gatewayAuth.transferOperatorship(
+                    gatewayAuth.rotateSigners(
                         getWeightedSignersSet(
                             newSigners,
                             newSigners.map(() => 1),
@@ -320,7 +320,7 @@ describe('AxelarGatewayWeightedAuth', () => {
 
             await expectRevert(
                 (gasOptions) =>
-                    gatewayAuth.transferOperatorship(
+                    gatewayAuth.rotateSigners(
                         getWeightedSignersSet(
                             newSigners,
                             newSigners.map(() => 1),
@@ -333,7 +333,7 @@ describe('AxelarGatewayWeightedAuth', () => {
             );
             await expectRevert(
                 (gasOptions) =>
-                    gatewayAuth.transferOperatorship(
+                    gatewayAuth.rotateSigners(
                         getWeightedSignersSet(
                             newSigners,
                             newSigners.map(() => 1),

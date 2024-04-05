@@ -2,6 +2,8 @@
 
 pragma solidity ^0.8.0;
 
+import { WeightedSigners } from '../types/WeightedSigners.sol';
+
 interface IBaseWeightedMultisig {
     error InvalidSigners();
     error InvalidThreshold();
@@ -9,19 +11,7 @@ interface IBaseWeightedMultisig {
     error LowSignaturesWeight();
     error InvalidWeights();
 
-    event SignersRotated(address[] signers, uint256[] weights, uint256 threshold);
-
-    /**
-     * @notice This struct represents the weighted signers payload
-     * @param signers The list of signers
-     * @param weights The list of weights
-     * @param threshold The threshold for the signers
-     */
-    struct WeightedSigners {
-        address[] signers;
-        uint256[] weights;
-        uint256 threshold;
-    }
+    event SignersRotated(uint256 indexed epoch, bytes32 indexed signersHash, WeightedSigners signers);
 
     /**
      * @dev This function returns the old signers retention period
@@ -48,6 +38,14 @@ interface IBaseWeightedMultisig {
      * @return The epoch for the given hash
      */
     function epochBySignerHash(bytes32 signerHash) external view returns (uint256);
+
+    /**
+     * @dev This function is used to hash the data with auth related data to compute the message hash that will be signed
+     * @param signersHash The hash of the weighted signers that sign off on the data
+     * @param dataHash The hash of the data
+     * @return The message hash to be signed
+     */
+    function hashMessage(bytes32 signersHash, bytes32 dataHash) external view returns (bytes32);
 
     /**
      * @notice This function takes messageHash and proof data and reverts if proof is invalid

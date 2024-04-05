@@ -6,6 +6,7 @@ import { IAxelarGatewayWeightedAuth } from '../interfaces/IAxelarGatewayWeighted
 
 import { BaseWeightedMultisig } from '../governance/BaseWeightedMultisig.sol';
 import { Ownable } from '../utils/Ownable.sol';
+import { WeightedSigners } from '../types/WeightedSigners.sol';
 
 /**
  * @title AxelarGatewayWeightedAuth Contract
@@ -19,40 +20,31 @@ contract AxelarGatewayWeightedAuth is Ownable, BaseWeightedMultisig, IAxelarGate
     /**
      * @notice Initializes the contract.
      * @dev Ownership of this contract should be transferred to the Gateway contract after deployment.
-     * @param initialOperatorSets The recent operator sets to be added to the multisig as initial signers
+     * @param owner_ The owner of the contract
+     * @param domainSeparator_ The domain separator for the signer proof
+     * @param initialSigners The initial weighted signers to be added to the auth contract
      */
-    constructor(address owner_, bytes[] memory initialOperatorSets)
-        Ownable(owner_)
-        BaseWeightedMultisig(PREVIOUS_SIGNERS_RETENTION)
-    {
-        uint256 length = initialOperatorSets.length;
+    constructor(
+        address owner_,
+        bytes32 domainSeparator_,
+        bytes[] memory initialSigners
+    ) Ownable(owner_) BaseWeightedMultisig(PREVIOUS_SIGNERS_RETENTION, domainSeparator_) {
+        uint256 length = initialSigners.length;
 
         for (uint256 i; i < length; ++i) {
-            // slither-disable-next-line uninitialized-local
-            WeightedSigners memory signerSet;
+            WeightedSigners memory signers = abi.decode(initialSigners[i], (WeightedSigners));
 
-            (signerSet.signers, signerSet.weights, signerSet.threshold) = abi.decode(
-                initialOperatorSets[i],
-                (address[], uint256[], uint256)
-            );
-
-            _rotateSigners(signerSet);
+            _rotateSigners(signers);
         }
     }
 
     /**
-     * @notice Transfers operatorship to a new set of signers
-     * @param params The new set of signers encoded as (address[], uint256[], uint256)
+     * @notice Rotate to a new set of weighted signers
+     * @param newSigners The ABI encoded WeightedSigners
      */
-    function transferOperatorship(bytes calldata params) external onlyOwner {
-        // slither-disable-next-line uninitialized-local
-        WeightedSigners memory newSigners;
+    function rotateSigners(bytes calldata newSigners) external onlyOwner {
+        WeightedSigners memory signers = abi.decode(newSigners, (WeightedSigners));
 
-        (newSigners.signers, newSigners.weights, newSigners.threshold) = abi.decode(
-            params,
-            (address[], uint256[], uint256)
-        );
-
-        _rotateSigners(newSigners);
+        _rotateSigners(signers);
     }
 }

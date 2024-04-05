@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import { InterchainMultisig } from '../../governance/InterchainMultisig.sol';
+import { WeightedSigners } from '../../types/WeightedSigners.sol';
 
 contract TestInterchainMultisig is InterchainMultisig {
     constructor(string memory chainName, WeightedSigners memory weightedSigners)

@@ -177,7 +177,7 @@ describe('BaseWeightedMultisig', () => {
                 ),
             );
 
-            await expect(isCurrentSigners).to.be.true;
+            expect(isCurrentSigners).to.be.true;
         });
     });
 
@@ -195,7 +195,7 @@ describe('BaseWeightedMultisig', () => {
                 'SignersRotated',
             );
 
-            await expect(await multisig.epoch()).to.be.equal(prevEpoch + 1);
+            expect(await multisig.epoch()).to.be.equal(prevEpoch + 1);
         });
 
         it('should revert if new signers length is zero', async () => {

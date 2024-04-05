@@ -7,6 +7,7 @@ import { SafeNativeTransfer } from '../libs/SafeNativeTransfer.sol';
 import { ECDSA } from '../libs/ECDSA.sol';
 import { Caller } from '../utils/Caller.sol';
 import { BaseWeightedMultisig } from './BaseWeightedMultisig.sol';
+import { WeightedSigners } from '../types/WeightedSigners.sol';
 
 /**
  * @title InterchainMultisig Contract
@@ -31,7 +32,7 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
      * @param chainName The name of the chain
      * @param weightedSigners The weighted signers payload
      */
-    constructor(string memory chainName, WeightedSigners memory weightedSigners) BaseWeightedMultisig(0) {
+    constructor(string memory chainName, WeightedSigners memory weightedSigners) BaseWeightedMultisig(0, bytes32(0)) {
         if (bytes(chainName).length == 0) revert InvalidChainName();
 
         chainNameHash = keccak256(bytes(chainName));

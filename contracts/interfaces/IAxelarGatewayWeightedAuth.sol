@@ -5,5 +5,9 @@ pragma solidity ^0.8.0;
 import { IBaseWeightedMultisig } from './IBaseWeightedMultisig.sol';
 
 interface IAxelarGatewayWeightedAuth is IBaseWeightedMultisig {
-    function transferOperatorship(bytes calldata params) external;
+    /**
+     * @notice This function rotates the current signers with a new set
+     * @param newSigners The data containing the new signers and their weights
+     */
+    function rotateSigners(bytes calldata newSigners) external;
 }

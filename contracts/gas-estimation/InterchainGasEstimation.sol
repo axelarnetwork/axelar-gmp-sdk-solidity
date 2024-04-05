@@ -158,8 +158,8 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
         // https://docs.arbitrum.io/build-decentralized-apps/how-to-estimate-gas
         // https://docs.arbitrum.io/arbos/l1-pricing
         // Reference https://github.com/OffchainLabs/nitro/blob/master/arbos/l1pricing/l1pricing.go#L565-L578
-        uint256 OneInBips = 10000;
-        uint256 TxDataNonZeroGasEIP2028 = 16;
+        uint256 oneInBips = 10000;
+        uint256 txDataNonZeroGasEIP2028 = 16;
         uint256 estimationPaddingUnits = 16 * TxDataNonZeroGasEIP2028;
         uint256 estimationPaddingBasisPoints = 100;
 

@@ -62,7 +62,7 @@ describe('InterchainGasEstimation', () => {
             '0x',
         );
 
-        expect(estimate).to.equal(353400090264);
+        expect(estimate).to.equal(356100090266);
     });
 
     it('should compute gas estimate for Arbitrum', async () => {
@@ -78,6 +78,6 @@ describe('InterchainGasEstimation', () => {
             '0x',
         );
 
-        expect(estimate).to.equal(210080600090000);
+        expect(estimate).to.equal(212504600090000);
     });
 });

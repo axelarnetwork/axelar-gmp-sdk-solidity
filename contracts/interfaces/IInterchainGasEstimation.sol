@@ -21,7 +21,8 @@ interface IInterchainGasEstimation {
         Default,
         OptimismEcotone,
         Arbitrum,
-        Scroll
+        Scroll,
+        Mantle
     }
 
     struct GasInfo {

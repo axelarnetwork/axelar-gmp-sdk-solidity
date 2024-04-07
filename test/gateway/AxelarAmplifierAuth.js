@@ -364,7 +364,12 @@ describe('AxelarAmplifierAuth', () => {
             });
 
             it('validate the proof from a single signer', async () => {
-                const multisig = await multisigFactory.deploy(owner.address, domainSeparator, previousSignersRetention, []);
+                const multisig = await multisigFactory.deploy(
+                    owner.address,
+                    domainSeparator,
+                    previousSignersRetention,
+                    [],
+                );
                 await multisig.deployTransaction.wait(network.config.confirmations);
 
                 const newSigners = {

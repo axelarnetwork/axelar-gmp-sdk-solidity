@@ -106,20 +106,21 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         BaseWeightedMultisigStorage storage slot = _baseWeightedMultisigStorage();
 
         uint256 length = newSigners.signers.length;
-        uint128 totalWeight;
+        uint256 totalWeight;
 
         // signers must be sorted binary or alphabetically in lower case
         if (length == 0 || !_isSortedAscAndContainsNoDuplicate(newSigners.signers)) revert InvalidSigners();
 
         for (uint256 i; i < length; ++i) {
-            uint128 weight = newSigners.signers[i].weight;
+            uint256 weight = newSigners.signers[i].weight;
 
             if (weight == 0) revert InvalidWeights();
 
             totalWeight = totalWeight + weight;
         }
 
-        if (newSigners.threshold == 0 || totalWeight < newSigners.threshold) revert InvalidThreshold();
+        uint128 threshold = newSigners.threshold;
+        if (threshold == 0 || totalWeight < threshold) revert InvalidThreshold();
 
         bytes32 newSignersHash = keccak256(abi.encode(newSigners));
 
@@ -152,7 +153,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         uint256 signersLength = weightedSigners.signers.length;
         uint256 signaturesLength = signatures.length;
         uint256 signerIndex;
-        uint128 totalWeight;
+        uint256 totalWeight;
 
         // looking for signers within signers
         // this requires both signers and signatures to be sorted

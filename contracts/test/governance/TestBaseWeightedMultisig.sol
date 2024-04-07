@@ -6,6 +6,8 @@ import { BaseWeightedMultisig } from '../../governance/BaseWeightedMultisig.sol'
 import { WeightedSigners } from '../../types/WeightedMultisigTypes.sol';
 
 contract TestBaseWeightedMultisig is BaseWeightedMultisig {
+    event DummyEvent();
+
     constructor(uint256 previousSignersRetention_, bytes32 domainSeparator_)
         BaseWeightedMultisig(previousSignersRetention_, domainSeparator_)
     {
@@ -16,5 +18,11 @@ contract TestBaseWeightedMultisig is BaseWeightedMultisig {
 
     function rotateSigners(WeightedSigners memory newSigners) external {
         _rotateSigners(newSigners);
+    }
+
+    function validate(bytes32 dataHash, bytes calldata proof) external returns (bool) {
+        emit DummyEvent();
+
+        return validateProof(dataHash, proof);
     }
 }

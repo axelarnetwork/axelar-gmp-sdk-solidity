@@ -26,6 +26,7 @@ describe.only('BaseWeightedMultisig', () => {
     let signers;
 
     let multisigFactory;
+    let testMultisigFactory;
     let multisig;
     let weightedSigners;
     let weightedSignersHash;
@@ -36,9 +37,10 @@ describe.only('BaseWeightedMultisig', () => {
         owner = wallets[0];
         signers = sortBy(wallets.slice(0, 3), (wallet) => wallet.address.toLowerCase());
 
-        multisigFactory = await ethers.getContractFactory('TestBaseWeightedMultisig', owner);
+        multisigFactory = await ethers.getContractFactory('AxelarGatewayWeightedAuth', owner);
+        testMultisigFactory = await ethers.getContractFactory('TestBaseWeightedMultisig', owner);
 
-        multisig = await multisigFactory.deploy(previousSignersRetention, domainSeparator);
+        multisig = await multisigFactory.deploy(owner.address, domainSeparator, []);
         await multisig.deployTransaction.wait(network.config.confirmations);
 
         weightedSigners = {
@@ -50,7 +52,7 @@ describe.only('BaseWeightedMultisig', () => {
         };
         weightedSignersHash = keccak256(encodeWeightedSigners(weightedSigners));
 
-        await multisig.rotateSigners(weightedSigners).then((tx) => tx.wait());
+        await multisig.rotateSigners(encodeWeightedSigners(weightedSigners)).then((tx) => tx.wait());
     });
 
     it('should validate storage constants', async () => {
@@ -89,7 +91,7 @@ describe.only('BaseWeightedMultisig', () => {
             let multisig;
 
             beforeEach(async () => {
-                multisig = await multisigFactory.deploy(previousSignersRetention, domainSeparator);
+                multisig = await multisigFactory.deploy(owner.address, domainSeparator, []);
                 await multisig.deployTransaction.wait(network.config.confirmations);
             });
 
@@ -112,7 +114,7 @@ describe.only('BaseWeightedMultisig', () => {
 
                 const prevEpoch = (await multisig.epoch()).toNumber();
 
-                await expect(multisig.rotateSigners(newSigners))
+                await expect(multisig.rotateSigners(encodeWeightedSigners(newSigners)))
                     .to.emit(multisig, 'SignersRotated')
                     .withArgs(prevEpoch + 1, signersHash);
 
@@ -134,13 +136,13 @@ describe.only('BaseWeightedMultisig', () => {
 
                 const prevEpoch = (await multisig.epoch()).toNumber();
 
-                await expect(multisig.rotateSigners(newSigners))
+                await expect(multisig.rotateSigners(encodeWeightedSigners(newSigners)))
                     .to.emit(multisig, 'SignersRotated')
                     .withArgs(prevEpoch + 1, newSignersHash);
 
                 expect(await multisig.epochBySignerHash(newSignersHash)).to.be.equal(prevEpoch + 1);
 
-                await expect(multisig.rotateSigners(newSigners))
+                await expect(multisig.rotateSigners(encodeWeightedSigners(newSigners)))
                     .to.emit(multisig, 'SignersRotated')
                     .withArgs(prevEpoch + 2, newSignersHash);
 
@@ -163,14 +165,14 @@ describe.only('BaseWeightedMultisig', () => {
 
                 const prevEpoch = (await multisig.epoch()).toNumber();
 
-                await expect(multisig.rotateSigners(newSigners))
+                await expect(multisig.rotateSigners(encodeWeightedSigners(newSigners)))
                     .to.emit(multisig, 'SignersRotated')
                     .withArgs(prevEpoch + 1, newSignersHash);
 
                 const newSigners2 = { ...newSigners, nonce: id('1') };
                 const newSigners2Hash = keccak256(encodeWeightedSigners(newSigners2));
 
-                await expect(multisig.rotateSigners(newSigners2))
+                await expect(multisig.rotateSigners(encodeWeightedSigners(newSigners2)))
                     .to.emit(multisig, 'SignersRotated')
                     .withArgs(prevEpoch + 2, newSigners2Hash);
 
@@ -184,7 +186,7 @@ describe.only('BaseWeightedMultisig', () => {
             it('should revert if new signers length is zero', async () => {
                 await expectRevert(
                     (gasOptions) =>
-                        multisig.rotateSigners({ signers: [], threshold: 1, nonce: defaultNonce }, gasOptions),
+                        multisig.rotateSigners(encodeWeightedSigners({ signers: [], threshold: 1, nonce: defaultNonce }), gasOptions),
                     multisig,
                     'InvalidSigners',
                 );
@@ -193,7 +195,7 @@ describe.only('BaseWeightedMultisig', () => {
             it('should not allow transferring signers to address zero', async () => {
                 await expectRevert(
                     (gasOptions) =>
-                        multisig.rotateSigners(
+                        multisig.rotateSigners(encodeWeightedSigners(
                             {
                                 signers: [
                                     {
@@ -205,7 +207,7 @@ describe.only('BaseWeightedMultisig', () => {
                                 nonce: defaultNonce,
                             },
                             gasOptions,
-                        ),
+                        )),
                     multisig,
                     'InvalidSigners',
                 );
@@ -214,7 +216,7 @@ describe.only('BaseWeightedMultisig', () => {
             it('should not allow transferring signers to duplicated signers', async () => {
                 await expectRevert(
                     (gasOptions) =>
-                        multisig.rotateSigners(
+                        multisig.rotateSigners(encodeWeightedSigners(
                             {
                                 signers: [
                                     { signer: '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b', weight: 1 },
@@ -224,7 +226,7 @@ describe.only('BaseWeightedMultisig', () => {
                                 nonce: defaultNonce,
                             },
                             gasOptions,
-                        ),
+                        )),
                     multisig,
                     'InvalidSigners',
                 );
@@ -233,7 +235,7 @@ describe.only('BaseWeightedMultisig', () => {
             it('should not allow transferring signers to unsorted signers', async () => {
                 await expectRevert(
                     (gasOptions) =>
-                        multisig.rotateSigners(
+                        multisig.rotateSigners(encodeWeightedSigners(
                             {
                                 signers: [
                                     { signer: '0xb7900E8Ec64A1D1315B6D4017d4b1dcd36E6Ea88', weight: 1 },
@@ -243,7 +245,7 @@ describe.only('BaseWeightedMultisig', () => {
                                 nonce: defaultNonce,
                             },
                             gasOptions,
-                        ),
+                        )),
                     multisig,
                     'InvalidSigners',
                 );
@@ -252,7 +254,7 @@ describe.only('BaseWeightedMultisig', () => {
             it('should not allow transferring signers with zero weights', async () => {
                 await expectRevert(
                     (gasOptions) =>
-                        multisig.rotateSigners(
+                        multisig.rotateSigners(encodeWeightedSigners(
                             {
                                 signers: [
                                     { signer: '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b', weight: 1 },
@@ -262,7 +264,7 @@ describe.only('BaseWeightedMultisig', () => {
                                 nonce: defaultNonce,
                             },
                             gasOptions,
-                        ),
+                        )),
                     multisig,
                     'InvalidWeights',
                 );
@@ -271,14 +273,14 @@ describe.only('BaseWeightedMultisig', () => {
             it('should not allow transferring signers with zero threshold', async () => {
                 await expectRevert(
                     (gasOptions) =>
-                        multisig.rotateSigners(
+                        multisig.rotateSigners(encodeWeightedSigners(
                             {
                                 signers: [{ signer: '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b', weight: 1 }],
                                 threshold: 0,
                                 nonce: defaultNonce,
                             },
                             gasOptions,
-                        ),
+                        )),
                     multisig,
                     'InvalidThreshold',
                 );
@@ -287,21 +289,21 @@ describe.only('BaseWeightedMultisig', () => {
             it('should not allow transferring signers with threshold greater than sum of weights', async () => {
                 await expectRevert(
                     (gasOptions) =>
-                        multisig.rotateSigners(
+                        multisig.rotateSigners(encodeWeightedSigners(
                             {
                                 signers: [{ signer: '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b', weight: 1 }],
                                 threshold: 2,
                                 nonce: defaultNonce,
                             },
                             gasOptions,
-                        ),
+                        )),
                     multisig,
                     'InvalidThreshold',
                 );
 
                 await expectRevert(
                     (gasOptions) =>
-                        multisig.rotateSigners(
+                        multisig.rotateSigners(encodeWeightedSigners(
                             {
                                 signers: [
                                     { signer: '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b', weight: 1 },
@@ -311,7 +313,7 @@ describe.only('BaseWeightedMultisig', () => {
                                 nonce: defaultNonce,
                             },
                             gasOptions,
-                        ),
+                        )),
                     multisig,
                     'InvalidThreshold',
                 );
@@ -321,7 +323,7 @@ describe.only('BaseWeightedMultisig', () => {
 
     describe('validateProof', () => {
         describe('positive tests', () => {
-            it('validate the proof from the current signers', async () => {
+            it.only('validate the proof from the current signers', async () => {
                 const proof = await getWeightedSignersProof2(
                     data,
                     domainSeparator,
@@ -348,8 +350,8 @@ describe.only('BaseWeightedMultisig', () => {
                 expect(isCurrentSigners).to.be.true;
             });
 
-            it('validate the proof from a single signer', async () => {
-                const multisig = await multisigFactory.deploy(previousSignersRetention, domainSeparator);
+            it.only('validate the proof from a single signer', async () => {
+                const multisig = await testMultisigFactory.deploy(previousSignersRetention, domainSeparator);
                 await multisig.deployTransaction.wait(network.config.confirmations);
 
                 const newSigners = {
@@ -365,17 +367,22 @@ describe.only('BaseWeightedMultisig', () => {
                     'SignersRotated',
                 );
 
+                const proof = await getWeightedSignersProof2(
+                    data,
+                    domainSeparator,
+                    newSigners,
+                    [signers[0]],
+                );
+
                 const isCurrentSigners = await multisig.validateProof(
                     dataHash,
-                    await getWeightedSignersProof2(
-                        data,
-                        domainSeparator,
-                        newSigners,
-                        [signers[0]],
-                    ),
+                    proof,
                 );
 
                 expect(isCurrentSigners).to.be.true;
+
+                // validate with a tx to estimate gas cost
+                await multisig.validate(dataHash, proof).then((tx) => tx.wait());
             });
         });
 
@@ -473,7 +480,7 @@ describe.only('BaseWeightedMultisig', () => {
         let multisig;
 
         before(async () => {
-            multisig = await multisigFactory.deploy(previousSignersRetention, domainSeparator);
+            multisig = await testMultisigFactory.deploy(previousSignersRetention, domainSeparator);
             await multisig.deployTransaction.wait(network.config.confirmations);
 
             for (let i = 0; i <= previousSignersRetention + 1; i++) {

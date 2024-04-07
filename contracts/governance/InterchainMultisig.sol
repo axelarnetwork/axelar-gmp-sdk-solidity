@@ -32,7 +32,11 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
      * @param chainName The name of the chain
      * @param weightedSigners The weighted signers payload
      */
-    constructor(string memory chainName, WeightedSigners memory weightedSigners) BaseWeightedMultisig(0, bytes32(0)) {
+    constructor(
+        string memory chainName,
+        bytes32 domainSeparator_,
+        WeightedSigners memory weightedSigners
+    ) BaseWeightedMultisig(0, domainSeparator_) {
         if (bytes(chainName).length == 0) revert InvalidChainName();
 
         chainNameHash = keccak256(bytes(chainName));
@@ -74,7 +78,7 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
         bytes32 batchHash = keccak256(abi.encode(batchId, calls));
         uint256 callsLength = calls.length;
 
-        validateProof(ECDSA.toEthSignedMessageHash(batchHash), proof);
+        validateProof(batchHash, proof);
 
         if (slot.isBatchExecuted[batchId]) revert AlreadyExecuted();
         slot.isBatchExecuted[batchId] = true;

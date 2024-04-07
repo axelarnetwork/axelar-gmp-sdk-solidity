@@ -6,9 +6,11 @@ import { InterchainMultisig } from '../../governance/InterchainMultisig.sol';
 import { WeightedSigners } from '../../types/WeightedMultisigTypes.sol';
 
 contract TestInterchainMultisig is InterchainMultisig {
-    constructor(string memory chainName, WeightedSigners memory weightedSigners)
-        InterchainMultisig(chainName, weightedSigners)
-    {
+    constructor(
+        string memory chainName,
+        bytes32 domainSeparator_,
+        WeightedSigners memory weightedSigners
+    ) InterchainMultisig(chainName, domainSeparator_, weightedSigners) {
         if (INTERCHAIN_MULTISIG_SLOT != bytes32(uint256(keccak256('InterchainMultisig.Slot')) - 1)) {
             revert('InterchainMultisig.Slot');
         }

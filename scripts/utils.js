@@ -96,9 +96,7 @@ const getWeightedSignersProof2 = async (data, domainSeparator, weightedSigners, 
     const weightedSignerHash = keccak256(encodeWeightedSigners(weightedSigners));
     const message = encodeWeightedSignersMessage(data, domainSeparator, weightedSignerHash);
 
-    const signatures = await Promise.all(
-        wallets.map((wallet) => wallet.signMessage(message)),
-    );
+    const signatures = await Promise.all(wallets.map((wallet) => wallet.signMessage(message)));
 
     return defaultAbiCoder.encode(
         [

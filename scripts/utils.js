@@ -92,7 +92,7 @@ const encodeMessageHash = (data, domainSeparator, weightedSignerHash) => {
     return hashMessage(encodeWeightedSignersMessage(data, domainSeparator, weightedSignerHash));
 };
 
-const getWeightedSignersProof2 = async (data, domainSeparator, weightedSigners, wallets) => {
+const getWeightedSignersProof = async (data, domainSeparator, weightedSigners, wallets) => {
     const weightedSignerHash = keccak256(encodeWeightedSigners(weightedSigners));
     const message = encodeWeightedSignersMessage(data, domainSeparator, weightedSignerHash);
 
@@ -106,21 +106,6 @@ const getWeightedSignersProof2 = async (data, domainSeparator, weightedSigners, 
     );
 };
 
-const getWeightedSignersProof = async (data, accounts, weights, threshold, signers, nonce = id('0'), msg = '') => {
-    const signersWithWeights = getAddresses(accounts).map((address, i) => ({ address, weight: weights[i] }));
-    const sortedSignersWithWeights = sortBy(signersWithWeights, (signer) => signer.address.toLowerCase());
-
-    const hash = msg || arrayify(keccak256(data));
-    const signatures = await Promise.all(
-        sortBy(signers, (wallet) => wallet.address.toLowerCase()).map((wallet) => wallet.signMessage(hash)),
-    );
-
-    const signerSet = sortedSignersWithWeights.map((signer) => [signer.address, signer.weight]);
-    const proof = [[signerSet, threshold, nonce], signatures];
-
-    return defaultAbiCoder.encode(['tuple(tuple(tuple(address,uint128)[],uint128,bytes32),bytes[])'], [proof]);
-};
-
 const encodeInterchainCallsBatch = (batchId, calls) =>
     defaultAbiCoder.encode(['bytes32', 'tuple(string, address, address, bytes, uint256)[]'], [batchId, calls]);
 
@@ -131,15 +116,7 @@ const encodeInterchainCallsBatch = (batchId, calls) =>
  */
 const solidityObjectToTuple = (obj) => {
     if (typeof obj === 'object') {
-        const convertedObj = Object.entries(obj).map(([key, value]) => solidityObjectToTuple(value));
-        Object.keys(obj).forEach((key, i) => {
-            convertedObj[key] = convertedObj[i];
-        });
-        return convertedObj;
-    }
-
-    if (typeof obj === 'number') {
-        return { _hex: '0x01', _isBigNumber: true };
+        return Object.entries(obj).map(([key, value]) => solidityObjectToTuple(value));
     }
 
     return obj;
@@ -154,7 +131,6 @@ module.exports = {
     getAddresses,
     getWeightedSignersSet,
     getWeightedSignersProof,
-    getWeightedSignersProof2,
     encodeInterchainCallsBatch,
     encodeWeightedSigners,
     encodeMessageHash,

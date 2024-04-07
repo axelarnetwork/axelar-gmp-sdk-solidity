@@ -5,8 +5,6 @@ pragma solidity ^0.8.0;
 import { IAxelarAmplifierGateway } from '../interfaces/IAxelarAmplifierGateway.sol';
 import { IAxelarAmplifierGatewayAuth } from '../interfaces/IAxelarAmplifierGatewayAuth.sol';
 
-import { ECDSA } from '../libs/ECDSA.sol';
-
 contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
     // keccak256('AxelarAmplifierGateway.Slot') - 1;
     bytes32 internal constant AXELAR_AMPLIFIER_GATEWAY_SLOT =
@@ -88,7 +86,7 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
     function execute(bytes calldata batch) external {
         (bytes memory data, bytes memory proof) = abi.decode(batch, (bytes, bytes));
 
-        bytes32 messageHash = ECDSA.toEthSignedMessageHash(keccak256(data));
+        bytes32 messageHash = keccak256(data);
 
         // returns true for current operators
         bool allowOperatorshipTransfer = authModule.validateProof(messageHash, proof);

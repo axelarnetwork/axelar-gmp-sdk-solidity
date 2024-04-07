@@ -6,16 +6,18 @@ const {
 } = ethers;
 const { expect } = chai;
 
-const { getAddresses, getChainId, getRandomID, getWeightedSignersSet, getWeightedSignersProof } = require('../utils');
+const { getChainId, getRandomID } = require('../utils');
+const { encodeWeightedSigners, getWeightedSignersProof } = require('../../scripts/utils');
 
 describe('AxelarAmplifierGateway', () => {
     const threshold = 2;
+    const domainSeparator = id('chain');
     const commandId = process.env.REPORT_GAS ? id('4') : getRandomID(); // use fixed command id for deterministic gas computation
 
     let wallets;
     let user;
     let operators;
-    let weights;
+    let weightedSigners;
 
     let gatewayFactory;
     let authFactory;
@@ -27,13 +29,16 @@ describe('AxelarAmplifierGateway', () => {
         wallets = await ethers.getSigners();
         user = wallets[0];
         operators = sortBy(wallets.slice(0, threshold), (wallet) => wallet.address.toLowerCase());
-        weights = Array(operators.length).fill(1);
+
+        weightedSigners = {
+            signers: operators.map((wallet, i) => ({ signer: wallet.address, weight: 1 })),
+            threshold,
+            nonce: id('0'),
+        };
 
         gatewayFactory = await ethers.getContractFactory('AxelarAmplifierGateway', user);
         authFactory = await ethers.getContractFactory('AxelarGatewayWeightedAuth', user);
     });
-
-    const getWeights = ({ length }, weight = 1) => Array(length).fill(weight);
 
     const getApproveContractCall = (sourceChain, source, destination, payloadHash, sourceTxHash, sourceEventIndex) => {
         return defaultAbiCoder.encode(
@@ -51,22 +56,18 @@ describe('AxelarAmplifierGateway', () => {
         );
     };
 
-    const getTransferWeightedOperatorshipCommand = (newOperators, newWeights, threshold) =>
-        defaultAbiCoder.encode(
-            ['address[]', 'uint256[]', 'uint256'],
-            [sortBy(newOperators, (address) => address.toLowerCase()), newWeights, threshold],
-        );
+    const getTransferWeightedOperatorshipCommand = (newSigners) => encodeWeightedSigners(newSigners);
 
-    const getSignedWeightedExecuteInput = async (data, operators, weights, threshold, signers) =>
+    const getSignedWeightedExecuteInput = async (data, weightedSigners, signers) =>
         defaultAbiCoder.encode(
             ['bytes', 'bytes'],
-            [data, await getWeightedSignersProof(data, operators, weights, threshold, signers)],
+            [data, await getWeightedSignersProof(data, domainSeparator, weightedSigners, signers)],
         );
 
     const deployGateway = async () => {
         // setup auth contract with a genesis operator set
         auth = await authFactory
-            .deploy(user.address, [getWeightedSignersSet(getAddresses(operators), weights, threshold)])
+            .deploy(user.address, domainSeparator, [encodeWeightedSigners(weightedSigners)])
             .then((d) => d.deployed());
 
         gateway = await gatewayFactory.deploy(auth.address).then((d) => d.deployed());
@@ -117,9 +118,7 @@ describe('AxelarAmplifierGateway', () => {
 
             const approveInput = await getSignedWeightedExecuteInput(
                 approveData,
-                operators,
-                weights,
-                threshold,
+                weightedSigners,
                 operators.slice(0, threshold),
             );
 
@@ -168,33 +167,29 @@ describe('AxelarAmplifierGateway', () => {
         });
 
         it('should allow operators to transfer operatorship', async () => {
-            const newOperators = [
-                '0xb7900E8Ec64A1D1315B6D4017d4b1dcd36E6Ea88',
-                '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b',
-            ];
+            const newSigners = {
+                signers: [
+                    { signer: '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b', weight: 1 },
+                    { signer: '0xb7900E8Ec64A1D1315B6D4017d4b1dcd36E6Ea88', weight: 1 },
+                ],
+                threshold: 2,
+                nonce: id('0'),
+            };
 
             const data = buildCommandBatch(
                 await getChainId(),
                 [commandId],
                 ['transferOperatorship'],
-                [getTransferWeightedOperatorshipCommand(newOperators, getWeights(newOperators), newOperators.length)],
+                [getTransferWeightedOperatorshipCommand(newSigners)],
             );
 
-            const input = await getSignedWeightedExecuteInput(
-                data,
-                operators,
-                weights,
-                threshold,
-                operators.slice(0, threshold),
-            );
+            const input = await getSignedWeightedExecuteInput(data, weightedSigners, operators.slice(0, threshold));
 
             const tx = await gateway.execute(input);
 
             await expect(tx)
                 .to.emit(gateway, 'OperatorshipTransferred')
-                .withArgs(
-                    getTransferWeightedOperatorshipCommand(newOperators, getWeights(newOperators), newOperators.length),
-                );
+                .withArgs(getTransferWeightedOperatorshipCommand(newSigners));
         });
     });
 });

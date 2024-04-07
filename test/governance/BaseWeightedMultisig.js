@@ -9,7 +9,7 @@ const {
 const { expect } = chai;
 
 const { expectRevert } = require('../utils');
-const { getWeightedSignersProof2, encodeWeightedSigners } = require('../../scripts/utils');
+const { getWeightedSignersProof, encodeWeightedSigners } = require('../../scripts/utils');
 
 describe('BaseWeightedMultisig', () => {
     const threshold = 2;
@@ -338,7 +338,7 @@ describe('BaseWeightedMultisig', () => {
     describe('validateProof', () => {
         describe('positive tests', () => {
             it('validate the proof from the current signers', async () => {
-                const proof = await getWeightedSignersProof2(
+                const proof = await getWeightedSignersProof(
                     data,
                     domainSeparator,
                     weightedSigners,
@@ -352,7 +352,7 @@ describe('BaseWeightedMultisig', () => {
 
             it('validate the proof from the current signers with extra signatures', async () => {
                 // sign with all signers, i.e more than threshold
-                const proof = await getWeightedSignersProof2(data, domainSeparator, weightedSigners, signers);
+                const proof = await getWeightedSignersProof(data, domainSeparator, weightedSigners, signers);
 
                 const isCurrentSigners = await multisig.validateProof(dataHash, proof);
 
@@ -371,7 +371,7 @@ describe('BaseWeightedMultisig', () => {
 
                 await expect(multisig.rotateSigners(newSigners)).to.emit(multisig, 'SignersRotated');
 
-                const proof = await getWeightedSignersProof2(data, domainSeparator, newSigners, [signers[0]]);
+                const proof = await getWeightedSignersProof(data, domainSeparator, newSigners, [signers[0]]);
 
                 const isCurrentSigners = await multisig.validateProof(dataHash, proof);
 
@@ -384,7 +384,7 @@ describe('BaseWeightedMultisig', () => {
 
         describe('negative tests', () => {
             it('reject the proof from a non-existent signers hash', async () => {
-                const proof = await getWeightedSignersProof2(
+                const proof = await getWeightedSignersProof(
                     data,
                     domainSeparator,
                     {
@@ -403,7 +403,7 @@ describe('BaseWeightedMultisig', () => {
             });
 
             it('reject the proof if signatures are insufficient', async () => {
-                const proof = await getWeightedSignersProof2(
+                const proof = await getWeightedSignersProof(
                     data,
                     domainSeparator,
                     weightedSigners,
@@ -418,7 +418,7 @@ describe('BaseWeightedMultisig', () => {
             });
 
             it('reject the proof if signatures are invalid', async () => {
-                const proof = await getWeightedSignersProof2(data, domainSeparator, weightedSigners, [
+                const proof = await getWeightedSignersProof(data, domainSeparator, weightedSigners, [
                     Wallet.createRandom(),
                 ]);
 
@@ -430,7 +430,7 @@ describe('BaseWeightedMultisig', () => {
             });
 
             it('reject the proof if signatures are missing', async () => {
-                const proof = await getWeightedSignersProof2(data, domainSeparator, weightedSigners, []);
+                const proof = await getWeightedSignersProof(data, domainSeparator, weightedSigners, []);
 
                 await expectRevert(
                     async (gasOptions) => multisig.validateProof(dataHash, proof, gasOptions),
@@ -457,7 +457,7 @@ describe('BaseWeightedMultisig', () => {
 
                 await multisig.rotateSigners(newSigners).then((tx) => tx.wait(network.config.confirmations));
 
-                const proof = await getWeightedSignersProof2(
+                const proof = await getWeightedSignersProof(
                     data,
                     domainSeparator,
                     newSigners,
@@ -472,7 +472,7 @@ describe('BaseWeightedMultisig', () => {
 
         it('validate the proof from all recent signers', async () => {
             for (let i = 1; i <= previousSignersRetention + 1; i++) {
-                const proof = await getWeightedSignersProof2(
+                const proof = await getWeightedSignersProof(
                     data,
                     domainSeparator,
                     {
@@ -489,7 +489,7 @@ describe('BaseWeightedMultisig', () => {
         });
 
         it('reject proof from outdated signers', async () => {
-            const proof = await getWeightedSignersProof2(
+            const proof = await getWeightedSignersProof(
                 data,
                 domainSeparator,
                 {
@@ -536,7 +536,7 @@ describe('BaseWeightedMultisig', () => {
             .to.emit(multisig, 'SignersRotated')
             .withArgs(prevEpoch + 1, signersHash);
 
-        const proof = await getWeightedSignersProof2(data, domainSeparator, newSigners, wallets.slice(0, threshold));
+        const proof = await getWeightedSignersProof(data, domainSeparator, newSigners, wallets.slice(0, threshold));
 
         await multisig.validate(dataHash, proof).then((tx) => tx.wait());
     });

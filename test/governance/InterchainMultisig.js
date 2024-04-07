@@ -1,15 +1,15 @@
 const chai = require('chai');
 const { ethers, network } = require('hardhat');
 const { sortBy } = require('lodash');
-const { getAddresses, encodeInterchainCallsBatch, getWeightedSignersProof, expectRevert } = require('../utils');
-const { getWeightedSignersProof2 } = require('../../scripts/utils');
+const { expectRevert } = require('../utils');
+const { getWeightedSignersProof, encodeInterchainCallsBatch } = require('../../scripts/utils');
 const {
     constants: { AddressZero },
     utils: { keccak256, formatBytes32String },
 } = ethers;
 const { expect } = chai;
 
-describe.only('InterchainMultisig', () => {
+describe('InterchainMultisig', () => {
     const threshold = 2;
     const nativeValue = 100;
     const domainSeparator = formatBytes32String('0x');
@@ -27,7 +27,7 @@ describe.only('InterchainMultisig', () => {
     let calldata;
 
     const executeCalls = async (batchId, calls, txOptions = {}) => {
-        const proof = await getWeightedSignersProof2(
+        const proof = await getWeightedSignersProof(
             encodeInterchainCallsBatch(batchId, calls),
             domainSeparator,
             weightedSigners,

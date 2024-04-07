@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 
 import { IInterchainMultisig } from '../interfaces/IInterchainMultisig.sol';
 import { SafeNativeTransfer } from '../libs/SafeNativeTransfer.sol';
-import { ECDSA } from '../libs/ECDSA.sol';
 import { Caller } from '../utils/Caller.sol';
 import { BaseWeightedMultisig } from './BaseWeightedMultisig.sol';
 import { WeightedSigners } from '../types/WeightedMultisigTypes.sol';

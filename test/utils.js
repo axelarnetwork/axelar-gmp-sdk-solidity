@@ -7,15 +7,6 @@ const {
 } = ethers;
 const { sortBy } = require('lodash');
 
-const {
-    getAddresses,
-    getWeightedSignersSet,
-    getWeightedSignersProof,
-    encodeInterchainCallsBatch,
-    encodeWeightedSigners,
-    getWeightedSignersProof2,
-} = require('../scripts/utils');
-
 const getRandomInt = (max) => {
     return Math.floor(Math.random() * max);
 };
@@ -112,11 +103,4 @@ module.exports = {
     deployContract,
 
     expectRevert,
-
-    getAddresses,
-    getWeightedSignersSet,
-    getWeightedSignersProof,
-    encodeInterchainCallsBatch,
-    encodeWeightedSigners,
-    getWeightedSignersProof2,
 };

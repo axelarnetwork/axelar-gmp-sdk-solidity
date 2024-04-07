@@ -64,7 +64,7 @@ describe.only('BaseWeightedMultisig', () => {
 
     describe('queries', () => {
         it('previousSignersRetention', async () => {
-            expect(await multisig.previousSignersRetention()).to.be.equal(previousSignersRetention);
+            expect(await multisig.previousSignersRetention()).to.be.equal(15);
         });
 
         it('hashMessage', async () => {
@@ -323,7 +323,7 @@ describe.only('BaseWeightedMultisig', () => {
 
     describe('validateProof', () => {
         describe('positive tests', () => {
-            it.only('validate the proof from the current signers', async () => {
+            it('validate the proof from the current signers', async () => {
                 const proof = await getWeightedSignersProof2(
                     data,
                     domainSeparator,
@@ -350,7 +350,7 @@ describe.only('BaseWeightedMultisig', () => {
                 expect(isCurrentSigners).to.be.true;
             });
 
-            it.only('validate the proof from a single signer', async () => {
+            it('validate the proof from a single signer', async () => {
                 const multisig = await testMultisigFactory.deploy(previousSignersRetention, domainSeparator);
                 await multisig.deployTransaction.wait(network.config.confirmations);
 
@@ -550,5 +550,42 @@ describe.only('BaseWeightedMultisig', () => {
                 'InvalidSigners',
             )
         });
+    });
+
+    it('should allow signer rotation to a large set', async () => {
+        const multisig = await testMultisigFactory.deploy(previousSignersRetention, domainSeparator);
+        await multisig.deployTransaction.wait(network.config.confirmations);
+
+        const numSigners = 40;
+        const threshold = Math.floor(numSigners / 2) + 1;
+        const wallets = sortBy(
+            Array(numSigners).fill(0).map(() => Wallet.createRandom()),
+            (wallet) => wallet.address.toLowerCase()
+        );
+        const signers = wallets.map((wallet) => {
+            return { signer: wallet.address, weight: 1 };
+        });
+        const newSigners = {
+            signers,
+            threshold,
+            nonce: defaultNonce,
+        };
+        const encodedSigners = encodeWeightedSigners(newSigners);
+        const signersHash = keccak256(encodedSigners);
+
+        const prevEpoch = (await multisig.epoch()).toNumber();
+
+        await expect(multisig.rotateSigners(newSigners))
+            .to.emit(multisig, 'SignersRotated')
+            .withArgs(prevEpoch + 1, signersHash);
+
+        const proof = await getWeightedSignersProof2(
+            data,
+            domainSeparator,
+            newSigners,
+            wallets.slice(0, threshold),
+        );
+
+        await multisig.validate(dataHash, proof).then((tx) => tx.wait());
     });
 });

@@ -37,7 +37,7 @@ describe('AxelarAmplifierGateway', () => {
         };
 
         gatewayFactory = await ethers.getContractFactory('AxelarAmplifierGateway', user);
-        authFactory = await ethers.getContractFactory('AxelarGatewayWeightedAuth', user);
+        authFactory = await ethers.getContractFactory('AxelarAmplifierAuth', user);
     });
 
     const getApproveContractCall = (sourceChain, source, destination, payloadHash, sourceTxHash, sourceEventIndex) => {

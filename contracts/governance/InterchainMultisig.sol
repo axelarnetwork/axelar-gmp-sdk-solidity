@@ -77,7 +77,7 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
         bytes32 batchHash = keccak256(abi.encode(batchId, calls));
         uint256 callsLength = calls.length;
 
-        validateProof(batchHash, proof);
+        _validateProof(batchHash, proof);
 
         if (slot.isBatchExecuted[batchId]) revert AlreadyExecuted();
         slot.isBatchExecuted[batchId] = true;
@@ -101,6 +101,16 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
         if (callsExecuted == 0) revert EmptyBatch();
 
         emit BatchExecuted(batchId, batchHash, callsExecuted, callsLength);
+    }
+
+    /**
+     * @notice This function takes dataHash and proof data and reverts if proof is invalid
+     * @param dataHash The hash of the message that was signed
+     * @param proof The data containing signers with signatures
+     * @return isLatestSigners True if provided signers are the current ones
+     */
+    function validateProof(bytes32 dataHash, bytes calldata proof) external view returns (bool isLatestSigners) {
+        return _validateProof(dataHash, proof);
     }
 
     /**

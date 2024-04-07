@@ -65,8 +65,12 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         return _baseWeightedMultisigStorage().epochBySignerHash[signerHash];
     }
 
+    /*************************\
+    |* Integration Functions *|
+    \*************************/
+
     /**
-     * @notice This function takes messageHash and proof data and reverts if proof is invalid
+     * @notice This function takes dataHash and proof data and reverts if proof is invalid
      * @param dataHash The hash of the message that was signed
      * @param proof The multisig proof data
      * @return isLatestSigners True if the proof is from the latest signer set
@@ -74,7 +78,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      *      The signers and signatures should be sorted by signer address in ascending order
      *      Example: abi.encode([0x11..., 0x22..., 0x33...], [1, 1, 1], 2, [signature1, signature3])
      */
-    function validateProof(bytes32 dataHash, bytes calldata proof) public view returns (bool isLatestSigners) {
+    function _validateProof(bytes32 dataHash, bytes calldata proof) internal view returns (bool isLatestSigners) {
         BaseWeightedMultisigStorage storage slot = _baseWeightedMultisigStorage();
 
         Proof memory proofData = abi.decode(proof, (Proof));
@@ -92,10 +96,6 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
 
         _validateSignatures(messageHash, signers, proofData.signatures);
     }
-
-    /*************************\
-    |* Integration Functions *|
-    \*************************/
 
     /**
      * @notice This function rotates the current signers with a new set of signers

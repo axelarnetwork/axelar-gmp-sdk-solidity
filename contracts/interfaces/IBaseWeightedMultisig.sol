@@ -44,12 +44,4 @@ interface IBaseWeightedMultisig {
      * @return The message hash to be signed
      */
     function messageHashToSign(bytes32 signersHash, bytes32 dataHash) external view returns (bytes32);
-
-    /**
-     * @notice This function takes messageHash and proof data and reverts if proof is invalid
-     * @param dataHash The hash of the message that was signed
-     * @param proof The data containing signers with signatures
-     * @return isLatestSigners True if provided signers are the current ones
-     */
-    function validateProof(bytes32 dataHash, bytes calldata proof) external view returns (bool isLatestSigners);
 }

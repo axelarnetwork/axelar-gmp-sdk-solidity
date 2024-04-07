@@ -2,18 +2,19 @@
 
 pragma solidity ^0.8.0;
 
-import { IAxelarGatewayWeightedAuth } from '../interfaces/IAxelarGatewayWeightedAuth.sol';
+import { IAxelarAmplifierAuth } from '../interfaces/IAxelarAmplifierAuth.sol';
+// import { IAxelarAmplifierGatewayAuth } from '../interfaces/IAxelarAmplifierGatewayAuth.sol';
 
 import { BaseWeightedMultisig } from '../governance/BaseWeightedMultisig.sol';
 import { Ownable } from '../utils/Ownable.sol';
 import { WeightedSigners } from '../types/WeightedMultisigTypes.sol';
 
 /**
- * @title AxelarGatewayWeightedAuth Contract
+ * @title AxelarAmplifierAuth Contract
  * @dev This contract is used by the Axelar Gateway to verify signed commands. It inherits the BaseWeightedMultisig contract
  * with added functionality to approve and execute multisig proposals.
  */
-contract AxelarGatewayWeightedAuth is Ownable, BaseWeightedMultisig, IAxelarGatewayWeightedAuth {
+contract AxelarAmplifierAuth is Ownable, BaseWeightedMultisig, IAxelarAmplifierAuth {
     // @notice The number of previous signers whose messages will be considered valid. This gives some time for signed messages to be relayed.
     uint256 public constant PREVIOUS_SIGNERS_RETENTION = 15;
 
@@ -46,5 +47,15 @@ contract AxelarGatewayWeightedAuth is Ownable, BaseWeightedMultisig, IAxelarGate
         WeightedSigners memory signers = abi.decode(newSigners, (WeightedSigners));
 
         _rotateSigners(signers);
+    }
+
+    /**
+     * @notice This function takes dataHash and proof data and reverts if proof is invalid
+     * @param dataHash The hash of the message that was signed
+     * @param proof The data containing signers with signatures
+     * @return isLatestSigners True if provided signers are the current ones
+     */
+    function validateProof(bytes32 dataHash, bytes calldata proof) external view returns (bool isLatestSigners) {
+        return _validateProof(dataHash, proof);
     }
 }

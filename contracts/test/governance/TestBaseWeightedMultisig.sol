@@ -20,9 +20,11 @@ contract TestBaseWeightedMultisig is BaseWeightedMultisig {
         _rotateSigners(newSigners);
     }
 
-    function validate(bytes32 dataHash, bytes calldata proof) external returns (bool) {
+    // use a non-view method to allow gas reporting in tests
+    function validateProof(bytes32 dataHash, bytes calldata proof) external returns (bool isLatestSigners) {
+        // emit an event to avoid compiler warning about making this into a view
         emit DummyEvent();
 
-        return validateProof(dataHash, proof);
+        return _validateProof(dataHash, proof);
     }
 }

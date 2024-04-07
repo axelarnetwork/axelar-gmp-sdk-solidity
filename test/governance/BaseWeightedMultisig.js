@@ -34,7 +34,7 @@ describe('BaseWeightedMultisig', () => {
         owner = wallets[0];
         signers = sortBy(wallets.slice(0, 3), (wallet) => wallet.address.toLowerCase());
 
-        multisigFactory = await ethers.getContractFactory('AxelarGatewayWeightedAuth', owner);
+        multisigFactory = await ethers.getContractFactory('AxelarAmplifierAuth', owner);
         testMultisigFactory = await ethers.getContractFactory('TestBaseWeightedMultisig', owner);
 
         multisig = await multisigFactory.deploy(owner.address, domainSeparator, []);

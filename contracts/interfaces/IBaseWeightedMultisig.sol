@@ -38,12 +38,12 @@ interface IBaseWeightedMultisig {
     function epochBySignerHash(bytes32 signerHash) external view returns (uint256);
 
     /**
-     * @dev This function is used to hash the data with auth related data to compute the message hash that will be signed
+     * @notice Compute the message hash that is signed by the weighted signers
      * @param signersHash The hash of the weighted signers that sign off on the data
      * @param dataHash The hash of the data
      * @return The message hash to be signed
      */
-    function hashMessage(bytes32 signersHash, bytes32 dataHash) external view returns (bytes32);
+    function messageHashToSign(bytes32 signersHash, bytes32 dataHash) external view returns (bytes32);
 
     /**
      * @notice This function takes messageHash and proof data and reverts if proof is invalid

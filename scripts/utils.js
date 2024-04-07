@@ -1,6 +1,6 @@
 const {
     ContractFactory,
-    utils: { keccak256, defaultAbiCoder, arrayify, id, recoverAddress, hashMessage },
+    utils: { keccak256, defaultAbiCoder, arrayify, id, hashMessage },
     BigNumber,
 } = require('ethers');
 const http = require('http');

@@ -72,7 +72,7 @@ describe.only('BaseWeightedMultisig', () => {
             const expectedMessageHash = hashMessage(
                 arrayify(domainSeparator + weightedSignersHash.slice(2) + dataHash.slice(2)),
             );
-            const messageHash = await multisig.hashMessage(weightedSignersHash, dataHash);
+            const messageHash = await multisig.messageHashToSign(weightedSignersHash, dataHash);
 
             expect(messageHash).to.be.equal(expectedMessageHash);
         });

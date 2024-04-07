@@ -88,7 +88,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         if (proofData.signatures.length == 0) revert MalformedSignatures();
         if (signerEpoch == 0 || currentEpoch - signerEpoch > previousSignersRetention) revert InvalidSigners();
 
-        bytes32 messageHash = hashMessage(signersHash, dataHash);
+        bytes32 messageHash = messageHashToSign(signersHash, dataHash);
 
         _validateSignatures(messageHash, proofData.signers, proofData.signatures);
     }
@@ -197,7 +197,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      * @param dataHash The hash of the data
      * @return The message hash to be signed
      */
-    function hashMessage(bytes32 signersHash, bytes32 dataHash) public view returns (bytes32) {
+    function messageHashToSign(bytes32 signersHash, bytes32 dataHash) public view returns (bytes32) {
         // 96 is the length of the trailing bytes
         return keccak256(abi.encodePacked('\x19Ethereum Signed Message:\n96', domainSeparator, signersHash, dataHash));
     }

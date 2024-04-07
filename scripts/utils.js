@@ -1,7 +1,6 @@
 const {
     ContractFactory,
-    utils: { keccak256, defaultAbiCoder, arrayify, id, hashMessage },
-    BigNumber,
+    utils: { keccak256, defaultAbiCoder, arrayify, hashMessage },
 } = require('ethers');
 const http = require('http');
 const { outputJsonSync } = require('fs-extra');

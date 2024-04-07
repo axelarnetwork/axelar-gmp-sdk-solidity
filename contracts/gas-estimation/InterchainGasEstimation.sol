@@ -12,6 +12,13 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
     // keccak256('GasEstimate.Slot') - 1
     bytes32 internal constant GAS_SERVICE_SLOT = 0x2fa150da4c9f4c3a28593398c65313dd42f63d0530ec6db4a2b46e6d837a3902;
 
+    // 68 bytes for the TX RLP encoding overhead
+    uint256 internal constant TX_ENCODING_OVERHEAD = 68;
+    // GMP executeWithToken call parameters
+    // 4 bytes for method selector, 32 bytes for the commandId, 96 bytes for the sourceChain, 128 bytes for the sourceAddress, 96 bytes for token symbol, 32 bytes for amount
+    // Expecting most of the calldata bytes to be zeroes. So multiplying by 8 as a weighted average of 4 and 16
+    uint256 internal constant GMP_CALLDATA_SIZE = 4 + 32 + 96 + 128 + 96 + 32; // 388 bytes
+
     struct GasServiceStorage {
         mapping(string => GasInfo) gasPrices;
     }
@@ -22,7 +29,7 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
      * @return gasInfo The gas info for the chain
      */
     function getGasInfo(string calldata chain) external view returns (GasInfo memory) {
-        return _gasServiceStorage().gasPrices[chain];
+        return _storage().gasPrices[chain];
     }
 
     /**
@@ -34,7 +41,7 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
     function _setGasInfo(string calldata chain, GasInfo calldata gasInfo) internal {
         emit GasInfoUpdated(chain, gasInfo);
 
-        _gasServiceStorage().gasPrices[chain] = gasInfo;
+        _storage().gasPrices[chain] = gasInfo;
     }
 
     /**
@@ -53,21 +60,15 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
         uint256 executionGasLimit,
         bytes calldata /* params */
     ) public view returns (uint256 gasEstimate) {
-        GasServiceStorage storage slot = _gasServiceStorage();
-        GasInfo storage gasInfo = slot.gasPrices[destinationChain];
+        GasInfo storage gasInfo = _storage().gasPrices[destinationChain];
 
         gasEstimate = gasInfo.axelarBaseFee + (executionGasLimit * gasInfo.relativeGasPrice);
 
         // if chain is L2, compute L1 data fee using L1 gas price info
         if (gasInfo.gasEstimationType != GasEstimationType.Default) {
-            GasInfo storage l1GasInfo = slot.gasPrices['ethereum'];
+            GasInfo storage l1GasInfo = _storage().gasPrices['ethereum'];
 
-            gasEstimate += computeL1DataFee(
-                gasInfo.gasEstimationType,
-                payload,
-                l1GasInfo.relativeGasPrice,
-                l1GasInfo.relativeBlobBaseFee
-            );
+            gasEstimate += computeL1DataFee(gasInfo.gasEstimationType, payload, l1GasInfo);
         }
     }
 
@@ -75,17 +76,19 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
      * @notice Computes the additional L1 data fee for an L2 destination chain.
      * @param gasEstimationType The gas estimation type
      * @param payload The payload of the contract call
-     * @param relativeGasPrice The gas price on the source chain
+     * @param l1GasInfo The L1 gas info
      * @return l1DataFee The L1 to L2 data fee
      */
     function computeL1DataFee(
         GasEstimationType gasEstimationType,
         bytes calldata payload,
-        uint256 relativeGasPrice,
-        uint256 relativeBlobBaseFee
-    ) internal pure returns (uint256) {
+        GasInfo storage l1GasInfo
+    ) internal view returns (uint256) {
         if (gasEstimationType == GasEstimationType.OptimismEcotone) {
-            return optimismEcotoneL1Fee(payload, relativeGasPrice, relativeBlobBaseFee);
+            return optimismEcotoneL1Fee(payload, l1GasInfo);
+        }
+        if (gasEstimationType == GasEstimationType.Arbitrum) {
+            return arbitrumL1Fee(payload, l1GasInfo);
         }
 
         revert UnsupportedEstimationType(gasEstimationType);
@@ -94,14 +97,14 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
     /**
      * @notice Computes the L1 to L2 fee for a contract call on the Optimism chain.
      * @param payload The payload of the contract call
-     * @param relativeGasPrice The base fee for L1 to L2
+     * @param l1GasInfo The L1 gas info
      * @return l1DataFee The L1 to L2 data fee
      */
-    function optimismEcotoneL1Fee(
-        bytes calldata payload,
-        uint256 relativeGasPrice,
-        uint256 relativeBlobBaseFee
-    ) internal pure returns (uint256 l1DataFee) {
+    function optimismEcotoneL1Fee(bytes calldata payload, GasInfo storage l1GasInfo)
+        internal
+        view
+        returns (uint256 l1DataFee)
+    {
         /* Optimism Ecotone gas model https://docs.optimism.io/stack/transactions/fees#ecotone
              tx_compressed_size = ((count_zero_bytes(tx_data) * 4 + count_non_zero_bytes(tx_data) * 16)) / 16
              weighted_gas_price = 16 * base_fee_scalar*base_fee + blob_base_fee_scalar * blob_base_fee
@@ -121,12 +124,10 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
         uint256 blobBaseFeeScalar = 9 * 10**5; // 0.9 multiplied by scalarPrecision
 
         // Calculating transaction size in bytes that will later be divided by 16 to compress the size
-        // 68 bytes for the TX RLP encoding overhead
-        uint256 txSize = 68 * 16;
+        uint256 txSize = TX_ENCODING_OVERHEAD * 16;
         // GMP executeWithToken call parameters
-        // 4 bytes for method selector, 32 bytes for the commandId, 96 bytes for the sourceChain, 128 bytes for the sourceAddress, 96 bytes for token symbol, 32 bytes for amount
         // Expecting most of the calldata bytes to be zeroes. So multiplying by 8 as a weighted average of 4 and 16
-        txSize += (4 + 32 + 96 + 128 + 96 + 32) * 8;
+        txSize += GMP_CALLDATA_SIZE * 8;
 
         for (uint256 i; i < payload.length; ++i) {
             if (payload[i] == 0) {
@@ -136,15 +137,43 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
             }
         }
 
-        uint256 weightedGasPrice = 16 * baseFeeScalar * relativeGasPrice + blobBaseFeeScalar * relativeBlobBaseFee;
+        uint256 weightedGasPrice = 16 *
+            baseFeeScalar *
+            l1GasInfo.relativeGasPrice +
+            blobBaseFeeScalar *
+            l1GasInfo.relativeBlobBaseFee;
 
         l1DataFee = (weightedGasPrice * txSize) / (16 * scalarPrecision); // 16 for txSize compression and scalar precision conversion
     }
 
     /**
+     * @notice Computes the L1 to L2 fee for a contract call on the Arbitrum chain.
+     * @param payload The payload of the contract call
+     * @param gasInfo The L1 gas info
+     * @return l1DataFee The L1 to L2 data fee
+     */
+    function arbitrumL1Fee(bytes calldata payload, GasInfo storage gasInfo) internal view returns (uint256 l1DataFee) {
+        // https://docs.arbitrum.io/build-decentralized-apps/how-to-estimate-gas
+        // https://docs.arbitrum.io/arbos/l1-pricing
+        // Reference https://github.com/OffchainLabs/nitro/blob/master/arbos/l1pricing/l1pricing.go#L565-L578
+        uint256 oneInBips = 10000;
+        uint256 txDataNonZeroGasEIP2028 = 16;
+        uint256 estimationPaddingUnits = 16 * txDataNonZeroGasEIP2028;
+        uint256 estimationPaddingBasisPoints = 100;
+
+        uint256 l1Bytes = TX_ENCODING_OVERHEAD + GMP_CALLDATA_SIZE + payload.length;
+        // Brotli baseline compression rate as 2x
+        uint256 units = (txDataNonZeroGasEIP2028 * l1Bytes) / 2;
+
+        return
+            (gasInfo.relativeGasPrice * (units + estimationPaddingUnits) * (oneInBips + estimationPaddingBasisPoints)) /
+            oneInBips;
+    }
+
+    /**
      * @notice Get the storage slot for the GasServiceStorage struct
      */
-    function _gasServiceStorage() private pure returns (GasServiceStorage storage slot) {
+    function _storage() private pure returns (GasServiceStorage storage slot) {
         assembly {
             slot.slot := GAS_SERVICE_SLOT
         }

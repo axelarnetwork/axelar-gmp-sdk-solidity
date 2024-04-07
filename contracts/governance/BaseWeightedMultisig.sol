@@ -78,19 +78,19 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         BaseWeightedMultisigStorage storage slot = _baseWeightedMultisigStorage();
 
         Proof memory proofData = abi.decode(proof, (Proof));
+        WeightedSigners memory signers = proofData.signers;
 
-        bytes32 signersHash = keccak256(abi.encode(proofData.signers));
+        bytes32 signersHash = keccak256(abi.encode(signers));
         uint256 signerEpoch = slot.epochBySignerHash[signersHash];
         uint256 currentEpoch = slot.epoch;
 
         isLatestSigners = signerEpoch == currentEpoch;
 
-        if (proofData.signatures.length == 0) revert MalformedSignatures();
         if (signerEpoch == 0 || currentEpoch - signerEpoch > previousSignersRetention) revert InvalidSigners();
 
         bytes32 messageHash = messageHashToSign(signersHash, dataHash);
 
-        _validateSignatures(messageHash, proofData.signers, proofData.signatures);
+        _validateSignatures(messageHash, signers, proofData.signatures);
     }
 
     /*************************\
@@ -105,7 +105,6 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
     function _rotateSigners(WeightedSigners memory newSigners) internal {
         BaseWeightedMultisigStorage storage slot = _baseWeightedMultisigStorage();
 
-        // signers must be sorted binary or alphabetically in lower case
         _validateSigners(newSigners);
 
         bytes32 newSignersHash = keccak256(abi.encode(newSigners));
@@ -140,6 +139,8 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         uint256 signaturesLength = signatures.length;
         uint256 signerIndex;
         uint256 totalWeight;
+
+        if (signaturesLength == 0) revert MalformedSignatures();
 
         // looking for signers within signers
         // this requires both signers and signatures to be sorted

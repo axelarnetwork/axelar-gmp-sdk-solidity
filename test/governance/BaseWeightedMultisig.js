@@ -180,6 +180,18 @@ describe('BaseWeightedMultisig', () => {
         });
 
         describe('negative tests', () => {
+            it('should revert if rotation is not from owner', async () => {
+                await expectRevert(
+                    (gasOptions) =>
+                        multisig.connect(signers[1]).rotateSigners(
+                            encodeWeightedSigners({ signers: [], threshold: 1, nonce: defaultNonce }),
+                            gasOptions,
+                        ),
+                    multisig,
+                    'NotOwner',
+                );
+            });
+
             it('should revert if new signers length is zero', async () => {
                 await expectRevert(
                     (gasOptions) =>

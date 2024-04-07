@@ -15,7 +15,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
     bytes32 internal constant BASE_WEIGHTED_MULTISIG_SLOT =
         0x457f3fc26bf430b020fe76358b1bfaba57e1657ace718da6437cda9934eabfe8;
 
-    struct WeightedMultisigStorage {
+    struct BaseWeightedMultisigStorage {
         uint256 epoch;
         mapping(uint256 => bytes32) signerHashByEpoch;
         mapping(bytes32 => uint256) epochBySignerHash;
@@ -44,7 +44,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      * @return uint256 The current signers epoch
      */
     function epoch() external view returns (uint256) {
-        return _storage().epoch;
+        return _baseWeightedMultisigStorage().epoch;
     }
 
     /**
@@ -53,7 +53,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      * @return bytes32 The signers hash for the given epoch
      */
     function signerHashByEpoch(uint256 signerEpoch) external view returns (bytes32) {
-        return _storage().signerHashByEpoch[signerEpoch];
+        return _baseWeightedMultisigStorage().signerHashByEpoch[signerEpoch];
     }
 
     /**
@@ -62,7 +62,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      * @return uint256 The epoch for the given signers hash
      */
     function epochBySignerHash(bytes32 signerHash) external view returns (uint256) {
-        return _storage().epochBySignerHash[signerHash];
+        return _baseWeightedMultisigStorage().epochBySignerHash[signerHash];
     }
 
     /**
@@ -75,7 +75,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      *      Example: abi.encode([0x11..., 0x22..., 0x33...], [1, 1, 1], 2, [signature1, signature3])
      */
     function validateProof(bytes32 dataHash, bytes calldata proof) public view returns (bool isLatestSigners) {
-        WeightedMultisigStorage storage slot = _storage();
+        BaseWeightedMultisigStorage storage slot = _baseWeightedMultisigStorage();
 
         Proof memory proofData = abi.decode(proof, (Proof));
 
@@ -103,7 +103,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      * @dev The signers should be sorted by signer address in ascending order
      */
     function _rotateSigners(WeightedSigners memory newSigners) internal {
-        WeightedMultisigStorage storage slot = _storage();
+        BaseWeightedMultisigStorage storage slot = _baseWeightedMultisigStorage();
 
         uint256 length = newSigners.signers.length;
         uint128 totalWeight;
@@ -228,9 +228,9 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
 
     /**
      * @notice Gets the specific storage location for preventing upgrade collisions
-     * @return slot containing the WeightedMultisigStorage struct
+     * @return slot containing the BaseWeightedMultisigStorage struct
      */
-    function _storage() private pure returns (WeightedMultisigStorage storage slot) {
+    function _baseWeightedMultisigStorage() private pure returns (BaseWeightedMultisigStorage storage slot) {
         assembly {
             slot.slot := BASE_WEIGHTED_MULTISIG_SLOT
         }

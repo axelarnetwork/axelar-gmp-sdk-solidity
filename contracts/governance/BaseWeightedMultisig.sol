@@ -105,22 +105,8 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
     function _rotateSigners(WeightedSigners memory newSigners) internal {
         BaseWeightedMultisigStorage storage slot = _baseWeightedMultisigStorage();
 
-        uint256 length = newSigners.signers.length;
-        uint256 totalWeight;
-
         // signers must be sorted binary or alphabetically in lower case
-        if (length == 0 || !_isSortedAscAndContainsNoDuplicate(newSigners.signers)) revert InvalidSigners();
-
-        for (uint256 i; i < length; ++i) {
-            uint256 weight = newSigners.signers[i].weight;
-
-            if (weight == 0) revert InvalidWeights();
-
-            totalWeight = totalWeight + weight;
-        }
-
-        uint128 threshold = newSigners.threshold;
-        if (threshold == 0 || totalWeight < threshold) revert InvalidThreshold();
+        _validateSigners(newSigners);
 
         bytes32 newSignersHash = keccak256(abi.encode(newSigners));
 
@@ -159,13 +145,13 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         // this requires both signers and signatures to be sorted
         // having it sorted allows us to avoid the full inner loop to find a match
         for (uint256 i; i < signaturesLength; ++i) {
-            address signer = ECDSA.recover(messageHash, signatures[i]);
+            address recoveredSigner = ECDSA.recover(messageHash, signatures[i]);
             WeightedSigner memory weightedSigner = signers[signerIndex];
 
             // looping through remaining signers to find a match
             for (
                 ;
-                signerIndex < signersLength && signer != weightedSigner.signer;
+                signerIndex < signersLength && recoveredSigner != weightedSigner.signer;
                 ++signerIndex
             ) {}
 
@@ -205,27 +191,40 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
     }
 
     /**
-     * @notice This function checks if the provided signers are sorted and contain no duplicates
-     * @param signers The signers to check
-     * @return True if the signers are sorted in ascending order and contain no duplicates
+     * @notice This function checks if the provided signers are valid, i.e sorted and contain no duplicates, with valid weights and threshold
+     * @dev If signers are invalid, the method will revert
+     * @param weightedSigners The weighted signers
      */
-    function _isSortedAscAndContainsNoDuplicate(WeightedSigner[] memory signers) internal pure returns (bool) {
-        uint256 signersLength = signers.length;
-        address prevSigner = signers[0].signer;
+    function _validateSigners(WeightedSigners memory weightedSigners) internal pure {
+        WeightedSigner[] memory signers = weightedSigners.signers;
+        uint256 length = signers.length;
+        uint256 totalWeight;
 
-        if (prevSigner == address(0)) return false;
+        if (length == 0) revert InvalidSigners();
 
-        for (uint256 i = 1; i < signersLength; ++i) {
-            address currSigner = signers[i].signer;
+        // since signers need to be in strictly increasing order,
+        // this prevents address(0) from being a valid signer
+        address prevSigner = address(0);
+
+        for (uint256 i = 0; i < length; ++i) {
+            WeightedSigner memory weightedSigner = signers[i];
+            address currSigner = weightedSigner.signer;
 
             if (prevSigner >= currSigner) {
-                return false;
+                revert InvalidSigners();
             }
 
             prevSigner = currSigner;
+
+            uint256 weight = weightedSigner.weight;
+
+            if (weight == 0) revert InvalidWeights();
+
+            totalWeight = totalWeight + weight;
         }
 
-        return true;
+        uint128 threshold = weightedSigners.threshold;
+        if (threshold == 0 || totalWeight < threshold) revert InvalidThreshold();
     }
 
     /**

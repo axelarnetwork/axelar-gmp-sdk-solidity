@@ -6,7 +6,7 @@ import { IAxelarGatewayWeightedAuth } from '../interfaces/IAxelarGatewayWeighted
 
 import { BaseWeightedMultisig } from '../governance/BaseWeightedMultisig.sol';
 import { Ownable } from '../utils/Ownable.sol';
-import { WeightedSigners } from '../types/WeightedSigners.sol';
+import { WeightedSigners } from '../types/WeightedMultisigTypes.sol';
 
 /**
  * @title AxelarGatewayWeightedAuth Contract

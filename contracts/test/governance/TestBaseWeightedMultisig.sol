@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import { BaseWeightedMultisig } from '../../governance/BaseWeightedMultisig.sol';
-import { WeightedSigners } from '../../types/WeightedSigners.sol';
+import { WeightedSigners } from '../../types/WeightedMultisigTypes.sol';
 
 contract TestBaseWeightedMultisig is BaseWeightedMultisig {
     constructor(uint256 previousSignersRetention_, bytes32 domainSeparator_)

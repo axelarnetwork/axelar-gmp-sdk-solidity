@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import { IBaseWeightedMultisig } from './IBaseWeightedMultisig.sol';
 import { ICaller } from './ICaller.sol';
-import { WeightedSigners } from '../types/WeightedSigners.sol';
+import { WeightedSigners } from '../types/WeightedMultisigTypes.sol';
 
 /**
  * @title IMultisig Interface

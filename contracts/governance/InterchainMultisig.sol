@@ -7,7 +7,7 @@ import { SafeNativeTransfer } from '../libs/SafeNativeTransfer.sol';
 import { ECDSA } from '../libs/ECDSA.sol';
 import { Caller } from '../utils/Caller.sol';
 import { BaseWeightedMultisig } from './BaseWeightedMultisig.sol';
-import { WeightedSigners } from '../types/WeightedSigners.sol';
+import { WeightedSigners } from '../types/WeightedMultisigTypes.sol';
 
 /**
  * @title InterchainMultisig Contract

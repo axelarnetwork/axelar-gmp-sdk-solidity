@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import { IBaseWeightedMultisig } from '../interfaces/IBaseWeightedMultisig.sol';
 import { ECDSA } from '../libs/ECDSA.sol';
-import { WeightedSigner, WeightedSigners, Proof } from '../types/WeightedSigners.sol';
+import { WeightedSigner, WeightedSigners, Proof } from '../types/WeightedMultisigTypes.sol';
 
 /**
     @title BaseWeightedMultisig Contract
@@ -26,6 +26,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
     uint256 public immutable previousSignersRetention;
 
     /// @dev The domain separator for the signer proof
+    /// @return The domain separator for the signer proof
     bytes32 public immutable domainSeparator;
 
     /// @param previousSignersRetentionEpochs The number of epochs to keep previous signers valid for signature verification

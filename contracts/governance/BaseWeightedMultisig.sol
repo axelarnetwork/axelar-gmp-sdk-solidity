@@ -125,7 +125,6 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         bytes32 newSignersHash = keccak256(abi.encode(newSigners));
 
         uint256 newEpoch = slot.epoch + 1;
-        // slither-disable-next-line costly-loop
         slot.epoch = newEpoch;
         slot.signerHashByEpoch[newEpoch] = newSignersHash;
         // if signer set is the same, old epoch will be overwritten
@@ -150,7 +149,8 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         WeightedSigners memory weightedSigners,
         bytes[] memory signatures
     ) internal pure {
-        uint256 signersLength = weightedSigners.signers.length;
+        WeightedSigner[] memory signers = weightedSigners.signers;
+        uint256 signersLength = signers.length;
         uint256 signaturesLength = signatures.length;
         uint256 signerIndex;
         uint256 totalWeight;
@@ -160,11 +160,12 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         // having it sorted allows us to avoid the full inner loop to find a match
         for (uint256 i; i < signaturesLength; ++i) {
             address signer = ECDSA.recover(messageHash, signatures[i]);
+            WeightedSigner memory weightedSigner = signers[signerIndex];
 
             // looping through remaining signers to find a match
             for (
                 ;
-                signerIndex < signersLength && signer != weightedSigners.signers[signerIndex].signer;
+                signerIndex < signersLength && signer != weightedSigner.signer;
                 ++signerIndex
             ) {}
 
@@ -172,7 +173,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
             if (signerIndex == signersLength) revert MalformedSignatures();
 
             // accumulating signatures weight
-            totalWeight = totalWeight + weightedSigners.signers[signerIndex].weight;
+            totalWeight = totalWeight + weightedSigner.weight;
 
             // weight needs to reach or surpass threshold
             if (totalWeight >= weightedSigners.threshold) return;

@@ -12,6 +12,8 @@ const {
     getWeightedSignersSet,
     getWeightedSignersProof,
     encodeInterchainCallsBatch,
+    encodeWeightedSigners,
+    getWeightedSignersProof2,
 } = require('../scripts/utils');
 
 const getRandomInt = (max) => {
@@ -115,4 +117,6 @@ module.exports = {
     getWeightedSignersSet,
     getWeightedSignersProof,
     encodeInterchainCallsBatch,
+    encodeWeightedSigners,
+    getWeightedSignersProof2,
 };

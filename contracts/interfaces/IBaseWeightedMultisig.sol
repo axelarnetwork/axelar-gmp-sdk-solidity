@@ -2,8 +2,6 @@
 
 pragma solidity ^0.8.0;
 
-import { WeightedSigners } from '../types/WeightedSigners.sol';
-
 interface IBaseWeightedMultisig {
     error InvalidSigners();
     error InvalidThreshold();
@@ -11,7 +9,7 @@ interface IBaseWeightedMultisig {
     error LowSignaturesWeight();
     error InvalidWeights();
 
-    event SignersRotated(uint256 indexed epoch, bytes32 indexed signersHash, WeightedSigners signers);
+    event SignersRotated(uint256 indexed epoch, bytes32 indexed signersHash);
 
     /**
      * @dev This function returns the old signers retention period

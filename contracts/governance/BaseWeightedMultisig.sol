@@ -66,14 +66,14 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
 
     /**
      * @notice This function takes messageHash and proof data and reverts if proof is invalid
-     * @param messageHash The hash of the message that was signed
+     * @param dataHash The hash of the message that was signed
      * @param proof The multisig proof data
      * @return isLatestSigners True if the proof is from the latest signer set
      * @dev The proof data should have signers, weights, threshold and signatures encoded
      *      The signers and signatures should be sorted by signer address in ascending order
      *      Example: abi.encode([0x11..., 0x22..., 0x33...], [1, 1, 1], 2, [signature1, signature3])
      */
-    function validateProof(bytes32 messageHash, bytes calldata proof) public view returns (bool isLatestSigners) {
+    function validateProof(bytes32 dataHash, bytes calldata proof) public view returns (bool isLatestSigners) {
         WeightedMultisigStorage storage slot = _storage();
 
         Proof memory proofData = abi.decode(proof, (Proof));
@@ -87,7 +87,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         if (proofData.signatures.length == 0) revert MalformedSignatures();
         if (signerEpoch == 0 || currentEpoch - signerEpoch > previousSignersRetention) revert InvalidSigners();
 
-        messageHash = hashMessage(messageHash, signersHash);
+        bytes32 messageHash = hashMessage(signersHash, dataHash);
 
         _validateSignatures(messageHash, proofData.signers, proofData.signatures);
     }
@@ -129,7 +129,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         // if signer set is the same, old epoch will be overwritten
         slot.epochBySignerHash[newSignersHash] = newEpoch;
 
-        emit SignersRotated(newEpoch, newSignersHash, newSigners);
+        emit SignersRotated(newEpoch, newSignersHash);
     }
 
     /**********************\
@@ -178,24 +178,14 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
             // increasing signers index if match was found
             ++signerIndex;
         }
+
         // if weight sum below threshold
         revert LowSignaturesWeight();
     }
 
-    // /**
-    //  * @dev This function is used to hash the data with auth related data to compute the message hash that will be signed
-    //  * @dev keccak256(domainSeparator || signersHash || dataHash)
-    //  * @param dataHash The hash of the data
-    //  * @param signersHash The hash of the weighted signers that sign off on the data
-    //  * @return The message hash to be signed
-    //  */
-    // function hashMessage(bytes32 dataHash, bytes32 signersHash) public view returns (bytes32) {
-    //     bytes32 messageHash = keccak256(abi.encodePacked(domainSeparator, signersHash, dataHash));
-    //     return ECDSA.toEthSignedMessageHash(messageHash);
-    // }
-
     /**
-     * @dev Returns an Ethereum Signed Message, created from `dataHash`, `signersHash`, and `domainSeparator`.
+     * @notice Compute the message hash that is signed by the weighted signers
+     * @dev Returns an Ethereum Signed Message, created from `domainSeparator`, `signersHash`, and `dataHash`.
      * This replicates the behavior of the
      * https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_sign[`eth_sign`]
      * JSON-RPC method.
@@ -204,6 +194,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      *
      * @param signersHash The hash of the weighted signers that sign off on the data
      * @param dataHash The hash of the data
+     * @return The message hash to be signed
      */
     function hashMessage(bytes32 signersHash, bytes32 dataHash) public view returns (bytes32) {
         // 96 is the length of the trailing bytes

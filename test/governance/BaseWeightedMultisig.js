@@ -2,399 +2,546 @@ const { sortBy } = require('lodash');
 const chai = require('chai');
 const { ethers, network } = require('hardhat');
 const {
-    utils: { arrayify, keccak256, hashMessage },
-    constants: { AddressZero },
+    utils: { arrayify, keccak256, hashMessage, toUtf8Bytes, id },
+    constants: { AddressZero, HashZero },
+    Wallet,
 } = ethers;
 const { expect } = chai;
 
-const { getAddresses, getWeightedSignersSet, getWeightedSignersProof, expectRevert } = require('../utils');
+const { expectRevert } = require('../utils');
+const {
+    getWeightedSignersProof2,
+    encodeWeightedSigners,
+} = require('../../scripts/utils');
 
-describe('BaseWeightedMultisig', () => {
+describe.only('BaseWeightedMultisig', () => {
     const threshold = 2;
+    const domainSeparator = keccak256(toUtf8Bytes('chain'));
+    const previousSignersRetention = 0;
+    const data = '0x123abc123abc';
+    const dataHash = keccak256(arrayify(data));
+    const defaultNonce = HashZero;
 
-    let wallets;
     let owner;
     let signers;
-    const previousSigners = [];
 
     let multisigFactory;
-
     let multisig;
+    let weightedSigners;
+    let weightedSignersHash;
 
     before(async () => {
-        wallets = await ethers.getSigners();
+        const wallets = await ethers.getSigners();
 
         owner = wallets[0];
-        signers = sortBy(wallets.slice(1, 3), (wallet) => wallet.address.toLowerCase());
-        previousSigners.push(sortBy(wallets.slice(0, 2), (wallet) => wallet.address.toLowerCase()));
+        signers = sortBy(wallets.slice(0, 3), (wallet) => wallet.address.toLowerCase());
 
         multisigFactory = await ethers.getContractFactory('TestBaseWeightedMultisig', owner);
 
-        const initialSigners = [...previousSigners, signers];
-
-        multisig = await multisigFactory.deploy(0);
+        multisig = await multisigFactory.deploy(previousSignersRetention, domainSeparator);
         await multisig.deployTransaction.wait(network.config.confirmations);
 
-        for (let i = 0; i < initialSigners.length; i++) {
-            await multisig
-                .rotateSigners([getAddresses(initialSigners[i]), initialSigners[i].map(() => 1), threshold])
-                .then((tx) => tx.wait());
-        }
+        weightedSigners = {
+            signers: signers.map((signer) => {
+                return { signer: signer.address, weight: 1 };
+            }),
+            threshold,
+            nonce: defaultNonce,
+        };
+        weightedSignersHash = keccak256(encodeWeightedSigners(weightedSigners));
+
+        await multisig.rotateSigners(weightedSigners).then((tx) => tx.wait());
+    });
+
+    it('should validate storage constants', async () => {
+        const testMultisigFactory = await ethers.getContractFactory('TestBaseWeightedMultisig', owner);
+
+        const multisig = await testMultisigFactory.deploy(previousSignersRetention, domainSeparator);
+        await multisig.deployTransaction.wait(network.config.confirmations);
+    });
+
+    describe('queries', () => {
+        it('previousSignersRetention', async () => {
+            expect(await multisig.previousSignersRetention()).to.be.equal(previousSignersRetention);
+        });
+
+        it('hashMessage', async () => {
+            const data = '0x123abc123abc';
+            const dataHash = keccak256(arrayify(data));
+
+            const expectedMessageHash = hashMessage(
+                arrayify(domainSeparator + weightedSignersHash.slice(2) + dataHash.slice(2)),
+            );
+            const messageHash = await multisig.hashMessage(weightedSignersHash, dataHash);
+
+            expect(messageHash).to.be.equal(expectedMessageHash);
+        });
+
+        it('signerHashByEpoch and epochBySignerHash', async () => {
+            const hash = keccak256(encodeWeightedSigners(weightedSigners));
+            expect(await multisig.signerHashByEpoch(1)).to.be.equal(hash);
+            expect(await multisig.epochBySignerHash(hash)).to.be.equal(1);
+        });
+    });
+
+    describe('rotateSigners', () => {
+        describe('positive tests', () => {
+            let multisig;
+
+            beforeEach(async () => {
+                multisig = await multisigFactory.deploy(previousSignersRetention, domainSeparator);
+                await multisig.deployTransaction.wait(network.config.confirmations);
+            });
+
+            it('should allow signer rotation', async () => {
+                const newSigners = {
+                    signers: [
+                        {
+                            signer: '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b',
+                            weight: 1,
+                        },
+                        {
+                            signer: '0xb7900E8Ec64A1D1315B6D4017d4b1dcd36E6Ea88',
+                            weight: 1,
+                        },
+                    ],
+                    threshold: 2,
+                    nonce: defaultNonce,
+                };
+                const signersHash = keccak256(encodeWeightedSigners(newSigners));
+
+                const prevEpoch = (await multisig.epoch()).toNumber();
+
+                await expect(multisig.rotateSigners(newSigners))
+                    .to.emit(multisig, 'SignersRotated')
+                    .withArgs(prevEpoch + 1, signersHash);
+
+                expect(await multisig.epoch()).to.be.equal(prevEpoch + 1);
+            });
+
+            it('should allow rotation to duplicate signers with the same nonce', async () => {
+                const newSigners = {
+                    signers: [
+                        {
+                            signer: '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b',
+                            weight: 1,
+                        },
+                    ],
+                    threshold: 1,
+                    nonce: defaultNonce,
+                };
+                const newSignersHash = keccak256(encodeWeightedSigners(newSigners));
+
+                const prevEpoch = (await multisig.epoch()).toNumber();
+
+                await expect(multisig.rotateSigners(newSigners))
+                    .to.emit(multisig, 'SignersRotated')
+                    .withArgs(prevEpoch + 1, newSignersHash);
+
+                expect(await multisig.epochBySignerHash(newSignersHash)).to.be.equal(prevEpoch + 1);
+
+                await expect(multisig.rotateSigners(newSigners))
+                    .to.emit(multisig, 'SignersRotated')
+                    .withArgs(prevEpoch + 2, newSignersHash);
+
+                // Duplicate weighted signers should point to the new epoch
+                expect(await multisig.epochBySignerHash(newSignersHash)).to.be.equal(prevEpoch + 2);
+            });
+
+            it('should allow rotation to duplicate signers with different nonce', async () => {
+                const newSigners = {
+                    signers: [
+                        {
+                            signer: '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b',
+                            weight: 1,
+                        },
+                    ],
+                    threshold: 1,
+                    nonce: id('0'),
+                };
+                const newSignersHash = keccak256(encodeWeightedSigners(newSigners));
+
+                const prevEpoch = (await multisig.epoch()).toNumber();
+
+                await expect(multisig.rotateSigners(newSigners))
+                    .to.emit(multisig, 'SignersRotated')
+                    .withArgs(prevEpoch + 1, newSignersHash);
+
+                const newSigners2 = { ...newSigners, nonce: id('1') };
+                const newSigners2Hash = keccak256(encodeWeightedSigners(newSigners2));
+
+                await expect(multisig.rotateSigners(newSigners2))
+                    .to.emit(multisig, 'SignersRotated')
+                    .withArgs(prevEpoch + 2, newSigners2Hash);
+
+                // Both weighted signer should be available
+                expect(await multisig.epochBySignerHash(newSignersHash)).to.be.equal(prevEpoch + 1);
+                expect(await multisig.epochBySignerHash(newSigners2Hash)).to.be.equal(prevEpoch + 2);
+            });
+        });
+
+        describe('negative tests', () => {
+            it('should revert if new signers length is zero', async () => {
+                await expectRevert(
+                    (gasOptions) =>
+                        multisig.rotateSigners({ signers: [], threshold: 1, nonce: defaultNonce }, gasOptions),
+                    multisig,
+                    'InvalidSigners',
+                );
+            });
+
+            it('should not allow transferring signers to address zero', async () => {
+                await expectRevert(
+                    (gasOptions) =>
+                        multisig.rotateSigners(
+                            {
+                                signers: [
+                                    {
+                                        signer: AddressZero,
+                                        weight: 1,
+                                    },
+                                ],
+                                threshold: 1,
+                                nonce: defaultNonce,
+                            },
+                            gasOptions,
+                        ),
+                    multisig,
+                    'InvalidSigners',
+                );
+            });
+
+            it('should not allow transferring signers to duplicated signers', async () => {
+                await expectRevert(
+                    (gasOptions) =>
+                        multisig.rotateSigners(
+                            {
+                                signers: [
+                                    { signer: '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b', weight: 1 },
+                                    { signer: '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b', weight: 1 },
+                                ],
+                                threshold: 1,
+                                nonce: defaultNonce,
+                            },
+                            gasOptions,
+                        ),
+                    multisig,
+                    'InvalidSigners',
+                );
+            });
+
+            it('should not allow transferring signers to unsorted signers', async () => {
+                await expectRevert(
+                    (gasOptions) =>
+                        multisig.rotateSigners(
+                            {
+                                signers: [
+                                    { signer: '0xb7900E8Ec64A1D1315B6D4017d4b1dcd36E6Ea88', weight: 1 },
+                                    { signer: '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b', weight: 1 },
+                                ],
+                                threshold: 1,
+                                nonce: defaultNonce,
+                            },
+                            gasOptions,
+                        ),
+                    multisig,
+                    'InvalidSigners',
+                );
+            });
+
+            it('should not allow transferring signers with zero weights', async () => {
+                await expectRevert(
+                    (gasOptions) =>
+                        multisig.rotateSigners(
+                            {
+                                signers: [
+                                    { signer: '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b', weight: 1 },
+                                    { signer: '0xb7900E8Ec64A1D1315B6D4017d4b1dcd36E6Ea88', weight: 0 },
+                                ],
+                                threshold: 1,
+                                nonce: defaultNonce,
+                            },
+                            gasOptions,
+                        ),
+                    multisig,
+                    'InvalidWeights',
+                );
+            });
+
+            it('should not allow transferring signers with zero threshold', async () => {
+                await expectRevert(
+                    (gasOptions) =>
+                        multisig.rotateSigners(
+                            {
+                                signers: [{ signer: '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b', weight: 1 }],
+                                threshold: 0,
+                                nonce: defaultNonce,
+                            },
+                            gasOptions,
+                        ),
+                    multisig,
+                    'InvalidThreshold',
+                );
+            });
+
+            it('should not allow transferring signers with threshold greater than sum of weights', async () => {
+                await expectRevert(
+                    (gasOptions) =>
+                        multisig.rotateSigners(
+                            {
+                                signers: [{ signer: '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b', weight: 1 }],
+                                threshold: 2,
+                                nonce: defaultNonce,
+                            },
+                            gasOptions,
+                        ),
+                    multisig,
+                    'InvalidThreshold',
+                );
+
+                await expectRevert(
+                    (gasOptions) =>
+                        multisig.rotateSigners(
+                            {
+                                signers: [
+                                    { signer: '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b', weight: 1 },
+                                    { signer: '0xb7900E8Ec64A1D1315B6D4017d4b1dcd36E6Ea88', weight: 2 },
+                                ],
+                                threshold: 4,
+                                nonce: defaultNonce,
+                            },
+                            gasOptions,
+                        ),
+                    multisig,
+                    'InvalidThreshold',
+                );
+            });
+        });
     });
 
     describe('validateProof', () => {
-        it('validate the proof from the current signers', async () => {
-            const data = '0x123abc123abc';
-
-            const message = hashMessage(arrayify(keccak256(data)));
-
-            const isCurrentSigners = await multisig.validateProof(
-                message,
-                await getWeightedSignersProof(
+        describe('positive tests', () => {
+            it('validate the proof from the current signers', async () => {
+                const proof = await getWeightedSignersProof2(
                     data,
-                    signers,
-                    signers.map(() => 1),
-                    threshold,
+                    domainSeparator,
+                    weightedSigners,
                     signers.slice(0, threshold),
-                ),
-            );
+                );
 
-            expect(isCurrentSigners).to.be.true;
-        });
+                const isCurrentSigners = await multisig.validateProof(dataHash, proof);
 
-        it('reject the proof for a non-existant epoch hash', async () => {
-            const data = '0x123abc123abc';
+                expect(isCurrentSigners).to.be.true;
+            });
 
-            const message = hashMessage(arrayify(keccak256(data)));
-
-            const invalidSigners = [owner, owner, owner];
-
-            await expectRevert(
-                async (gasOptions) =>
-                    multisig.validateProof(
-                        message,
-                        await getWeightedSignersProof(
-                            data,
-                            invalidSigners,
-                            invalidSigners.map(() => 1),
-                            threshold,
-                            invalidSigners.slice(0, threshold - 1),
-                        ),
-                        gasOptions,
-                    ),
-                multisig,
-                'InvalidSigners',
-            );
-        });
-
-        it('reject the proof if weights are not matching the threshold', async () => {
-            const data = '0x123abc123abc';
-
-            const message = hashMessage(arrayify(keccak256(data)));
-
-            await expectRevert(
-                async (gasOptions) =>
-                    multisig.validateProof(
-                        message,
-                        await getWeightedSignersProof(
-                            data,
-                            signers,
-                            signers.map(() => 1),
-                            threshold,
-                            signers.slice(0, threshold - 1),
-                        ),
-                        gasOptions,
-                    ),
-                multisig,
-                'LowSignaturesWeight',
-            );
-        });
-
-        it('reject the proof if signatures are invalid', async () => {
-            const data = '0x123abc123abc';
-
-            const message = hashMessage(arrayify(keccak256(data)));
-
-            await expectRevert(
-                async (gasOptions) =>
-                    multisig.validateProof(
-                        message,
-                        await getWeightedSignersProof(
-                            data,
-                            signers,
-                            signers.map(() => 1),
-                            threshold,
-                            wallets.slice(0, threshold),
-                        ),
-                        gasOptions,
-                    ),
-                multisig,
-                'MalformedSignatures',
-            );
-        });
-
-        it('reject the proof if signatures are missing', async () => {
-            const data = '0x123abc123abc';
-
-            const message = hashMessage(arrayify(keccak256(data)));
-
-            await expectRevert(
-                async (gasOptions) =>
-                    multisig.validateProof(
-                        message,
-                        await getWeightedSignersProof(
-                            data,
-                            signers,
-                            signers.map(() => 1),
-                            threshold,
-                            [],
-                        ),
-                        gasOptions,
-                    ),
-                multisig,
-                'MalformedSignatures',
-            );
-        });
-
-        it('validate the proof for a single signer', async () => {
-            await expect(multisig.rotateSigners([getAddresses(signers), signers.map(() => 1), 1])).to.emit(
-                multisig,
-                'SignersRotated',
-            );
-
-            const data = '0x123abc123abc';
-
-            const message = hashMessage(arrayify(keccak256(data)));
-
-            const isCurrentSigners = await multisig.validateProof(
-                message,
-                await getWeightedSignersProof(
+            it('validate the proof from the current signers with extra signatures', async () => {
+                // sign with all signers, i.e more than threshold
+                const proof = await getWeightedSignersProof2(
                     data,
+                    domainSeparator,
+                    weightedSigners,
                     signers,
-                    signers.map(() => 1),
-                    1,
-                    signers.slice(0, 1),
-                ),
-            );
+                );
 
-            expect(isCurrentSigners).to.be.true;
-        });
-    });
+                const isCurrentSigners = await multisig.validateProof(dataHash, proof);
 
-    describe('transferSigners', () => {
-        it('should allow owner to transfer signers', async () => {
-            const newSigners = [
-                '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b',
-                '0xb7900E8Ec64A1D1315B6D4017d4b1dcd36E6Ea88',
-            ];
+                expect(isCurrentSigners).to.be.true;
+            });
 
-            const prevEpoch = Number(await multisig.epoch());
+            it('validate the proof from a single signer', async () => {
+                const multisig = await multisigFactory.deploy(previousSignersRetention, domainSeparator);
+                await multisig.deployTransaction.wait(network.config.confirmations);
 
-            await expect(multisig.rotateSigners([newSigners, newSigners.map(() => 1), 2])).to.emit(
-                multisig,
-                'SignersRotated',
-            );
+                const newSigners = {
+                    signers: [
+                        { signer: signers[0].address, weight: 1 },
+                    ],
+                    threshold: 1,
+                    nonce: defaultNonce,
+                };
 
-            expect(await multisig.epoch()).to.be.equal(prevEpoch + 1);
-        });
+                await expect(multisig.rotateSigners(newSigners)).to.emit(
+                    multisig,
+                    'SignersRotated',
+                );
 
-        it('should revert if new signers length is zero', async () => {
-            const newSigners = [];
+                const isCurrentSigners = await multisig.validateProof(
+                    dataHash,
+                    await getWeightedSignersProof2(
+                        data,
+                        domainSeparator,
+                        newSigners,
+                        [signers[0]],
+                    ),
+                );
 
-            await expectRevert(
-                (gasOptions) => multisig.rotateSigners([newSigners, newSigners.map(() => 1), 2], gasOptions),
-                multisig,
-                'InvalidSigners',
-            );
-        });
-
-        it('should not allow transferring signers to address zero', async () => {
-            const newSigners = [AddressZero, '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b'];
-
-            await expectRevert(
-                (gasOptions) => multisig.rotateSigners([newSigners, newSigners.map(() => 1), 2], gasOptions),
-                multisig,
-                'InvalidSigners',
-            );
+                expect(isCurrentSigners).to.be.true;
+            });
         });
 
-        it('should not allow transferring signers to duplicated signers', async () => {
-            const newSigners = [
-                '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b',
-                '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b',
-            ];
+        describe('negative tests', () => {
+            it('reject the proof from a non-existent signers hash', async () => {
+                const proof = await getWeightedSignersProof2(
+                    data,
+                    domainSeparator,
+                    {
+                        signers: [
+                            {signer: owner.address, weight: 1},
+                        ],
+                        threshold: 1,
+                        nonce: defaultNonce,
+                    },
+                    [owner],
+                );
 
-            await expectRevert(
-                (gasOptions) => multisig.rotateSigners([newSigners, newSigners.map(() => 1), 2], gasOptions),
-                multisig,
-                'InvalidSigners',
-            );
-        });
-
-        it('should not allow transferring signers to unsorted signers', async () => {
-            const newSigners = [
-                '0xb7900E8Ec64A1D1315B6D4017d4b1dcd36E6Ea88',
-                '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b',
-            ];
-
-            await expectRevert(
-                (gasOptions) => multisig.rotateSigners([newSigners, newSigners.map(() => 1), 2], gasOptions),
-                multisig,
-                'InvalidSigners',
-            );
-        });
-
-        it('should not allow signers transfer to the previous signers ', async () => {
-            const updatedSigners = getAddresses(signers.slice(0, threshold));
-
-            await expect(multisig.rotateSigners([updatedSigners, updatedSigners.map(() => 2), threshold])).to.emit(
-                multisig,
-                'SignersRotated',
-            );
-        });
-
-        it('should not allow transferring signers with invalid threshold', async () => {
-            const newSigners = [
-                '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b',
-                '0xb7900E8Ec64A1D1315B6D4017d4b1dcd36E6Ea88',
-            ];
-
-            await expectRevert(
-                (gasOptions) => multisig.rotateSigners([newSigners, newSigners.map(() => 1), 0], gasOptions),
-                multisig,
-                'InvalidThreshold',
-            );
-            await expectRevert(
-                (gasOptions) => multisig.rotateSigners([newSigners, newSigners.map(() => 1), 3], gasOptions),
-                multisig,
-                'InvalidThreshold',
-            );
-        });
-
-        it('should not allow transferring signers with invalid number of weights', async () => {
-            const newSigners = [
-                '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b',
-                '0xb7900E8Ec64A1D1315B6D4017d4b1dcd36E6Ea88',
-            ];
-
-            await expectRevert(
-                (gasOptions) => multisig.rotateSigners([newSigners, [1], 2], gasOptions),
-                multisig,
-                'InvalidWeights',
-            );
-            await expectRevert(
-                (gasOptions) => multisig.rotateSigners([newSigners, [1, 0], 2], gasOptions),
-                multisig,
-                'InvalidWeights',
-            );
-            await expectRevert(
-                (gasOptions) => multisig.rotateSigners([newSigners, [1, 1], 0], gasOptions),
-                multisig,
-                'InvalidThreshold',
-            );
-            await expectRevert(
-                (gasOptions) => multisig.rotateSigners([newSigners, [1, 1], 3], gasOptions),
-                multisig,
-                'InvalidThreshold',
-            );
-        });
-    });
-
-    describe('signerHashByEpoch and epochBySignerHash', () => {
-        it('should expose correct hashes and epoch', async () => {
-            const signersHistory = [...previousSigners, signers];
-
-            await Promise.all(
-                signersHistory.map(async (signers, i) => {
-                    const hash = keccak256(
-                        getWeightedSignersSet(
-                            getAddresses(signers),
-                            signers.map(() => 1),
-                            threshold,
+                await expectRevert(
+                    async (gasOptions) =>
+                        multisig.validateProof(
+                            dataHash,
+                            proof,
+                            gasOptions,
                         ),
-                    );
-                    expect(await multisig.signerHashByEpoch(i + 1)).to.be.equal(hash);
-                    expect(await multisig.epochBySignerHash(hash)).to.be.equal(i + 1);
-                }),
-            );
+                    multisig,
+                    'InvalidSigners',
+                );
+            });
+
+            it('reject the proof if signatures are insufficient', async () => {
+                const proof = await getWeightedSignersProof2(
+                    data,
+                    domainSeparator,
+                    weightedSigners,
+                    signers.slice(0, threshold - 1),
+                );
+
+                await expectRevert(
+                    async (gasOptions) =>
+                        multisig.validateProof(
+                            dataHash,
+                            proof,
+                            gasOptions,
+                        ),
+                    multisig,
+                    'LowSignaturesWeight',
+                );
+            });
+
+            it('reject the proof if signatures are invalid', async () => {
+                const proof = await getWeightedSignersProof2(
+                    data,
+                    domainSeparator,
+                    weightedSigners,
+                    [Wallet.createRandom()],
+                );
+
+                await expectRevert(
+                    async (gasOptions) =>
+                        multisig.validateProof(
+                            dataHash,
+                            proof,
+                            gasOptions,
+                        ),
+                    multisig,
+                    'MalformedSignatures',
+                );
+            });
+
+            it('reject the proof if signatures are missing', async () => {
+                const proof = await getWeightedSignersProof2(
+                    data,
+                    domainSeparator,
+                    weightedSigners,
+                    [],
+                );
+
+                await expectRevert(
+                    async (gasOptions) =>
+                        multisig.validateProof(
+                            dataHash,
+                            proof,
+                            gasOptions,
+                        ),
+                    multisig,
+                    'MalformedSignatures',
+                );
+            });
         });
     });
 
-    describe('validateProof with PREVIOUS_SIGNERS_RETENTION as 15', () => {
-        const PREVIOUS_SIGNERS_RETENTION = 15;
-        let newMultisig;
-        const previousSigners = [];
+    describe('validateProof with multiple signer sets', () => {
+        const previousSignersRetention = 2;
+        let multisig;
 
         before(async () => {
-            for (let i = 0; i <= PREVIOUS_SIGNERS_RETENTION; i++) {
-                previousSigners.push(sortBy(wallets.slice(0, 2), (wallet) => wallet.address.toLowerCase()));
-            }
+            multisig = await multisigFactory.deploy(previousSignersRetention, domainSeparator);
+            await multisig.deployTransaction.wait(network.config.confirmations);
 
-            const initialSigners = [...previousSigners, signers];
+            for (let i = 0; i <= previousSignersRetention + 1; i++) {
+                const newSigners = {
+                    ...weightedSigners,
+                    nonce: id(`${i}`),
+                };
 
-            newMultisig = await multisigFactory.deploy(PREVIOUS_SIGNERS_RETENTION);
-            await newMultisig.deployTransaction.wait(network.config.confirmations);
+                await multisig.rotateSigners(newSigners).then((tx) => tx.wait(network.config.confirmations));
 
-            for (let i = 0; i < initialSigners.length; i++) {
-                await newMultisig
-                    .rotateSigners([getAddresses(initialSigners[i]), initialSigners[i].map(() => i + 1), (i + 1) * 2])
-                    .then((tx) => tx.wait());
+                const proof = await getWeightedSignersProof2(
+                    data,
+                    domainSeparator,
+                    newSigners,
+                    signers.slice(0, threshold),
+                );
+
+                const isCurrentSigners = await multisig.validateProof(
+                    dataHash,
+                    proof,
+                );
+
+                expect(isCurrentSigners).to.be.equal(true);
             }
         });
 
-        it('validate the proof from the recent signers', async () => {
-            const data = '0x123abc123abc';
+        it('validate the proof from all recent signers', async () => {
+            for (let i = 1; i <= previousSignersRetention + 1; i++) {
+                const proof = await getWeightedSignersProof2(
+                    data,
+                    domainSeparator,
+                    {
+                        ...weightedSigners,
+                        nonce: id(`${i}`),
+                    },
+                    signers.slice(0, threshold),
+                );
 
-            const message = hashMessage(arrayify(keccak256(data)));
+                const isCurrentSigners = await multisig.validateProof(
+                    dataHash,
+                    proof,
+                );
 
-            const validPreviousSigners = previousSigners.slice(-PREVIOUS_SIGNERS_RETENTION);
-
-            expect(validPreviousSigners.length).to.be.equal(PREVIOUS_SIGNERS_RETENTION);
-
-            await Promise.all(
-                validPreviousSigners.map(async (signers, index) => {
-                    const isCurrentSigners = await newMultisig.validateProof(
-                        message,
-                        await getWeightedSignersProof(
-                            data,
-                            signers,
-                            signers.map(() => index + 2),
-                            (index + 2) * 2,
-                            signers,
-                        ),
-                    );
-                    expect(isCurrentSigners).to.be.equal(false);
-                }),
-            );
-
-            await expect(await newMultisig.epoch()).to.be.equal(PREVIOUS_SIGNERS_RETENTION + 2);
+                expect(isCurrentSigners).to.be.equal(i === (previousSignersRetention + 1));
+            }
         });
 
-        it('reject the proof from the signers older than key retention', async () => {
-            const data = '0x123abc123abc';
-            const message = hashMessage(arrayify(keccak256(data)));
-            const invalidPreviousSigners = previousSigners.slice(0, -PREVIOUS_SIGNERS_RETENTION);
-
-            await Promise.all(
-                invalidPreviousSigners.map(async (signers) => {
-                    await expectRevert(
-                        async (gasOptions) =>
-                            newMultisig.validateProof(
-                                message,
-                                await getWeightedSignersProof(
-                                    data,
-                                    signers,
-                                    signers.map(() => 1),
-                                    threshold,
-                                    signers.slice(0, threshold),
-                                ),
-                                gasOptions,
-                            ),
-                        multisig,
-                        'InvalidSigners',
-                    );
-                }),
+        it('reject proof from outdated signers', async () => {
+            const proof = await getWeightedSignersProof2(
+                data,
+                domainSeparator,
+                {
+                    ...weightedSigners,
+                    nonce: id('0'),
+                },
+                signers.slice(0, threshold),
             );
+
+            await expectRevert(
+                (gasOptions) =>
+                    multisig.validateProof(
+                        dataHash,
+                        proof,
+                        gasOptions,
+                    ),
+                multisig,
+                'InvalidSigners',
+            )
         });
     });
 });

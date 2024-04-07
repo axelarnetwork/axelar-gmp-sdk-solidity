@@ -15,9 +15,6 @@ import { WeightedSigners } from '../types/WeightedMultisigTypes.sol';
  * with added functionality to approve and execute multisig proposals.
  */
 contract AxelarAmplifierAuth is Ownable, BaseWeightedMultisig, IAxelarAmplifierAuth {
-    // @notice The number of previous signers whose messages will be considered valid. This gives some time for signed messages to be relayed.
-    uint256 public constant PREVIOUS_SIGNERS_RETENTION = 15;
-
     /**
      * @notice Initializes the contract.
      * @dev Ownership of this contract should be transferred to the Gateway contract after deployment.
@@ -28,8 +25,9 @@ contract AxelarAmplifierAuth is Ownable, BaseWeightedMultisig, IAxelarAmplifierA
     constructor(
         address owner_,
         bytes32 domainSeparator_,
+        uint256 previousSignersRetention_,
         bytes[] memory initialSigners
-    ) Ownable(owner_) BaseWeightedMultisig(PREVIOUS_SIGNERS_RETENTION, domainSeparator_) {
+    ) Ownable(owner_) BaseWeightedMultisig(previousSignersRetention_, domainSeparator_) {
         uint256 length = initialSigners.length;
 
         for (uint256 i; i < length; ++i) {

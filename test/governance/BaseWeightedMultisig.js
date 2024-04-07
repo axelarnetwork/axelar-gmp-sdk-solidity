@@ -37,7 +37,7 @@ describe('BaseWeightedMultisig', () => {
         multisigFactory = await ethers.getContractFactory('AxelarAmplifierAuth', owner);
         testMultisigFactory = await ethers.getContractFactory('TestBaseWeightedMultisig', owner);
 
-        multisig = await multisigFactory.deploy(owner.address, domainSeparator, []);
+        multisig = await multisigFactory.deploy(owner.address, domainSeparator, previousSignersRetention, []);
         await multisig.deployTransaction.wait(network.config.confirmations);
 
         weightedSigners = {
@@ -61,7 +61,7 @@ describe('BaseWeightedMultisig', () => {
 
     describe('queries', () => {
         it('previousSignersRetention', async () => {
-            expect(await multisig.previousSignersRetention()).to.be.equal(15);
+            expect(await multisig.previousSignersRetention()).to.be.equal(previousSignersRetention);
         });
 
         it('hashMessage', async () => {
@@ -88,7 +88,7 @@ describe('BaseWeightedMultisig', () => {
             let multisig;
 
             beforeEach(async () => {
-                multisig = await multisigFactory.deploy(owner.address, domainSeparator, []);
+                multisig = await multisigFactory.deploy(owner.address, domainSeparator, previousSignersRetention, []);
                 await multisig.deployTransaction.wait(network.config.confirmations);
             });
 
@@ -387,12 +387,7 @@ describe('BaseWeightedMultisig', () => {
 
                 const proof = await getWeightedSignersProof(data, domainSeparator, newSigners, [signers[0]]);
 
-                const isCurrentSigners = await multisig.validateProof(dataHash, proof);
-
-                expect(isCurrentSigners).to.be.true;
-
-                // validate with a tx to estimate gas cost
-                await multisig.validate(dataHash, proof).then((tx) => tx.wait());
+                await multisig.validateProof(dataHash, proof).then((tx) => tx.wait());
             });
         });
 
@@ -460,7 +455,7 @@ describe('BaseWeightedMultisig', () => {
         let multisig;
 
         before(async () => {
-            multisig = await testMultisigFactory.deploy(previousSignersRetention, domainSeparator);
+            multisig = await multisigFactory.deploy(owner.address, domainSeparator, previousSignersRetention, []);
             await multisig.deployTransaction.wait(network.config.confirmations);
 
             for (let i = 0; i <= previousSignersRetention + 1; i++) {
@@ -469,7 +464,9 @@ describe('BaseWeightedMultisig', () => {
                     nonce: id(`${i}`),
                 };
 
-                await multisig.rotateSigners(newSigners).then((tx) => tx.wait(network.config.confirmations));
+                await multisig
+                    .rotateSigners(encodeWeightedSigners(newSigners))
+                    .then((tx) => tx.wait(network.config.confirmations));
 
                 const proof = await getWeightedSignersProof(
                     data,
@@ -552,6 +549,6 @@ describe('BaseWeightedMultisig', () => {
 
         const proof = await getWeightedSignersProof(data, domainSeparator, newSigners, wallets.slice(0, threshold));
 
-        await multisig.validate(dataHash, proof).then((tx) => tx.wait());
+        await multisig.validateProof(dataHash, proof).then((tx) => tx.wait());
     });
 });

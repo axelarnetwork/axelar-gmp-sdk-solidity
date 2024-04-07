@@ -12,6 +12,7 @@ const { encodeWeightedSigners, getWeightedSignersProof } = require('../../script
 describe('AxelarAmplifierGateway', () => {
     const threshold = 2;
     const domainSeparator = id('chain');
+    const previousSignersRetention = 15;
     const commandId = process.env.REPORT_GAS ? id('4') : getRandomID(); // use fixed command id for deterministic gas computation
 
     let wallets;
@@ -67,7 +68,7 @@ describe('AxelarAmplifierGateway', () => {
     const deployGateway = async () => {
         // setup auth contract with a genesis operator set
         auth = await authFactory
-            .deploy(user.address, domainSeparator, [encodeWeightedSigners(weightedSigners)])
+            .deploy(user.address, domainSeparator, previousSignersRetention, [encodeWeightedSigners(weightedSigners)])
             .then((d) => d.deployed());
 
         gateway = await gatewayFactory.deploy(auth.address).then((d) => d.deployed());

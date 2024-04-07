@@ -11,7 +11,7 @@ const { expect } = chai;
 const { expectRevert } = require('../utils');
 const { getWeightedSignersProof, encodeWeightedSigners } = require('../../scripts/utils');
 
-describe('BaseWeightedMultisig', () => {
+describe('AxelarAmplifierAuth', () => {
     const threshold = 2;
     const domainSeparator = keccak256(toUtf8Bytes('chain'));
     const previousSignersRetention = 0;
@@ -23,7 +23,6 @@ describe('BaseWeightedMultisig', () => {
     let signers;
 
     let multisigFactory;
-    let testMultisigFactory;
     let multisig;
     let weightedSigners;
     let weightedSignersHash;
@@ -35,7 +34,6 @@ describe('BaseWeightedMultisig', () => {
         signers = sortBy(wallets.slice(0, 3), (wallet) => wallet.address.toLowerCase());
 
         multisigFactory = await ethers.getContractFactory('AxelarAmplifierAuth', owner);
-        testMultisigFactory = await ethers.getContractFactory('TestBaseWeightedMultisig', owner);
 
         multisig = await multisigFactory.deploy(owner.address, domainSeparator, previousSignersRetention, []);
         await multisig.deployTransaction.wait(network.config.confirmations);
@@ -50,13 +48,6 @@ describe('BaseWeightedMultisig', () => {
         weightedSignersHash = keccak256(encodeWeightedSigners(weightedSigners));
 
         await multisig.rotateSigners(encodeWeightedSigners(weightedSigners)).then((tx) => tx.wait());
-    });
-
-    it('should validate storage constants', async () => {
-        const testMultisigFactory = await ethers.getContractFactory('TestBaseWeightedMultisig', owner);
-
-        const multisig = await testMultisigFactory.deploy(previousSignersRetention, domainSeparator);
-        await multisig.deployTransaction.wait(network.config.confirmations);
     });
 
     describe('queries', () => {
@@ -369,12 +360,11 @@ describe('BaseWeightedMultisig', () => {
                 const proof = await getWeightedSignersProof(data, domainSeparator, weightedSigners, signers);
 
                 const isCurrentSigners = await multisig.validateProof(dataHash, proof);
-
                 expect(isCurrentSigners).to.be.true;
             });
 
             it('validate the proof from a single signer', async () => {
-                const multisig = await testMultisigFactory.deploy(previousSignersRetention, domainSeparator);
+                const multisig = await multisigFactory.deploy(owner.address, domainSeparator, previousSignersRetention, []);
                 await multisig.deployTransaction.wait(network.config.confirmations);
 
                 const newSigners = {
@@ -382,12 +372,16 @@ describe('BaseWeightedMultisig', () => {
                     threshold: 1,
                     nonce: defaultNonce,
                 };
+                const encodedSigners = encodeWeightedSigners(newSigners);
 
-                await expect(multisig.rotateSigners(newSigners)).to.emit(multisig, 'SignersRotated');
+                await expect(multisig.rotateSigners(encodedSigners))
+                    .to.emit(multisig, 'SignersRotated')
+                    .withArgs(1, keccak256(encodedSigners));
 
                 const proof = await getWeightedSignersProof(data, domainSeparator, newSigners, [signers[0]]);
 
-                await multisig.validateProof(dataHash, proof).then((tx) => tx.wait());
+                const isLatestSigners = await multisig.validateProof(dataHash, proof);
+                expect(isLatestSigners).to.be.true;
             });
         });
 
@@ -516,39 +510,5 @@ describe('BaseWeightedMultisig', () => {
                 'InvalidSigners',
             );
         });
-    });
-
-    it('should allow signer rotation to a large set', async () => {
-        const multisig = await testMultisigFactory.deploy(previousSignersRetention, domainSeparator);
-        await multisig.deployTransaction.wait(network.config.confirmations);
-
-        const numSigners = 40;
-        const threshold = Math.floor(numSigners / 2) + 1;
-        const wallets = sortBy(
-            Array(numSigners)
-                .fill(0)
-                .map(() => Wallet.createRandom()),
-            (wallet) => wallet.address.toLowerCase(),
-        );
-        const signers = wallets.map((wallet) => {
-            return { signer: wallet.address, weight: 1 };
-        });
-        const newSigners = {
-            signers,
-            threshold,
-            nonce: defaultNonce,
-        };
-        const encodedSigners = encodeWeightedSigners(newSigners);
-        const signersHash = keccak256(encodedSigners);
-
-        const prevEpoch = (await multisig.epoch()).toNumber();
-
-        await expect(multisig.rotateSigners(newSigners))
-            .to.emit(multisig, 'SignersRotated')
-            .withArgs(prevEpoch + 1, signersHash);
-
-        const proof = await getWeightedSignersProof(data, domainSeparator, newSigners, wallets.slice(0, threshold));
-
-        await multisig.validateProof(dataHash, proof).then((tx) => tx.wait());
     });
 });

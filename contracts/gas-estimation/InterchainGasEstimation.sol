@@ -180,13 +180,12 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
         // https://docs.scroll.io/en/developers/guides/estimating-gas-and-tx-fees/
         // Reference https://github.com/scroll-tech/scroll/blob/af2913903b181f3492af1c62b4da4c1c99cc552d/contracts/src/L2/predeploys/L1GasPriceOracle.sol#L63-L86
         uint256 overhead = 2500;
-        uint256 l1BaseFee = 15_602_435_409; // upper bound
         uint256 scalar = 1_150_000_000;
         uint256 precision = 1e9;
 
         uint256 txSize = _l1TxSize(payload) + overhead + (4 * 16);
 
-        return (l1GasInfo.relativeGasPrice * txSize * l1BaseFee * scalar) / precision;
+        return (l1GasInfo.relativeGasPrice * txSize * scalar) / precision;
     }
 
     /**

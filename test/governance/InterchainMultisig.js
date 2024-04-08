@@ -33,6 +33,7 @@ describe('InterchainMultisig', () => {
             weightedSigners,
             signers,
         );
+
         return interchainMultisig.executeCalls(batchId, calls, proof, txOptions);
     };
 
@@ -204,9 +205,19 @@ describe('InterchainMultisig', () => {
             ['Ethereum', interchainMultisig.address, targetContract.address, calldata, nativeValue],
             ['Optimism', interchainMultisig.address, targetContract.address, calldata, nativeValue],
         ];
+        const batchId = formatBytes32String('10');
+        const dataHash = keccak256(encodeInterchainCallsBatch(batchId, calls));
+        const proof = await getWeightedSignersProof(
+            encodeInterchainCallsBatch(batchId, calls),
+            domainSeparator,
+            weightedSigners,
+            signers,
+        );
+
+        expect(await interchainMultisig.validateProof(dataHash, proof)).to.be.true;
 
         await expect(
-            await executeCalls(formatBytes32String('10'), calls, {
+            await executeCalls(batchId, calls, {
                 value: nativeValue,
             }),
         )
@@ -215,8 +226,8 @@ describe('InterchainMultisig', () => {
             .withArgs(formatBytes32String('10'), targetContract.address, calldata, nativeValue)
             .and.to.emit(interchainMultisig, 'BatchExecuted')
             .withArgs(
-                formatBytes32String('10'),
-                keccak256(encodeInterchainCallsBatch(formatBytes32String('10'), calls)),
+                batchId,
+                dataHash,
                 1,
                 2,
             );

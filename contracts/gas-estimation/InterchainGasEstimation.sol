@@ -93,6 +93,9 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
         if (gasEstimationType == GasEstimationType.Scroll) {
             return scrollL1Fee(payload, l1GasInfo);
         }
+        if (gasEstimationType == GasEstimationType.Mantle) {
+            return mantleL1Fee(payload, l1GasInfo);
+        }
 
         revert UnsupportedEstimationType(gasEstimationType);
     }
@@ -181,6 +184,25 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
         uint256 precision = 1e9;
 
         uint256 txSize = _l1TxSize(payload) + overhead + (4 * 16);
+
+        return (l1GasInfo.relativeGasPrice * txSize * scalar) / precision;
+    }
+
+    /**
+     * @notice Computes the L1 to L2 fee for a contract call on the Mantle chain.
+     * @param payload The payload of the contract call
+     * @param l1GasInfo The L1 gas info
+     * @return l1DataFee The L1 to L2 data fee
+     */
+    function mantleL1Fee(bytes calldata payload, GasInfo storage l1GasInfo) internal view returns (uint256 l1DataFee) {
+        // Resembling OP Bedrock gas price model
+        // https://docs-v2.mantle.xyz/devs/concepts/tx-fee/ef
+        // Reference https://github.com/mantlenetworkio/mantle-v2/blob/a29f01045191344b0ba89542215e6a02bd5e7fcc/packages/contracts-bedrock/contracts/L2/GasPriceOracle.sol#L98-L105
+        uint256 overhead = 188;
+        uint256 scalar = 10_000;
+        uint256 precision = 1e6;
+
+        uint256 txSize = _l1TxSize(payload) + overhead;
 
         return (l1GasInfo.relativeGasPrice * txSize * scalar) / precision;
     }

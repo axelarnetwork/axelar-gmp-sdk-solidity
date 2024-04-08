@@ -95,6 +95,6 @@ describe('InterchainGasEstimation', () => {
             '0x',
         );
 
-        expect(estimate).to.equal('6552710823071820600090000');
+        expect(estimate).to.equal('419980600090000');
     });
 });

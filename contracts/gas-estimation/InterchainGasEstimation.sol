@@ -190,6 +190,26 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
     }
 
     /**
+     * @notice Computes the L1 to L2 fee for a contract call on the Mantle chain.
+     * @param payload The payload of the contract call
+     * @param l1GasInfo The L1 gas info
+     * @return l1DataFee The L1 to L2 data fee
+     */
+    function mantleL1Fee(bytes calldata payload, GasInfo storage l1GasInfo) internal view returns (uint256 l1DataFee) {
+        // Resembling OP Bedrock gas price model
+        // https://docs-v2.mantle.xyz/devs/concepts/tx-fee/ef
+        // Reference https://github.com/mantlenetworkio/mantle-v2/blob/a29f01045191344b0ba89542215e6a02bd5e7fcc/packages/contracts-bedrock/contracts/L2/GasPriceOracle.sol#L98-L105
+        uint256 overhead = 188;
+        uint256 l1BaseFee = 15_193_017_827; // upper bound
+        uint256 scalar = 10_000;
+        uint256 precision = 1e6;
+
+        uint256 txSize = _l1TxSize(payload) + overhead;
+
+        return (l1GasInfo.relativeGasPrice * txSize * l1BaseFee * scalar) / precision;
+    }
+
+    /**
      * @notice Computes the transaction size for an L1 transaction
      * @param payload The payload of the contract call
      * @return txSize The transaction size
@@ -208,37 +228,6 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
                 txSize += 16; // 16 for each non-zero byte
             }
         }
-    }
-
-    /**
-     * @notice Computes the L1 to L2 fee for a contract call on the Mantle chain.
-     * @param payload The payload of the contract call
-     * @param l1GasInfo The L1 gas info
-     * @return l1DataFee The L1 to L2 data fee
-     */
-    function mantleL1Fee(bytes calldata payload, GasInfo storage l1GasInfo) internal view returns (uint256 l1DataFee) {
-        // Resembling OP Bedrock gas price model
-        // https://docs-v2.mantle.xyz/devs/concepts/tx-fee/ef
-        // Reference https://github.com/mantlenetworkio/mantle-v2/blob/a29f01045191344b0ba89542215e6a02bd5e7fcc/packages/contracts-bedrock/contracts/L2/GasPriceOracle.sol#L98-L105
-        uint256 overhead = 188;
-        uint256 l1BaseFee = 15_193_017_827; // upper bound
-        uint256 scalar = 10_000;
-        uint256 PRECISION = 1e6;
-
-        // Expecting most of the calldata bytes to be zeroes. So multiplying by 8 as a weighted average of 4 and 16
-        uint256 l1GasUsed = TX_ENCODING_OVERHEAD * 16 + GMP_CALLDATA_SIZE * 8;
-
-        for (uint256 i; i < payload.length; ++i) {
-            if (payload[i] == 0) {
-                l1GasUsed += 4;
-            } else {
-                l1GasUsed += 16;
-            }
-        }
-
-        l1GasUsed = l1GasUsed + overhead;
-
-        return (l1GasInfo.relativeGasPrice * l1GasUsed * l1BaseFee * scalar) / PRECISION;
     }
 
     /**

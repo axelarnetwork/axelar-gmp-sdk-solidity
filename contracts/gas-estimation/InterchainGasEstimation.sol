@@ -179,11 +179,11 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
         uint256 overhead = 2500;
         uint256 l1BaseFee = 15_602_435_409;
         uint256 scalar = 1_150_000_000;
-        uint256 PRECISION = 1e9;
+        uint256 precision = 1e9;
 
         uint256 txSize = _l1TxSize(payload) + overhead + (4 * 16);
 
-        return (l1GasInfo.relativeGasPrice * txSize * l1BaseFee * scalar) / PRECISION;
+        return (l1GasInfo.relativeGasPrice * txSize * l1BaseFee * scalar) / precision;
     }
 
     /**

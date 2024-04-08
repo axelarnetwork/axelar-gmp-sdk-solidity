@@ -102,10 +102,7 @@ interface IAxelarAmplifierGateway is IAxelarGMPGateway {
      * @param messageId The unique message id for the message.
      * @return The commandId for the message.
      */
-    function messageToCommandId(
-        string calldata sourceChain,
-        string calldata messageId
-    ) external pure returns (bytes32);
+    function messageToCommandId(string calldata sourceChain, string calldata messageId) external pure returns (bytes32);
 
     /**
      * @notice Approves an array of messages, signed by the Axelar signers.

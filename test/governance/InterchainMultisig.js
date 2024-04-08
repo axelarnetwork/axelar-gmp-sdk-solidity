@@ -225,12 +225,7 @@ describe('InterchainMultisig', () => {
             .and.to.emit(interchainMultisig, 'CallExecuted')
             .withArgs(formatBytes32String('10'), targetContract.address, calldata, nativeValue)
             .and.to.emit(interchainMultisig, 'BatchExecuted')
-            .withArgs(
-                batchId,
-                dataHash,
-                1,
-                2,
-            );
+            .withArgs(batchId, dataHash, 1, 2);
     });
 
     it('should withdraw native value', async () => {

@@ -2,10 +2,11 @@ const { sortBy } = require('lodash');
 const chai = require('chai');
 const { ethers } = require('hardhat');
 const {
-    utils: { id, arrayify, keccak256, defaultAbiCoder },
+    utils: { arrayify, keccak256, defaultAbiCoder, toUtf8Bytes },
 } = ethers;
 const { expect } = chai;
-
+/**
+<<<<<<< Updated upstream
 const { getChainId, getRandomID } = require('../utils');
 const { encodeWeightedSigners, getWeightedSignersProof } = require('../../scripts/utils');
 
@@ -19,6 +20,25 @@ describe('AxelarAmplifierGateway', () => {
     let user;
     let operators;
     let weightedSigners;
+=======
+const { getAddresses, getRandomID, getWeightedSignersSet, getWeightedSignersProof } = require('../utils');
+
+const APPROVE_CONTRACT_CALL = 0;
+const ROTATE_SIGNERS = 1;
+
+describe('AxelarAmplifierGateway', () => {
+    const threshold = 20;
+    const messageId = process.env.REPORT_GAS ? '4' : `${getRandomID()}`; // use fixed command id for deterministic gas computation
+    const commandId = keccak256(ethers.utils.toUtf8Bytes(messageId));
+    const chainName = 'chain';
+    const router = 'router';
+    const domainSeparator = keccak256(toUtf8Bytes(chainName + router + 'axelar-1'));
+
+    let wallets;
+    let user;
+    let signers;
+    let weights;
+>>>>>>> Stashed changes
 
     let gatewayFactory;
     let authFactory;
@@ -29,6 +49,7 @@ describe('AxelarAmplifierGateway', () => {
     before(async () => {
         wallets = await ethers.getSigners();
         user = wallets[0];
+<<<<<<< Updated upstream
         operators = sortBy(wallets.slice(0, threshold), (wallet) => wallet.address.toLowerCase());
 
         weightedSigners = {
@@ -36,27 +57,44 @@ describe('AxelarAmplifierGateway', () => {
             threshold,
             nonce: id('0'),
         };
+=======
+        signers = sortBy(wallets.slice(0, threshold), (wallet) => wallet.address.toLowerCase());
+        weights = Array(signers.length).fill(1);
+>>>>>>> Stashed changes
 
         gatewayFactory = await ethers.getContractFactory('AxelarAmplifierGateway', user);
         authFactory = await ethers.getContractFactory('AxelarAmplifierAuth', user);
     });
 
+<<<<<<< Updated upstream
     const getApproveContractCall = (sourceChain, source, destination, payloadHash, sourceTxHash, sourceEventIndex) => {
+=======
+    const getWeights = ({ length }, weight = 1) => Array(length).fill(weight);
+
+    const getApproveContractCall = (sourceChain, source, destination, payloadHash) => {
+>>>>>>> Stashed changes
         return defaultAbiCoder.encode(
-            ['string', 'string', 'address', 'bytes32', 'bytes32', 'uint256'],
-            [sourceChain, source, destination, payloadHash, sourceTxHash, sourceEventIndex],
+            ['tuple(string,string,address,bytes32)'],
+            [[sourceChain, source, destination, payloadHash]],
         );
     };
 
-    const buildCommandBatch = (chainId, commandIDs, commandNames, commands) => {
-        return arrayify(
-            defaultAbiCoder.encode(
-                ['uint256', 'bytes32[]', 'string[]', 'bytes[]'],
-                [chainId, commandIDs, commandNames, commands],
-            ),
+    const getRotateSignersCommand = (nonce, newSigners, newWeights, threshold) => {
+        return defaultAbiCoder.encode(
+            ['tuple(uint256,bytes)'],
+            [
+                [
+                    nonce,
+                    defaultAbiCoder.encode(
+                        ['address[]', 'uint256[]', 'uint256'],
+                        [sortBy(newSigners, (address) => address.toLowerCase()), newWeights, threshold],
+                    ),
+                ],
+            ],
         );
     };
 
+<<<<<<< Updated upstream
     const getTransferWeightedOperatorshipCommand = (newSigners) => encodeWeightedSigners(newSigners);
 
     const getSignedWeightedExecuteInput = async (data, weightedSigners, signers) =>
@@ -64,14 +102,25 @@ describe('AxelarAmplifierGateway', () => {
             ['bytes', 'bytes'],
             [data, await getWeightedSignersProof(data, domainSeparator, weightedSigners, signers)],
         );
+=======
+    const getSignedBatch = async (batch, signers, weights, threshold, participants) => {
+        const encodedBatch = arrayify(defaultAbiCoder.encode(['tuple(bytes32,tuple(uint8,string,bytes)[])'], [batch]));
+
+        return [batch, await getWeightedSignersProof(encodedBatch, signers, weights, threshold, participants)];
+    };
+>>>>>>> Stashed changes
 
     const deployGateway = async () => {
         // setup auth contract with a genesis operator set
         auth = await authFactory
+<<<<<<< Updated upstream
             .deploy(user.address, domainSeparator, previousSignersRetention, [encodeWeightedSigners(weightedSigners)])
+=======
+            .deploy(user.address, [getWeightedSignersSet(getAddresses(signers), weights, threshold)])
+>>>>>>> Stashed changes
             .then((d) => d.deployed());
 
-        gateway = await gatewayFactory.deploy(auth.address).then((d) => d.deployed());
+        gateway = await gatewayFactory.deploy(auth.address, domainSeparator).then((d) => d.deployed());
 
         await auth.transferOwnership(gateway.address).then((tx) => tx.wait());
     };
@@ -92,51 +141,46 @@ describe('AxelarAmplifierGateway', () => {
                 .to.emit(gateway, 'ContractCall')
                 .withArgs(user.address, destinationChain, destinationAddress, keccak256(payload), payload);
         });
+    });
+
+    describe('validate contract call', async () => {
+        beforeEach(async () => {
+            await deployGateway();
+        });
 
         it('should approve and validate contract call', async () => {
             const payload = defaultAbiCoder.encode(['address'], [user.address]);
             const payloadHash = keccak256(payload);
             const sourceChain = 'Source';
             const sourceAddress = 'address0x123';
-            const sourceTxHash = keccak256('0x123abc123abc');
-            const sourceEventIndex = 17;
 
-            const approveData = buildCommandBatch(
-                await getChainId(),
-                [commandId],
-                ['approveContractCall'],
+            const batch = [
+                domainSeparator,
                 [
-                    getApproveContractCall(
-                        sourceChain,
-                        sourceAddress,
-                        user.address,
-                        payloadHash,
-                        sourceTxHash,
-                        sourceEventIndex,
-                    ),
+                    [
+                        APPROVE_CONTRACT_CALL,
+                        messageId,
+                        getApproveContractCall(sourceChain, sourceAddress, user.address, payloadHash),
+                    ],
                 ],
-            );
+            ];
 
+<<<<<<< Updated upstream
             const approveInput = await getSignedWeightedExecuteInput(
                 approveData,
                 weightedSigners,
                 operators.slice(0, threshold),
             );
+=======
+            const signedBatch = await getSignedBatch(batch, signers, weights, threshold, signers.slice(0, threshold));
+>>>>>>> Stashed changes
 
-            await expect(gateway.execute(approveInput))
+            await expect(gateway.execute(signedBatch))
                 .to.emit(gateway, 'ContractCallApproved')
-                .withArgs(
-                    commandId,
-                    sourceChain,
-                    sourceAddress,
-                    user.address,
-                    payloadHash,
-                    sourceTxHash,
-                    sourceEventIndex,
-                );
+                .withArgs(commandId, sourceChain, sourceAddress, user.address, payloadHash, messageId);
 
-            const isApprovedBefore = await gateway.isContractCallApproved(
-                commandId,
+            const isApprovedBefore = await gateway.isMessageApproved(
+                messageId,
                 sourceChain,
                 sourceAddress,
                 user.address,
@@ -145,13 +189,17 @@ describe('AxelarAmplifierGateway', () => {
 
             expect(isApprovedBefore).to.be.true;
 
+            expect(
+                await gateway.isContractCallApproved(commandId, sourceChain, sourceAddress, user.address, payloadHash),
+            ).to.be.true;
+
             await gateway
                 .connect(user)
-                .validateContractCall(commandId, sourceChain, sourceAddress, payloadHash)
+                .validateMessage(messageId, sourceChain, sourceAddress, payloadHash)
                 .then((tx) => tx.wait());
 
-            const isApprovedAfter = await gateway.isContractCallApproved(
-                commandId,
+            const isApprovedAfter = await gateway.isMessageApproved(
+                messageId,
                 sourceChain,
                 sourceAddress,
                 user.address,
@@ -159,14 +207,99 @@ describe('AxelarAmplifierGateway', () => {
             );
 
             expect(isApprovedAfter).to.be.false;
+
+            expect(
+                await gateway.isContractCallApproved(commandId, sourceChain, sourceAddress, user.address, payloadHash),
+            ).to.be.false;
+        });
+
+        it('should approve and validate multiple contract calls', async () => {
+            const commands = [];
+            const numCommands = 10;
+            const payload = defaultAbiCoder.encode(['address'], [user.address]);
+            const payloadHash = keccak256(payload);
+            const sourceChain = 'Source';
+            const sourceAddress = 'address0x123';
+
+            for (let i = 0; i < numCommands; i++) {
+                const messageId = `${i}`;
+
+                commands.push([
+                    APPROVE_CONTRACT_CALL,
+                    messageId,
+                    getApproveContractCall(sourceChain, sourceAddress, user.address, payloadHash),
+                ]);
+            }
+
+            const batch = [domainSeparator, commands];
+
+            const signedBatch = await getSignedBatch(batch, signers, weights, threshold, signers.slice(0, threshold));
+
+            const tx = await gateway.execute(signedBatch);
+            await tx.wait();
+
+            for (let i = 0; i < numCommands; i++) {
+                const messageId = `${i}`;
+                const commandId = keccak256(ethers.utils.toUtf8Bytes(messageId));
+
+                await expect(tx)
+                    .to.emit(gateway, 'ContractCallApproved')
+                    .withArgs(commandId, sourceChain, sourceAddress, user.address, payloadHash, messageId);
+
+                const isApprovedBefore = await gateway.isMessageApproved(
+                    messageId,
+                    sourceChain,
+                    sourceAddress,
+                    user.address,
+                    payloadHash,
+                );
+
+                expect(isApprovedBefore).to.be.true;
+
+                expect(
+                    await gateway.isContractCallApproved(
+                        commandId,
+                        sourceChain,
+                        sourceAddress,
+                        user.address,
+                        payloadHash,
+                    ),
+                ).to.be.true;
+
+                await gateway
+                    .connect(user)
+                    .validateMessage(messageId, sourceChain, sourceAddress, payloadHash)
+                    .then((tx) => tx.wait());
+
+                const isApprovedAfter = await gateway.isMessageApproved(
+                    messageId,
+                    sourceChain,
+                    sourceAddress,
+                    user.address,
+                    payloadHash,
+                );
+
+                expect(isApprovedAfter).to.be.false;
+
+                expect(
+                    await gateway.isContractCallApproved(
+                        commandId,
+                        sourceChain,
+                        sourceAddress,
+                        user.address,
+                        payloadHash,
+                    ),
+                ).to.be.false;
+            }
         });
     });
 
-    describe('transfer operatorship', () => {
+    describe('rotate signers', () => {
         beforeEach(async () => {
             await deployGateway();
         });
 
+<<<<<<< Updated upstream
         it('should allow operators to transfer operatorship', async () => {
             const newSigners = {
                 signers: [
@@ -185,12 +318,38 @@ describe('AxelarAmplifierGateway', () => {
             );
 
             const input = await getSignedWeightedExecuteInput(data, weightedSigners, operators.slice(0, threshold));
+=======
+        it('should allow signers to rotate', async () => {
+            const newSigners = [
+                '0xb7900E8Ec64A1D1315B6D4017d4b1dcd36E6Ea88',
+                '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b',
+            ];
+            const nonce = 1;
 
-            const tx = await gateway.execute(input);
+            const batch = [
+                domainSeparator,
+                [
+                    [
+                        ROTATE_SIGNERS,
+                        messageId,
+                        getRotateSignersCommand(nonce, newSigners, getWeights(newSigners), newSigners.length),
+                    ],
+                ],
+            ];
+
+            const signedBatch = await getSignedBatch(batch, signers, weights, threshold, signers.slice(0, threshold));
+>>>>>>> Stashed changes
+
+            const tx = await gateway.execute(signedBatch);
 
             await expect(tx)
                 .to.emit(gateway, 'OperatorshipTransferred')
+<<<<<<< Updated upstream
                 .withArgs(getTransferWeightedOperatorshipCommand(newSigners));
+=======
+                .withArgs(getRotateSignersCommand(nonce, newSigners, getWeights(newSigners), newSigners.length));
+>>>>>>> Stashed changes
         });
     });
 });
+*/

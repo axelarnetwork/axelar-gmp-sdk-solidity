@@ -148,6 +148,7 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
 
         authModule.rotateSigners(newSignersData);
 
+        // slither-disable-next-line reentrancy-events
         emit SignersRotated(newSignersData);
     }
 

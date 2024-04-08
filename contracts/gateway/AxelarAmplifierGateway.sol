@@ -54,7 +54,7 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
         address contractAddress,
         bytes32 payloadHash
     ) external view override returns (bool) {
-        bytes32 commandId = keccak256(bytes(messageId));
+        bytes32 commandId = messageToCommandId(sourceChain, messageId);
         return _isContractCallApproved(commandId, sourceChain, sourceAddress, contractAddress, payloadHash);
     }
 

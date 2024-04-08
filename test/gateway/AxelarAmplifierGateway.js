@@ -1,10 +1,3 @@
-const { sortBy } = require('lodash');
-const chai = require('chai');
-const { ethers } = require('hardhat');
-const {
-    utils: { arrayify, keccak256, defaultAbiCoder, toUtf8Bytes },
-} = ethers;
-const { expect } = chai;
 /**
 <<<<<<< Updated upstream
 const { getChainId, getRandomID } = require('../utils');

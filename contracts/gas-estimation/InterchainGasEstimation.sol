@@ -130,18 +130,7 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
         uint256 blobBaseFeeScalar = 9 * 10**5; // 0.9 multiplied by scalarPrecision
 
         // Calculating transaction size in bytes that will later be divided by 16 to compress the size
-        uint256 txSize = TX_ENCODING_OVERHEAD * 16;
-        // GMP executeWithToken call parameters
-        // Expecting most of the calldata bytes to be zeroes. So multiplying by 8 as a weighted average of 4 and 16
-        txSize += GMP_CALLDATA_SIZE * 8;
-
-        for (uint256 i; i < payload.length; ++i) {
-            if (payload[i] == 0) {
-                txSize += 4; // 4 for each zero byte
-            } else {
-                txSize += 16; // 16 for each non-zero byte
-            }
-        }
+        uint256 txSize = _l1TxSize(payload);
 
         uint256 weightedGasPrice = 16 *
             baseFeeScalar *
@@ -195,20 +184,30 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
         uint256 scalar = 1_150_000_000;
         uint256 PRECISION = 1e9;
 
-        // Expecting most of the calldata bytes to be zeroes. So multiplying by 8 as a weighted average of 4 and 16
-        uint256 l1GasUsed = GMP_CALLDATA_SIZE * 8;
+        uint256 txSize = _l1TxSize(payload) + overhead + (4 * 16);
 
-        for (uint256 i; i < payload.length; ++i) {
+        return (l1GasInfo.relativeGasPrice * txSize * l1BaseFee * scalar) / PRECISION;
+    }
+
+    /**
+     * @notice Computes the transaction size for an L1 transaction
+     * @param payload The payload of the contract call
+     * @return txSize The transaction size
+     */
+    function _l1TxSize(bytes calldata payload) private pure returns (uint256 txSize) {
+        txSize = TX_ENCODING_OVERHEAD * 16;
+        // GMP executeWithToken call parameters
+        // Expecting most of the calldata bytes to be zeroes. So multiplying by 8 as a weighted average of 4 and 16
+        txSize += GMP_CALLDATA_SIZE * 8;
+
+        uint256 length = payload.length;
+        for (uint256 i; i < length; ++i) {
             if (payload[i] == 0) {
-                l1GasUsed += 4;
+                txSize += 4; // 4 for each zero byte
             } else {
-                l1GasUsed += 16;
+                txSize += 16; // 16 for each non-zero byte
             }
         }
-
-        l1GasUsed = l1GasUsed + overhead + (4 * 16);
-
-        return (l1GasInfo.relativeGasPrice * l1GasUsed * l1BaseFee * scalar) / PRECISION;
     }
 
     /**

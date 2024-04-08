@@ -96,7 +96,7 @@ describe('InterchainGasEstimation', () => {
             '0x',
         );
 
-        expect(estimate).to.equal('5576622463884780600090000');
+        expect(estimate).to.equal('6552710823071820600090000');
     });
 
     it('should compute gas estimate for Mantle', async () => {

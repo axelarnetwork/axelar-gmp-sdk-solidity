@@ -90,6 +90,12 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
         if (gasEstimationType == GasEstimationType.Arbitrum) {
             return arbitrumL1Fee(payload, l1GasInfo);
         }
+        if (gasEstimationType == GasEstimationType.Scroll) {
+            return scrollL1Fee(payload, l1GasInfo);
+        }
+        if (gasEstimationType == GasEstimationType.Mantle) {
+            return mantleL1Fee(payload, l1GasInfo);
+        }
 
         revert UnsupportedEstimationType(gasEstimationType);
     }
@@ -124,18 +130,7 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
         uint256 blobBaseFeeScalar = 9 * 10**5; // 0.9 multiplied by scalarPrecision
 
         // Calculating transaction size in bytes that will later be divided by 16 to compress the size
-        uint256 txSize = TX_ENCODING_OVERHEAD * 16;
-        // GMP executeWithToken call parameters
-        // Expecting most of the calldata bytes to be zeroes. So multiplying by 8 as a weighted average of 4 and 16
-        txSize += GMP_CALLDATA_SIZE * 8;
-
-        for (uint256 i; i < payload.length; ++i) {
-            if (payload[i] == 0) {
-                txSize += 4; // 4 for each zero byte
-            } else {
-                txSize += 16; // 16 for each non-zero byte
-            }
-        }
+        uint256 txSize = _l1TxSize(payload);
 
         uint256 weightedGasPrice = 16 *
             baseFeeScalar *
@@ -149,10 +144,14 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
     /**
      * @notice Computes the L1 to L2 fee for a contract call on the Arbitrum chain.
      * @param payload The payload of the contract call
-     * @param gasInfo The L1 gas info
+     * @param l1GasInfo The L1 gas info
      * @return l1DataFee The L1 to L2 data fee
      */
-    function arbitrumL1Fee(bytes calldata payload, GasInfo storage gasInfo) internal view returns (uint256 l1DataFee) {
+    function arbitrumL1Fee(bytes calldata payload, GasInfo storage l1GasInfo)
+        internal
+        view
+        returns (uint256 l1DataFee)
+    {
         // https://docs.arbitrum.io/build-decentralized-apps/how-to-estimate-gas
         // https://docs.arbitrum.io/arbos/l1-pricing
         // Reference https://github.com/OffchainLabs/nitro/blob/master/arbos/l1pricing/l1pricing.go#L565-L578
@@ -166,8 +165,67 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
         uint256 units = (txDataNonZeroGasEIP2028 * l1Bytes) / 2;
 
         return
-            (gasInfo.relativeGasPrice * (units + estimationPaddingUnits) * (oneInBips + estimationPaddingBasisPoints)) /
-            oneInBips;
+            (l1GasInfo.relativeGasPrice *
+                (units + estimationPaddingUnits) *
+                (oneInBips + estimationPaddingBasisPoints)) / oneInBips;
+    }
+
+    /**
+     * @notice Computes the L1 to L2 fee for a contract call on the Scroll chain.
+     * @param payload The payload of the contract call
+     * @param l1GasInfo The L1 gas info
+     * @return l1DataFee The L1 to L2 data fee
+     */
+    function scrollL1Fee(bytes calldata payload, GasInfo storage l1GasInfo) internal view returns (uint256 l1DataFee) {
+        // https://docs.scroll.io/en/developers/guides/estimating-gas-and-tx-fees/
+        // Reference https://github.com/scroll-tech/scroll/blob/af2913903b181f3492af1c62b4da4c1c99cc552d/contracts/src/L2/predeploys/L1GasPriceOracle.sol#L63-L86
+        uint256 overhead = 2500;
+        uint256 scalar = 1_150_000_000;
+        uint256 precision = 1e9;
+
+        uint256 txSize = _l1TxSize(payload) + overhead + (4 * 16);
+
+        return (l1GasInfo.relativeGasPrice * txSize * scalar) / precision;
+    }
+
+    /**
+     * @notice Computes the L1 to L2 fee for a contract call on the Mantle chain.
+     * @param payload The payload of the contract call
+     * @param l1GasInfo The L1 gas info
+     * @return l1DataFee The L1 to L2 data fee
+     */
+    function mantleL1Fee(bytes calldata payload, GasInfo storage l1GasInfo) internal view returns (uint256 l1DataFee) {
+        // Resembling OP Bedrock gas price model
+        // https://docs-v2.mantle.xyz/devs/concepts/tx-fee/ef
+        // Reference https://github.com/mantlenetworkio/mantle-v2/blob/a29f01045191344b0ba89542215e6a02bd5e7fcc/packages/contracts-bedrock/contracts/L2/GasPriceOracle.sol#L98-L105
+        uint256 overhead = 188;
+        uint256 scalar = 10_000;
+        uint256 precision = 1e6;
+
+        uint256 txSize = _l1TxSize(payload) + overhead;
+
+        return (l1GasInfo.relativeGasPrice * txSize * scalar) / precision;
+    }
+
+    /**
+     * @notice Computes the transaction size for an L1 transaction
+     * @param payload The payload of the contract call
+     * @return txSize The transaction size
+     */
+    function _l1TxSize(bytes calldata payload) private pure returns (uint256 txSize) {
+        txSize = TX_ENCODING_OVERHEAD * 16;
+        // GMP executeWithToken call parameters
+        // Expecting most of the calldata bytes to be zeroes. So multiplying by 8 as a weighted average of 4 and 16
+        txSize += GMP_CALLDATA_SIZE * 8;
+
+        uint256 length = payload.length;
+        for (uint256 i; i < length; ++i) {
+            if (payload[i] == 0) {
+                txSize += 4; // 4 for each zero byte
+            } else {
+                txSize += 16; // 16 for each non-zero byte
+            }
+        }
     }
 
     /**

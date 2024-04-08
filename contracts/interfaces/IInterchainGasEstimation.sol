@@ -20,7 +20,9 @@ interface IInterchainGasEstimation {
     enum GasEstimationType {
         Default,
         OptimismEcotone,
-        Arbitrum
+        Arbitrum,
+        Scroll,
+        Mantle
     }
 
     struct GasInfo {

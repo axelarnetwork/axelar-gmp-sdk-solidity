@@ -199,13 +199,12 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
         // https://docs-v2.mantle.xyz/devs/concepts/tx-fee/ef
         // Reference https://github.com/mantlenetworkio/mantle-v2/blob/a29f01045191344b0ba89542215e6a02bd5e7fcc/packages/contracts-bedrock/contracts/L2/GasPriceOracle.sol#L98-L105
         uint256 overhead = 188;
-        uint256 l1BaseFee = 15_193_017_827; // upper bound
         uint256 scalar = 10_000;
         uint256 precision = 1e6;
 
         uint256 txSize = _l1TxSize(payload) + overhead;
 
-        return (l1GasInfo.relativeGasPrice * txSize * l1BaseFee * scalar) / precision;
+        return (l1GasInfo.relativeGasPrice * txSize * scalar) / precision;
     }
 
     /**

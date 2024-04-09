@@ -3,6 +3,8 @@
 pragma solidity ^0.8.0;
 
 import { IAxelarGMPGateway } from './IAxelarGMPGateway.sol';
+import { IAxelarAmplifierGatewayAuth } from './IAxelarAmplifierGatewayAuth.sol';
+
 import { Message } from '../types/AmplifierGatewayTypes.sol';
 
 /**
@@ -37,14 +39,13 @@ interface IAxelarAmplifierGateway is IAxelarGMPGateway {
     event Executed(bytes32 indexed commandId);
 
     /**
-     * @notice Emitted when a contract call is approved.
-     * @dev Logs the approval of a contract call that originated from another chain.
+     * @notice Emitted when a cross-chain contract call is approved.
      * @param commandId The identifier of the command to execute.
+     * @param messageId The message id for the message.
      * @param sourceChain The name of the source chain from whence the command came.
      * @param sourceAddress The address of the sender on the source chain.
      * @param contractAddress The address of the contract where the call will be executed.
      * @param payloadHash The keccak256 hash of the approved payload data.
-     * @param messageId The message id for the message.
      */
     event ContractCallApproved(
         bytes32 indexed commandId,
@@ -61,6 +62,11 @@ interface IAxelarAmplifierGateway is IAxelarGMPGateway {
      * @param newSignersData The encoded new signers.
      */
     event SignersRotated(bytes newSignersData);
+
+    /**
+     * @notice Returns the authModule used for proof verification.
+     */
+    function authModule() external view returns (IAxelarAmplifierGatewayAuth);
 
     /**
      * @notice Checks if a contract call is approved.

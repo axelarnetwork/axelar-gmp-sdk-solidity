@@ -114,7 +114,7 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
             Message calldata message = messages[i];
             bytes32 commandId = messageToCommandId(message.sourceChain, message.messageId);
 
-            // Ignore if commandId is already executed
+            // Ignore if message has already been approved
             if (isCommandExecuted(commandId)) {
                 continue;
             }

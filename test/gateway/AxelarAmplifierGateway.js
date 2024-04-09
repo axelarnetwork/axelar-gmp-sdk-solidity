@@ -2,24 +2,25 @@ const { sortBy } = require('lodash');
 const chai = require('chai');
 const { ethers, network } = require('hardhat');
 const {
-    utils: { arrayify, id, keccak256, defaultAbiCoder, toUtf8Bytes, solidityKeccak256, solidityPack },
+    utils: { id, keccak256, defaultAbiCoder, toUtf8Bytes, solidityKeccak256, solidityPack },
+    constants: { AddressZero },
 } = ethers;
 const { expect } = chai;
 
-const { getRandomID } = require('../utils');
 const { encodeWeightedSigners, getWeightedSignersProof } = require('../../scripts/utils');
+const { expectRevert } = require('../utils');
 
 const APPROVE_MESSAGES = 0;
 const ROTATE_SIGNERS = 1;
 
-describe.only('AxelarAmplifierGateway', () => {
+describe('AxelarAmplifierGateway', () => {
+    const numSigners = 5;
     const threshold = 3;
     const chainName = 'chain';
     const router = 'router';
     const domainSeparator = keccak256(toUtf8Bytes(chainName + router + 'axelar-1'));
     const previousSignersRetention = 15;
 
-    let wallets;
     let user;
     let signers;
     let weightedSigners;
@@ -31,9 +32,13 @@ describe.only('AxelarAmplifierGateway', () => {
     let gateway;
 
     before(async () => {
-        wallets = await ethers.getSigners();
+        const wallets = await ethers.getSigners();
         user = wallets[0];
-        signers = sortBy(wallets.slice(0, threshold), (wallet) => wallet.address.toLowerCase());
+
+        signers = sortBy(
+            Array.from({ length: numSigners }, (_, i) => ethers.Wallet.createRandom()),
+            (wallet) => wallet.address.toLowerCase(),
+        );
 
         weightedSigners = {
             signers: signers.map((wallet) => ({ signer: wallet.address, weight: 1 })),
@@ -47,24 +52,28 @@ describe.only('AxelarAmplifierGateway', () => {
 
     const getApproveMessageData = (messages) => {
         return defaultAbiCoder.encode(
-            ['tuple(string messageId, string sourceChain, string sourceAddress, address contractAddress, bytes32 payloadHash)[] messages'],
-            [messages]
+            [
+                'tuple(string messageId, string sourceChain, string sourceAddress, address contractAddress, bytes32 payloadHash)[] messages',
+            ],
+            [messages],
         );
     };
 
     const getRotateSignersData = (newSigners) => encodeWeightedSigners(newSigners);
 
     const getProof = (commandType, command, weightedSigners, wallets) => {
-        const commandData = (commandType === ROTATE_SIGNERS) ? getRotateSignersData(command) : getApproveMessageData(command);
+        const commandData =
+            commandType === ROTATE_SIGNERS ? getRotateSignersData(command) : getApproveMessageData(command);
 
         const data = solidityPack(['uint8', 'bytes'], [commandType, commandData]);
 
         return getWeightedSignersProof(data, domainSeparator, weightedSigners, wallets);
-    }
+    };
 
     const deployGateway = async () => {
-        auth = await authFactory
-            .deploy(user.address, domainSeparator, previousSignersRetention, [encodeWeightedSigners(weightedSigners)]);
+        auth = await authFactory.deploy(user.address, domainSeparator, previousSignersRetention, [
+            encodeWeightedSigners(weightedSigners),
+        ]);
         await auth.deployTransaction.wait(network.config.confirmations);
 
         gateway = await gatewayFactory.deploy(auth.address);
@@ -93,6 +102,16 @@ describe.only('AxelarAmplifierGateway', () => {
             );
 
             expect(commandId).to.equal(expectedCommandId);
+        });
+    });
+
+    describe('negative tests', () => {
+        it('reject deployment with auth address set to 0', async () => {
+            await expectRevert(
+                (gasOptions) => gatewayFactory.deploy(AddressZero, gasOptions),
+                gatewayFactory,
+                'InvalidAuthModule',
+            );
         });
     });
 
@@ -127,20 +146,17 @@ describe.only('AxelarAmplifierGateway', () => {
             const sourceAddress = 'address0x123';
             const commandId = await gateway.messageToCommandId(sourceChain, messageId);
 
-            const messages = [{
-                messageId,
-                sourceChain,
-                sourceAddress,
-                contractAddress: user.address,
-                payloadHash,
-            }];
+            const messages = [
+                {
+                    messageId,
+                    sourceChain,
+                    sourceAddress,
+                    contractAddress: user.address,
+                    payloadHash,
+                },
+            ];
 
-            const proof = await getProof(
-                APPROVE_MESSAGES,
-                messages,
-                weightedSigners,
-                signers.slice(0, threshold),
-            );
+            const proof = await getProof(APPROVE_MESSAGES, messages, weightedSigners, signers.slice(0, threshold));
 
             await expect(gateway.approveMessages(messages, proof))
                 .to.emit(gateway, 'ContractCallApproved')
@@ -170,6 +186,62 @@ describe.only('AxelarAmplifierGateway', () => {
             expect(isApprovedAfter).to.be.false;
         });
 
+        it('should be a no-op when re-approving a message', async () => {
+            const messageId = '1';
+            const payload = defaultAbiCoder.encode(['address'], [user.address]);
+            const payloadHash = keccak256(payload);
+            const sourceChain = 'Source';
+            const sourceAddress = 'address0x123';
+            const commandId = await gateway.messageToCommandId(sourceChain, messageId);
+
+            const messages = [
+                {
+                    messageId,
+                    sourceChain,
+                    sourceAddress,
+                    contractAddress: user.address,
+                    payloadHash,
+                },
+            ];
+
+            const proof = await getProof(APPROVE_MESSAGES, messages, weightedSigners, signers.slice(0, threshold));
+
+            await expect(gateway.approveMessages(messages, proof))
+                .to.emit(gateway, 'ContractCallApproved')
+                .withArgs(commandId, messageId, sourceChain, sourceAddress, user.address, payloadHash);
+
+            const isApprovedBefore = await gateway.isMessageApproved(
+                messageId,
+                sourceChain,
+                sourceAddress,
+                user.address,
+                payloadHash,
+            );
+            expect(isApprovedBefore).to.be.true;
+
+            await gateway
+                .connect(user)
+                .validateMessage(messageId, sourceChain, sourceAddress, payloadHash)
+                .then((tx) => tx.wait());
+
+            const isApprovedAfter = await gateway.isMessageApproved(
+                messageId,
+                sourceChain,
+                sourceAddress,
+                user.address,
+                payloadHash,
+            );
+            expect(isApprovedAfter).to.be.false;
+
+            expect(await gateway.isCommandExecuted(commandId)).to.be.true;
+
+            // try re-approving the same message
+            await expect(gateway.approveMessages(messages, proof)).to.not.emit(gateway, 'ContractCallApproved');
+
+            expect(await gateway.isMessageApproved(messageId, sourceChain, sourceAddress, user.address, payloadHash)).to
+                .be.false;
+        });
+
         it('should approve and validate contract call', async () => {
             const messageId = '1';
             const payload = defaultAbiCoder.encode(['address'], [user.address]);
@@ -178,20 +250,17 @@ describe.only('AxelarAmplifierGateway', () => {
             const sourceAddress = 'address0x123';
             const commandId = await gateway.messageToCommandId(sourceChain, messageId);
 
-            const messages = [{
-                messageId,
-                sourceChain,
-                sourceAddress,
-                contractAddress: user.address,
-                payloadHash,
-            }];
+            const messages = [
+                {
+                    messageId,
+                    sourceChain,
+                    sourceAddress,
+                    contractAddress: user.address,
+                    payloadHash,
+                },
+            ];
 
-            const proof = await getProof(
-                APPROVE_MESSAGES,
-                messages,
-                weightedSigners,
-                signers.slice(0, threshold),
-            );
+            const proof = await getProof(APPROVE_MESSAGES, messages, weightedSigners, signers.slice(0, threshold));
 
             await expect(gateway.approveMessages(messages, proof))
                 .to.emit(gateway, 'ContractCallApproved')
@@ -201,14 +270,18 @@ describe.only('AxelarAmplifierGateway', () => {
                 await gateway.isContractCallApproved(commandId, sourceChain, sourceAddress, user.address, payloadHash),
             ).to.be.true;
 
-            await gateway
-                .connect(user)
-                .validateContractCall(commandId, sourceChain, sourceAddress, payloadHash)
-                .then((tx) => tx.wait());
+            await expect(gateway.connect(user).validateContractCall(commandId, sourceChain, sourceAddress, payloadHash))
+                .to.emit(gateway, 'ContractCallExecuted')
+                .withArgs(commandId);
 
             expect(
                 await gateway.isContractCallApproved(commandId, sourceChain, sourceAddress, user.address, payloadHash),
             ).to.be.false;
+
+            // already executed
+            await expect(
+                gateway.connect(user).validateContractCall(commandId, sourceChain, sourceAddress, payloadHash),
+            ).to.not.emit(gateway, 'ContractCallExecuted');
         });
 
         it('should approve and validate multiple contract calls', async () => {
@@ -231,12 +304,7 @@ describe.only('AxelarAmplifierGateway', () => {
                 });
             }
 
-            const proof = await getProof(
-                APPROVE_MESSAGES,
-                messages,
-                weightedSigners,
-                signers.slice(0, threshold),
-            );
+            const proof = await getProof(APPROVE_MESSAGES, messages, weightedSigners, signers.slice(0, threshold));
 
             const tx = await gateway.approveMessages(messages, proof);
             await tx.wait();
@@ -295,6 +363,18 @@ describe.only('AxelarAmplifierGateway', () => {
                 ).to.be.false;
             }
         });
+
+        it('reject empty messages', async () => {
+            await expectRevert(
+                async (gasOptions) => {
+                    const proof = await getProof(APPROVE_MESSAGES, [], weightedSigners, signers.slice(0, threshold));
+
+                    return gateway.approveMessages([], proof, gasOptions);
+                },
+                gatewayFactory,
+                'InvalidMessages',
+            );
+        });
     });
 
     describe('rotate signers', () => {
@@ -303,21 +383,49 @@ describe.only('AxelarAmplifierGateway', () => {
         });
 
         it('should allow operators to transfer operatorship', async () => {
+            const newSignersCount = 75;
+            const newThreshold = 33;
+            const wallets = sortBy(
+                Array.from({ length: newSignersCount }, (_, i) => ethers.Wallet.createRandom()),
+                (wallet) => wallet.address.toLowerCase(),
+            );
+
             const newSigners = {
-                signers: [
-                    { signer: '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b', weight: 1 },
-                    { signer: '0xb7900E8Ec64A1D1315B6D4017d4b1dcd36E6Ea88', weight: 1 },
-                ],
-                threshold: 2,
-                nonce: id('0'),
+                signers: wallets.map((wallet) => ({ signer: wallet.address, weight: 1 })),
+                threshold: newThreshold,
+                nonce: id('1'),
             };
             const newSignersData = getRotateSignersData(newSigners);
 
-            const proof = await getProof(ROTATE_SIGNERS, newSigners, weightedSigners, signers.slice(0, threshold));
+            let proof = await getProof(ROTATE_SIGNERS, newSigners, weightedSigners, signers.slice(0, threshold));
 
             await expect(gateway.rotateSigners(newSignersData, proof))
                 .to.emit(gateway, 'SignersRotated')
                 .withArgs(newSignersData);
+
+            // validate message with the new signer set
+            const messageId = '1';
+            const sourceChain = 'Source';
+            const sourceAddress = 'address0x123';
+            const payload = defaultAbiCoder.encode(['address'], [user.address]);
+            const payloadHash = keccak256(payload);
+            const commandId = await gateway.messageToCommandId(sourceChain, messageId);
+
+            const messages = [
+                {
+                    messageId,
+                    sourceChain,
+                    sourceAddress,
+                    contractAddress: user.address,
+                    payloadHash,
+                },
+            ];
+
+            proof = await getProof(APPROVE_MESSAGES, messages, newSigners, wallets.slice(0, newThreshold));
+
+            await expect(gateway.approveMessages(messages, proof))
+                .to.emit(gateway, 'ContractCallApproved')
+                .withArgs(commandId, messageId, sourceChain, sourceAddress, user.address, payloadHash);
         });
     });
 });

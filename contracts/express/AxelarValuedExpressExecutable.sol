@@ -218,7 +218,7 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker, IAxel
         if (value == 0) return;
 
         if (tokenAddress == address(0)) {
-            if (value < msg.value) revert InsufficientValue();
+            if (msg.value < value) revert InsufficientValue();
         } else {
             IERC20(tokenAddress).safeTransferFrom(expressExecutor, address(this), value);
         }

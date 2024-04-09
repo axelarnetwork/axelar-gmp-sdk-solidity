@@ -25,6 +25,7 @@ jobs:
 
       - name: Run Slither
         uses: crytic/slither-action@v0.3.2
+        with:
+          slither-version: '0.10.1'
         env:
           NO_OVERRIDES: true
-          slither-version: '0.10.1'

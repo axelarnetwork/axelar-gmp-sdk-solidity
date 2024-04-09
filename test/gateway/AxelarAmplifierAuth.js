@@ -12,6 +12,7 @@ const { expectRevert } = require('../utils');
 const { getWeightedSignersProof, encodeWeightedSigners } = require('../../scripts/utils');
 
 describe('AxelarAmplifierAuth', () => {
+    const numSigners = 3;
     const threshold = 2;
     const domainSeparator = keccak256(toUtf8Bytes('chain'));
     const previousSignersRetention = 0;
@@ -31,7 +32,7 @@ describe('AxelarAmplifierAuth', () => {
         const wallets = await ethers.getSigners();
 
         owner = wallets[0];
-        signers = sortBy(wallets.slice(0, 3), (wallet) => wallet.address.toLowerCase());
+        signers = sortBy(wallets.slice(0, numSigners), (wallet) => wallet.address.toLowerCase());
 
         multisigFactory = await ethers.getContractFactory('AxelarAmplifierAuth', owner);
 
@@ -167,6 +168,25 @@ describe('AxelarAmplifierAuth', () => {
                 // Both weighted signer should be available
                 expect(await multisig.epochBySignerHash(newSignersHash)).to.be.equal(prevEpoch + 1);
                 expect(await multisig.epochBySignerHash(newSigners2Hash)).to.be.equal(prevEpoch + 2);
+            });
+
+            it('should allow signer rotation with non trivial weights', async () => {
+                const numSigners = 5;
+                const wallets = sortBy(Array.from({ length: numSigners }, () => Wallet.createRandom()), (wallet) => wallet.address.toLowerCase());
+                const newSigners = {
+                    signers: wallets.map((wallet, i) => { return { signer: wallet.address, weight: i + 1 }; }),
+                    threshold: (numSigners * (numSigners + 1)) / 2,
+                    nonce: defaultNonce,
+                };
+                const signersHash = keccak256(encodeWeightedSigners(newSigners));
+
+                const prevEpoch = (await multisig.epoch()).toNumber();
+
+                await expect(multisig.rotateSigners(encodeWeightedSigners(newSigners)))
+                    .to.emit(multisig, 'SignersRotated')
+                    .withArgs(prevEpoch + 1, signersHash);
+
+                expect(await multisig.epoch()).to.be.equal(prevEpoch + 1);
             });
         });
 
@@ -360,6 +380,32 @@ describe('AxelarAmplifierAuth', () => {
                 const proof = await getWeightedSignersProof(data, domainSeparator, weightedSigners, signers);
 
                 const isCurrentSigners = await multisig.validateProof(dataHash, proof);
+                expect(isCurrentSigners).to.be.true;
+            });
+
+            it('validate the proof with last threshold signers', async () => {
+                const proof = await getWeightedSignersProof(
+                    data,
+                    domainSeparator,
+                    weightedSigners,
+                    signers.slice(-threshold),
+                );
+
+                const isCurrentSigners = await multisig.validateProof(dataHash, proof);
+
+                expect(isCurrentSigners).to.be.true;
+            });
+
+            it('validate the proof with different signer combinations', async () => {
+                const proof = await getWeightedSignersProof(
+                    data,
+                    domainSeparator,
+                    weightedSigners,
+                    signers.slice(0, 1).concat(signers.slice(-(threshold-1))),
+                );
+
+                const isCurrentSigners = await multisig.validateProof(dataHash, proof);
+
                 expect(isCurrentSigners).to.be.true;
             });
 

@@ -3,16 +3,15 @@
 pragma solidity ^0.8.0;
 
 import { IAxelarAmplifierAuth } from '../interfaces/IAxelarAmplifierAuth.sol';
-// import { IAxelarAmplifierGatewayAuth } from '../interfaces/IAxelarAmplifierGatewayAuth.sol';
 
 import { BaseWeightedMultisig } from '../governance/BaseWeightedMultisig.sol';
 import { Ownable } from '../utils/Ownable.sol';
-import { WeightedSigners } from '../types/WeightedMultisigTypes.sol';
+import { Proof, WeightedSigners } from '../types/WeightedMultisigTypes.sol';
 
 /**
  * @title AxelarAmplifierAuth Contract
- * @dev This contract is used by the Axelar Gateway to verify signed commands. It inherits the BaseWeightedMultisig contract
- * with added functionality to approve and execute multisig proposals.
+ * @dev This contract is used by the Axelar Amplifier Gateway to verify signed commands.
+ * It inherits the BaseWeightedMultisig contract and allows the gateway to issue signer rotations.
  */
 contract AxelarAmplifierAuth is Ownable, BaseWeightedMultisig, IAxelarAmplifierAuth {
     /**
@@ -54,6 +53,8 @@ contract AxelarAmplifierAuth is Ownable, BaseWeightedMultisig, IAxelarAmplifierA
      * @return isLatestSigners True if provided signers are the current ones
      */
     function validateProof(bytes32 dataHash, bytes calldata proof) external view returns (bool isLatestSigners) {
-        return _validateProof(dataHash, proof);
+        Proof memory proofData = abi.decode(proof, (Proof));
+
+        return _validateProof(dataHash, proofData);
     }
 }

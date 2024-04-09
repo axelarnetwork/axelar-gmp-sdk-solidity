@@ -44,7 +44,7 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker, IAxel
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
-    ) external {
+    ) external virtual {
         bytes32 payloadHash = keccak256(payload);
 
         if (!gateway.validateContractCall(commandId, sourceChain, sourceAddress, payloadHash))
@@ -53,6 +53,7 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker, IAxel
         address expressExecutor = _popExpressExecutor(commandId, sourceChain, sourceAddress, payloadHash);
 
         if (expressExecutor == address(0)) {
+            _allocateValue(sourceChain, sourceAddress, payload);
             _execute(sourceChain, sourceAddress, payload);
             return;
         }
@@ -73,7 +74,7 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker, IAxel
         bytes calldata payload,
         string calldata tokenSymbol,
         uint256 amount
-    ) external {
+    ) external virtual {
         bytes32 payloadHash = keccak256(payload);
         if (
             !gateway.validateContractCallAndMint(
@@ -203,31 +204,37 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker, IAxel
         _executeWithToken(sourceChain, sourceAddress, payload, symbol, amount);
     }
 
+    function _allocateValue(
+        string calldata sourceChain,
+        string calldata sourceAddress,
+        bytes calldata payload
+    ) internal virtual {}
+
+    function _transferFromExecutor(
+        address expressExecutor,
+        address tokenAddress,
+        uint256 value
+    ) internal virtual {
+        if (value == 0) return;
+
+        if (tokenAddress == address(0)) {
+            if (value < msg.value) revert InsufficientValue();
+        } else {
+            IERC20(tokenAddress).safeTransferFrom(expressExecutor, address(this), value);
+        }
+    }
+
     function _transferToExecutor(
         address expressExecutor,
         address tokenAddress,
         uint256 value
-    ) internal {
+    ) internal virtual {
         if (value == 0) return;
 
         if (tokenAddress == address(0)) {
             payable(expressExecutor).safeNativeTransfer(value);
         } else {
             IERC20(tokenAddress).safeTransfer(expressExecutor, value);
-        }
-    }
-
-    function _transferFromExecutor(
-        address expressExecutor,
-        address tokenAddress,
-        uint256 value
-    ) internal {
-        if (value == 0) return;
-
-        if (tokenAddress == address(0)) {
-            if (value != msg.value) revert InsufficientValue();
-        } else {
-            IERC20(tokenAddress).safeTransferFrom(expressExecutor, address(this), value);
         }
     }
 

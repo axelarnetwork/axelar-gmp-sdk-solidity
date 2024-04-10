@@ -36,7 +36,7 @@ describe('AxelarAmplifierGateway', () => {
         user = wallets[0];
 
         signers = sortBy(
-            Array.from({ length: numSigners }, (_, i) => ethers.Wallet.createRandom()),
+            Array.from({ length: numSigners }, (_, i) => wallets[i]),
             (wallet) => wallet.address.toLowerCase(),
         );
 
@@ -186,7 +186,7 @@ describe('AxelarAmplifierGateway', () => {
             expect(isApprovedAfter).to.be.false;
         });
 
-        it('should be a no-op when re-approving a message', async () => {
+        it('reject re-approving a message', async () => {
             const messageId = '1';
             const payload = defaultAbiCoder.encode(['address'], [user.address]);
             const payloadHash = keccak256(payload);
@@ -378,13 +378,23 @@ describe('AxelarAmplifierGateway', () => {
     });
 
     describe('rotate signers', () => {
+        const sourceChain = 'Source';
+        const sourceAddress = 'address0x123';
+        let contractAddress;
+        let payload;
+        let payloadHash;
+
         beforeEach(async () => {
             await deployGateway();
+
+            contractAddress = user.address;
+            payload = defaultAbiCoder.encode(['address'], [user.address]);
+            payloadHash = keccak256(payload);
         });
 
         it('should allow operators to transfer operatorship', async () => {
             const newSignersCount = 75;
-            const newThreshold = 33;
+            const newThreshold = 35;
             const wallets = sortBy(
                 Array.from({ length: newSignersCount }, (_, i) => ethers.Wallet.createRandom()),
                 (wallet) => wallet.address.toLowerCase(),
@@ -405,10 +415,6 @@ describe('AxelarAmplifierGateway', () => {
 
             // validate message with the new signer set
             const messageId = '1';
-            const sourceChain = 'Source';
-            const sourceAddress = 'address0x123';
-            const payload = defaultAbiCoder.encode(['address'], [user.address]);
-            const payloadHash = keccak256(payload);
             const commandId = await gateway.messageToCommandId(sourceChain, messageId);
 
             const messages = [
@@ -416,7 +422,7 @@ describe('AxelarAmplifierGateway', () => {
                     messageId,
                     sourceChain,
                     sourceAddress,
-                    contractAddress: user.address,
+                    contractAddress,
                     payloadHash,
                 },
             ];
@@ -426,6 +432,119 @@ describe('AxelarAmplifierGateway', () => {
             await expect(gateway.approveMessages(messages, proof))
                 .to.emit(gateway, 'ContractCallApproved')
                 .withArgs(commandId, messageId, sourceChain, sourceAddress, user.address, payloadHash);
+        });
+
+        it('should allow multiple rotations crossing the retention period', async () => {
+            let currentSigners = weightedSigners;
+
+            for (let i = 1; i <= previousSignersRetention + 1; i++) {
+                const newSigners = {
+                    ...weightedSigners,
+                    nonce: id(`${i}`),
+                };
+                const newSignersHash = encodeWeightedSigners(newSigners);
+                const proof = await getProof(ROTATE_SIGNERS, newSigners, currentSigners, signers.slice(0, threshold));
+
+                await expect(gateway.rotateSigners(newSignersHash, proof))
+                    .to.emit(gateway, 'SignersRotated')
+                    .withArgs(newSignersHash);
+
+                currentSigners = newSigners;
+            }
+
+            for (let i = 1; i <= previousSignersRetention; i++) {
+                const ithSigners = {
+                    ...weightedSigners,
+                    nonce: id(`${i}`),
+                };
+                const messages = [
+                    {
+                        messageId: `${i}`,
+                        sourceChain,
+                        sourceAddress,
+                        contractAddress,
+                        payloadHash,
+                    },
+                ];
+                const commandId = await gateway.messageToCommandId(sourceChain, `${i}`);
+                const proof = await getProof(APPROVE_MESSAGES, messages, ithSigners, signers.slice(0, threshold));
+
+                await expect(gateway.approveMessages(messages, proof))
+                    .to.emit(gateway, 'ContractCallApproved')
+                    .withArgs(commandId, `${i}`, sourceChain, sourceAddress, user.address, payloadHash);
+            }
+
+            // reject proof from outadted signer set
+            const messages = [
+                {
+                    messageId: '0',
+                    sourceChain,
+                    sourceAddress,
+                    contractAddress,
+                    payloadHash,
+                },
+            ];
+            const proof = await getProof(APPROVE_MESSAGES, messages, weightedSigners, signers.slice(0, threshold));
+            await expectRevert(
+                (gasOptions) => gateway.approveMessages(messages, proof, gasOptions),
+                auth,
+                'InvalidSigners',
+            );
+        });
+
+        it('reject rotating to the same signers', async () => {
+            const newSigners = {
+                signers: signers.map((wallet) => ({ signer: wallet.address, weight: 1 })),
+                threshold: threshold - 1,
+                nonce: id('1'),
+            };
+
+            const newSignersData = getRotateSignersData(newSigners);
+            const commandId = solidityKeccak256(['uint8', 'bytes'], [ROTATE_SIGNERS, newSignersData]);
+            let proof = await getProof(ROTATE_SIGNERS, newSigners, weightedSigners, signers.slice(0, threshold));
+
+            await expect(gateway.rotateSigners(newSignersData, proof))
+                .to.emit(gateway, 'Executed')
+                .withArgs(commandId)
+                .to.emit(gateway, 'SignersRotated')
+                .withArgs(newSignersData);
+
+            proof = await getProof(ROTATE_SIGNERS, newSigners, newSigners, signers.slice(0, threshold - 1));
+            await expectRevert(
+                (gasOptions) => gateway.rotateSigners(newSignersData, proof, gasOptions),
+                gateway,
+                'CommandAlreadyExecuted',
+                commandId,
+            );
+        });
+
+        it('reject rotating signers from an old signer set', async () => {
+            const newSigners = {
+                signers: signers.map((wallet) => ({ signer: wallet.address, weight: 1 })),
+                threshold,
+                nonce: id('1'),
+            };
+
+            const newSignersData = getRotateSignersData(newSigners);
+            let proof = await getProof(ROTATE_SIGNERS, newSigners, weightedSigners, signers.slice(0, threshold));
+
+            await expect(gateway.rotateSigners(newSignersData, proof))
+                .to.emit(gateway, 'SignersRotated')
+                .withArgs(newSignersData);
+
+            // sign off from an older signer set
+            const newSigners2 = {
+                signers: signers.map((wallet) => ({ signer: wallet.address, weight: 1 })),
+                threshold,
+                nonce: id('2'),
+            };
+            proof = await getProof(ROTATE_SIGNERS, newSigners2, weightedSigners, signers.slice(0, threshold));
+
+            await expectRevert(
+                (gasOptions) => gateway.rotateSigners(getRotateSignersData(newSigners2), proof, gasOptions),
+                gateway,
+                'NotLatestSigners',
+            );
         });
     });
 });

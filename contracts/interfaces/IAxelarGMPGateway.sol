@@ -25,41 +25,6 @@ interface IAxelarGMPGateway {
     );
 
     /**
-     * @notice Emitted when a command has been executed.
-     * @dev Logs successful execution of a command.
-     * @param commandId The identifier of the executed command.
-     */
-    event Executed(bytes32 indexed commandId);
-
-    /**
-     * @notice Emitted when a contract call is approved.
-     * @dev Logs the approval of a contract call that originated from another chain.
-     * @param commandId The identifier of the command to execute.
-     * @param sourceChain The name of the source chain from whence the command came.
-     * @param sourceAddress The address of the sender on the source chain.
-     * @param contractAddress The address of the contract where the call will be executed.
-     * @param payloadHash The keccak256 hash of the approved payload data.
-     * @param sourceTxHash The hash of the source transaction on the source chain.
-     * @param sourceEventIndex The index of the event in the source transaction logs.
-     */
-    event ContractCallApproved(
-        bytes32 indexed commandId,
-        string sourceChain,
-        string sourceAddress,
-        address indexed contractAddress,
-        bytes32 indexed payloadHash,
-        bytes32 sourceTxHash,
-        uint256 sourceEventIndex
-    );
-
-    /**
-     * @notice Emitted when a contract call has been executed.
-     * @dev Logs the execution of an approved contract call.
-     * @param commandId The identifier of the command that was executed.
-     */
-    event ContractCallExecuted(bytes32 indexed commandId);
-
-    /**
      * @notice Sends a contract call to another chain.
      * @dev Initiates a cross-chain contract call through the gateway to the specified destination chain and contract.
      * @param destinationChain The name of the destination chain.

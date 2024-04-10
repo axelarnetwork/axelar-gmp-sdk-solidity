@@ -138,12 +138,12 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
             revert CommandAlreadyExecuted(commandId);
         }
 
-        _commandExecuted(commandId);
-
         bool isLatestSigners = _verifyProof(dataHash, proof);
         if (!isLatestSigners) {
             revert NotLatestSigners();
         }
+
+        _commandExecuted(commandId);
 
         authModule.rotateSigners(newSignersData);
 

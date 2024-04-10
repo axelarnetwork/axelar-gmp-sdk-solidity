@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import { BaseWeightedMultisig } from '../../governance/BaseWeightedMultisig.sol';
-import { WeightedSigners } from '../../types/WeightedMultisigTypes.sol';
+import { Proof, WeightedSigners } from '../../types/WeightedMultisigTypes.sol';
 
 contract TestBaseWeightedMultisig is BaseWeightedMultisig {
     event DummyEvent();
@@ -25,6 +25,8 @@ contract TestBaseWeightedMultisig is BaseWeightedMultisig {
         // emit an event to avoid compiler warning about making this into a view
         emit DummyEvent();
 
-        return _validateProof(dataHash, proof);
+        Proof memory proofData = abi.decode(proof, (Proof));
+
+        return _validateProof(dataHash, proofData);
     }
 }

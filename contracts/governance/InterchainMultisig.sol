@@ -3,10 +3,11 @@
 pragma solidity ^0.8.0;
 
 import { IInterchainMultisig } from '../interfaces/IInterchainMultisig.sol';
+
 import { SafeNativeTransfer } from '../libs/SafeNativeTransfer.sol';
 import { Caller } from '../utils/Caller.sol';
 import { BaseWeightedMultisig } from './BaseWeightedMultisig.sol';
-import { WeightedSigners } from '../types/WeightedMultisigTypes.sol';
+import { Proof, WeightedSigners } from '../types/WeightedMultisigTypes.sol';
 
 /**
  * @title InterchainMultisig Contract
@@ -77,7 +78,8 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
         bytes32 batchHash = keccak256(abi.encode(batchId, calls));
         uint256 callsLength = calls.length;
 
-        _validateProof(batchHash, proof);
+        Proof memory proofData = abi.decode(proof, (Proof));
+        _validateProof(batchHash, proofData);
 
         if (slot.isBatchExecuted[batchId]) revert AlreadyExecuted();
         slot.isBatchExecuted[batchId] = true;
@@ -110,7 +112,9 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
      * @return isLatestSigners True if provided signers are the current ones
      */
     function validateProof(bytes32 dataHash, bytes calldata proof) external view returns (bool isLatestSigners) {
-        return _validateProof(dataHash, proof);
+        Proof memory proofData = abi.decode(proof, (Proof));
+
+        return _validateProof(dataHash, proofData);
     }
 
     /**

@@ -78,11 +78,10 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      *      The signers and signatures should be sorted by signer address in ascending order
      *      Example: abi.encode([0x11..., 0x22..., 0x33...], [1, 1, 1], 2, [signature1, signature3])
      */
-    function _validateProof(bytes32 dataHash, bytes calldata proof) internal view returns (bool isLatestSigners) {
+    function _validateProof(bytes32 dataHash, Proof memory proof) internal view returns (bool isLatestSigners) {
         BaseWeightedMultisigStorage storage slot = _baseWeightedMultisigStorage();
 
-        Proof memory proofData = abi.decode(proof, (Proof));
-        WeightedSigners memory signers = proofData.signers;
+        WeightedSigners memory signers = proof.signers;
 
         bytes32 signersHash = keccak256(abi.encode(signers));
         uint256 signerEpoch = slot.epochBySignerHash[signersHash];
@@ -94,7 +93,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
 
         bytes32 messageHash = messageHashToSign(signersHash, dataHash);
 
-        _validateSignatures(messageHash, signers, proofData.signatures);
+        _validateSignatures(messageHash, signers, proof.signatures);
     }
 
     /**
@@ -140,7 +139,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         uint256 signerIndex;
         uint256 totalWeight;
 
-        if (signaturesLength == 0) revert MalformedSignatures();
+        if (signaturesLength == 0) revert LowSignaturesWeight();
 
         // looking for signers within signers
         // this requires both signers and signatures to be sorted

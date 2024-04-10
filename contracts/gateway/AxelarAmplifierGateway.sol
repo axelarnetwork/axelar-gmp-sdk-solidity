@@ -121,10 +121,7 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
 
             _approveMessage(commandId, message);
 
-            _storage().commands[commandId] = true;
-
-            // slither-disable-next-line reentrancy-events
-            emit Executed(commandId);
+            _commandExecuted(commandId);
         }
     }
 
@@ -140,6 +137,8 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
         if (isCommandExecuted(commandId)) {
             revert CommandAlreadyExecuted(commandId);
         }
+
+        _commandExecuted(commandId);
 
         bool isLatestSigners = _verifyProof(dataHash, proof);
         if (!isLatestSigners) {
@@ -164,6 +163,15 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
      */
     function _computeDataHash(CommandType commandType, bytes memory data) internal pure returns (bytes32) {
         return keccak256(abi.encodePacked(commandType, data));
+    }
+
+    /**
+     * @dev This function is used to mark a command as executed
+     */
+    function _commandExecuted(bytes32 commandId) internal {
+        _storage().commands[commandId] = true;
+
+        emit Executed(commandId);
     }
 
     /**
@@ -235,8 +243,8 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
 
     function _getIsContractCallApprovedKey(
         bytes32 commandId,
-        string memory sourceChain,
-        string memory sourceAddress,
+        string calldata sourceChain,
+        string calldata sourceAddress,
         address contractAddress,
         bytes32 payloadHash
     ) internal pure returns (bytes32) {

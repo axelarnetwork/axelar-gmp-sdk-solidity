@@ -119,9 +119,9 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
                 continue;
             }
 
-            _approveMessage(commandId, message);
-
             _commandExecuted(commandId);
+
+            _approveMessage(commandId, message);
         }
     }
 

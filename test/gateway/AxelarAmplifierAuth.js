@@ -382,7 +382,7 @@ describe('AxelarAmplifierAuth', () => {
                     data,
                     domainSeparator,
                     weightedSigners,
-                    signers.slice(0, 1).concat(signers.slice(-(threshold-1))),
+                    signers.slice(0, 1).concat(signers.slice(-(threshold - 1))),
                 );
 
                 const isCurrentSigners = await multisig.validateProof(dataHash, proof);
@@ -551,17 +551,25 @@ describe('AxelarAmplifierAuth', () => {
         const maxSigners = 20;
         const numSigners = 1 + getRandomInt(maxSigners);
         const weightedWallets = sortBy(
-            Array.from({ length: numSigners }, () => { return { wallet: Wallet.createRandom(), weight: 1 + getRandomInt(1000) } } ),
-            (weightedWallet) => weightedWallet.wallet.address.toLowerCase()
+            Array.from({ length: numSigners }, () => {
+                return { wallet: Wallet.createRandom(), weight: 1 + getRandomInt(1000) };
+            }),
+            (weightedWallet) => weightedWallet.wallet.address.toLowerCase(),
         );
 
         // Select a random subset of wallets to define the threshold
         const subsetSize = getRandomInt(numSigners) + 1;
-        const participatingWallets = sortBy(getRandomSubarray(weightedWallets, subsetSize), (weightedWallet) => weightedWallet.wallet.address.toLowerCase());
-        const threshold = participatingWallets.map((weightedWallet) => weightedWallet.weight).reduce((a, b) => a + b, 0);
+        const participatingWallets = sortBy(getRandomSubarray(weightedWallets, subsetSize), (weightedWallet) =>
+            weightedWallet.wallet.address.toLowerCase(),
+        );
+        const threshold = participatingWallets
+            .map((weightedWallet) => weightedWallet.weight)
+            .reduce((a, b) => a + b, 0);
 
         const newSigners = {
-            signers: weightedWallets.map((weightedWallet) => { return { signer: weightedWallet.wallet.address, weight: weightedWallet.weight } }),
+            signers: weightedWallets.map((weightedWallet) => {
+                return { signer: weightedWallet.wallet.address, weight: weightedWallet.weight };
+            }),
             threshold,
             nonce: defaultNonce,
         };
@@ -577,17 +585,37 @@ describe('AxelarAmplifierAuth', () => {
             expect(await multisig.epoch()).to.be.equal(prevEpoch + 1);
 
             // Validate a proof with the new signers
-            const proof = await getWeightedSignersProof(data, domainSeparator, newSigners, participatingWallets.map((weightedWallet) => weightedWallet.wallet));
+            const proof = await getWeightedSignersProof(
+                data,
+                domainSeparator,
+                newSigners,
+                participatingWallets.map((weightedWallet) => weightedWallet.wallet),
+            );
 
             const isCurrentSigners = await multisig.validateProof(dataHash, proof);
             expect(isCurrentSigners).to.be.true;
 
             // A proof with a smaller participating set should fail due to not reaching the threshold
-            const invalidProof = await getWeightedSignersProof(data, domainSeparator, newSigners, participatingWallets.slice(1).map((weightedWallet) => weightedWallet.wallet));
+            const invalidProof = await getWeightedSignersProof(
+                data,
+                domainSeparator,
+                newSigners,
+                participatingWallets.slice(1).map((weightedWallet) => weightedWallet.wallet),
+            );
 
-            await expectRevert((gasOptions) => multisig.validateProof(dataHash, invalidProof, gasOptions), multisig, 'LowSignaturesWeight');
+            await expectRevert(
+                (gasOptions) => multisig.validateProof(dataHash, invalidProof, gasOptions),
+                multisig,
+                'LowSignaturesWeight',
+            );
         } catch (err) {
-            console.error(`Test failed with the following random signer set: ${JSON.stringify(newSigners, ' ', 2)}\nparticipants: ${JSON.stringify(participatingWallets, ' ', 2)}`);
+            console.error(
+                `Test failed with the following random signer set: ${JSON.stringify(
+                    newSigners,
+                    ' ',
+                    2,
+                )}\nparticipants: ${JSON.stringify(participatingWallets, ' ', 2)}`,
+            );
             throw err;
         }
     });

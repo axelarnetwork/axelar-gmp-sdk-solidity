@@ -9,4 +9,6 @@ import { IAxelarAmplifierGatewayAuth } from './IAxelarAmplifierGatewayAuth.sol';
  * @title IAxelarAmplifierAuth Interface
  * @notice This interface defines the functions that the Axelar Amplifier Auth contract supports
  */
-interface IAxelarAmplifierAuth is IBaseWeightedMultisig, IAxelarAmplifierGatewayAuth {}
+interface IAxelarAmplifierAuth is IBaseWeightedMultisig, IAxelarAmplifierGatewayAuth {
+
+}

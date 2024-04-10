@@ -8,7 +8,7 @@ const {
 } = ethers;
 const { expect } = chai;
 
-const { expectRevert } = require('../utils');
+const { expectRevert, getRandomInt, getRandomSubarray } = require('../utils');
 const { getWeightedSignersProof, encodeWeightedSigners } = require('../../scripts/utils');
 
 describe('AxelarAmplifierAuth', () => {
@@ -168,25 +168,6 @@ describe('AxelarAmplifierAuth', () => {
                 // Both weighted signer should be available
                 expect(await multisig.epochBySignerHash(newSignersHash)).to.be.equal(prevEpoch + 1);
                 expect(await multisig.epochBySignerHash(newSigners2Hash)).to.be.equal(prevEpoch + 2);
-            });
-
-            it('should allow signer rotation with non trivial weights', async () => {
-                const numSigners = 5;
-                const wallets = sortBy(Array.from({ length: numSigners }, () => Wallet.createRandom()), (wallet) => wallet.address.toLowerCase());
-                const newSigners = {
-                    signers: wallets.map((wallet, i) => { return { signer: wallet.address, weight: i + 1 }; }),
-                    threshold: (numSigners * (numSigners + 1)) / 2,
-                    nonce: defaultNonce,
-                };
-                const signersHash = keccak256(encodeWeightedSigners(newSigners));
-
-                const prevEpoch = (await multisig.epoch()).toNumber();
-
-                await expect(multisig.rotateSigners(encodeWeightedSigners(newSigners)))
-                    .to.emit(multisig, 'SignersRotated')
-                    .withArgs(prevEpoch + 1, signersHash);
-
-                expect(await multisig.epoch()).to.be.equal(prevEpoch + 1);
             });
         });
 
@@ -489,7 +470,7 @@ describe('AxelarAmplifierAuth', () => {
                 await expectRevert(
                     async (gasOptions) => multisig.validateProof(dataHash, proof, gasOptions),
                     multisig,
-                    'MalformedSignatures',
+                    'LowSignaturesWeight',
                 );
             });
         });
@@ -561,5 +542,53 @@ describe('AxelarAmplifierAuth', () => {
                 'InvalidSigners',
             );
         });
+    });
+
+    it('should allow rotateSigners and validateProof with a randomized signer set', async () => {
+        const multisig = await multisigFactory.deploy(owner.address, domainSeparator, previousSignersRetention, []);
+        await multisig.deployTransaction.wait(network.config.confirmations);
+
+        const maxSigners = 20;
+        const numSigners = 1 + getRandomInt(maxSigners);
+        const weightedWallets = sortBy(
+            Array.from({ length: numSigners }, () => { return { wallet: Wallet.createRandom(), weight: 1 + getRandomInt(1000) } } ),
+            (weightedWallet) => weightedWallet.wallet.address.toLowerCase()
+        );
+
+        // Select a random subset of wallets to define the threshold
+        const subsetSize = getRandomInt(numSigners) + 1;
+        const participatingWallets = sortBy(getRandomSubarray(weightedWallets, subsetSize), (weightedWallet) => weightedWallet.wallet.address.toLowerCase());
+        const threshold = participatingWallets.map((weightedWallet) => weightedWallet.weight).reduce((a, b) => a + b, 0);
+
+        const newSigners = {
+            signers: weightedWallets.map((weightedWallet) => { return { signer: weightedWallet.wallet.address, weight: weightedWallet.weight } }),
+            threshold,
+            nonce: defaultNonce,
+        };
+        const signersHash = keccak256(encodeWeightedSigners(newSigners));
+
+        try {
+            const prevEpoch = (await multisig.epoch()).toNumber();
+
+            await expect(multisig.rotateSigners(encodeWeightedSigners(newSigners)))
+                .to.emit(multisig, 'SignersRotated')
+                .withArgs(prevEpoch + 1, signersHash);
+
+            expect(await multisig.epoch()).to.be.equal(prevEpoch + 1);
+
+            // Validate a proof with the new signers
+            const proof = await getWeightedSignersProof(data, domainSeparator, newSigners, participatingWallets.map((weightedWallet) => weightedWallet.wallet));
+
+            const isCurrentSigners = await multisig.validateProof(dataHash, proof);
+            expect(isCurrentSigners).to.be.true;
+
+            // A proof with a smaller participating set should fail due to not reaching the threshold
+            const invalidProof = await getWeightedSignersProof(data, domainSeparator, newSigners, participatingWallets.slice(1).map((weightedWallet) => weightedWallet.wallet));
+
+            await expectRevert((gasOptions) => multisig.validateProof(dataHash, invalidProof, gasOptions), multisig, 'LowSignaturesWeight');
+        } catch (err) {
+            console.error(`Test failed with the following random signer set: ${JSON.stringify(newSigners, ' ', 2)}\nparticipants: ${JSON.stringify(participatingWallets, ' ', 2)}`);
+            throw err;
+        }
     });
 });

@@ -7,13 +7,6 @@ const {
 } = ethers;
 const { sortBy } = require('lodash');
 
-const {
-    getAddresses,
-    getWeightedSignersSet,
-    getWeightedSignersProof,
-    encodeInterchainCallsBatch,
-} = require('../scripts/utils');
-
 const getRandomInt = (max) => {
     return Math.floor(Math.random() * max);
 };
@@ -74,6 +67,11 @@ const expectRevert = async (txFunc, contract, error, args) => {
     }
 };
 
+const getRandomSubarray = (arr, size) => {
+    const shuffled = arr.slice().sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, size);
+};
+
 module.exports = {
     bigNumberToNumber: (bigNumber) => bigNumber.toNumber(),
 
@@ -97,6 +95,8 @@ module.exports = {
 
     getRandomInt,
 
+    getRandomSubarray,
+
     getRandomID: () => id(getRandomInt(1e10).toString()),
 
     tickBlockTime: (provider, seconds) => provider.send('evm_increaseTime', [seconds]),
@@ -110,9 +110,4 @@ module.exports = {
     deployContract,
 
     expectRevert,
-
-    getAddresses,
-    getWeightedSignersSet,
-    getWeightedSignersProof,
-    encodeInterchainCallsBatch,
 };

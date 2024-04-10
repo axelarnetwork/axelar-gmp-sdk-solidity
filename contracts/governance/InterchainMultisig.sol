@@ -3,10 +3,11 @@
 pragma solidity ^0.8.0;
 
 import { IInterchainMultisig } from '../interfaces/IInterchainMultisig.sol';
+
 import { SafeNativeTransfer } from '../libs/SafeNativeTransfer.sol';
-import { ECDSA } from '../libs/ECDSA.sol';
 import { Caller } from '../utils/Caller.sol';
 import { BaseWeightedMultisig } from './BaseWeightedMultisig.sol';
+import { Proof, WeightedSigners } from '../types/WeightedMultisigTypes.sol';
 
 /**
  * @title InterchainMultisig Contract
@@ -31,7 +32,11 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
      * @param chainName The name of the chain
      * @param weightedSigners The weighted signers payload
      */
-    constructor(string memory chainName, WeightedSigners memory weightedSigners) BaseWeightedMultisig(0) {
+    constructor(
+        string memory chainName,
+        bytes32 domainSeparator_,
+        WeightedSigners memory weightedSigners
+    ) BaseWeightedMultisig(0, domainSeparator_) {
         if (bytes(chainName).length == 0) revert InvalidChainName();
 
         chainNameHash = keccak256(bytes(chainName));
@@ -73,7 +78,8 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
         bytes32 batchHash = keccak256(abi.encode(batchId, calls));
         uint256 callsLength = calls.length;
 
-        validateProof(ECDSA.toEthSignedMessageHash(batchHash), proof);
+        Proof memory proofData = abi.decode(proof, (Proof));
+        _validateProof(batchHash, proofData);
 
         if (slot.isBatchExecuted[batchId]) revert AlreadyExecuted();
         slot.isBatchExecuted[batchId] = true;
@@ -97,6 +103,18 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
         if (callsExecuted == 0) revert EmptyBatch();
 
         emit BatchExecuted(batchId, batchHash, callsExecuted, callsLength);
+    }
+
+    /**
+     * @notice This function takes dataHash and proof data and reverts if proof is invalid
+     * @param dataHash The hash of the message that was signed
+     * @param proof The data containing signers with signatures
+     * @return isLatestSigners True if provided signers are the current ones
+     */
+    function validateProof(bytes32 dataHash, bytes calldata proof) external view returns (bool isLatestSigners) {
+        Proof memory proofData = abi.decode(proof, (Proof));
+
+        return _validateProof(dataHash, proofData);
     }
 
     /**

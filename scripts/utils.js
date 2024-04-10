@@ -78,7 +78,7 @@ const getWeightedSignersSet = (signerAddresses, weights, threshold) => {
 
 const encodeWeightedSigners = (weightedSigners) => {
     return defaultAbiCoder.encode(
-        ['tuple(tuple(address signer,uint128 weight)[] signers,uint128 threshold,bytes32 nonce) signers'],
+        ['tuple(tuple(address signer,uint128 weight)[] signers,uint128 threshold,bytes32 nonce)'],
         [weightedSigners],
     );
 };

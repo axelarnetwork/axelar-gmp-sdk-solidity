@@ -42,9 +42,19 @@ contract AxelarAmplifierAuth is Ownable, BaseWeightedMultisig, IAxelarAmplifierA
     /**
      * @notice Rotate to a new set of weighted signers
      * @param newSigners The ABI encoded WeightedSigners
+     */
+    function rotateSigners(bytes calldata newSigners) external onlyOwner {
+        WeightedSigners memory signers = abi.decode(newSigners, (WeightedSigners));
+
+        _rotateSigners(signers, false);
+    }
+
+    /**
+     * @notice Rotate to a new set of weighted signers
+     * @param newSigners The ABI encoded WeightedSigners
      * @param applyRotationDelay True if rotation delay should be applied
      */
-    function rotateSigners(bytes calldata newSigners, bool applyRotationDelay) external onlyOwner {
+    function rotateSignersWithDelay(bytes calldata newSigners, bool applyRotationDelay) external onlyOwner {
         WeightedSigners memory signers = abi.decode(newSigners, (WeightedSigners));
 
         _rotateSigners(signers, applyRotationDelay);

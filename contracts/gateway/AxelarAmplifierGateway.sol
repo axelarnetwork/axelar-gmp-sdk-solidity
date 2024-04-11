@@ -13,17 +13,18 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
         0xca458dc12368669a3b8c292bc21c1b887ab1aa386fa3fcc1ed972afd74a330ca;
 
     struct AxelarAmplifierGatewayStorage {
-        address rotationOperator;
         mapping(bytes32 => bool) commands;
         mapping(bytes32 => bool) approvals;
     }
 
     IAxelarAmplifierGatewayAuth public immutable authModule;
+    address public immutable rotationOperator;
 
-    constructor(address authModule_) {
+    constructor(address authModule_, address rotationOperator_) {
         if (authModule_.code.length == 0) revert InvalidAuthModule();
 
         authModule = IAxelarAmplifierGatewayAuth(authModule_);
+        rotationOperator = rotationOperator_;
     }
 
     /******************\
@@ -158,7 +159,7 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
         // and thus generate proofs for valid rotations. Compromising both the rotation operator
         // and the signers is significantly more difficult since they are independent entities
         // with a different policy of signing (manual vs protocol-initiated respectively).
-        bool applyRotationDelay = msg.sender != _storage().rotationOperator;
+        bool applyRotationDelay = msg.sender != rotationOperator;
 
         if (applyRotationDelay && !isLatestSigners) {
             revert NotLatestSigners();
@@ -166,7 +167,7 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
 
         _commandExecuted(commandId);
 
-        authModule.rotateSigners(newSignersData, applyRotationDelay);
+        authModule.rotateSignersWithDelay(newSignersData, applyRotationDelay);
 
         // slither-disable-next-line reentrancy-events
         emit SignersRotated(newSignersData);

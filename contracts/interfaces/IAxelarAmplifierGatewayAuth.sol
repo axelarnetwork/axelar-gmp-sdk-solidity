@@ -14,7 +14,13 @@ interface IAxelarAmplifierGatewayAuth {
     /**
      * @notice This function rotates the current signers with a new set
      * @param newSigners The data containing the new signers and their weights
+     */
+    function rotateSigners(bytes calldata newSigners) external;
+
+    /**
+     * @notice This function rotates the current signers with a new set, applying rotation delay if the caller desires
+     * @param newSigners The data containing the new signers and their weights
      * @param applyRotationDelay True if rotation delay should be applied
      */
-    function rotateSigners(bytes calldata newSigners, bool applyRotationDelay) external;
+    function rotateSignersWithDelay(bytes calldata newSigners, bool applyRotationDelay) external;
 }

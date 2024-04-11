@@ -36,7 +36,7 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
         string memory chainName,
         bytes32 domainSeparator_,
         WeightedSigners memory weightedSigners
-    ) BaseWeightedMultisig(0, domainSeparator_) {
+    ) BaseWeightedMultisig(0, domainSeparator_, 0) {
         if (bytes(chainName).length == 0) revert InvalidChainName();
 
         chainNameHash = keccak256(bytes(chainName));

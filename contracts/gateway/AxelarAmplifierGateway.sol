@@ -128,8 +128,6 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
 
     /**
      * @notice Rotate the signers on the auth module.
-     * @dev A rotation delay is enforced by default. If the rotation is triggered by the `rotationOperator`, the delay can be bypassed.
-     * The rotation delay prevents a malicious actor from rotating out honest signers completely in the event of a compromise or proof verification bug.
      * @param  newSignersData The data for the new signers.
      * @param  proof The proof signed by the Axelar verifiers for this command.
      */
@@ -141,12 +139,27 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
             revert CommandAlreadyExecuted(commandId);
         }
 
-        bool applyRotationDelay = msg.sender != _storage().rotationOperator;
         bool isLatestSigners = _verifyProof(dataHash, proof);
 
-        // Under normal circumstances, signer rotation can only be signed off by the latest signer set
-        // However, in the event that the latest signer set is compromised,
-        // the rotation operator has the ability to allow submitting a rotation signed off by an older (but still valid) honest signer set
+        // Gateway upgrades are triggered via cross-chain messages from Axelar governance.
+        // Hence, an honest signer set (within retention window) is required to approve a message from governance.
+        // A minimum rotation delay and the rotation operator allow retaining an honest signer set to recover from compromise or bugs as follows.
+        //
+        // Under normal circumstances, a rotation delay is enforced.
+        // This is to prevent a malicious actor from rotating out honest signers quickly
+        // in case of a compromise of the signers or a bypass of proof verification.
+        //
+        // However, in the event that a previous (but valid) signer set is compromised,
+        // the rotation operator can bypass the delay to rotate out the compromised signers.
+        // Furthermore, in the event that the latest signer set is compromised,
+        // the rotation operator has the ability to allow submitting a rotation signed off by an older (but still valid) honest signer set.
+        //
+        // A compromised rotation operator doesn't have any privileges as long as the signers are honest
+        // and thus generate proofs for valid rotations. Compromising both the rotation operator
+        // and the signers is significantly more difficult since they are independent entities
+        // with a different policy of signing (manual vs protocol-initiated respectively).
+        bool applyRotationDelay = msg.sender != _storage().rotationOperator;
+
         if (applyRotationDelay && !isLatestSigners) {
             revert NotLatestSigners();
         }

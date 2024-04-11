@@ -32,18 +32,19 @@ contract AxelarAmplifierAuth is Ownable, BaseWeightedMultisig, IAxelarAmplifierA
         for (uint256 i; i < length; ++i) {
             WeightedSigners memory signers = abi.decode(initialSigners[i], (WeightedSigners));
 
-            _rotateSigners(signers);
+            _rotateSigners(signers, false);
         }
     }
 
     /**
      * @notice Rotate to a new set of weighted signers
      * @param newSigners The ABI encoded WeightedSigners
+     * @param applyRotationDelay True if rotation delay should be applied
      */
-    function rotateSigners(bytes calldata newSigners) external onlyOwner {
+    function rotateSigners(bytes calldata newSigners, bool applyRotationDelay) external onlyOwner {
         WeightedSigners memory signers = abi.decode(newSigners, (WeightedSigners));
 
-        _rotateSigners(signers);
+        _rotateSigners(signers, applyRotationDelay);
     }
 
     /**

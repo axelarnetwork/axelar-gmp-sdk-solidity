@@ -17,7 +17,7 @@ contract TestBaseWeightedMultisig is BaseWeightedMultisig {
     }
 
     function rotateSigners(WeightedSigners memory newSigners) external {
-        _rotateSigners(newSigners);
+        _rotateSigners(newSigners, false);
     }
 
     // use a non-view method to allow gas reporting in tests

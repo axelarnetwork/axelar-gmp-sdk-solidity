@@ -8,6 +8,7 @@ interface IBaseWeightedMultisig {
     error MalformedSignatures();
     error LowSignaturesWeight();
     error InvalidWeights();
+    error InsufficientRotationDelay(uint256 lastRotationTimestamp);
 
     event SignersRotated(uint256 indexed epoch, bytes32 indexed signersHash);
 

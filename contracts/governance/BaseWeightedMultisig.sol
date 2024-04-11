@@ -17,6 +17,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
 
     struct BaseWeightedMultisigStorage {
         uint256 epoch;
+        uint256 lastRotationTimestamp;
         mapping(uint256 => bytes32) signerHashByEpoch;
         mapping(bytes32 => uint256) epochBySignerHash;
     }
@@ -29,10 +30,15 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
     /// @return The domain separator for the signer proof
     bytes32 public immutable domainSeparator;
 
+    /// @dev The required delay between rotations
+    /// @return The minimum delay between rotations
+    uint256 public immutable minimumRotationDelay;
+
     /// @param previousSignersRetentionEpochs The number of epochs to keep previous signers valid for signature verification
     constructor(uint256 previousSignersRetentionEpochs, bytes32 domainSeparator_) {
         previousSignersRetention = previousSignersRetentionEpochs;
         domainSeparator = domainSeparator_;
+        minimumRotationDelay = 1 days;
     }
 
     /**********************\
@@ -99,12 +105,15 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
     /**
      * @notice This function rotates the current signers with a new set of signers
      * @param newSigners The new weighted signers data
+     * @param applyRotationDelay If true, the rotation delay will be applied
      * @dev The signers should be sorted by signer address in ascending order
      */
-    function _rotateSigners(WeightedSigners memory newSigners) internal {
+    function _rotateSigners(WeightedSigners memory newSigners, bool applyRotationDelay) internal {
         BaseWeightedMultisigStorage storage slot = _baseWeightedMultisigStorage();
 
         _validateSigners(newSigners);
+
+        _updateRotationTimestamp(applyRotationDelay);
 
         bytes32 newSignersHash = keccak256(abi.encode(newSigners));
 
@@ -120,6 +129,18 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
     /**********************\
     |* Internal Functions *|
     \**********************/
+
+    /**
+     * @notice This function applies the rotation delay
+     */
+    function _updateRotationTimestamp(bool applyRotationDelay) internal {
+        uint256 lastRotationTimestamp = _baseWeightedMultisigStorage().lastRotationTimestamp;
+        uint256 currentTimestamp = block.timestamp;
+
+        if (applyRotationDelay && currentTimestamp - lastRotationTimestamp < minimumRotationDelay) revert InsufficientRotationDelay(lastRotationTimestamp);
+
+        _baseWeightedMultisigStorage().lastRotationTimestamp = currentTimestamp;
+    }
 
     /**
      * @notice This function takes messageHash and proof data and reverts if proof is invalid

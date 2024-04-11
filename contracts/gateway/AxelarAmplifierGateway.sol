@@ -13,6 +13,7 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
         0xca458dc12368669a3b8c292bc21c1b887ab1aa386fa3fcc1ed972afd74a330ca;
 
     struct AxelarAmplifierGatewayStorage {
+        address rotationOperator;
         mapping(bytes32 => bool) commands;
         mapping(bytes32 => bool) approvals;
     }
@@ -126,7 +127,9 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
     }
 
     /**
-     * @notice Update the signer data for the auth module.
+     * @notice Rotate the signers on the auth module.
+     * @dev A rotation delay is enforced by default. If the rotation is triggered by the `rotationOperator`, the delay can be bypassed.
+     * The rotation delay prevents a malicious actor from rotating out honest signers completely in the event of a compromise or proof verification bug.
      * @param  newSignersData The data for the new signers.
      * @param  proof The proof signed by the Axelar verifiers for this command.
      */
@@ -138,14 +141,19 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
             revert CommandAlreadyExecuted(commandId);
         }
 
+        bool applyRotationDelay = msg.sender != _storage().rotationOperator;
         bool isLatestSigners = _verifyProof(dataHash, proof);
-        if (!isLatestSigners) {
+
+        // Under normal circumstances, signer rotation can only be signed off by the latest signer set
+        // However, in the event that the latest signer set is compromised,
+        // the rotation operator has the ability to allow submitting a rotation signed off by an older (but still valid) honest signer set
+        if (applyRotationDelay && !isLatestSigners) {
             revert NotLatestSigners();
         }
 
         _commandExecuted(commandId);
 
-        authModule.rotateSigners(newSignersData);
+        authModule.rotateSigners(newSignersData, applyRotationDelay);
 
         // slither-disable-next-line reentrancy-events
         emit SignersRotated(newSignersData);

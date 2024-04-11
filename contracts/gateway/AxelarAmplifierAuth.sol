@@ -19,14 +19,17 @@ contract AxelarAmplifierAuth is Ownable, BaseWeightedMultisig, IAxelarAmplifierA
      * @dev Ownership of this contract should be transferred to the Gateway contract after deployment.
      * @param owner_ The owner of the contract
      * @param domainSeparator_ The domain separator for the signer proof
+     * @param previousSignersRetention_ The number of previous signers to retain
+     * @param minimumRotationDelay_ The minimum delay required between rotations
      * @param initialSigners The initial weighted signers to be added to the auth contract
      */
     constructor(
         address owner_,
         bytes32 domainSeparator_,
         uint256 previousSignersRetention_,
+        uint256 minimumRotationDelay_,
         bytes[] memory initialSigners
-    ) Ownable(owner_) BaseWeightedMultisig(previousSignersRetention_, domainSeparator_) {
+    ) Ownable(owner_) BaseWeightedMultisig(previousSignersRetention_, domainSeparator_, minimumRotationDelay_) {
         uint256 length = initialSigners.length;
 
         for (uint256 i; i < length; ++i) {

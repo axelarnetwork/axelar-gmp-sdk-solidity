@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import { IBaseWeightedMultisig } from './IBaseWeightedMultisig.sol';
 import { ICaller } from './ICaller.sol';
+import { WeightedSigners } from '../types/WeightedMultisigTypes.sol';
 
 /**
  * @title IMultisig Interface
@@ -48,6 +49,14 @@ interface IInterchainMultisig is ICaller, IBaseWeightedMultisig {
      * @return True if the payload has been executed
      */
     function isBatchExecuted(bytes32 batchHash) external view returns (bool);
+
+    /**
+     * @notice This function takes dataHash and proof data and reverts if proof is invalid
+     * @param dataHash The hash of the message that was signed
+     * @param proof The data containing signers with signatures
+     * @return isLatestSigners True if provided signers are the current ones
+     */
+    function validateProof(bytes32 dataHash, bytes calldata proof) external view returns (bool isLatestSigners);
 
     /**
      * @notice Executes an external contract call.

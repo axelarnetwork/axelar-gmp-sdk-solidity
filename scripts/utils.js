@@ -1,6 +1,6 @@
 const {
     ContractFactory,
-    utils: { keccak256, defaultAbiCoder, arrayify },
+    utils: { keccak256, defaultAbiCoder, arrayify, hashMessage },
 } = require('ethers');
 const http = require('http');
 const { outputJsonSync } = require('fs-extra');
@@ -76,25 +76,50 @@ const getWeightedSignersSet = (signerAddresses, weights, threshold) => {
     return defaultAbiCoder.encode(['address[]', 'uint256[]', 'uint256'], [sortedAddresses, sortedWeights, threshold]);
 };
 
-const getWeightedSignersProof = async (data, accounts, weights, threshold, signers) => {
-    const signersWithWeights = getAddresses(accounts).map((address, i) => ({ address, weight: weights[i] }));
-    const sortedSignersWithWeights = sortBy(signersWithWeights, (signer) => signer.address.toLowerCase());
-    const sortedAddresses = sortedSignersWithWeights.map(({ address }) => address);
-    const sortedWeights = sortedSignersWithWeights.map(({ weight }) => weight);
-
-    const hash = arrayify(keccak256(data));
-    const signatures = await Promise.all(
-        sortBy(signers, (wallet) => wallet.address.toLowerCase()).map((wallet) => wallet.signMessage(hash)),
+const encodeWeightedSigners = (weightedSigners) => {
+    return defaultAbiCoder.encode(
+        ['tuple(tuple(address signer,uint128 weight)[] signers,uint128 threshold,bytes32 nonce)'],
+        [weightedSigners],
     );
+};
+
+const encodeWeightedSignersMessage = (data, domainSeparator, weightedSignerHash) => {
+    return arrayify(domainSeparator + weightedSignerHash.slice(2) + keccak256(arrayify(data)).slice(2));
+};
+
+const encodeMessageHash = (data, domainSeparator, weightedSignerHash) => {
+    return hashMessage(encodeWeightedSignersMessage(data, domainSeparator, weightedSignerHash));
+};
+
+const getWeightedSignersProof = async (data, domainSeparator, weightedSigners, wallets) => {
+    const weightedSignerHash = keccak256(encodeWeightedSigners(weightedSigners));
+    const message = encodeWeightedSignersMessage(data, domainSeparator, weightedSignerHash);
+
+    const signatures = await Promise.all(wallets.map((wallet) => wallet.signMessage(message)));
 
     return defaultAbiCoder.encode(
-        ['address[]', 'uint256[]', 'uint256', 'bytes[]'],
-        [sortedAddresses, sortedWeights, threshold, signatures],
+        [
+            'tuple(tuple(tuple(address signer,uint128 weight)[] signers,uint128 threshold,bytes32 nonce) signers,bytes[] signatures)',
+        ],
+        [{ signers: weightedSigners, signatures }],
     );
 };
 
 const encodeInterchainCallsBatch = (batchId, calls) =>
     defaultAbiCoder.encode(['bytes32', 'tuple(string, address, address, bytes, uint256)[]'], [batchId, calls]);
+
+/**
+ * Convert object to solidity tuple type
+ * @param {*} obj
+ * @returns {Array}
+ */
+const solidityObjectToTuple = (obj) => {
+    if (typeof obj === 'object') {
+        return Object.entries(obj).map(([key, value]) => solidityObjectToTuple(value));
+    }
+
+    return obj;
+};
 
 module.exports = {
     getSaltFromKey,
@@ -106,4 +131,7 @@ module.exports = {
     getWeightedSignersSet,
     getWeightedSignersProof,
     encodeInterchainCallsBatch,
+    encodeWeightedSigners,
+    encodeMessageHash,
+    solidityObjectToTuple,
 };

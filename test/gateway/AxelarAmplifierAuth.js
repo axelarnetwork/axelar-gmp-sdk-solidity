@@ -37,7 +37,13 @@ describe('AxelarAmplifierAuth', () => {
 
         multisigFactory = await ethers.getContractFactory('AxelarAmplifierAuth', owner);
 
-        multisig = await multisigFactory.deploy(owner.address, domainSeparator, previousSignersRetention, minimumRotationDelay, []);
+        multisig = await multisigFactory.deploy(
+            owner.address,
+            domainSeparator,
+            previousSignersRetention,
+            minimumRotationDelay,
+            [],
+        );
         await multisig.deployTransaction.wait(network.config.confirmations);
 
         weightedSigners = {
@@ -85,7 +91,13 @@ describe('AxelarAmplifierAuth', () => {
             let multisig;
 
             beforeEach(async () => {
-                multisig = await multisigFactory.deploy(owner.address, domainSeparator, previousSignersRetention, minimumRotationDelay, []);
+                multisig = await multisigFactory.deploy(
+                    owner.address,
+                    domainSeparator,
+                    previousSignersRetention,
+                    minimumRotationDelay,
+                    [],
+                );
                 await multisig.deployTransaction.wait(network.config.confirmations);
             });
 
@@ -487,7 +499,13 @@ describe('AxelarAmplifierAuth', () => {
         let multisig;
 
         before(async () => {
-            multisig = await multisigFactory.deploy(owner.address, domainSeparator, previousSignersRetention, minimumRotationDelay, []);
+            multisig = await multisigFactory.deploy(
+                owner.address,
+                domainSeparator,
+                previousSignersRetention,
+                minimumRotationDelay,
+                [],
+            );
             await multisig.deployTransaction.wait(network.config.confirmations);
 
             for (let i = 0; i <= previousSignersRetention + 1; i++) {
@@ -551,7 +569,13 @@ describe('AxelarAmplifierAuth', () => {
     });
 
     it('should allow rotateSigners and validateProof with a randomized signer set', async () => {
-        const multisig = await multisigFactory.deploy(owner.address, domainSeparator, previousSignersRetention, minimumRotationDelay, []);
+        const multisig = await multisigFactory.deploy(
+            owner.address,
+            domainSeparator,
+            previousSignersRetention,
+            minimumRotationDelay,
+            [],
+        );
         await multisig.deployTransaction.wait(network.config.confirmations);
 
         const maxSigners = 20;

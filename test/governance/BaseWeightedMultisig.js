@@ -27,14 +27,22 @@ describe('BaseWeightedMultisig', () => {
     });
 
     it('should validate storage constants', async () => {
-        const multisig = await testMultisigFactory.deploy(previousSignersRetention, domainSeparator, minimumRotationDelay);
+        const multisig = await testMultisigFactory.deploy(
+            previousSignersRetention,
+            domainSeparator,
+            minimumRotationDelay,
+        );
         await multisig.deployTransaction.wait(network.config.confirmations);
     });
 
     it('should allow signer rotation to a large set of 40 signers', async () => {
         const numSigners = 40;
 
-        const multisig = await testMultisigFactory.deploy(previousSignersRetention, domainSeparator, minimumRotationDelay);
+        const multisig = await testMultisigFactory.deploy(
+            previousSignersRetention,
+            domainSeparator,
+            minimumRotationDelay,
+        );
         await multisig.deployTransaction.wait(network.config.confirmations);
 
         const data = '0x123abc123abc';

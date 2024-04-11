@@ -37,7 +37,11 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
     /// @param previousSignersRetentionEpochs The number of epochs to keep previous signers valid for signature verification
     /// @param domainSeparator_ The domain separator for the signer proof
     /// @param minimumRotationDelay_ The minimum delay between rotations
-    constructor(uint256 previousSignersRetentionEpochs, bytes32 domainSeparator_, uint256 minimumRotationDelay_) {
+    constructor(
+        uint256 previousSignersRetentionEpochs,
+        bytes32 domainSeparator_,
+        uint256 minimumRotationDelay_
+    ) {
         previousSignersRetention = previousSignersRetentionEpochs;
         domainSeparator = domainSeparator_;
         minimumRotationDelay = minimumRotationDelay_;
@@ -139,8 +143,12 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         uint256 lastRotationTimestamp = _baseWeightedMultisigStorage().lastRotationTimestamp;
         uint256 currentTimestamp = block.timestamp;
 
-        if (applyRotationDelay && currentTimestamp - lastRotationTimestamp < minimumRotationDelay) {
-            revert InsufficientRotationDelay(minimumRotationDelay, lastRotationTimestamp, currentTimestamp - lastRotationTimestamp);
+        if (applyRotationDelay && (currentTimestamp - lastRotationTimestamp) < minimumRotationDelay) {
+            revert InsufficientRotationDelay(
+                minimumRotationDelay,
+                lastRotationTimestamp,
+                currentTimestamp - lastRotationTimestamp
+            );
         }
 
         _baseWeightedMultisigStorage().lastRotationTimestamp = currentTimestamp;

@@ -8,9 +8,11 @@ import { Proof, WeightedSigners } from '../../types/WeightedMultisigTypes.sol';
 contract TestBaseWeightedMultisig is BaseWeightedMultisig {
     event DummyEvent();
 
-    constructor(uint256 previousSignersRetention_, bytes32 domainSeparator_, uint256 minimumRotationDelay_)
-        BaseWeightedMultisig(previousSignersRetention_, domainSeparator_, minimumRotationDelay_)
-    {
+    constructor(
+        uint256 previousSignersRetention_,
+        bytes32 domainSeparator_,
+        uint256 minimumRotationDelay_
+    ) BaseWeightedMultisig(previousSignersRetention_, domainSeparator_, minimumRotationDelay_) {
         if (BASE_WEIGHTED_MULTISIG_SLOT != bytes32(uint256(keccak256('BaseWeightedMultisig.Slot')) - 1)) {
             revert('BaseWeightedMultisig.Slot');
         }

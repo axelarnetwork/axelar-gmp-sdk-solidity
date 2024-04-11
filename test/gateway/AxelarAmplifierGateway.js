@@ -20,6 +20,8 @@ describe('AxelarAmplifierGateway', () => {
     const router = 'router';
     const domainSeparator = keccak256(toUtf8Bytes(chainName + router + 'axelar-1'));
     const previousSignersRetention = 15;
+    const rotationOperator = AddressZero;
+    const minimumRotationDelay = 0;
 
     let user;
     let signers;
@@ -71,12 +73,12 @@ describe('AxelarAmplifierGateway', () => {
     };
 
     const deployGateway = async () => {
-        auth = await authFactory.deploy(user.address, domainSeparator, previousSignersRetention, [
+        auth = await authFactory.deploy(user.address, domainSeparator, previousSignersRetention, minimumRotationDelay, [
             encodeWeightedSigners(weightedSigners),
         ]);
         await auth.deployTransaction.wait(network.config.confirmations);
 
-        gateway = await gatewayFactory.deploy(auth.address);
+        gateway = await gatewayFactory.deploy(auth.address, rotationOperator);
         await gateway.deployTransaction.wait(network.config.confirmations);
 
         await auth.transferOwnership(gateway.address).then((tx) => tx.wait(network.config.confirmations));
@@ -89,6 +91,10 @@ describe('AxelarAmplifierGateway', () => {
 
         it('should return the auth module', async () => {
             expect(await gateway.authModule()).to.equal(auth.address);
+        });
+
+        it('should return the rotation operator', async () => {
+            expect(await gateway.rotationOperator()).to.equal(rotationOperator);
         });
 
         it('should return the correct command id', async () => {
@@ -108,7 +114,7 @@ describe('AxelarAmplifierGateway', () => {
     describe('negative tests', () => {
         it('reject deployment with auth address set to 0', async () => {
             await expectRevert(
-                (gasOptions) => gatewayFactory.deploy(AddressZero, gasOptions),
+                (gasOptions) => gatewayFactory.deploy(AddressZero, rotationOperator, gasOptions),
                 gatewayFactory,
                 'InvalidAuthModule',
             );

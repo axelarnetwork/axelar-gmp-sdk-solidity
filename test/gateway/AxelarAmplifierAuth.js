@@ -16,6 +16,7 @@ describe('AxelarAmplifierAuth', () => {
     const threshold = 2;
     const domainSeparator = keccak256(toUtf8Bytes('chain'));
     const previousSignersRetention = 0;
+    const minimumRotationDelay = 0;
     const data = '0x123abc123abc';
     const dataHash = keccak256(arrayify(data));
     const defaultNonce = HashZero;
@@ -36,7 +37,7 @@ describe('AxelarAmplifierAuth', () => {
 
         multisigFactory = await ethers.getContractFactory('AxelarAmplifierAuth', owner);
 
-        multisig = await multisigFactory.deploy(owner.address, domainSeparator, previousSignersRetention, []);
+        multisig = await multisigFactory.deploy(owner.address, domainSeparator, previousSignersRetention, minimumRotationDelay, []);
         await multisig.deployTransaction.wait(network.config.confirmations);
 
         weightedSigners = {
@@ -54,6 +55,10 @@ describe('AxelarAmplifierAuth', () => {
     describe('queries', () => {
         it('previousSignersRetention', async () => {
             expect(await multisig.previousSignersRetention()).to.be.equal(previousSignersRetention);
+        });
+
+        it('minimumRotationDelay', async () => {
+            expect(await multisig.minimumRotationDelay()).to.be.equal(minimumRotationDelay);
         });
 
         it('hashMessage', async () => {
@@ -80,7 +85,7 @@ describe('AxelarAmplifierAuth', () => {
             let multisig;
 
             beforeEach(async () => {
-                multisig = await multisigFactory.deploy(owner.address, domainSeparator, previousSignersRetention, []);
+                multisig = await multisigFactory.deploy(owner.address, domainSeparator, previousSignersRetention, minimumRotationDelay, []);
                 await multisig.deployTransaction.wait(network.config.confirmations);
             });
 
@@ -395,6 +400,7 @@ describe('AxelarAmplifierAuth', () => {
                     owner.address,
                     domainSeparator,
                     previousSignersRetention,
+                    minimumRotationDelay,
                     [],
                 );
                 await multisig.deployTransaction.wait(network.config.confirmations);
@@ -481,7 +487,7 @@ describe('AxelarAmplifierAuth', () => {
         let multisig;
 
         before(async () => {
-            multisig = await multisigFactory.deploy(owner.address, domainSeparator, previousSignersRetention, []);
+            multisig = await multisigFactory.deploy(owner.address, domainSeparator, previousSignersRetention, minimumRotationDelay, []);
             await multisig.deployTransaction.wait(network.config.confirmations);
 
             for (let i = 0; i <= previousSignersRetention + 1; i++) {
@@ -545,7 +551,7 @@ describe('AxelarAmplifierAuth', () => {
     });
 
     it('should allow rotateSigners and validateProof with a randomized signer set', async () => {
-        const multisig = await multisigFactory.deploy(owner.address, domainSeparator, previousSignersRetention, []);
+        const multisig = await multisigFactory.deploy(owner.address, domainSeparator, previousSignersRetention, minimumRotationDelay, []);
         await multisig.deployTransaction.wait(network.config.confirmations);
 
         const maxSigners = 20;

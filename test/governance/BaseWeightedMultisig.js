@@ -13,6 +13,7 @@ const { getWeightedSignersProof, encodeWeightedSigners } = require('../../script
 describe('BaseWeightedMultisig', () => {
     const previousSignersRetention = 0;
     const domainSeparator = keccak256(toUtf8Bytes('chain'));
+    const minimumRotationDelay = 0;
 
     let owner;
     let testMultisigFactory;
@@ -26,14 +27,14 @@ describe('BaseWeightedMultisig', () => {
     });
 
     it('should validate storage constants', async () => {
-        const multisig = await testMultisigFactory.deploy(previousSignersRetention, domainSeparator);
+        const multisig = await testMultisigFactory.deploy(previousSignersRetention, domainSeparator, minimumRotationDelay);
         await multisig.deployTransaction.wait(network.config.confirmations);
     });
 
     it('should allow signer rotation to a large set of 40 signers', async () => {
         const numSigners = 40;
 
-        const multisig = await testMultisigFactory.deploy(previousSignersRetention, domainSeparator);
+        const multisig = await testMultisigFactory.deploy(previousSignersRetention, domainSeparator, minimumRotationDelay);
         await multisig.deployTransaction.wait(network.config.confirmations);
 
         const data = '0x123abc123abc';

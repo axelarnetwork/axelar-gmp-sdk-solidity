@@ -150,6 +150,12 @@ contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
         // This is to prevent a malicious actor from rotating out honest signers quickly
         // in case of a compromise of the signers or a bypass of proof verification.
         //
+        // The block.timestamp can be influenced by validators, however in practice
+        // timestamp manipulation on the order of hours is unlikely to be accepted by the network.
+        // Even if the attacker controls a validator and can influence the timestamp significantly,
+        // they still need to additionally compromise the signers or bypass verification for this to be effective,
+        // which is significantly more difficult.
+        //
         // However, in the event that a previous (but valid) signer set is compromised,
         // the rotation operator can bypass the delay to rotate out the compromised signers.
         // Furthermore, in the event that the latest signer set is compromised,

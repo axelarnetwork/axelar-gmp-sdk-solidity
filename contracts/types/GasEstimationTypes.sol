@@ -18,7 +18,7 @@ enum GasEstimationType {
 /**
  * @title GasInfo
  * @notice This struct represents the gas pricing information for a specific chain.
- * @dev Using smaller uint types to save storage packed into 32 byte slots.
+ * @dev Smaller uint types are used for efficient struct packing to save storage costs.
  */
 struct GasInfo {
     uint64 gasEstimationType; // Custom gas pricing rule, such as L1 data fee on L2s

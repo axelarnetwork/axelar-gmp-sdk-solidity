@@ -11,8 +11,7 @@ enum GasEstimationType {
     OptimismBedrock,
     OptimismEcotone,
     Arbitrum,
-    Scroll,
-    Mantle
+    Scroll
 }
 
 /**

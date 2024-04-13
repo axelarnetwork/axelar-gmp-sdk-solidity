@@ -23,16 +23,14 @@ contract AxelarAmplifierAuth is Ownable, BaseWeightedMultisig, IAxelarAmplifierA
      */
     constructor(
         address owner_,
-        bytes32 domainSeparator_,
         uint256 previousSignersRetention_,
-        bytes[] memory initialSigners
+        bytes32 domainSeparator_,
+        WeightedSigners[] memory initialSigners
     ) Ownable(owner_) BaseWeightedMultisig(previousSignersRetention_, domainSeparator_) {
         uint256 length = initialSigners.length;
 
         for (uint256 i; i < length; ++i) {
-            WeightedSigners memory signers = abi.decode(initialSigners[i], (WeightedSigners));
-
-            _rotateSigners(signers);
+            _rotateSigners(initialSigners[i]);
         }
     }
 
@@ -40,10 +38,8 @@ contract AxelarAmplifierAuth is Ownable, BaseWeightedMultisig, IAxelarAmplifierA
      * @notice Rotate to a new set of weighted signers
      * @param newSigners The ABI encoded WeightedSigners
      */
-    function rotateSigners(bytes calldata newSigners) external onlyOwner {
-        WeightedSigners memory signers = abi.decode(newSigners, (WeightedSigners));
-
-        _rotateSigners(signers);
+    function rotateSigners(WeightedSigners calldata newSigners) external onlyOwner {
+        _rotateSigners(newSigners);
     }
 
     /**
@@ -52,9 +48,7 @@ contract AxelarAmplifierAuth is Ownable, BaseWeightedMultisig, IAxelarAmplifierA
      * @param proof The data containing signers with signatures
      * @return isLatestSigners True if provided signers are the current ones
      */
-    function validateProof(bytes32 dataHash, bytes calldata proof) external view returns (bool isLatestSigners) {
-        Proof memory proofData = abi.decode(proof, (Proof));
-
-        return _validateProof(dataHash, proofData);
+    function validateProof(bytes32 dataHash, Proof calldata proof) external view returns (bool isLatestSigners) {
+        return _validateProof(dataHash, proof);
     }
 }

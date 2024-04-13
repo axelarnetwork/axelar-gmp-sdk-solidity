@@ -72,14 +72,13 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
     function executeCalls(
         bytes32 batchId,
         Call[] calldata calls,
-        bytes calldata proof
+        Proof calldata proof
     ) external payable {
         InterchainMultisigStorage storage slot = _interchainMultisigStorage();
         bytes32 batchHash = keccak256(abi.encode(batchId, calls));
         uint256 callsLength = calls.length;
 
-        Proof memory proofData = abi.decode(proof, (Proof));
-        _validateProof(batchHash, proofData);
+        _validateProof(batchHash, proof);
 
         if (slot.isBatchExecuted[batchId]) revert AlreadyExecuted();
         slot.isBatchExecuted[batchId] = true;
@@ -111,20 +110,18 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
      * @param proof The data containing signers with signatures
      * @return isLatestSigners True if provided signers are the current ones
      */
-    function validateProof(bytes32 dataHash, bytes calldata proof) external view returns (bool isLatestSigners) {
-        Proof memory proofData = abi.decode(proof, (Proof));
-
-        return _validateProof(dataHash, proofData);
+    function validateProof(bytes32 dataHash, Proof calldata proof) external view returns (bool isLatestSigners) {
+        return _validateProof(dataHash, proof);
     }
 
     /**
      * @notice Rotates the signers of the multisig
      * @notice This function is protected by the onlySelf modifier.
-     * @param newWeightedSigners The new weighted signers encoded as bytes
+     * @param newSigners The new weighted signers encoded as bytes
      * @dev This function is only callable by the contract itself after signature verification
      */
-    function rotateSigners(WeightedSigners memory newWeightedSigners) external onlySelf {
-        _rotateSigners(newWeightedSigners);
+    function rotateSigners(WeightedSigners calldata newSigners) external onlySelf {
+        _rotateSigners(newSigners);
     }
 
     /**

@@ -3,7 +3,6 @@ const chai = require('chai');
 const { ethers, network } = require('hardhat');
 const {
     utils: { id, keccak256, defaultAbiCoder, toUtf8Bytes, solidityKeccak256, solidityPack },
-    constants: { AddressZero },
 } = ethers;
 const { expect } = chai;
 
@@ -26,9 +25,7 @@ describe('AxelarAmplifierGateway', () => {
     let weightedSigners;
 
     let gatewayFactory;
-    let authFactory;
 
-    let auth;
     let gateway;
 
     before(async () => {
@@ -47,7 +44,6 @@ describe('AxelarAmplifierGateway', () => {
         };
 
         gatewayFactory = await ethers.getContractFactory('AxelarAmplifierGateway', user);
-        authFactory = await ethers.getContractFactory('AxelarAmplifierAuth', user);
     });
 
     const getApproveMessageData = (messages) => {
@@ -71,24 +67,20 @@ describe('AxelarAmplifierGateway', () => {
     };
 
     const deployGateway = async () => {
-        auth = await authFactory.deploy(user.address, domainSeparator, previousSignersRetention, [
-            encodeWeightedSigners(weightedSigners),
-        ]);
-        await auth.deployTransaction.wait(network.config.confirmations);
+        // auth = await authFactory.deploy(user.address, domainSeparator, previousSignersRetention, [
+        //     encodeWeightedSigners(weightedSigners),
+        // ]);
+        // await auth.deployTransaction.wait(network.config.confirmations);
 
-        gateway = await gatewayFactory.deploy(auth.address);
+        gateway = await gatewayFactory.deploy(previousSignersRetention, domainSeparator, [weightedSigners]);
         await gateway.deployTransaction.wait(network.config.confirmations);
 
-        await auth.transferOwnership(gateway.address).then((tx) => tx.wait(network.config.confirmations));
+        // await auth.transferOwnership(gateway.address).then((tx) => tx.wait(network.config.confirmations));
     };
 
     describe('queries', () => {
         before(async () => {
             await deployGateway();
-        });
-
-        it('should return the auth module', async () => {
-            expect(await gateway.authModule()).to.equal(auth.address);
         });
 
         it('should return the correct command id', async () => {
@@ -105,15 +97,7 @@ describe('AxelarAmplifierGateway', () => {
         });
     });
 
-    describe('negative tests', () => {
-        it('reject deployment with auth address set to 0', async () => {
-            await expectRevert(
-                (gasOptions) => gatewayFactory.deploy(AddressZero, gasOptions),
-                gatewayFactory,
-                'InvalidAuthModule',
-            );
-        });
-    });
+    describe('negative tests', () => {});
 
     describe('call contract', () => {
         beforeEach(async () => {
@@ -409,9 +393,7 @@ describe('AxelarAmplifierGateway', () => {
 
             let proof = await getProof(ROTATE_SIGNERS, newSigners, weightedSigners, signers.slice(0, threshold));
 
-            await expect(gateway.rotateSigners(newSignersData, proof))
-                .to.emit(gateway, 'SignersRotated')
-                .withArgs(newSignersData);
+            await expect(gateway.rotateSigners(newSigners, proof)).to.emit(gateway, 'Rotated').withArgs(newSignersData);
 
             // validate message with the new signer set
             const messageId = '1';
@@ -445,8 +427,8 @@ describe('AxelarAmplifierGateway', () => {
                 const newSignersHash = encodeWeightedSigners(newSigners);
                 const proof = await getProof(ROTATE_SIGNERS, newSigners, currentSigners, signers.slice(0, threshold));
 
-                await expect(gateway.rotateSigners(newSignersHash, proof))
-                    .to.emit(gateway, 'SignersRotated')
+                await expect(gateway.rotateSigners(newSigners, proof))
+                    .to.emit(gateway, 'Rotated')
                     .withArgs(newSignersHash);
 
                 currentSigners = newSigners;
@@ -474,7 +456,7 @@ describe('AxelarAmplifierGateway', () => {
                     .withArgs(commandId, `${i}`, sourceChain, sourceAddress, user.address, payloadHash);
             }
 
-            // reject proof from outadted signer set
+            // reject proof from outdated signer set
             const messages = [
                 {
                     messageId: '0',
@@ -487,7 +469,7 @@ describe('AxelarAmplifierGateway', () => {
             const proof = await getProof(APPROVE_MESSAGES, messages, weightedSigners, signers.slice(0, threshold));
             await expectRevert(
                 (gasOptions) => gateway.approveMessages(messages, proof, gasOptions),
-                auth,
+                gateway,
                 'InvalidSigners',
             );
         });
@@ -503,15 +485,15 @@ describe('AxelarAmplifierGateway', () => {
             const commandId = solidityKeccak256(['uint8', 'bytes'], [ROTATE_SIGNERS, newSignersData]);
             let proof = await getProof(ROTATE_SIGNERS, newSigners, weightedSigners, signers.slice(0, threshold));
 
-            await expect(gateway.rotateSigners(newSignersData, proof))
+            await expect(gateway.rotateSigners(newSigners, proof))
                 .to.emit(gateway, 'Executed')
                 .withArgs(commandId)
-                .to.emit(gateway, 'SignersRotated')
+                .to.emit(gateway, 'Rotated')
                 .withArgs(newSignersData);
 
             proof = await getProof(ROTATE_SIGNERS, newSigners, newSigners, signers.slice(0, threshold - 1));
             await expectRevert(
-                (gasOptions) => gateway.rotateSigners(newSignersData, proof, gasOptions),
+                (gasOptions) => gateway.rotateSigners(newSigners, proof, gasOptions),
                 gateway,
                 'CommandAlreadyExecuted',
                 commandId,
@@ -528,9 +510,7 @@ describe('AxelarAmplifierGateway', () => {
             const newSignersData = getRotateSignersData(newSigners);
             let proof = await getProof(ROTATE_SIGNERS, newSigners, weightedSigners, signers.slice(0, threshold));
 
-            await expect(gateway.rotateSigners(newSignersData, proof))
-                .to.emit(gateway, 'SignersRotated')
-                .withArgs(newSignersData);
+            await expect(gateway.rotateSigners(newSigners, proof)).to.emit(gateway, 'Rotated').withArgs(newSignersData);
 
             // sign off from an older signer set
             const newSigners2 = {
@@ -541,7 +521,7 @@ describe('AxelarAmplifierGateway', () => {
             proof = await getProof(ROTATE_SIGNERS, newSigners2, weightedSigners, signers.slice(0, threshold));
 
             await expectRevert(
-                (gasOptions) => gateway.rotateSigners(getRotateSignersData(newSigners2), proof, gasOptions),
+                (gasOptions) => gateway.rotateSigners(newSigners2, proof, gasOptions),
                 gateway,
                 'NotLatestSigners',
             );

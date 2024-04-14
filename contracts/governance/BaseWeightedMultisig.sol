@@ -81,7 +81,9 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
     function _validateProof(bytes32 dataHash, Proof calldata proof) internal view returns (bool isLatestSigners) {
         BaseWeightedMultisigStorage storage slot = _baseWeightedMultisigStorage();
 
-        bytes32 signersHash = keccak256(abi.encode(proof.signers));
+        WeightedSigners calldata signers = proof.signers;
+
+        bytes32 signersHash = keccak256(abi.encode(signers));
         uint256 signerEpoch = slot.epochBySignerHash[signersHash];
         uint256 currentEpoch = slot.epoch;
 
@@ -91,9 +93,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
 
         bytes32 messageHash = messageHashToSign(signersHash, dataHash);
 
-        {
-            _validateSignatures(messageHash, proof.signers, proof.signatures);
-        }
+        _validateSignatures(messageHash, signers, proof.signatures);
     }
 
     /**
@@ -104,9 +104,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
     function _rotateSigners(WeightedSigners memory newSigners) internal {
         BaseWeightedMultisigStorage storage slot = _baseWeightedMultisigStorage();
 
-        {
-            _validateSigners(newSigners);
-        }
+        _validateSigners(newSigners);
 
         bytes32 newSignersHash = keccak256(abi.encode(newSigners));
 

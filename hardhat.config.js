@@ -40,7 +40,6 @@ const defaultSettings = {
     settings: {
         evmVersion: process.env.EVM_VERSION || 'london',
         optimizer: optimizerSettings,
-        viaIR: true,
     },
 };
 

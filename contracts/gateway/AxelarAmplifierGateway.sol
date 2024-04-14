@@ -14,13 +14,9 @@ contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, I
     constructor(
         uint256 previousSignersRetention_,
         bytes32 domainSeparator_,
-        WeightedSigners[] memory initialSigners
+        WeightedSigners memory initialSigners
     ) BaseWeightedMultisig(previousSignersRetention_, domainSeparator_) {
-        uint256 length = initialSigners.length;
-
-        for (uint256 i; i < length; ++i) {
-            _rotateSigners(initialSigners[i]);
-        }
+        _rotateSigners(initialSigners);
     }
 
     /**********************\

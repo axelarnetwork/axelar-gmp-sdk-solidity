@@ -66,7 +66,7 @@ describe('AxelarAmplifierGateway', () => {
     };
 
     const deployGateway = async () => {
-        gateway = await gatewayFactory.deploy(previousSignersRetention, domainSeparator, [weightedSigners]);
+        gateway = await gatewayFactory.deploy(previousSignersRetention, domainSeparator, weightedSigners);
         await gateway.deployTransaction.wait(network.config.confirmations);
     };
 

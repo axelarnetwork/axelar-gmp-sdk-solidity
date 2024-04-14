@@ -34,10 +34,14 @@ describe('BaseWeightedMultisig', () => {
 
     it.only('should validate proof from signers', async () => {
         const threshold = 2;
-        const wallets = sortBy((await ethers.getSigners()).slice(0, threshold), (wallet) => wallet.address.toLowerCase());
+        const wallets = sortBy((await ethers.getSigners()).slice(0, threshold), (wallet) =>
+            wallet.address.toLowerCase(),
+        );
 
         const newSigners = {
-            signers: wallets.map((wallet) => { return { signer: wallet.address, weight: 1 }; }),
+            signers: wallets.map((wallet) => {
+                return { signer: wallet.address, weight: 1 };
+            }),
             threshold,
             nonce: HashZero,
         };

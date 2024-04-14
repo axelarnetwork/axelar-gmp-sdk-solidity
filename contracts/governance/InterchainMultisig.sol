@@ -30,18 +30,18 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
      * @notice Contract constructor
      * @dev Sets the initial list of signers and corresponding threshold.
      * @param chainName The name of the chain
-     * @param weightedSigners The weighted signers payload
+     * @param signers The weighted signers payload
      */
     constructor(
         string memory chainName,
         bytes32 domainSeparator_,
-        WeightedSigners memory weightedSigners
+        WeightedSigners memory signers
     ) BaseWeightedMultisig(0, domainSeparator_) {
         if (bytes(chainName).length == 0) revert InvalidChainName();
 
         chainNameHash = keccak256(bytes(chainName));
 
-        _rotateSigners(weightedSigners);
+        _rotateSigners(signers);
     }
 
     modifier onlySelf() {

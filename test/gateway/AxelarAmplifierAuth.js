@@ -113,7 +113,7 @@ describe('AxelarAmplifierAuth', () => {
 
                 await expect(multisig.rotateSigners(newSigners))
                     .to.emit(multisig, 'SignersRotated')
-                    .withArgs(prevEpoch + 1, signersHash);
+                    .withArgs(prevEpoch + 1, signersHash, encodeWeightedSigners(newSigners));
 
                 expect(await multisig.epoch()).to.be.equal(prevEpoch + 1);
             });
@@ -129,19 +129,20 @@ describe('AxelarAmplifierAuth', () => {
                     threshold: 1,
                     nonce: defaultNonce,
                 };
-                const newSignersHash = keccak256(encodeWeightedSigners(newSigners));
+                const encodedSigners = encodeWeightedSigners(newSigners);
+                const newSignersHash = keccak256(encodedSigners);
 
                 const prevEpoch = (await multisig.epoch()).toNumber();
 
                 await expect(multisig.rotateSigners(newSigners))
                     .to.emit(multisig, 'SignersRotated')
-                    .withArgs(prevEpoch + 1, newSignersHash);
+                    .withArgs(prevEpoch + 1, newSignersHash, encodedSigners);
 
                 expect(await multisig.epochBySignerHash(newSignersHash)).to.be.equal(prevEpoch + 1);
 
                 await expect(multisig.rotateSigners(newSigners))
                     .to.emit(multisig, 'SignersRotated')
-                    .withArgs(prevEpoch + 2, newSignersHash);
+                    .withArgs(prevEpoch + 2, newSignersHash, encodedSigners);
 
                 // Duplicate weighted signers should point to the new epoch
                 expect(await multisig.epochBySignerHash(newSignersHash)).to.be.equal(prevEpoch + 2);
@@ -164,14 +165,14 @@ describe('AxelarAmplifierAuth', () => {
 
                 await expect(multisig.rotateSigners(newSigners))
                     .to.emit(multisig, 'SignersRotated')
-                    .withArgs(prevEpoch + 1, newSignersHash);
+                    .withArgs(prevEpoch + 1, newSignersHash, encodeWeightedSigners(newSigners));
 
                 const newSigners2 = { ...newSigners, nonce: id('1') };
                 const newSigners2Hash = keccak256(encodeWeightedSigners(newSigners2));
 
                 await expect(multisig.rotateSigners(newSigners2))
                     .to.emit(multisig, 'SignersRotated')
-                    .withArgs(prevEpoch + 2, newSigners2Hash);
+                    .withArgs(prevEpoch + 2, newSigners2Hash, encodeWeightedSigners(newSigners2));
 
                 // Both weighted signer should be available
                 expect(await multisig.epochBySignerHash(newSignersHash)).to.be.equal(prevEpoch + 1);
@@ -397,7 +398,7 @@ describe('AxelarAmplifierAuth', () => {
 
                 await expect(multisig.rotateSigners(newSigners))
                     .to.emit(multisig, 'SignersRotated')
-                    .withArgs(1, keccak256(encodedSigners));
+                    .withArgs(1, keccak256(encodedSigners), encodedSigners);
 
                 const proof = await getWeightedSignersProof(data, domainSeparator, newSigners, [signers[0]]);
 
@@ -577,7 +578,7 @@ describe('AxelarAmplifierAuth', () => {
 
             await expect(multisig.rotateSigners(newSigners))
                 .to.emit(multisig, 'SignersRotated')
-                .withArgs(prevEpoch + 1, signersHash);
+                .withArgs(prevEpoch + 1, signersHash, encodeWeightedSigners(newSigners));
 
             expect(await multisig.epoch()).to.be.equal(prevEpoch + 1);
 

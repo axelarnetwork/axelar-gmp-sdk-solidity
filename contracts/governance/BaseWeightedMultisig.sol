@@ -106,7 +106,8 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
 
         _validateSigners(newSigners);
 
-        bytes32 newSignersHash = keccak256(abi.encode(newSigners));
+        bytes memory newSignersData = abi.encode(newSigners);
+        bytes32 newSignersHash = keccak256(newSignersData);
 
         uint256 newEpoch = slot.epoch + 1;
         slot.epoch = newEpoch;
@@ -114,7 +115,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         // if signer set is the same, old epoch will be overwritten
         slot.epochBySignerHash[newSignersHash] = newEpoch;
 
-        emit SignersRotated(newEpoch, newSignersHash);
+        emit SignersRotated(newEpoch, newSignersHash, newSignersData);
     }
 
     /**********************\

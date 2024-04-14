@@ -15,13 +15,6 @@ interface IAxelarAmplifierGateway is IBaseAmplifierGateway {
     error NotLatestSigners();
 
     /**
-     * @notice Emitted when signers are transferred to a new set.
-     * @dev Logs the rotation of signers to a new set.
-     * @param newSignersData The encoded new signers.
-     */
-    event Rotated(bytes newSignersData);
-
-    /**
      * @notice Approves an array of messages, signed by the Axelar signers.
      * @param  messages The array of messages to verify.
      * @param  proof The proof signed by the Axelar signers for this command.

@@ -58,9 +58,6 @@ contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, I
         _commandExecuted(commandId);
 
         _rotateSigners(newSigners);
-
-        // slither-disable-next-line reentrancy-events
-        emit Rotated(newSignersData);
     }
 
     /**********************\

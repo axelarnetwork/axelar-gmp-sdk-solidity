@@ -9,7 +9,7 @@ interface IBaseWeightedMultisig {
     error LowSignaturesWeight();
     error InvalidWeights();
 
-    event SignersRotated(uint256 indexed epoch, bytes32 indexed signersHash);
+    event SignersRotated(uint256 indexed epoch, bytes32 indexed signersHash, bytes signers);
 
     /**
      * @dev This function returns the old signers retention period

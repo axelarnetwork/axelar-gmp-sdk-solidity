@@ -384,8 +384,9 @@ describe('AxelarAmplifierGateway', () => {
             const newSignersData = getRotateSignersData(newSigners);
 
             let proof = await getProof(ROTATE_SIGNERS, newSigners, weightedSigners, signers.slice(0, threshold));
+            const epoch = (await gateway.epoch()).toNumber() + 1;
 
-            await expect(gateway.rotateSigners(newSigners, proof)).to.emit(gateway, 'Rotated').withArgs(newSignersData);
+            await expect(gateway.rotateSigners(newSigners, proof)).to.emit(gateway, 'SignersRotated').withArgs(epoch, keccak256(newSignersData), newSignersData);
 
             // validate message with the new signer set
             const messageId = '1';
@@ -499,10 +500,9 @@ describe('AxelarAmplifierGateway', () => {
                 nonce: id('1'),
             };
 
-            const newSignersData = getRotateSignersData(newSigners);
             let proof = await getProof(ROTATE_SIGNERS, newSigners, weightedSigners, signers.slice(0, threshold));
 
-            await expect(gateway.rotateSigners(newSigners, proof)).to.emit(gateway, 'Rotated').withArgs(newSignersData);
+            await gateway.rotateSigners(newSigners, proof).then((tx) => tx.wait());
 
             // sign off from an older signer set
             const newSigners2 = {

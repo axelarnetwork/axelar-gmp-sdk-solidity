@@ -85,7 +85,7 @@ describe('BaseWeightedMultisig', () => {
 
         await expect(multisig.rotateSigners(newSigners))
             .to.emit(multisig, 'SignersRotated')
-            .withArgs(prevEpoch + 1, signersHash);
+            .withArgs(prevEpoch + 1, signersHash, encodedSigners);
 
         const proof = await getWeightedSignersProof(data, domainSeparator, newSigners, wallets.slice(0, threshold));
 

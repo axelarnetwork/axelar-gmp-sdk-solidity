@@ -83,10 +83,7 @@ describe('AxelarAmplifierGateway', () => {
     };
 
     const deployGateway = async () => {
-        const signers = defaultAbiCoder.encode(
-            [`${WEIGHTED_SIGNERS_TYPE}[]`],
-            [[weightedSigners]],
-        );
+        const signers = defaultAbiCoder.encode([`${WEIGHTED_SIGNERS_TYPE}[]`], [[weightedSigners]]);
 
         implementation = await gatewayFactory.deploy(previousSignersRetention, domainSeparator);
         await implementation.deployTransaction.wait(network.config.confirmations);
@@ -467,7 +464,7 @@ describe('AxelarAmplifierGateway', () => {
 
                 await expect(gateway.rotateSigners(newSigners, proof))
                     .to.emit(gateway, 'SignersRotated')
-                    .withArgs(i+1, keccak256(encodedSigners), encodedSigners);
+                    .withArgs(i + 1, keccak256(encodedSigners), encodedSigners);
 
                 currentSigners = newSigners;
             }
@@ -593,10 +590,7 @@ describe('AxelarAmplifierGateway', () => {
                 nonce: id('1'),
             };
 
-            const setupParams = defaultAbiCoder.encode(
-                [`${WEIGHTED_SIGNERS_TYPE}[]`],
-                [[newSigners]],
-            );
+            const setupParams = defaultAbiCoder.encode([`${WEIGHTED_SIGNERS_TYPE}[]`], [[newSigners]]);
 
             await expect(gateway.upgrade(newImplementation.address, newImplementationCodehash, setupParams))
                 .to.emit(gateway, 'Upgraded')
@@ -613,9 +607,10 @@ describe('AxelarAmplifierGateway', () => {
             const setupParams = '0xff';
 
             await expectRevert(
-                (gasOptions) => gateway.upgrade(newImplementation.address, newImplementationCodehash, setupParams, gasOptions),
+                (gasOptions) =>
+                    gateway.upgrade(newImplementation.address, newImplementationCodehash, setupParams, gasOptions),
                 gateway,
-                'SetupFailed'
+                'SetupFailed',
             );
         });
 
@@ -623,7 +618,7 @@ describe('AxelarAmplifierGateway', () => {
             await expectRevert(
                 (gasOptions) => gateway.upgrade(implementation.address, ethers.constants.HashZero, '0x', gasOptions),
                 gateway,
-                'InvalidCodeHash'
+                'InvalidCodeHash',
             );
         });
     });

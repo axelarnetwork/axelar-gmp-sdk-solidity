@@ -12,10 +12,9 @@ import { BaseAmplifierGateway } from './BaseAmplifierGateway.sol';
 import { Upgradable } from '../upgradable/Upgradable.sol';
 
 contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, Upgradable, IAxelarAmplifierGateway {
-    constructor(
-        uint256 previousSignersRetention_,
-        bytes32 domainSeparator_
-    ) BaseWeightedMultisig(previousSignersRetention_, domainSeparator_) {}
+    constructor(uint256 previousSignersRetention_, bytes32 domainSeparator_)
+        BaseWeightedMultisig(previousSignersRetention_, domainSeparator_)
+    {}
 
     /**********************\
     |* External Functions *|
@@ -77,7 +76,7 @@ contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, U
      * @dev This function should be implemented in derived contracts.
      */
     function _setup(bytes calldata data) internal override {
-        (WeightedSigners[] memory signers) = abi.decode(data, (WeightedSigners[]));
+        WeightedSigners[] memory signers = abi.decode(data, (WeightedSigners[]));
 
         for (uint256 i = 0; i < signers.length; i++) {
             _rotateSigners(signers[i]);

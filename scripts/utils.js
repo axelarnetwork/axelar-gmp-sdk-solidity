@@ -79,10 +79,7 @@ const getWeightedSignersSet = (signerAddresses, weights, threshold) => {
 const WEIGHTED_SIGNERS_TYPE = 'tuple(tuple(address signer,uint128 weight)[] signers,uint128 threshold,bytes32 nonce)';
 
 const encodeWeightedSigners = (weightedSigners) => {
-    return defaultAbiCoder.encode(
-        [WEIGHTED_SIGNERS_TYPE],
-        [weightedSigners],
-    );
+    return defaultAbiCoder.encode([WEIGHTED_SIGNERS_TYPE], [weightedSigners]);
 };
 
 const encodeWeightedSignersMessage = (data, domainSeparator, weightedSignerHash) => {

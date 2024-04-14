@@ -5,9 +5,13 @@ pragma solidity ^0.8.0;
 import { Proxy } from '../upgradable/Proxy.sol';
 
 contract AxelarAmplifierGatewayProxy is Proxy {
-    constructor(address implementationAddress, address owner, bytes memory setupParams) Proxy(implementationAddress, owner, setupParams) {}
+    constructor(
+        address implementationAddress,
+        address owner,
+        bytes memory setupParams
+    ) Proxy(implementationAddress, owner, setupParams) {}
 
-    function contractId() internal pure virtual override returns (bytes32) {
+    function contractId() internal pure override returns (bytes32) {
         return keccak256('axelar-amplifier-gateway');
     }
 }

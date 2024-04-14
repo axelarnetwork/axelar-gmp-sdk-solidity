@@ -9,9 +9,14 @@ contract TestProxy is Proxy {
         address implementationAddress,
         address owner,
         bytes memory setupParams
-    ) Proxy(implementationAddress, owner, setupParams) {}
+    ) Proxy(implementationAddress, owner, setupParams) {
+        if (_IMPLEMENTATION_SLOT != bytes32(uint256(keccak256('eip1967.proxy.implementation')) - 1))
+            revert('invalid implementation slot');
+
+        if (_OWNER_SLOT != keccak256('owner')) revert('invalid owner slot');
+    }
 
     function contractId() internal pure override returns (bytes32) {
-        return keccak256('proxy-implementation');
+        return keccak256('test');
     }
 }

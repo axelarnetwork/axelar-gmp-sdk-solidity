@@ -8,9 +8,11 @@ const {
     constants: { AddressZero },
 } = ethers;
 
-const { deployCreate3Upgradable, upgradeUpgradable } = require('../../index');
-const Proxy = require('../../artifacts/contracts/test/upgradable/ProxyTest.sol/ProxyTest.json');
-const Upgradable = require('../../artifacts/contracts/test/upgradable/UpgradableTest.sol/UpgradableTest.json');
+const { deployCreate3Upgradable, upgradeUpgradable } = require('../../scripts/upgradable');
+const { expectRevert } = require('../utils');
+
+const Proxy = require('../../artifacts/contracts/test/upgradable/TestProxy.sol/TestProxy.json');
+const Upgradable = require('../../artifacts/contracts/test/upgradable/TestUpgradable.sol/TestUpgradable.json');
 
 describe('Upgradable', () => {
     let upgradable;
@@ -23,7 +25,7 @@ describe('Upgradable', () => {
     before(async () => {
         [ownerWallet, userWallet] = await ethers.getSigners();
 
-        upgradableTestFactory = await ethers.getContractFactory('UpgradableTest', ownerWallet);
+        upgradableTestFactory = await ethers.getContractFactory('TestUpgradable', ownerWallet);
 
         create3DeployerFactory = await ethers.getContractFactory('Create3Deployer', ownerWallet);
     });
@@ -124,6 +126,19 @@ describe('Upgradable', () => {
 
             // call setup on the implementation
             await expect(implementation.setup(setupParams)).to.be.revertedWithCustomError(implementation, 'NotProxy');
+        });
+
+        it.only('should revert if upgrade is called by non owner', async () => {
+            const implementation = await upgradable.implementation();
+            const implementationCode = await ethers.provider.getCode(implementation);
+            const implementationCodeHash = keccak256(implementationCode);
+
+            await expectRevert(
+                (gasOptions) =>
+                upgradable.connect(userWallet).upgrade(implementation, implementationCodeHash, '0x', gasOptions),
+                upgradable,
+                'NotOwner',
+            );
         });
     });
 });

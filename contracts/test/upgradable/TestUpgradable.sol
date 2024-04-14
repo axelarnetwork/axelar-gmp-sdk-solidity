@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import { Upgradable } from '../../upgradable/Upgradable.sol';
 
-contract UpgradableTest is Upgradable {
+contract TestUpgradable is Upgradable {
     uint256 public num;
 
     constructor() Upgradable() {

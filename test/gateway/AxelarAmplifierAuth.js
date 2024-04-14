@@ -92,7 +92,7 @@ describe('AxelarAmplifierAuth', () => {
                 await multisig.deployTransaction.wait(network.config.confirmations);
             });
 
-            it.only('should allow signer rotation', async () => {
+            it('should allow signer rotation', async () => {
                 const newSigners = {
                     signers: [
                         {

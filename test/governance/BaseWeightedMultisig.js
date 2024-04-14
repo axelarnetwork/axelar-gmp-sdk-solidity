@@ -32,7 +32,7 @@ describe('BaseWeightedMultisig', () => {
         await multisig.deployTransaction.wait(network.config.confirmations);
     });
 
-    it.only('should validate proof from signers', async () => {
+    it('should validate proof from signers', async () => {
         const threshold = 2;
         const wallets = sortBy((await ethers.getSigners()).slice(0, threshold), (wallet) =>
             wallet.address.toLowerCase(),
@@ -55,7 +55,7 @@ describe('BaseWeightedMultisig', () => {
         await multisig.validateProof(dataHash, proof).then((tx) => tx.wait());
     });
 
-    it.only('should allow signer rotation to a large set of 40 signers', async () => {
+    it('should allow signer rotation to a large set of 40 signers', async () => {
         const numSigners = 40;
 
         const multisig = await testMultisigFactory.deploy(previousSignersRetention, domainSeparator);

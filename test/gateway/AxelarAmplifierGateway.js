@@ -110,7 +110,7 @@ describe('AxelarAmplifierGateway', () => {
             await deployGateway();
         });
 
-        it.only('should emit contract call event', async () => {
+        it('should emit contract call event', async () => {
             const destinationChain = 'Destination';
             const destinationAddress = '0x123abc';
             const payload = defaultAbiCoder.encode(['address'], [user.address]);
@@ -128,7 +128,7 @@ describe('AxelarAmplifierGateway', () => {
             await deployGateway();
         });
 
-        it.only('should approve and validate message', async () => {
+        it('should approve and validate message', async () => {
             const messageId = '1';
             const payload = defaultAbiCoder.encode(['address'], [user.address]);
             const payloadHash = keccak256(payload);
@@ -384,7 +384,7 @@ describe('AxelarAmplifierGateway', () => {
             payloadHash = keccak256(payload);
         });
 
-        it.only('should allow rotating signers', async () => {
+        it('should allow rotating signers', async () => {
             const newSignersCount = 75;
             const newThreshold = 35;
             const wallets = sortBy(

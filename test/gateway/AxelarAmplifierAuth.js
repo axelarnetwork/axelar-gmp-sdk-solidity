@@ -398,7 +398,7 @@ describe('AxelarAmplifierAuth', () => {
 
                 await expect(multisig.rotateSigners(newSigners))
                     .to.emit(multisig, 'SignersRotated')
-                    .withArgs(1, keccak256(encodedSigners), encodedSigners);
+                    .withArgs(2, keccak256(encodedSigners), encodedSigners);
 
                 const proof = await getWeightedSignersProof(data, domainSeparator, newSigners, [signers[0]]);
 

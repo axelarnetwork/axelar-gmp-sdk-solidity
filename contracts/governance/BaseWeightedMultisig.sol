@@ -78,12 +78,10 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      *      The signers and signatures should be sorted by signer address in ascending order
      *      Example: abi.encode([0x11..., 0x22..., 0x33...], [1, 1, 1], 2, [signature1, signature3])
      */
-    function _validateProof(bytes32 dataHash, Proof memory proof) internal view returns (bool isLatestSigners) {
+    function _validateProof(bytes32 dataHash, Proof calldata proof) internal view returns (bool isLatestSigners) {
         BaseWeightedMultisigStorage storage slot = _baseWeightedMultisigStorage();
 
-        WeightedSigners memory signers = proof.signers;
-
-        bytes32 signersHash = keccak256(abi.encode(signers));
+        bytes32 signersHash = keccak256(abi.encode(proof.signers));
         uint256 signerEpoch = slot.epochBySignerHash[signersHash];
         uint256 currentEpoch = slot.epoch;
 
@@ -93,7 +91,9 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
 
         bytes32 messageHash = messageHashToSign(signersHash, dataHash);
 
-        _validateSignatures(messageHash, signers, proof.signatures);
+        {
+            _validateSignatures(messageHash, proof.signers, proof.signatures);
+        }
     }
 
     /**
@@ -104,7 +104,9 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
     function _rotateSigners(WeightedSigners memory newSigners) internal {
         BaseWeightedMultisigStorage storage slot = _baseWeightedMultisigStorage();
 
-        _validateSigners(newSigners);
+        {
+            _validateSigners(newSigners);
+        }
 
         bytes32 newSignersHash = keccak256(abi.encode(newSigners));
 
@@ -130,10 +132,10 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      */
     function _validateSignatures(
         bytes32 messageHash,
-        WeightedSigners memory weightedSigners,
-        bytes[] memory signatures
+        WeightedSigners calldata weightedSigners,
+        bytes[] calldata signatures
     ) internal pure {
-        WeightedSigner[] memory signers = weightedSigners.signers;
+        WeightedSigner[] calldata signers = weightedSigners.signers;
         uint256 signersLength = signers.length;
         uint256 signaturesLength = signatures.length;
         uint256 signerIndex;

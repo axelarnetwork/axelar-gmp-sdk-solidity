@@ -25,7 +25,6 @@ describe('AxelarAmplifierGateway', () => {
     let weightedSigners;
 
     let gatewayFactory;
-
     let gateway;
 
     before(async () => {
@@ -67,15 +66,8 @@ describe('AxelarAmplifierGateway', () => {
     };
 
     const deployGateway = async () => {
-        // auth = await authFactory.deploy(user.address, domainSeparator, previousSignersRetention, [
-        //     encodeWeightedSigners(weightedSigners),
-        // ]);
-        // await auth.deployTransaction.wait(network.config.confirmations);
-
         gateway = await gatewayFactory.deploy(previousSignersRetention, domainSeparator, [weightedSigners]);
         await gateway.deployTransaction.wait(network.config.confirmations);
-
-        // await auth.transferOwnership(gateway.address).then((tx) => tx.wait(network.config.confirmations));
     };
 
     describe('queries', () => {

@@ -564,4 +564,67 @@ describe('AxelarAmplifierGateway', () => {
             );
         });
     });
+
+    describe('upgradability', () => {
+        beforeEach(async () => {
+            await deployGateway();
+        });
+
+        it('should allow upgrading the implementation', async () => {
+            const newImplementation = await gatewayFactory.deploy(previousSignersRetention, domainSeparator);
+            await newImplementation.deployTransaction.wait(network.config.confirmations);
+
+            const newImplementationCodehash = keccak256(await ethers.provider.getCode(newImplementation.address));
+
+            await expect(gateway.upgrade(newImplementation.address, newImplementationCodehash, '0x'))
+                .to.emit(gateway, 'Upgraded')
+                .withArgs(newImplementation.address);
+        });
+
+        it('should allow upgrading the implementation with setup params', async () => {
+            const newImplementation = await gatewayFactory.deploy(previousSignersRetention, domainSeparator);
+            await newImplementation.deployTransaction.wait(network.config.confirmations);
+
+            const newImplementationCodehash = keccak256(await ethers.provider.getCode(newImplementation.address));
+
+            const newSigners = {
+                signers: signers.map((wallet) => ({ signer: wallet.address, weight: 2 })),
+                threshold: threshold * 2,
+                nonce: id('1'),
+            };
+
+            const setupParams = defaultAbiCoder.encode(
+                [`${WEIGHTED_SIGNERS_TYPE}[]`],
+                [[newSigners]],
+            );
+
+            await expect(gateway.upgrade(newImplementation.address, newImplementationCodehash, setupParams))
+                .to.emit(gateway, 'Upgraded')
+                .withArgs(newImplementation.address)
+                .to.emit(gateway, 'SignersRotated')
+                .withArgs(2, keccak256(encodeWeightedSigners(newSigners)), encodeWeightedSigners(newSigners));
+        });
+
+        it('reject upgrading with invalid setup params', async () => {
+            const newImplementation = await gatewayFactory.deploy(previousSignersRetention, domainSeparator);
+            await newImplementation.deployTransaction.wait(network.config.confirmations);
+
+            const newImplementationCodehash = keccak256(await ethers.provider.getCode(newImplementation.address));
+            const setupParams = '0xff';
+
+            await expectRevert(
+                (gasOptions) => gateway.upgrade(newImplementation.address, newImplementationCodehash, setupParams, gasOptions),
+                gateway,
+                'SetupFailed'
+            );
+        });
+
+        it('reject upgrading to invalid implementation', async () => {
+            await expectRevert(
+                (gasOptions) => gateway.upgrade(implementation.address, ethers.constants.HashZero, '0x', gasOptions),
+                gateway,
+                'InvalidCodeHash'
+            );
+        });
+    });
 });

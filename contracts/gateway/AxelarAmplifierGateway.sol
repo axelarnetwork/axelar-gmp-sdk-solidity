@@ -29,7 +29,7 @@ contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, I
      * @param  proof The proof signed by the Axelar signers for this command.
      */
     function approveMessages(Message[] calldata messages, Proof calldata proof) external {
-        bytes32 dataHash = _computeDataHash(CommandType.ApproveMessages, abi.encode(messages));
+        bytes32 dataHash = keccak256(abi.encode(CommandType.ApproveMessages, messages));
 
         _validateProof(dataHash, proof);
 
@@ -37,13 +37,12 @@ contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, I
     }
 
     /**
-     * @notice Update the signer data for the auth module.
+     * @notice Rotate the weighted signers, signed off by the latest Axelar signers.
      * @param  newSigners The data for the new signers.
      * @param  proof The proof signed by the Axelar verifiers for this command.
      */
     function rotateSigners(WeightedSigners calldata newSigners, Proof calldata proof) external {
-        bytes memory newSignersData = abi.encode(newSigners);
-        bytes32 dataHash = _computeDataHash(CommandType.RotateSigners, newSignersData);
+        bytes32 dataHash = keccak256(abi.encode(CommandType.RotateSigners, newSigners));
         bytes32 commandId = dataHash;
 
         if (isCommandExecuted(commandId)) {
@@ -60,17 +59,13 @@ contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, I
         _rotateSigners(newSigners);
     }
 
-    /**********************\
-    |* Internal Functions *|
-    \**********************/
-
     /**
-     * @dev This function computes the data hash that is used for signing
-     * @param commandType The type of command
-     * @param data The data that is being signed
-     * @return The hash of the data
+     * @notice This function takes dataHash and proof and reverts if proof is invalid
+     * @param dataHash The hash of the data being signed
+     * @param proof The proof from Axelar signers
+     * @return isLatestSigners True if provided signers are the current ones
      */
-    function _computeDataHash(CommandType commandType, bytes memory data) internal pure returns (bytes32) {
-        return keccak256(abi.encodePacked(commandType, data));
+    function validateProof(bytes32 dataHash, Proof calldata proof) external view returns (bool isLatestSigners) {
+        return _validateProof(dataHash, proof);
     }
 }

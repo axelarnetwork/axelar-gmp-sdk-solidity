@@ -2,7 +2,7 @@ const { sortBy } = require('lodash');
 const chai = require('chai');
 const { ethers, network } = require('hardhat');
 const {
-    utils: { id, keccak256, defaultAbiCoder, toUtf8Bytes, solidityKeccak256, solidityPack },
+    utils: { id, keccak256, defaultAbiCoder, toUtf8Bytes, solidityKeccak256 },
 } = ethers;
 const { expect } = chai;
 
@@ -48,19 +48,33 @@ describe('AxelarAmplifierGateway', () => {
     const getApproveMessageData = (messages) => {
         return defaultAbiCoder.encode(
             [
+                'uint8',
                 'tuple(string messageId, string sourceChain, string sourceAddress, address contractAddress, bytes32 payloadHash)[] messages',
             ],
-            [messages],
+            [APPROVE_MESSAGES, messages],
         );
     };
 
-    const getRotateSignersData = (newSigners) => encodeWeightedSigners(newSigners);
+    const getRotateSignersData = (signers) => {
+        return defaultAbiCoder.encode(
+            ['uint8', 'tuple(tuple(address signer,uint128 weight)[] signers,uint128 threshold,bytes32 nonce)'],
+            [ROTATE_SIGNERS, signers],
+        );
+    };
 
     const getProof = (commandType, command, weightedSigners, wallets) => {
-        const commandData =
-            commandType === ROTATE_SIGNERS ? getRotateSignersData(command) : getApproveMessageData(command);
+        let data;
 
-        const data = solidityPack(['uint8', 'bytes'], [commandType, commandData]);
+        switch (commandType) {
+            case APPROVE_MESSAGES:
+                data = getApproveMessageData(command);
+                break;
+            case ROTATE_SIGNERS:
+                data = getRotateSignersData(command);
+                break;
+            default:
+                throw new Error(`Invalid command type: ${commandType}`);
+        }
 
         return getWeightedSignersProof(data, domainSeparator, weightedSigners, wallets);
     };
@@ -133,6 +147,8 @@ describe('AxelarAmplifierGateway', () => {
             ];
 
             const proof = await getProof(APPROVE_MESSAGES, messages, weightedSigners, signers.slice(0, threshold));
+
+            expect(await gateway.validateProof(getApproveMessageData(messages), proof)).to.be.true;
 
             await expect(gateway.approveMessages(messages, proof))
                 .to.emit(gateway, 'ContractCallApproved')
@@ -368,7 +384,7 @@ describe('AxelarAmplifierGateway', () => {
             payloadHash = keccak256(payload);
         });
 
-        it.only('should allow operators to transfer operatorship', async () => {
+        it.only('should allow rotating signers', async () => {
             const newSignersCount = 75;
             const newThreshold = 35;
             const wallets = sortBy(
@@ -381,12 +397,16 @@ describe('AxelarAmplifierGateway', () => {
                 threshold: newThreshold,
                 nonce: id('1'),
             };
-            const newSignersData = getRotateSignersData(newSigners);
+            const newSignersData = encodeWeightedSigners(newSigners);
 
             let proof = await getProof(ROTATE_SIGNERS, newSigners, weightedSigners, signers.slice(0, threshold));
             const epoch = (await gateway.epoch()).toNumber() + 1;
 
-            await expect(gateway.rotateSigners(newSigners, proof)).to.emit(gateway, 'SignersRotated').withArgs(epoch, keccak256(newSignersData), newSignersData);
+            expect(await gateway.validateProof(getRotateSignersData(newSigners), proof)).to.be.true;
+
+            await expect(gateway.rotateSigners(newSigners, proof))
+                .to.emit(gateway, 'SignersRotated')
+                .withArgs(epoch, keccak256(newSignersData), newSignersData);
 
             // validate message with the new signer set
             const messageId = '1';
@@ -403,6 +423,8 @@ describe('AxelarAmplifierGateway', () => {
             ];
 
             proof = await getProof(APPROVE_MESSAGES, messages, newSigners, wallets.slice(0, newThreshold));
+
+            expect(await gateway.validateProof(getApproveMessageData(messages), proof)).to.be.true;
 
             await expect(gateway.approveMessages(messages, proof))
                 .to.emit(gateway, 'ContractCallApproved')
@@ -474,7 +496,7 @@ describe('AxelarAmplifierGateway', () => {
                 nonce: id('1'),
             };
 
-            const newSignersData = getRotateSignersData(newSigners);
+            const newSignersData = encodeWeightedSigners(newSigners);
             const commandId = solidityKeccak256(['uint8', 'bytes'], [ROTATE_SIGNERS, newSignersData]);
             let proof = await getProof(ROTATE_SIGNERS, newSigners, weightedSigners, signers.slice(0, threshold));
 

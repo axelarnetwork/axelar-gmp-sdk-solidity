@@ -6,7 +6,7 @@ const {
 } = ethers;
 const { expect } = chai;
 
-const { encodeWeightedSigners, getWeightedSignersProof } = require('../../scripts/utils');
+const { encodeWeightedSigners, getWeightedSignersProof, WEIGHTED_SIGNERS_TYPE } = require('../../scripts/utils');
 const { expectRevert } = require('../utils');
 
 const APPROVE_MESSAGES = 0;
@@ -25,7 +25,9 @@ describe('AxelarAmplifierGateway', () => {
     let weightedSigners;
 
     let gatewayFactory;
+    let gatewayProxyFactory;
     let gateway;
+    let implementation;
 
     before(async () => {
         const wallets = await ethers.getSigners();
@@ -43,6 +45,7 @@ describe('AxelarAmplifierGateway', () => {
         };
 
         gatewayFactory = await ethers.getContractFactory('AxelarAmplifierGateway', user);
+        gatewayProxyFactory = await ethers.getContractFactory('AxelarAmplifierGatewayProxy', user);
     });
 
     const getApproveMessageData = (messages) => {
@@ -80,8 +83,18 @@ describe('AxelarAmplifierGateway', () => {
     };
 
     const deployGateway = async () => {
-        gateway = await gatewayFactory.deploy(previousSignersRetention, domainSeparator, weightedSigners);
-        await gateway.deployTransaction.wait(network.config.confirmations);
+        const signers = defaultAbiCoder.encode(
+            [`${WEIGHTED_SIGNERS_TYPE}[]`],
+            [[weightedSigners]],
+        );
+
+        implementation = await gatewayFactory.deploy(previousSignersRetention, domainSeparator);
+        await implementation.deployTransaction.wait(network.config.confirmations);
+
+        const proxy = await gatewayProxyFactory.deploy(implementation.address, user.address, signers);
+        await proxy.deployTransaction.wait(network.config.confirmations);
+
+        gateway = gatewayFactory.attach(proxy.address);
     };
 
     describe('queries', () => {
@@ -100,6 +113,16 @@ describe('AxelarAmplifierGateway', () => {
             );
 
             expect(commandId).to.equal(expectedCommandId);
+        });
+
+        it('should return the correct implementation address', async () => {
+            const gatewayImplementation = await gateway.implementation();
+            expect(gatewayImplementation).to.equal(implementation.address);
+        });
+
+        it('should return the correct contract id', async () => {
+            const contractId = await gateway.contractId();
+            expect(contractId).to.equal(id('axelar-amplifier-gateway'));
         });
     });
 

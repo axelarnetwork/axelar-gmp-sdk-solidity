@@ -76,9 +76,11 @@ const getWeightedSignersSet = (signerAddresses, weights, threshold) => {
     return defaultAbiCoder.encode(['address[]', 'uint256[]', 'uint256'], [sortedAddresses, sortedWeights, threshold]);
 };
 
+const WEIGHTED_SIGNERS_TYPE = 'tuple(tuple(address signer,uint128 weight)[] signers,uint128 threshold,bytes32 nonce)';
+
 const encodeWeightedSigners = (weightedSigners) => {
     return defaultAbiCoder.encode(
-        ['tuple(tuple(address signer,uint128 weight)[] signers,uint128 threshold,bytes32 nonce)'],
+        [WEIGHTED_SIGNERS_TYPE],
         [weightedSigners],
     );
 };
@@ -129,4 +131,6 @@ module.exports = {
     encodeWeightedSigners,
     encodeMessageHash,
     solidityObjectToTuple,
+
+    WEIGHTED_SIGNERS_TYPE,
 };

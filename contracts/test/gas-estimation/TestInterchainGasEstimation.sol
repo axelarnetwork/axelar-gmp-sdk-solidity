@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.0;
 
+import { GasInfo } from '../../types/GasEstimationTypes.sol';
 import { InterchainGasEstimation } from '../../gas-estimation/InterchainGasEstimation.sol';
 
 contract TestInterchainGasEstimation is InterchainGasEstimation {

@@ -2,6 +2,8 @@
 
 pragma solidity ^0.8.0;
 
+import { GasEstimationType, GasInfo } from '../types/GasEstimationTypes.sol';
+
 /**
  * @title IInterchainGasEstimation Interface
  * @notice This is an interface for the InterchainGasEstimation contract
@@ -16,22 +18,6 @@ interface IInterchainGasEstimation {
      * @param info The gas info for the chain
      */
     event GasInfoUpdated(string chain, GasInfo info);
-
-    enum GasEstimationType {
-        Default,
-        OptimismEcotone,
-        Arbitrum,
-        Scroll,
-        Mantle
-    }
-
-    struct GasInfo {
-        GasEstimationType gasEstimationType; // Custom gas pricing rule, such as L1 data fee on L2s
-        uint128 axelarBaseFee; // axelar base fee for cross-chain message approval (in terms of src native gas token)
-        uint128 expressFee; // axelar express fee for cross-chain message approval and express execution
-        uint128 relativeGasPrice; // dest_gas_price * dest_token_market_price / src_token_market_price
-        uint128 relativeBlobBaseFee; // dest_blob_base_fee * dest_token_market_price / src_token_market_price
-    }
 
     /**
      * @notice Returns the gas price for a specific chain.

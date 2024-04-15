@@ -8,8 +8,8 @@ pragma solidity ^0.8.0;
  */
 enum GasEstimationType {
     Default,
-    OptimismBedrock,
     OptimismEcotone,
+    OptimismBedrock,
     Arbitrum,
     Scroll
 }

@@ -34,11 +34,6 @@ describe('AxelarAmplifierAuth', () => {
         owner = wallets[0];
         signers = sortBy(wallets.slice(0, numSigners), (wallet) => wallet.address.toLowerCase());
 
-        multisigFactory = await ethers.getContractFactory('AxelarAmplifierAuth', owner);
-
-        multisig = await multisigFactory.deploy(owner.address, domainSeparator, previousSignersRetention, []);
-        await multisig.deployTransaction.wait(network.config.confirmations);
-
         weightedSigners = {
             signers: signers.map((signer) => {
                 return { signer: signer.address, weight: 1 };
@@ -48,7 +43,15 @@ describe('AxelarAmplifierAuth', () => {
         };
         weightedSignersHash = keccak256(encodeWeightedSigners(weightedSigners));
 
-        await multisig.rotateSigners(encodeWeightedSigners(weightedSigners)).then((tx) => tx.wait());
+        multisigFactory = await ethers.getContractFactory('AxelarAmplifierAuth', owner);
+
+        multisig = await multisigFactory.deploy(
+            owner.address,
+            previousSignersRetention,
+            domainSeparator,
+            weightedSigners,
+        );
+        await multisig.deployTransaction.wait(network.config.confirmations);
     });
 
     describe('queries', () => {
@@ -80,7 +83,12 @@ describe('AxelarAmplifierAuth', () => {
             let multisig;
 
             beforeEach(async () => {
-                multisig = await multisigFactory.deploy(owner.address, domainSeparator, previousSignersRetention, []);
+                multisig = await multisigFactory.deploy(
+                    owner.address,
+                    previousSignersRetention,
+                    domainSeparator,
+                    weightedSigners,
+                );
                 await multisig.deployTransaction.wait(network.config.confirmations);
             });
 
@@ -103,9 +111,9 @@ describe('AxelarAmplifierAuth', () => {
 
                 const prevEpoch = (await multisig.epoch()).toNumber();
 
-                await expect(multisig.rotateSigners(encodeWeightedSigners(newSigners)))
+                await expect(multisig.rotateSigners(newSigners))
                     .to.emit(multisig, 'SignersRotated')
-                    .withArgs(prevEpoch + 1, signersHash);
+                    .withArgs(prevEpoch + 1, signersHash, encodeWeightedSigners(newSigners));
 
                 expect(await multisig.epoch()).to.be.equal(prevEpoch + 1);
             });
@@ -121,19 +129,20 @@ describe('AxelarAmplifierAuth', () => {
                     threshold: 1,
                     nonce: defaultNonce,
                 };
-                const newSignersHash = keccak256(encodeWeightedSigners(newSigners));
+                const encodedSigners = encodeWeightedSigners(newSigners);
+                const newSignersHash = keccak256(encodedSigners);
 
                 const prevEpoch = (await multisig.epoch()).toNumber();
 
-                await expect(multisig.rotateSigners(encodeWeightedSigners(newSigners)))
+                await expect(multisig.rotateSigners(newSigners))
                     .to.emit(multisig, 'SignersRotated')
-                    .withArgs(prevEpoch + 1, newSignersHash);
+                    .withArgs(prevEpoch + 1, newSignersHash, encodedSigners);
 
                 expect(await multisig.epochBySignerHash(newSignersHash)).to.be.equal(prevEpoch + 1);
 
-                await expect(multisig.rotateSigners(encodeWeightedSigners(newSigners)))
+                await expect(multisig.rotateSigners(newSigners))
                     .to.emit(multisig, 'SignersRotated')
-                    .withArgs(prevEpoch + 2, newSignersHash);
+                    .withArgs(prevEpoch + 2, newSignersHash, encodedSigners);
 
                 // Duplicate weighted signers should point to the new epoch
                 expect(await multisig.epochBySignerHash(newSignersHash)).to.be.equal(prevEpoch + 2);
@@ -154,16 +163,16 @@ describe('AxelarAmplifierAuth', () => {
 
                 const prevEpoch = (await multisig.epoch()).toNumber();
 
-                await expect(multisig.rotateSigners(encodeWeightedSigners(newSigners)))
+                await expect(multisig.rotateSigners(newSigners))
                     .to.emit(multisig, 'SignersRotated')
-                    .withArgs(prevEpoch + 1, newSignersHash);
+                    .withArgs(prevEpoch + 1, newSignersHash, encodeWeightedSigners(newSigners));
 
                 const newSigners2 = { ...newSigners, nonce: id('1') };
                 const newSigners2Hash = keccak256(encodeWeightedSigners(newSigners2));
 
-                await expect(multisig.rotateSigners(encodeWeightedSigners(newSigners2)))
+                await expect(multisig.rotateSigners(newSigners2))
                     .to.emit(multisig, 'SignersRotated')
-                    .withArgs(prevEpoch + 2, newSigners2Hash);
+                    .withArgs(prevEpoch + 2, newSigners2Hash, encodeWeightedSigners(newSigners2));
 
                 // Both weighted signer should be available
                 expect(await multisig.epochBySignerHash(newSignersHash)).to.be.equal(prevEpoch + 1);
@@ -177,10 +186,7 @@ describe('AxelarAmplifierAuth', () => {
                     (gasOptions) =>
                         multisig
                             .connect(signers[1])
-                            .rotateSigners(
-                                encodeWeightedSigners({ signers: [], threshold: 1, nonce: defaultNonce }),
-                                gasOptions,
-                            ),
+                            .rotateSigners({ signers: [], threshold: 1, nonce: defaultNonce }, gasOptions),
                     multisig,
                     'NotOwner',
                 );
@@ -189,10 +195,7 @@ describe('AxelarAmplifierAuth', () => {
             it('should revert if new signers length is zero', async () => {
                 await expectRevert(
                     (gasOptions) =>
-                        multisig.rotateSigners(
-                            encodeWeightedSigners({ signers: [], threshold: 1, nonce: defaultNonce }),
-                            gasOptions,
-                        ),
+                        multisig.rotateSigners({ signers: [], threshold: 1, nonce: defaultNonce }, gasOptions),
                     multisig,
                     'InvalidSigners',
                 );
@@ -202,19 +205,17 @@ describe('AxelarAmplifierAuth', () => {
                 await expectRevert(
                     (gasOptions) =>
                         multisig.rotateSigners(
-                            encodeWeightedSigners(
-                                {
-                                    signers: [
-                                        {
-                                            signer: AddressZero,
-                                            weight: 1,
-                                        },
-                                    ],
-                                    threshold: 1,
-                                    nonce: defaultNonce,
-                                },
-                                gasOptions,
-                            ),
+                            {
+                                signers: [
+                                    {
+                                        signer: AddressZero,
+                                        weight: 1,
+                                    },
+                                ],
+                                threshold: 1,
+                                nonce: defaultNonce,
+                            },
+                            gasOptions,
                         ),
                     multisig,
                     'InvalidSigners',
@@ -225,17 +226,15 @@ describe('AxelarAmplifierAuth', () => {
                 await expectRevert(
                     (gasOptions) =>
                         multisig.rotateSigners(
-                            encodeWeightedSigners(
-                                {
-                                    signers: [
-                                        { signer: '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b', weight: 1 },
-                                        { signer: '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b', weight: 1 },
-                                    ],
-                                    threshold: 1,
-                                    nonce: defaultNonce,
-                                },
-                                gasOptions,
-                            ),
+                            {
+                                signers: [
+                                    { signer: '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b', weight: 1 },
+                                    { signer: '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b', weight: 1 },
+                                ],
+                                threshold: 1,
+                                nonce: defaultNonce,
+                            },
+                            gasOptions,
                         ),
                     multisig,
                     'InvalidSigners',
@@ -246,17 +245,15 @@ describe('AxelarAmplifierAuth', () => {
                 await expectRevert(
                     (gasOptions) =>
                         multisig.rotateSigners(
-                            encodeWeightedSigners(
-                                {
-                                    signers: [
-                                        { signer: '0xb7900E8Ec64A1D1315B6D4017d4b1dcd36E6Ea88', weight: 1 },
-                                        { signer: '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b', weight: 1 },
-                                    ],
-                                    threshold: 1,
-                                    nonce: defaultNonce,
-                                },
-                                gasOptions,
-                            ),
+                            {
+                                signers: [
+                                    { signer: '0xb7900E8Ec64A1D1315B6D4017d4b1dcd36E6Ea88', weight: 1 },
+                                    { signer: '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b', weight: 1 },
+                                ],
+                                threshold: 1,
+                                nonce: defaultNonce,
+                            },
+                            gasOptions,
                         ),
                     multisig,
                     'InvalidSigners',
@@ -267,17 +264,15 @@ describe('AxelarAmplifierAuth', () => {
                 await expectRevert(
                     (gasOptions) =>
                         multisig.rotateSigners(
-                            encodeWeightedSigners(
-                                {
-                                    signers: [
-                                        { signer: '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b', weight: 1 },
-                                        { signer: '0xb7900E8Ec64A1D1315B6D4017d4b1dcd36E6Ea88', weight: 0 },
-                                    ],
-                                    threshold: 1,
-                                    nonce: defaultNonce,
-                                },
-                                gasOptions,
-                            ),
+                            {
+                                signers: [
+                                    { signer: '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b', weight: 1 },
+                                    { signer: '0xb7900E8Ec64A1D1315B6D4017d4b1dcd36E6Ea88', weight: 0 },
+                                ],
+                                threshold: 1,
+                                nonce: defaultNonce,
+                            },
+                            gasOptions,
                         ),
                     multisig,
                     'InvalidWeights',
@@ -288,14 +283,12 @@ describe('AxelarAmplifierAuth', () => {
                 await expectRevert(
                     (gasOptions) =>
                         multisig.rotateSigners(
-                            encodeWeightedSigners(
-                                {
-                                    signers: [{ signer: '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b', weight: 1 }],
-                                    threshold: 0,
-                                    nonce: defaultNonce,
-                                },
-                                gasOptions,
-                            ),
+                            {
+                                signers: [{ signer: '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b', weight: 1 }],
+                                threshold: 0,
+                                nonce: defaultNonce,
+                            },
+                            gasOptions,
                         ),
                     multisig,
                     'InvalidThreshold',
@@ -306,14 +299,12 @@ describe('AxelarAmplifierAuth', () => {
                 await expectRevert(
                     (gasOptions) =>
                         multisig.rotateSigners(
-                            encodeWeightedSigners(
-                                {
-                                    signers: [{ signer: '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b', weight: 1 }],
-                                    threshold: 2,
-                                    nonce: defaultNonce,
-                                },
-                                gasOptions,
-                            ),
+                            {
+                                signers: [{ signer: '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b', weight: 1 }],
+                                threshold: 2,
+                                nonce: defaultNonce,
+                            },
+                            gasOptions,
                         ),
                     multisig,
                     'InvalidThreshold',
@@ -322,17 +313,15 @@ describe('AxelarAmplifierAuth', () => {
                 await expectRevert(
                     (gasOptions) =>
                         multisig.rotateSigners(
-                            encodeWeightedSigners(
-                                {
-                                    signers: [
-                                        { signer: '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b', weight: 1 },
-                                        { signer: '0xb7900E8Ec64A1D1315B6D4017d4b1dcd36E6Ea88', weight: 2 },
-                                    ],
-                                    threshold: 4,
-                                    nonce: defaultNonce,
-                                },
-                                gasOptions,
-                            ),
+                            {
+                                signers: [
+                                    { signer: '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b', weight: 1 },
+                                    { signer: '0xb7900E8Ec64A1D1315B6D4017d4b1dcd36E6Ea88', weight: 2 },
+                                ],
+                                threshold: 4,
+                                nonce: defaultNonce,
+                            },
+                            gasOptions,
                         ),
                     multisig,
                     'InvalidThreshold',
@@ -391,24 +380,25 @@ describe('AxelarAmplifierAuth', () => {
             });
 
             it('validate the proof from a single signer', async () => {
-                const multisig = await multisigFactory.deploy(
-                    owner.address,
-                    domainSeparator,
-                    previousSignersRetention,
-                    [],
-                );
-                await multisig.deployTransaction.wait(network.config.confirmations);
-
                 const newSigners = {
                     signers: [{ signer: signers[0].address, weight: 1 }],
                     threshold: 1,
                     nonce: defaultNonce,
                 };
+
+                const multisig = await multisigFactory.deploy(
+                    owner.address,
+                    previousSignersRetention,
+                    domainSeparator,
+                    newSigners,
+                );
+                await multisig.deployTransaction.wait(network.config.confirmations);
+
                 const encodedSigners = encodeWeightedSigners(newSigners);
 
-                await expect(multisig.rotateSigners(encodedSigners))
+                await expect(multisig.rotateSigners(newSigners))
                     .to.emit(multisig, 'SignersRotated')
-                    .withArgs(1, keccak256(encodedSigners));
+                    .withArgs(2, keccak256(encodedSigners), encodedSigners);
 
                 const proof = await getWeightedSignersProof(data, domainSeparator, newSigners, [signers[0]]);
 
@@ -481,7 +471,12 @@ describe('AxelarAmplifierAuth', () => {
         let multisig;
 
         before(async () => {
-            multisig = await multisigFactory.deploy(owner.address, domainSeparator, previousSignersRetention, []);
+            multisig = await multisigFactory.deploy(
+                owner.address,
+                previousSignersRetention,
+                domainSeparator,
+                weightedSigners,
+            );
             await multisig.deployTransaction.wait(network.config.confirmations);
 
             for (let i = 0; i <= previousSignersRetention + 1; i++) {
@@ -490,9 +485,7 @@ describe('AxelarAmplifierAuth', () => {
                     nonce: id(`${i}`),
                 };
 
-                await multisig
-                    .rotateSigners(encodeWeightedSigners(newSigners))
-                    .then((tx) => tx.wait(network.config.confirmations));
+                await multisig.rotateSigners(newSigners).then((tx) => tx.wait(network.config.confirmations));
 
                 const proof = await getWeightedSignersProof(
                     data,
@@ -545,7 +538,12 @@ describe('AxelarAmplifierAuth', () => {
     });
 
     it('should allow rotateSigners and validateProof with a randomized signer set', async () => {
-        const multisig = await multisigFactory.deploy(owner.address, domainSeparator, previousSignersRetention, []);
+        const multisig = await multisigFactory.deploy(
+            owner.address,
+            previousSignersRetention,
+            domainSeparator,
+            weightedSigners,
+        );
         await multisig.deployTransaction.wait(network.config.confirmations);
 
         const maxSigners = 20;
@@ -578,9 +576,9 @@ describe('AxelarAmplifierAuth', () => {
         try {
             const prevEpoch = (await multisig.epoch()).toNumber();
 
-            await expect(multisig.rotateSigners(encodeWeightedSigners(newSigners)))
+            await expect(multisig.rotateSigners(newSigners))
                 .to.emit(multisig, 'SignersRotated')
-                .withArgs(prevEpoch + 1, signersHash);
+                .withArgs(prevEpoch + 1, signersHash, encodeWeightedSigners(newSigners));
 
             expect(await multisig.epoch()).to.be.equal(prevEpoch + 1);
 

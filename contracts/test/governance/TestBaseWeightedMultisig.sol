@@ -16,17 +16,15 @@ contract TestBaseWeightedMultisig is BaseWeightedMultisig {
         }
     }
 
-    function rotateSigners(WeightedSigners memory newSigners) external {
+    function rotateSigners(WeightedSigners calldata newSigners) external {
         _rotateSigners(newSigners);
     }
 
     // use a non-view method to allow gas reporting in tests
-    function validateProof(bytes32 dataHash, bytes calldata proof) external returns (bool isLatestSigners) {
+    function validateProof(bytes32 dataHash, Proof calldata proof) external returns (bool isLatestSigners) {
         // emit an event to avoid compiler warning about making this into a view
         emit DummyEvent();
 
-        Proof memory proofData = abi.decode(proof, (Proof));
-
-        return _validateProof(dataHash, proofData);
+        return _validateProof(dataHash, proof);
     }
 }

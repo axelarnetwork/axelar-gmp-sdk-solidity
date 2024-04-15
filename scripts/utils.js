@@ -97,12 +97,7 @@ const getWeightedSignersProof = async (data, domainSeparator, weightedSigners, w
 
     const signatures = await Promise.all(wallets.map((wallet) => wallet.signMessage(message)));
 
-    return defaultAbiCoder.encode(
-        [
-            'tuple(tuple(tuple(address signer,uint128 weight)[] signers,uint128 threshold,bytes32 nonce) signers,bytes[] signatures)',
-        ],
-        [{ signers: weightedSigners, signatures }],
-    );
+    return { signers: weightedSigners, signatures };
 };
 
 const encodeInterchainCallsBatch = (batchId, calls) =>

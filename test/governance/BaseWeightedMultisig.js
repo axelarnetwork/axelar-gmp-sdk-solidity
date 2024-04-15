@@ -13,6 +13,8 @@ const { getWeightedSignersProof, encodeWeightedSigners } = require('../../script
 describe('BaseWeightedMultisig', () => {
     const previousSignersRetention = 0;
     const domainSeparator = keccak256(toUtf8Bytes('chain'));
+    const data = '0x123abc123abc';
+    const dataHash = keccak256(arrayify(data));
 
     let owner;
     let testMultisigFactory;
@@ -30,14 +32,35 @@ describe('BaseWeightedMultisig', () => {
         await multisig.deployTransaction.wait(network.config.confirmations);
     });
 
+    it('should validate proof from signers', async () => {
+        const threshold = 2;
+        const wallets = sortBy((await ethers.getSigners()).slice(0, threshold), (wallet) =>
+            wallet.address.toLowerCase(),
+        );
+
+        const newSigners = {
+            signers: wallets.map((wallet) => {
+                return { signer: wallet.address, weight: 1 };
+            }),
+            threshold,
+            nonce: HashZero,
+        };
+
+        const multisig = await testMultisigFactory.deploy(previousSignersRetention, domainSeparator);
+        await multisig.deployTransaction.wait(network.config.confirmations);
+
+        await multisig.rotateSigners(newSigners).then((tx) => tx.wait());
+
+        const proof = await getWeightedSignersProof(data, domainSeparator, newSigners, wallets);
+        await multisig.validateProof(dataHash, proof).then((tx) => tx.wait());
+    });
+
     it('should allow signer rotation to a large set of 40 signers', async () => {
         const numSigners = 40;
 
         const multisig = await testMultisigFactory.deploy(previousSignersRetention, domainSeparator);
         await multisig.deployTransaction.wait(network.config.confirmations);
 
-        const data = '0x123abc123abc';
-        const dataHash = keccak256(arrayify(data));
         const defaultNonce = HashZero;
         const threshold = Math.floor(numSigners / 2) + 1;
 
@@ -62,7 +85,7 @@ describe('BaseWeightedMultisig', () => {
 
         await expect(multisig.rotateSigners(newSigners))
             .to.emit(multisig, 'SignersRotated')
-            .withArgs(prevEpoch + 1, signersHash);
+            .withArgs(prevEpoch + 1, signersHash, encodedSigners);
 
         const proof = await getWeightedSignersProof(data, domainSeparator, newSigners, wallets.slice(0, threshold));
 

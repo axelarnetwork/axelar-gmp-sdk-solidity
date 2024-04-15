@@ -53,7 +53,7 @@ abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
     }
 
     function isCommandExecuted(bytes32 commandId) public view override returns (bool) {
-        return _baseAmplifierStorage().commands[commandId];
+        return _baseAmplifierGatewayStorage().commands[commandId];
     }
 
     /**
@@ -114,7 +114,7 @@ abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
                 continue;
             }
 
-            _commandExecuted(commandId);
+            _markCommandExecuted(commandId);
 
             _approveMessage(commandId, message);
         }
@@ -127,8 +127,8 @@ abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
     /**
      * @dev This function is used to mark a command as executed
      */
-    function _commandExecuted(bytes32 commandId) internal {
-        _baseAmplifierStorage().commands[commandId] = true;
+    function _markCommandExecuted(bytes32 commandId) internal {
+        _baseAmplifierGatewayStorage().commands[commandId] = true;
 
         emit Executed(commandId);
     }
@@ -147,7 +147,7 @@ abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
             contractAddress,
             payloadHash
         );
-        return _baseAmplifierStorage().approvals[key];
+        return _baseAmplifierGatewayStorage().approvals[key];
     }
 
     function _validateContractCall(
@@ -157,10 +157,10 @@ abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
         bytes32 payloadHash
     ) internal returns (bool valid) {
         bytes32 key = _getIsContractCallApprovedKey(commandId, sourceChain, sourceAddress, msg.sender, payloadHash);
-        valid = _baseAmplifierStorage().approvals[key];
+        valid = _baseAmplifierGatewayStorage().approvals[key];
 
         if (valid) {
-            delete _baseAmplifierStorage().approvals[key];
+            delete _baseAmplifierGatewayStorage().approvals[key];
 
             emit ContractCallExecuted(commandId);
         }
@@ -174,7 +174,7 @@ abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
             message.contractAddress,
             message.payloadHash
         );
-        _baseAmplifierStorage().approvals[key] = true;
+        _baseAmplifierGatewayStorage().approvals[key] = true;
 
         emit ContractCallApproved(
             commandId,
@@ -204,7 +204,7 @@ abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
      * @notice Gets the specific storage location for preventing upgrade collisions
      * @return slot containing the BaseAmplifierGatewayStorage struct
      */
-    function _baseAmplifierStorage() private pure returns (BaseAmplifierGatewayStorage storage slot) {
+    function _baseAmplifierGatewayStorage() private pure returns (BaseAmplifierGatewayStorage storage slot) {
         assembly {
             slot.slot := BASE_AMPLIFIER_GATEWAY_SLOT
         }

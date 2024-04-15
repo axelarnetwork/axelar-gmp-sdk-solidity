@@ -26,7 +26,7 @@ interface IAxelarAmplifierGateway is IBaseAmplifierGateway {
      * @param  newSigners The data for the new signers.
      * @param  proof The proof signed by the Axelar signers for this command.
      */
-    function rotateSigners(WeightedSigners calldata newSigners, Proof calldata proof) external;
+    function rotateSigners(WeightedSigners memory newSigners, Proof calldata proof) external;
 
     /**
      * @notice This function takes dataHash and proof and reverts if proof is invalid

@@ -120,7 +120,7 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
      * @param newSigners The new weighted signers encoded as bytes
      * @dev This function is only callable by the contract itself after signature verification
      */
-    function rotateSigners(WeightedSigners calldata newSigners) external onlySelf {
+    function rotateSigners(WeightedSigners memory newSigners) external onlySelf {
         _rotateSigners(newSigners);
     }
 

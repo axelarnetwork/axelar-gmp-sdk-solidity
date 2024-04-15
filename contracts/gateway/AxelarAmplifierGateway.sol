@@ -38,7 +38,7 @@ contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, U
      * @param  newSigners The data for the new signers.
      * @param  proof The proof signed by the Axelar verifiers for this command.
      */
-    function rotateSigners(WeightedSigners calldata newSigners, Proof calldata proof) external {
+    function rotateSigners(WeightedSigners memory newSigners, Proof calldata proof) external {
         bytes32 dataHash = keccak256(abi.encode(CommandType.RotateSigners, newSigners));
         bytes32 commandId = dataHash;
 
@@ -51,7 +51,7 @@ contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, U
             revert NotLatestSigners();
         }
 
-        _commandExecuted(commandId);
+        _markCommandExecuted(commandId);
 
         _rotateSigners(newSigners);
     }

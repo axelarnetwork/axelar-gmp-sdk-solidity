@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.0;
 
+import { GasInfo } from '../types/GasEstimationTypes.sol';
 import { IInterchainGasEstimation } from './IInterchainGasEstimation.sol';
 import { IUpgradable } from './IUpgradable.sol';
 

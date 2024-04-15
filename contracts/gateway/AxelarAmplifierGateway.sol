@@ -77,7 +77,12 @@ contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, U
      * @param messageId The unique message id for the message.
      * @return The commandId for the message.
      */
-    function messageToCommandId(string calldata sourceChain, string calldata messageId) public pure override(BaseAmplifierGateway, IBaseAmplifierGateway) returns (bytes32) {
+    function messageToCommandId(string calldata sourceChain, string calldata messageId)
+        public
+        pure
+        override(BaseAmplifierGateway, IBaseAmplifierGateway)
+        returns (bytes32)
+    {
         // Axelar prevents `sourceChain` to contain '_',
         // hence we can use it as a separator with abi.encodePacked to avoid ambiguous encodings
         return keccak256(abi.encodePacked(CommandType.ApproveMessages, sourceChain, '_', messageId));

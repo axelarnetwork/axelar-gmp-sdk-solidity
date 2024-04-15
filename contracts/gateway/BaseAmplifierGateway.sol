@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import { IBaseAmplifierGateway } from '../interfaces/IBaseAmplifierGateway.sol';
 
-import { CommandType, Message } from '../types/AmplifierGatewayTypes.sol';
+import { Message } from '../types/AmplifierGatewayTypes.sol';
 
 abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
     /// @dev This slot contains all the storage for this contract in an upgrade-compatible manner
@@ -62,7 +62,11 @@ abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
      * @param messageId The unique message id for the message.
      * @return The commandId for the message.
      */
-    function messageToCommandId(string calldata sourceChain, string calldata messageId) public pure virtual returns (bytes32);
+    function messageToCommandId(string calldata sourceChain, string calldata messageId)
+        public
+        pure
+        virtual
+        returns (bytes32);
 
     /*************************\
     |* Legacy Public Methods *|

@@ -379,17 +379,22 @@ describe('AxelarAmplifierGateway', () => {
         });
 
         it('reject invalid contract call approval', async () => {
-            expect(await gateway.isContractCallApproved(id('1'), 'Chain', 'address', user.address, id('data'))).to.be.false;
+            expect(await gateway.isContractCallApproved(id('1'), 'Chain', 'address', user.address, id('data'))).to.be
+                .false;
 
-            await expect(gateway.validateContractCall(id('1'), 'Chain', 'address', id('data')))
-                .to.not.emit(gateway, 'ContractCallExecuted');
+            await expect(gateway.validateContractCall(id('1'), 'Chain', 'address', id('data'))).to.not.emit(
+                gateway,
+                'ContractCallExecuted',
+            );
         });
 
         it('reject invalid message approval', async () => {
             expect(await gateway.isMessageApproved('1', 'Chain', 'address', user.address, id('data'))).to.be.false;
 
-            await expect(gateway.validateMessage('1', 'Chain', 'address', id('data')))
-                .to.not.emit(gateway, 'ContractCallExecuted');
+            await expect(gateway.validateMessage('1', 'Chain', 'address', id('data'))).to.not.emit(
+                gateway,
+                'ContractCallExecuted',
+            );
         });
 
         it('reject re-approving a message', async () => {
@@ -484,10 +489,7 @@ describe('AxelarAmplifierGateway', () => {
 
             expect(await gateway.validateProof(keccak256(getRotateSignersData(newSigners)), proof)).to.be.true;
 
-            const rotationCommandId = solidityKeccak256(
-                ['uint8', 'bytes'],
-                [ROTATE_SIGNERS, newSignersData],
-            );
+            const rotationCommandId = solidityKeccak256(['uint8', 'bytes'], [ROTATE_SIGNERS, newSignersData]);
 
             await expect(gateway.rotateSigners(newSigners, proof))
                 .to.emit(gateway, 'SignersRotated')
@@ -533,7 +535,7 @@ describe('AxelarAmplifierGateway', () => {
 
                 await expect(gateway.rotateSigners(newSigners, proof))
                     .to.emit(gateway, 'SignersRotated')
-                    .withArgs(i+1, keccak256(encodedSigners), encodedSigners);
+                    .withArgs(i + 1, keccak256(encodedSigners), encodedSigners);
 
                 currentSigners = newSigners;
             }

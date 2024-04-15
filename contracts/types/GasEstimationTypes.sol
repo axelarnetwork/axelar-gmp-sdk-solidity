@@ -20,6 +20,7 @@ enum GasEstimationType {
  * @dev Smaller uint types are used for efficient struct packing to save storage costs.
  */
 struct GasInfo {
+    /// @dev example
     uint64 gasEstimationType; // Custom gas pricing rule, such as L1 data fee on L2s
     uint64 l1FeeScalar; // scalar value for a gas estimation formula, expected < 1e10
     uint128 axelarBaseFee; // Axelar base fee for cross-chain message approval (in terms of src native gas token)

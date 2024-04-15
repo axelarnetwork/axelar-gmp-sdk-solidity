@@ -26,7 +26,7 @@ struct GasInfo {
     uint64 l1FeeScalar;
     /// @dev Axelar base fee for cross-chain message approval (in terms of src native gas token)
     uint128 axelarBaseFee;
-    /// @dev dest_gas_price * dest_token_market_price / src_token_market_price
+    /// @dev Gas price of destination chain, in terms of the source chain token, i.e dest_gas_price * dest_token_market_price / src_token_market_price
     uint128 relativeGasPrice;
     /// @dev dest_blob_base_fee * dest_token_market_price / src_token_market_price
     uint128 relativeBlobBaseFee;

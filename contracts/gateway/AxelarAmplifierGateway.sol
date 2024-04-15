@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import { IAxelarAmplifierGateway } from '../interfaces/IAxelarAmplifierGateway.sol';
+import { IBaseAmplifierGateway } from '../interfaces/IBaseAmplifierGateway.sol';
 
 import { CommandType, Message } from '../types/AmplifierGatewayTypes.sol';
 import { WeightedSigners, Proof } from '../types/WeightedMultisigTypes.sol';
@@ -43,7 +44,7 @@ contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, I
      */
     function rotateSigners(WeightedSigners memory newSigners, Proof calldata proof) external {
         bytes32 dataHash = keccak256(abi.encode(CommandType.RotateSigners, newSigners));
-        bytes32 commandId = dataHash;
+        bytes32 commandId = keccak256(abi.encodePacked(CommandType.RotateSigners, abi.encode(newSigners))); // TODO: optimize
 
         if (isCommandExecuted(commandId)) {
             revert CommandAlreadyExecuted(commandId);
@@ -67,5 +68,17 @@ contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, I
      */
     function validateProof(bytes32 dataHash, Proof calldata proof) external view returns (bool isLatestSigners) {
         return _validateProof(dataHash, proof);
+    }
+
+    /**
+     * @notice Compute the commandId for a `Message`.
+     * @param sourceChain The name of the source chain as registered on Axelar.
+     * @param messageId The unique message id for the message.
+     * @return The commandId for the message.
+     */
+    function messageToCommandId(string calldata sourceChain, string calldata messageId) public pure override(BaseAmplifierGateway, IBaseAmplifierGateway) returns (bytes32) {
+        // Axelar prevents `sourceChain` to contain '_',
+        // hence we can use it as a separator with abi.encodePacked to avoid ambiguous encodings
+        return keccak256(abi.encodePacked(CommandType.ApproveMessages, sourceChain, '_', messageId));
     }
 }

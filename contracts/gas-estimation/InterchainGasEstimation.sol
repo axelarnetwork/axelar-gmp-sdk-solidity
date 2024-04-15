@@ -70,7 +70,7 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
         if (gasEstimationType != GasEstimationType.Default) {
             GasInfo storage l1GasInfo = _storage().gasPrices['ethereum'];
 
-            gasEstimate += computeL1DataFee(gasEstimationType, payload, l1GasInfo, gasInfo.l1FeeScalar);
+            gasEstimate += computeL1DataFee(gasEstimationType, payload, gasInfo, l1GasInfo);
         }
     }
 
@@ -84,20 +84,20 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
     function computeL1DataFee(
         GasEstimationType gasEstimationType,
         bytes calldata payload,
-        GasInfo storage l1GasInfo,
-        uint256 l1FeeScalar
+        GasInfo storage gasInfo,
+        GasInfo storage l1GasInfo
     ) internal view returns (uint256) {
         if (gasEstimationType == GasEstimationType.OptimismEcotone) {
-            return optimismEcotoneL1Fee(payload, l1GasInfo, l1FeeScalar);
+            return optimismEcotoneL1Fee(payload, gasInfo, l1GasInfo);
         }
         if (gasEstimationType == GasEstimationType.OptimismBedrock) {
-            return optimismBedrockL1Fee(payload, l1GasInfo, l1FeeScalar);
+            return optimismBedrockL1Fee(payload, gasInfo, l1GasInfo);
         }
         if (gasEstimationType == GasEstimationType.Arbitrum) {
-            return arbitrumL1Fee(payload, l1GasInfo);
+            return arbitrumL1Fee(payload, gasInfo, l1GasInfo);
         }
         if (gasEstimationType == GasEstimationType.Scroll) {
-            return scrollL1Fee(payload, l1GasInfo, l1FeeScalar);
+            return scrollL1Fee(payload, gasInfo, l1GasInfo);
         }
 
         revert UnsupportedEstimationType(gasEstimationType);
@@ -106,13 +106,14 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
     /**
      * @notice Computes the L1 to L2 fee for an OP chain with Ecotone gas model.
      * @param payload The payload of the contract call
+     * @param gasInfo Destination chain gas info
      * @param l1GasInfo The L1 gas info
      * @return l1DataFee The L1 to L2 data fee
      */
     function optimismEcotoneL1Fee(
         bytes calldata payload,
-        GasInfo storage l1GasInfo,
-        uint256 baseFeeScalar
+        GasInfo storage gasInfo,
+        GasInfo storage l1GasInfo
     ) internal view returns (uint256 l1DataFee) {
         /* Optimism Ecotone gas model https://docs.optimism.io/stack/transactions/fees#ecotone
              tx_compressed_size = ((count_zero_bytes(tx_data) * 4 + count_non_zero_bytes(tx_data) * 16)) / 16
@@ -135,7 +136,7 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
         uint256 txSize = _l1TxSize(payload);
 
         uint256 weightedGasPrice = 16 *
-            baseFeeScalar *
+            gasInfo.l1FeeScalar *
             l1GasInfo.relativeGasPrice +
             blobBaseFeeScalar *
             l1GasInfo.relativeBlobBaseFee;
@@ -146,13 +147,14 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
     /**
      * @notice Computes the L1 to L2 fee for an OP chain with Bedrock gas model.
      * @param payload The payload of the contract call
+     * @param gasInfo Destination chain gas info
      * @param l1GasInfo The L1 gas info
      * @return l1DataFee The L1 to L2 data fee
      */
     function optimismBedrockL1Fee(
         bytes calldata payload,
-        GasInfo storage l1GasInfo,
-        uint256 scalar
+        GasInfo storage gasInfo,
+        GasInfo storage l1GasInfo
     ) internal view returns (uint256 l1DataFee) {
         // Resembling OP Bedrock gas price model
         // https://docs.optimism.io/stack/transactions/fees#bedrock
@@ -163,20 +165,21 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
 
         uint256 txSize = _l1TxSize(payload) + overhead;
 
-        return (l1GasInfo.relativeGasPrice * txSize * scalar) / precision;
+        return (l1GasInfo.relativeGasPrice * txSize * gasInfo.l1FeeScalar) / precision;
     }
 
     /**
      * @notice Computes the L1 to L2 fee for a contract call on the Arbitrum chain.
      * @param payload The payload of the contract call
+     * param gasInfo Destination chain gas info
      * @param l1GasInfo The L1 gas info
      * @return l1DataFee The L1 to L2 data fee
      */
-    function arbitrumL1Fee(bytes calldata payload, GasInfo storage l1GasInfo)
-        internal
-        view
-        returns (uint256 l1DataFee)
-    {
+    function arbitrumL1Fee(
+        bytes calldata payload,
+        GasInfo storage, /* gasInfo */
+        GasInfo storage l1GasInfo
+    ) internal view returns (uint256 l1DataFee) {
         // https://docs.arbitrum.io/build-decentralized-apps/how-to-estimate-gas
         // https://docs.arbitrum.io/arbos/l1-pricing
         // Reference https://github.com/OffchainLabs/nitro/blob/master/arbos/l1pricing/l1pricing.go#L565-L578
@@ -198,13 +201,14 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
     /**
      * @notice Computes the L1 to L2 fee for a contract call on the Scroll chain.
      * @param payload The payload of the contract call
+     * @param gasInfo Destination chain gas info
      * @param l1GasInfo The L1 gas info
      * @return l1DataFee The L1 to L2 data fee
      */
     function scrollL1Fee(
         bytes calldata payload,
-        GasInfo storage l1GasInfo,
-        uint256 scalar
+        GasInfo storage gasInfo,
+        GasInfo storage l1GasInfo
     ) internal view returns (uint256 l1DataFee) {
         // https://docs.scroll.io/en/developers/guides/estimating-gas-and-tx-fees/
         // Reference https://github.com/scroll-tech/scroll/blob/af2913903b181f3492af1c62b4da4c1c99cc552d/contracts/src/L2/predeploys/L1GasPriceOracle.sol#L63-L86
@@ -213,7 +217,7 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
 
         uint256 txSize = _l1TxSize(payload) + overhead + (4 * 16);
 
-        return (l1GasInfo.relativeGasPrice * txSize * scalar) / precision;
+        return (l1GasInfo.relativeGasPrice * txSize * gasInfo.l1FeeScalar) / precision;
     }
 
     /**

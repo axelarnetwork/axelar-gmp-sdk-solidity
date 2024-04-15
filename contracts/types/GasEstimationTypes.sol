@@ -22,7 +22,7 @@ enum GasEstimationType {
 struct GasInfo {
     /// @dev Custom gas pricing rule, such as L1 data fee on L2s
     uint64 gasEstimationType;
-    /// @dev scalar value for a gas estimation formula, expected < 1e10
+    /// @dev Scalar value needed for specific gas estimation types, expected to be less than 1e10
     uint64 l1FeeScalar;
     /// @dev Axelar base fee for cross-chain message approval (in terms of src native gas token)
     uint128 axelarBaseFee;

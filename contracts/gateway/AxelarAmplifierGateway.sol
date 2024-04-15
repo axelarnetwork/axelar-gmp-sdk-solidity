@@ -10,19 +10,20 @@ import { WeightedSigners, Proof } from '../types/WeightedMultisigTypes.sol';
 
 import { BaseWeightedMultisig } from '../governance/BaseWeightedMultisig.sol';
 import { BaseAmplifierGateway } from './BaseAmplifierGateway.sol';
+import { Upgradable } from '../upgradable/Upgradable.sol';
 
-contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, IAxelarAmplifierGateway {
-    constructor(
-        uint256 previousSignersRetention_,
-        bytes32 domainSeparator_,
-        WeightedSigners memory initialSigners
-    ) BaseWeightedMultisig(previousSignersRetention_, domainSeparator_) {
-        _rotateSigners(initialSigners);
-    }
+contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, Upgradable, IAxelarAmplifierGateway {
+    constructor(uint256 previousSignersRetention_, bytes32 domainSeparator_)
+        BaseWeightedMultisig(previousSignersRetention_, domainSeparator_)
+    {}
 
     /**********************\
     |* External Functions *|
     \**********************/
+
+    function contractId() external pure returns (bytes32) {
+        return keccak256('axelar-amplifier-gateway');
+    }
 
     /**
      * @notice Approves an array of messages, signed by the Axelar signers.
@@ -76,9 +77,31 @@ contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, I
      * @param messageId The unique message id for the message.
      * @return The commandId for the message.
      */
-    function messageToCommandId(string calldata sourceChain, string calldata messageId) public pure override(BaseAmplifierGateway, IBaseAmplifierGateway) returns (bytes32) {
+    function messageToCommandId(string calldata sourceChain, string calldata messageId)
+        public
+        pure
+        override(BaseAmplifierGateway, IBaseAmplifierGateway)
+        returns (bytes32)
+    {
         // Axelar prevents `sourceChain` to contain '_',
         // hence we can use it as a separator with abi.encodePacked to avoid ambiguous encodings
         return keccak256(abi.encodePacked(CommandType.ApproveMessages, sourceChain, '_', messageId));
+    }
+
+    /*****************\
+    |* Upgradability *|
+    \*****************/
+
+    /**
+     * @notice Internal function to set up the contract with initial data
+     * @param data Initialization data for the contract
+     * @dev This function should be implemented in derived contracts.
+     */
+    function _setup(bytes calldata data) internal override {
+        WeightedSigners[] memory signers = abi.decode(data, (WeightedSigners[]));
+
+        for (uint256 i = 0; i < signers.length; i++) {
+            _rotateSigners(signers[i]);
+        }
     }
 }

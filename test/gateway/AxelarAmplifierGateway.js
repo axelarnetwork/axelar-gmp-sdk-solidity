@@ -404,9 +404,18 @@ describe('AxelarAmplifierGateway', () => {
 
             expect(await gateway.validateProof(keccak256(getRotateSignersData(newSigners)), proof)).to.be.true;
 
+            const rotationCommandId = solidityKeccak256(
+                ['uint8', 'string', 'string', 'string'],
+                [APPROVE_MESSAGES, sourceChain, '_', messageId],
+            );
+
             await expect(gateway.rotateSigners(newSigners, proof))
                 .to.emit(gateway, 'SignersRotated')
-                .withArgs(epoch, keccak256(newSignersData), newSignersData);
+                .withArgs(epoch, keccak256(newSignersData), newSignersData)
+                .to.emit(gateway, 'Executed')
+                .withArgs(rotationCommandId);
+
+            expect(await gateway.isCommandExecuted(rotationCommandId)).to.be.true;
 
             // validate message with the new signer set
             const messageId = '1';

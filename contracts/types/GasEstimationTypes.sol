@@ -20,11 +20,16 @@ enum GasEstimationType {
  * @dev Smaller uint types are used for efficient struct packing to save storage costs.
  */
 struct GasInfo {
-    /// @dev example
-    uint64 gasEstimationType; // Custom gas pricing rule, such as L1 data fee on L2s
-    uint64 l1FeeScalar; // scalar value for a gas estimation formula, expected < 1e10
-    uint128 axelarBaseFee; // Axelar base fee for cross-chain message approval (in terms of src native gas token)
-    uint128 relativeGasPrice; // dest_gas_price * dest_token_market_price / src_token_market_price
-    uint128 relativeBlobBaseFee; // dest_blob_base_fee * dest_token_market_price / src_token_market_price
-    uint128 expressFee; // Axelar express fee for cross-chain message approval and express execution
+    /// @dev Custom gas pricing rule, such as L1 data fee on L2s
+    uint64 gasEstimationType;
+    /// @dev scalar value for a gas estimation formula, expected < 1e10
+    uint64 l1FeeScalar;
+    /// @dev Axelar base fee for cross-chain message approval (in terms of src native gas token)
+    uint128 axelarBaseFee;
+    /// @dev dest_gas_price * dest_token_market_price / src_token_market_price
+    uint128 relativeGasPrice;
+    /// @dev dest_blob_base_fee * dest_token_market_price / src_token_market_price
+    uint128 relativeBlobBaseFee;
+    /// @dev Axelar express fee for cross-chain message approval and express execution
+    uint128 expressFee;
 }

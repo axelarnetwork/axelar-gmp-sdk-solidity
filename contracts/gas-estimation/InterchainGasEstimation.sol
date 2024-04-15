@@ -87,11 +87,11 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
         GasInfo storage l1GasInfo,
         uint256 l1FeeScalar
     ) internal view returns (uint256) {
-        if (gasEstimationType == GasEstimationType.OptimismBedrock) {
-            return optimismBedrockL1Fee(payload, l1GasInfo, l1FeeScalar);
-        }
         if (gasEstimationType == GasEstimationType.OptimismEcotone) {
             return optimismEcotoneL1Fee(payload, l1GasInfo, l1FeeScalar);
+        }
+        if (gasEstimationType == GasEstimationType.OptimismBedrock) {
+            return optimismBedrockL1Fee(payload, l1GasInfo, l1FeeScalar);
         }
         if (gasEstimationType == GasEstimationType.Arbitrum) {
             return arbitrumL1Fee(payload, l1GasInfo);
@@ -101,29 +101,6 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
         }
 
         revert UnsupportedEstimationType(gasEstimationType);
-    }
-
-    /**
-     * @notice Computes the L1 to L2 fee for an OP chain with Bedrock gas model.
-     * @param payload The payload of the contract call
-     * @param l1GasInfo The L1 gas info
-     * @return l1DataFee The L1 to L2 data fee
-     */
-    function optimismBedrockL1Fee(
-        bytes calldata payload,
-        GasInfo storage l1GasInfo,
-        uint256 scalar
-    ) internal view returns (uint256 l1DataFee) {
-        // Resembling OP Bedrock gas price model
-        // https://docs.optimism.io/stack/transactions/fees#bedrock
-        // https://docs-v2.mantle.xyz/devs/concepts/tx-fee/ef
-        // Reference https://github.com/mantlenetworkio/mantle-v2/blob/a29f01045191344b0ba89542215e6a02bd5e7fcc/packages/contracts-bedrock/contracts/L2/GasPriceOracle.sol#L98-L105
-        uint256 overhead = 188;
-        uint256 precision = 1e6;
-
-        uint256 txSize = _l1TxSize(payload) + overhead;
-
-        return (l1GasInfo.relativeGasPrice * txSize * scalar) / precision;
     }
 
     /**
@@ -164,6 +141,29 @@ abstract contract InterchainGasEstimation is IInterchainGasEstimation {
             l1GasInfo.relativeBlobBaseFee;
 
         l1DataFee = (weightedGasPrice * txSize) / (16 * scalarPrecision); // 16 for txSize compression and scalar precision conversion
+    }
+
+    /**
+     * @notice Computes the L1 to L2 fee for an OP chain with Bedrock gas model.
+     * @param payload The payload of the contract call
+     * @param l1GasInfo The L1 gas info
+     * @return l1DataFee The L1 to L2 data fee
+     */
+    function optimismBedrockL1Fee(
+        bytes calldata payload,
+        GasInfo storage l1GasInfo,
+        uint256 scalar
+    ) internal view returns (uint256 l1DataFee) {
+        // Resembling OP Bedrock gas price model
+        // https://docs.optimism.io/stack/transactions/fees#bedrock
+        // https://docs-v2.mantle.xyz/devs/concepts/tx-fee/ef
+        // Reference https://github.com/mantlenetworkio/mantle-v2/blob/a29f01045191344b0ba89542215e6a02bd5e7fcc/packages/contracts-bedrock/contracts/L2/GasPriceOracle.sol#L98-L105
+        uint256 overhead = 188;
+        uint256 precision = 1e6;
+
+        uint256 txSize = _l1TxSize(payload) + overhead;
+
+        return (l1GasInfo.relativeGasPrice * txSize * scalar) / precision;
     }
 
     /**

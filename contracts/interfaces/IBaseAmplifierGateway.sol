@@ -13,10 +13,7 @@ interface IBaseAmplifierGateway is IAxelarGMPGateway {
     |* Errors *|
     \**********/
 
-    error NotSelf();
     error InvalidMessages();
-    error InvalidCommand();
-    error CommandAlreadyExecuted(bytes32 commandId);
 
     /**
      * @notice Emitted when a contract call has been executed.
@@ -24,13 +21,6 @@ interface IBaseAmplifierGateway is IAxelarGMPGateway {
      * @param commandId The identifier of the command that was executed.
      */
     event ContractCallExecuted(bytes32 indexed commandId);
-
-    /**
-     * @notice Emitted when a command has been executed.
-     * @dev Logs successful execution of a command.
-     * @param commandId The identifier of the executed command.
-     */
-    event Executed(bytes32 indexed commandId);
 
     /**
      * @notice Emitted when a cross-chain contract call is approved.
@@ -67,6 +57,15 @@ interface IBaseAmplifierGateway is IAxelarGMPGateway {
         address contractAddress,
         bytes32 payloadHash
     ) external view returns (bool);
+
+    /**
+     * @notice Checks if a message is executed.
+     * @dev Determines whether a given message, identified by the sourceChain and messageId is executed.
+     * @param sourceChain The name of the source chain.
+     * @param messageId The unique identifier of the message.
+     * @return True if the message is executed, false otherwise.
+     */
+    function isMessageExecuted(string calldata sourceChain, string calldata messageId) external view returns (bool);
 
     /**
      * @notice Validates and approves a contract call using messageId.

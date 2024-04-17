@@ -14,6 +14,7 @@ import { Message } from '../types/AmplifierGatewayTypes.sol';
  */
 interface IAxelarAmplifierGateway is IBaseAmplifierGateway, IUpgradable {
     error NotLatestSigners();
+    error AlreadyRotated();
 
     /**
      * @notice Approves an array of messages, signed by the Axelar signers.

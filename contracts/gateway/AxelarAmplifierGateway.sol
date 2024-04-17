@@ -3,7 +3,6 @@
 pragma solidity ^0.8.0;
 
 import { IAxelarAmplifierGateway } from '../interfaces/IAxelarAmplifierGateway.sol';
-import { IBaseAmplifierGateway } from '../interfaces/IBaseAmplifierGateway.sol';
 
 import { CommandType, Message } from '../types/AmplifierGatewayTypes.sol';
 import { WeightedSigners, Proof } from '../types/WeightedMultisigTypes.sol';
@@ -13,9 +12,35 @@ import { BaseAmplifierGateway } from './BaseAmplifierGateway.sol';
 import { Upgradable } from '../upgradable/Upgradable.sol';
 
 contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, Upgradable, IAxelarAmplifierGateway {
+    /// @dev This slot contains the storage for this contract in an upgrade-compatible manner
+    /// keccak256('AxelarAmplifierGateway.Slot') - 1;
+    bytes32 internal constant AXELAR_AMPLIFIER_GATEWAY_SLOT =
+        0xca458dc12368669a3b8c292bc21c1b887ab1aa386fa3fcc1ed972afd74a330ca;
+
+    struct AxelarAmplifierGatewayStorage {
+        mapping(bytes32 => bool) rotations;
+    }
+
     constructor(uint256 previousSignersRetention_, bytes32 domainSeparator_)
         BaseWeightedMultisig(previousSignersRetention_, domainSeparator_)
     {}
+
+    /*****************\
+    |* Upgradability *|
+    \*****************/
+
+    /**
+     * @notice Internal function to set up the contract with initial data
+     * @param data Initialization data for the contract
+     * @dev This function should be implemented in derived contracts.
+     */
+    function _setup(bytes calldata data) internal override {
+        WeightedSigners[] memory signers = abi.decode(data, (WeightedSigners[]));
+
+        for (uint256 i = 0; i < signers.length; i++) {
+            _rotateSigners(signers[i]);
+        }
+    }
 
     /**********************\
     |* External Functions *|
@@ -45,10 +70,9 @@ contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, U
      */
     function rotateSigners(WeightedSigners memory newSigners, Proof calldata proof) external {
         bytes32 dataHash = keccak256(abi.encode(CommandType.RotateSigners, newSigners));
-        bytes32 commandId = keccak256(abi.encodePacked(CommandType.RotateSigners, abi.encode(newSigners))); // TODO: optimize
 
-        if (isCommandExecuted(commandId)) {
-            revert CommandAlreadyExecuted(commandId);
+        if (_axelarAmplifierGatewayStorage().rotations[dataHash]) {
+            revert AlreadyRotated();
         }
 
         bool isLatestSigners = _validateProof(dataHash, proof);
@@ -56,7 +80,7 @@ contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, U
             revert NotLatestSigners();
         }
 
-        _markCommandExecuted(commandId);
+        _axelarAmplifierGatewayStorage().rotations[dataHash] = true;
 
         _rotateSigners(newSigners);
     }
@@ -71,37 +95,17 @@ contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, U
         return _validateProof(dataHash, proof);
     }
 
-    /**
-     * @notice Compute the commandId for a `Message`.
-     * @param sourceChain The name of the source chain as registered on Axelar.
-     * @param messageId The unique message id for the message.
-     * @return The commandId for the message.
-     */
-    function messageToCommandId(string calldata sourceChain, string calldata messageId)
-        public
-        pure
-        override(BaseAmplifierGateway, IBaseAmplifierGateway)
-        returns (bytes32)
-    {
-        // Axelar prevents `sourceChain` to contain '_',
-        // hence we can use it as a separator with abi.encodePacked to avoid ambiguous encodings
-        return keccak256(abi.encodePacked(CommandType.ApproveMessages, sourceChain, '_', messageId));
-    }
-
-    /*****************\
-    |* Upgradability *|
-    \*****************/
+    /********************\
+    |* Pure Key Getters *|
+    \********************/
 
     /**
-     * @notice Internal function to set up the contract with initial data
-     * @param data Initialization data for the contract
-     * @dev This function should be implemented in derived contracts.
+     * @notice Gets the specific storage location for preventing upgrade collisions
+     * @return slot containing the storage struct
      */
-    function _setup(bytes calldata data) internal override {
-        WeightedSigners[] memory signers = abi.decode(data, (WeightedSigners[]));
-
-        for (uint256 i = 0; i < signers.length; i++) {
-            _rotateSigners(signers[i]);
+    function _axelarAmplifierGatewayStorage() private pure returns (AxelarAmplifierGatewayStorage storage slot) {
+        assembly {
+            slot.slot := AXELAR_AMPLIFIER_GATEWAY_SLOT
         }
     }
 }

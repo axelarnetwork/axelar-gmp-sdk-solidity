@@ -123,6 +123,11 @@ struct Proof {
 The data hash is calculated depending on the command type.
 
 ```solidity
+enum CommandType {
+    ApproveMessages,
+    RotateSigners
+}
+
 // For approveMessages
 bytes32 dataHash = keccak256(abi.encode(CommandType.ApproveMessages, messages));
 

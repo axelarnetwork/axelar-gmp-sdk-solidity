@@ -223,6 +223,8 @@ describe('AxelarAmplifierGateway', () => {
 
             const proof = await getProof(APPROVE_MESSAGES, messages, weightedSigners, signers.slice(0, threshold));
 
+            expect(await gateway.isMessageExecuted(sourceChain, messageId)).to.be.false;
+
             await expect(gateway.approveMessages(messages, proof))
                 .to.emit(gateway, 'ContractCallApproved')
                 .withArgs(commandId, messageId, sourceChain, sourceAddress, user.address, payloadHash);
@@ -235,6 +237,8 @@ describe('AxelarAmplifierGateway', () => {
                 payloadHash,
             );
             expect(isApprovedBefore).to.be.true;
+
+            expect(await gateway.isMessageExecuted(sourceChain, messageId)).to.be.false;
 
             await gateway
                 .connect(user)
@@ -249,6 +253,8 @@ describe('AxelarAmplifierGateway', () => {
                 payloadHash,
             );
             expect(isApprovedAfter).to.be.false;
+
+            expect(await gateway.isMessageExecuted(sourceChain, messageId)).to.be.true;
         });
 
         it('should approve and validate contract call', async () => {
@@ -291,6 +297,8 @@ describe('AxelarAmplifierGateway', () => {
             await expect(
                 gateway.connect(user).validateContractCall(commandId, sourceChain, sourceAddress, payloadHash),
             ).to.not.emit(gateway, 'ContractCallExecuted');
+
+            expect(await gateway.isCommandExecuted(commandId)).to.be.true;
         });
 
         it('should approve and validate multiple contract calls', async () => {

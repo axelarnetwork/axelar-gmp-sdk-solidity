@@ -128,10 +128,10 @@ enum CommandType {
     RotateSigners
 }
 
-// For approveMessages
+// For approveMessages. `messages` has type `Message[]`
 bytes32 dataHash = keccak256(abi.encode(CommandType.ApproveMessages, messages));
 
-// For rotateSigners
+// For rotateSigners. `newSigners` has type `WeightedSigners`
 bytes32 dataHash = keccak256(abi.encode(CommandType.RotateSigners, newSigners));
 ```
 

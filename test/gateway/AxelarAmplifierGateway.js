@@ -104,10 +104,7 @@ describe('AxelarAmplifierGateway', () => {
             const sourceChain = 'Source';
 
             const commandId = await gateway.messageToCommandId(sourceChain, messageId);
-            const expectedCommandId = solidityKeccak256(
-                ['uint8', 'string', 'string', 'string'],
-                [APPROVE_MESSAGES, sourceChain, '_', messageId],
-            );
+            const expectedCommandId = solidityKeccak256(['string', 'string', 'string'], [sourceChain, '_', messageId]);
 
             expect(commandId).to.equal(expectedCommandId);
         });
@@ -489,15 +486,9 @@ describe('AxelarAmplifierGateway', () => {
 
             expect(await gateway.validateProof(keccak256(getRotateSignersData(newSigners)), proof)).to.be.true;
 
-            const rotationCommandId = solidityKeccak256(['uint8', 'bytes'], [ROTATE_SIGNERS, newSignersData]);
-
             await expect(gateway.rotateSigners(newSigners, proof))
                 .to.emit(gateway, 'SignersRotated')
-                .withArgs(epoch, keccak256(newSignersData), newSignersData)
-                .to.emit(gateway, 'Executed')
-                .withArgs(rotationCommandId);
-
-            expect(await gateway.isCommandExecuted(rotationCommandId)).to.be.true;
+                .withArgs(epoch, keccak256(newSignersData), newSignersData);
 
             // validate message with the new signer set
             const messageId = '1';
@@ -588,12 +579,9 @@ describe('AxelarAmplifierGateway', () => {
             };
 
             const newSignersData = encodeWeightedSigners(newSigners);
-            const commandId = solidityKeccak256(['uint8', 'bytes'], [ROTATE_SIGNERS, newSignersData]);
             let proof = await getProof(ROTATE_SIGNERS, newSigners, weightedSigners, signers.slice(0, threshold));
 
             await expect(gateway.rotateSigners(newSigners, proof))
-                .to.emit(gateway, 'Executed')
-                .withArgs(commandId)
                 .to.emit(gateway, 'SignersRotated')
                 .withArgs(2, keccak256(newSignersData), newSignersData);
 
@@ -601,8 +589,7 @@ describe('AxelarAmplifierGateway', () => {
             await expectRevert(
                 (gasOptions) => gateway.rotateSigners(newSigners, proof, gasOptions),
                 gateway,
-                'CommandAlreadyExecuted',
-                commandId,
+                'AlreadyRotated',
             );
         });
 

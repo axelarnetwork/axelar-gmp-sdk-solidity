@@ -72,6 +72,7 @@ module.exports = {
                   'contracts/upgradable/FixedProxy.sol': compilerSettings,
                   'contracts/governance/InterchainGovernance.sol': compilerSettings,
                   'contracts/governance/Multisig.sol': compilerSettings,
+                  'contracts/utils/Operators.sol': compilerSettings,
               },
     },
     defaultNetwork: 'hardhat',

@@ -1,6 +1,6 @@
 {
   "name": "@axelar-network/axelar-gmp-sdk-solidity",
-  "version": "5.7.0",
+  "version": "5.8.0",
   "description": "Solidity GMP SDK and utilities provided by Axelar for cross-chain development",
   "main": "index.js",
   "scripts": {
@@ -17,7 +17,7 @@
   "author": "axelar-network",
   "license": "MIT",
   "devDependencies": {
-    "@axelar-network/axelar-chains-config": "^1.0.0",
+    "@axelar-network/axelar-chains-config": "^1.2.0",
     "@nomicfoundation/hardhat-toolbox": "^2.0.2",
     "cross-env": "^7.0.3",
     "eslint": "^8.57.0",

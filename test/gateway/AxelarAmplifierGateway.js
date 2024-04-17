@@ -120,6 +120,16 @@ describe('AxelarAmplifierGateway', () => {
         });
     });
 
+    it('should validate storage constants', async () => {
+        const testBaseGatewayFactory = await ethers.getContractFactory('TestBaseAmplifierGateway', user);
+        const testBaseGateway = await testBaseGatewayFactory.deploy();
+        await testBaseGateway.deployTransaction.wait(network.config.confirmations);
+
+        const testAxelarGatewayFactory = await ethers.getContractFactory('TestAxelarAmplifierGateway', user);
+        const testAxelarGateway = await testAxelarGatewayFactory.deploy(0, id('1'));
+        await testAxelarGateway.deployTransaction.wait(network.config.confirmations);
+    });
+
     describe('call contract', () => {
         beforeEach(async () => {
             await deployGateway();

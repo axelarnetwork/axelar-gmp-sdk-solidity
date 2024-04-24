@@ -4,6 +4,7 @@ const chai = require('chai');
 const { ethers } = require('hardhat');
 const {
     utils: { defaultAbiCoder, Interface, keccak256, formatBytes32String },
+    constants: { AddressZero },
 } = ethers;
 const { expect } = chai;
 const { isHardhat, getPayloadAndProposalHash, getEVMVersion, expectRevert } = require('../utils');
@@ -25,6 +26,7 @@ describe('AxelarServiceGovernance', () => {
     let calldata;
 
     const governanceChain = 'Governance Chain';
+    const minimumTimeDelay = isHardhat ? 10 * 60 * 60 : 15;
     const timeDelay = isHardhat ? 12 * 60 * 60 : 45;
 
     const ScheduleTimeLockProposal = 0;
@@ -48,8 +50,6 @@ describe('AxelarServiceGovernance', () => {
         targetInterface = new ethers.utils.Interface(targetContract.interface.fragments);
         calldata = targetInterface.encodeFunctionData('callTarget');
 
-        const minimumTimeDelay = isHardhat ? 10 * 60 * 60 : 15;
-
         serviceGovernance = await serviceGovernanceFactory
             .deploy(gateway.address, governanceChain, governanceAddress.address, minimumTimeDelay, multisig.address)
             .then((d) => d.deployed());
@@ -60,6 +60,22 @@ describe('AxelarServiceGovernance', () => {
         expect(await serviceGovernance.governanceChain()).to.equal(governanceChain);
         expect(await serviceGovernance.governanceAddress()).to.equal(governanceAddress.address);
         expect(await serviceGovernance.multisig()).to.equal(multisig.address);
+    });
+
+    it('should revert on invalid multisig address', async () => {
+        await expectRevert(
+            async (gasOptions) => serviceGovernanceFactory.deploy(gateway.address, governanceChain, governanceAddress.address, minimumTimeDelay, AddressZero, gasOptions),
+            serviceGovernanceFactory,
+            'InvalidMultisigAddress',
+        );
+    });
+
+    it('should revert on invalid multisig transfer', async () => {
+        await expectRevert(
+            async (gasOptions) => serviceGovernance.connect(multisig).transferMultisig(AddressZero, gasOptions),
+            serviceGovernance,
+            'InvalidMultisigAddress',
+        );
     });
 
     it('should revert on invalid command', async () => {

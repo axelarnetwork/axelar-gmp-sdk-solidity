@@ -58,12 +58,15 @@ describe('Mutlicall', () => {
     });
 
     it('Shoult revert if any of the calls fail', async () => {
-        await expect(test.multicall([function1Data, function2Data, function3Data, function1Data]))
-            .to.be.revertedWith('function3 failed');
+        await expect(test.multicall([function1Data, function2Data, function3Data, function1Data])).to.be.revertedWith(
+            'function3 failed',
+        );
     });
 
     it('Shoult revert with error if a call fails without revert data', async () => {
-        await expect(test.multicall([function1Data, function4Data]))
-            .to.be.revertedWithCustomError(test, 'MulticallFailed');
+        await expect(test.multicall([function1Data, function4Data])).to.be.revertedWithCustomError(
+            test,
+            'MulticallFailed',
+        );
     });
 });

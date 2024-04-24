@@ -8,16 +8,17 @@ const {
     constants: { AddressZero },
 } = ethers;
 
-const { deployCreate3Upgradable, upgradeUpgradable } = require('../../scripts/upgradable');
+const { deployCreate2InitUpgradable, deployCreate3Upgradable, upgradeUpgradable } = require('../../scripts/upgradable');
 const { expectRevert } = require('../utils');
 
-const Proxy = require('../../artifacts/contracts/test/upgradable/TestProxy.sol/TestProxy.json');
 const Upgradable = require('../../artifacts/contracts/test/upgradable/TestUpgradable.sol/TestUpgradable.json');
 
 describe('Upgradable', () => {
     let upgradable;
-    let create3DeployerFactory;
-    let upgradableTestFactory;
+    let implementation;
+    let implementationCodeHash;
+    let upgradableFactory;
+    let proxyFactory;
 
     let ownerWallet;
     let userWallet;
@@ -25,46 +26,68 @@ describe('Upgradable', () => {
     before(async () => {
         [ownerWallet, userWallet] = await ethers.getSigners();
 
-        upgradableTestFactory = await ethers.getContractFactory('TestUpgradable', ownerWallet);
-
-        create3DeployerFactory = await ethers.getContractFactory('Create3Deployer', ownerWallet);
+        proxyFactory = await ethers.getContractFactory('TestProxy', ownerWallet);
+        upgradableFactory = await ethers.getContractFactory('TestUpgradable', ownerWallet);
     });
 
     describe('positive tests', () => {
         beforeEach(async () => {
-            const create3Deployer = await create3DeployerFactory.deploy().then((d) => d.deployed());
+            implementation = await upgradableFactory.deploy().then((d) => d.deployed());
+            implementationCodeHash = keccak256(await ethers.provider.getCode(implementation.address));
 
-            upgradable = await deployCreate3Upgradable(create3Deployer.address, ownerWallet, Upgradable, Proxy, []);
+            const proxy = await proxyFactory
+                .deploy(implementation.address, ownerWallet.address, '0x')
+                .then((d) => d.deployed());
+            upgradable = upgradableFactory.attach(proxy.address);
         });
 
         it('should store implementation address in the proxy, not the implementation', async () => {
             const implementationAddress = await upgradable.implementation();
 
-            const implementation = upgradableTestFactory.attach(implementationAddress);
+            const implementation = upgradableFactory.attach(implementationAddress);
 
             expect(await implementation.implementation()).to.eq(AddressZero);
         });
 
         it('should upgrade to a new implementation', async () => {
-            const oldImplementation = await upgradable.implementation();
+            const newImplementation = await upgradableFactory.deploy().then((d) => d.deployed());
+            const newImplementationCodeHash = keccak256(await ethers.provider.getCode(newImplementation.address));
 
-            await upgradeUpgradable(upgradable.address, ownerWallet, Upgradable, []);
+            await expect(upgradable.upgrade(newImplementation.address, newImplementationCodeHash, '0x'))
+                .to.emit(upgradable, 'Upgraded')
+                .withArgs(newImplementation.address);
 
-            const newImplementation = await upgradable.implementation();
-
-            expect(newImplementation).not.to.be.equal(oldImplementation);
+            expect(await upgradable.implementation()).to.be.equal(newImplementation.address);
         });
 
         it('should upgrade to a new implementation with setup params', async () => {
-            const oldImplementation = await upgradable.implementation();
+            const setupParams = defaultAbiCoder.encode(['uint256'], [10]);
+            const newImplementation = await upgradableFactory.deploy().then((d) => d.deployed());
+            const newImplementationCodeHash = keccak256(await ethers.provider.getCode(newImplementation.address));
 
+            await expect(upgradable.upgrade(newImplementation.address, newImplementationCodeHash, setupParams))
+                .to.emit(upgradable, 'Upgraded')
+                .withArgs(newImplementation.address);
+
+            expect(await upgradable.implementation()).to.be.equal(newImplementation.address);
+        });
+
+        it('should upgrade to the same implementation', async () => {
+            await expect(upgradable.upgrade(implementation.address, implementationCodeHash, '0x'))
+                .to.emit(upgradable, 'Upgraded')
+                .withArgs(implementation.address);
+
+            expect(await upgradable.implementation()).to.be.equal(implementation.address);
+        });
+
+        it('should upgrade to the same implementation with setup params', async () => {
             const setupParams = defaultAbiCoder.encode(['uint256'], [10]);
 
-            await upgradeUpgradable(upgradable.address, ownerWallet, Upgradable, [], setupParams);
+            await expect(upgradable.upgrade(implementation.address, implementationCodeHash, setupParams))
+                .to.emit(upgradable, 'Upgraded')
+                .withArgs(implementation.address);
 
-            const newImplementation = await upgradable.implementation();
-
-            expect(newImplementation).not.to.be.equal(oldImplementation);
+            expect(await upgradable.implementation()).to.be.equal(implementation.address);
         });
 
         it('should transfer ownership', async () => {
@@ -72,13 +95,57 @@ describe('Upgradable', () => {
 
             expect(await upgradable.owner()).to.be.equal(userWallet.address);
         });
+
+        describe('with Deployers', () => {
+            it('should deploy upgradable contract with create2 deployer', async () => {
+                const create2DeployerFactory = await ethers.getContractFactory('Create2Deployer', ownerWallet);
+                const deployer = await create2DeployerFactory.deploy().then((d) => d.deployed());
+
+                const Proxy = require('../../artifacts/contracts/test/upgradable/TestInitProxy.sol/TestInitProxy.json');
+
+                const upgradable = await deployCreate2InitUpgradable(
+                    deployer.address,
+                    ownerWallet,
+                    Upgradable,
+                    Proxy,
+                    [],
+                );
+
+                const oldImplementation = await upgradable.implementation();
+
+                await upgradeUpgradable(upgradable.address, ownerWallet, Upgradable, []);
+
+                const newImplementation = await upgradable.implementation();
+
+                expect(newImplementation).not.to.be.equal(oldImplementation);
+            });
+
+            it('should deploy upgradable contract with create3 deployer', async () => {
+                const create3DeployerFactory = await ethers.getContractFactory('Create3Deployer', ownerWallet);
+                const deployer = await create3DeployerFactory.deploy().then((d) => d.deployed());
+
+                const Proxy = require('../../artifacts/contracts/test/upgradable/TestProxy.sol/TestProxy.json');
+
+                const upgradable = await deployCreate3Upgradable(deployer.address, ownerWallet, Upgradable, Proxy, []);
+
+                const oldImplementation = await upgradable.implementation();
+
+                await upgradeUpgradable(upgradable.address, ownerWallet, Upgradable, []);
+
+                const newImplementation = await upgradable.implementation();
+
+                expect(newImplementation).not.to.be.equal(oldImplementation);
+            });
+        });
     });
 
     describe('negative tests', () => {
         before(async () => {
-            const create3Deployer = await create3DeployerFactory.deploy().then((d) => d.deployed());
-
-            upgradable = await deployCreate3Upgradable(create3Deployer.address, ownerWallet, Upgradable, Proxy, []);
+            const implementation = await upgradableFactory.deploy().then((d) => d.deployed());
+            const proxy = await proxyFactory
+                .deploy(implementation.address, ownerWallet.address, '0x')
+                .then((d) => d.deployed());
+            upgradable = upgradableFactory.attach(proxy.address);
         });
 
         it('should revert on upgrade with invalid contract ID', async () => {
@@ -105,7 +172,7 @@ describe('Upgradable', () => {
         });
 
         it('should revert on upgrade if setup fails', async () => {
-            const newImplementation = await upgradableTestFactory.deploy().then((d) => d.deployed());
+            const newImplementation = await upgradableFactory.deploy().then((d) => d.deployed());
 
             const setupParams = '0x00';
 
@@ -122,7 +189,7 @@ describe('Upgradable', () => {
             const implementationAddress = await upgradable.implementation();
             const setupParams = '0x';
 
-            const implementation = await upgradableTestFactory.attach(implementationAddress);
+            const implementation = await upgradableFactory.attach(implementationAddress);
 
             // call setup on the implementation
             await expect(implementation.setup(setupParams)).to.be.revertedWithCustomError(implementation, 'NotProxy');
@@ -135,7 +202,7 @@ describe('Upgradable', () => {
 
             await expectRevert(
                 (gasOptions) =>
-                upgradable.connect(userWallet).upgrade(implementation, implementationCodeHash, '0x', gasOptions),
+                    upgradable.connect(userWallet).upgrade(implementation, implementationCodeHash, '0x', gasOptions),
                 upgradable,
                 'NotOwner',
             );

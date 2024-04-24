@@ -185,9 +185,7 @@ describe('Proxy', async () => {
         it('should shadow setup function in fixed proxy', async () => {
             const setupParams = defaultAbiCoder.encode(['uint256'], [123]);
 
-            const proxy = await fixedProxyFactory
-                .deploy(fixedProxyImplementation.address)
-                .then((d) => d.deployed());
+            const proxy = await fixedProxyFactory.deploy(fixedProxyImplementation.address).then((d) => d.deployed());
 
             const receipt = await proxy.setup(setupParams).then((tx) => tx.wait());
             expect(receipt.events).to.be.empty;

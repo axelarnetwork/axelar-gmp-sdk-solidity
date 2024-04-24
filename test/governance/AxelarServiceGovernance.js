@@ -64,7 +64,15 @@ describe('AxelarServiceGovernance', () => {
 
     it('should revert on invalid multisig address', async () => {
         await expectRevert(
-            async (gasOptions) => serviceGovernanceFactory.deploy(gateway.address, governanceChain, governanceAddress.address, minimumTimeDelay, AddressZero, gasOptions),
+            async (gasOptions) =>
+                serviceGovernanceFactory.deploy(
+                    gateway.address,
+                    governanceChain,
+                    governanceAddress.address,
+                    minimumTimeDelay,
+                    AddressZero,
+                    gasOptions,
+                ),
             serviceGovernanceFactory,
             'InvalidMultisigAddress',
         );

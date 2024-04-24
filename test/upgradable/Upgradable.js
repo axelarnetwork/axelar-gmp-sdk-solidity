@@ -187,7 +187,7 @@ describe('Upgradable', () => {
         it('should revert on upgrade if setup fails', async () => {
             const newImplementation = await upgradableFactory.deploy().then((d) => d.deployed());
 
-            const setupParams = '0x00';
+            const setupParams = '0x1234';
 
             const implementationCode = await ethers.provider.getCode(newImplementation.address);
 

@@ -132,7 +132,7 @@ describe('Upgradable', () => {
 
                 const Proxy = require(path.join(
                     config.paths.artifacts,
-                    'contracts/test/upgradable/TestInitProxy.sol/TestProxy.json',
+                    'contracts/test/upgradable/TestProxy.sol/TestProxy.json',
                 ));
                 const Upgradable = require(path.join(
                     config.paths.artifacts,

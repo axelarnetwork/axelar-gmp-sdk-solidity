@@ -95,7 +95,7 @@ describe('Upgradable', () => {
             expect(await upgradable.owner()).to.be.equal(userWallet.address);
         });
 
-        describe.only('with Deployers', () => {
+        describe('with Deployers', () => {
             it('should deploy upgradable contract with create2 deployer', async () => {
                 const create2DeployerFactory = await ethers.getContractFactory('Create2Deployer', ownerWallet);
                 const deployer = await create2DeployerFactory.deploy().then((d) => d.deployed());

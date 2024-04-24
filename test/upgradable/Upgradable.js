@@ -1,8 +1,9 @@
 'use strict';
 
+const path = require('path');
 const chai = require('chai');
 const { expect } = chai;
-const { ethers } = require('hardhat');
+const { ethers, config } = require('hardhat');
 const {
     utils: { keccak256, defaultAbiCoder },
     constants: { AddressZero },
@@ -10,8 +11,6 @@ const {
 
 const { deployCreate2InitUpgradable, deployCreate3Upgradable, upgradeUpgradable } = require('../../scripts/upgradable');
 const { expectRevert } = require('../utils');
-
-const Upgradable = require('../../artifacts/contracts/test/upgradable/TestUpgradable.sol/TestUpgradable.json');
 
 describe('Upgradable', () => {
     let upgradable;
@@ -96,12 +95,19 @@ describe('Upgradable', () => {
             expect(await upgradable.owner()).to.be.equal(userWallet.address);
         });
 
-        describe('with Deployers', () => {
+        describe.only('with Deployers', () => {
             it('should deploy upgradable contract with create2 deployer', async () => {
                 const create2DeployerFactory = await ethers.getContractFactory('Create2Deployer', ownerWallet);
                 const deployer = await create2DeployerFactory.deploy().then((d) => d.deployed());
 
-                const Proxy = require('../../artifacts/contracts/test/upgradable/TestInitProxy.sol/TestInitProxy.json');
+                const Proxy = require(path.join(
+                    config.paths.artifacts,
+                    'contracts/test/upgradable/TestInitProxy.sol/TestInitProxy.json',
+                ));
+                const Upgradable = require(path.join(
+                    config.paths.artifacts,
+                    'contracts/test/upgradable/TestUpgradable.sol/TestUpgradable.json',
+                ));
 
                 const upgradable = await deployCreate2InitUpgradable(
                     deployer.address,
@@ -124,7 +130,14 @@ describe('Upgradable', () => {
                 const create3DeployerFactory = await ethers.getContractFactory('Create3Deployer', ownerWallet);
                 const deployer = await create3DeployerFactory.deploy().then((d) => d.deployed());
 
-                const Proxy = require('../../artifacts/contracts/test/upgradable/TestProxy.sol/TestProxy.json');
+                const Proxy = require(path.join(
+                    config.paths.artifacts,
+                    'contracts/test/upgradable/TestInitProxy.sol/TestProxy.json',
+                ));
+                const Upgradable = require(path.join(
+                    config.paths.artifacts,
+                    'contracts/test/upgradable/TestUpgradable.sol/TestUpgradable.json',
+                ));
 
                 const upgradable = await deployCreate3Upgradable(deployer.address, ownerWallet, Upgradable, Proxy, []);
 

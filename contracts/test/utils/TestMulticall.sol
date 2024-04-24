@@ -27,6 +27,7 @@ contract TestMulticall is Multicall {
     }
 
     function function4() external pure {
+        // solhint-disable-next-line reason-string
         revert();
     }
 

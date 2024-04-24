@@ -128,7 +128,7 @@ describe('Upgradable', () => {
             await expect(implementation.setup(setupParams)).to.be.revertedWithCustomError(implementation, 'NotProxy');
         });
 
-        it.only('should revert if upgrade is called by non owner', async () => {
+        it('should revert if upgrade is called by non owner', async () => {
             const implementation = await upgradable.implementation();
             const implementationCode = await ethers.provider.getCode(implementation);
             const implementationCodeHash = keccak256(implementationCode);

@@ -17,6 +17,6 @@ contract TestProxy is Proxy {
     }
 
     function contractId() internal pure override returns (bytes32) {
-        return keccak256('test');
+        return keccak256('proxy-implementation');
     }
 }

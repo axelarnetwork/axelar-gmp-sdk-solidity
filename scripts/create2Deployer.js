@@ -1,9 +1,7 @@
 'use strict';
 
 const { Contract, ContractFactory } = require('ethers');
-const { getSaltFromKey } = require('./utils');
-
-const Create2Deployer = require('../artifacts/contracts/interfaces/IDeployer.sol/IDeployer.json');
+const { getSaltFromKey, IDeployer } = require('./utils');
 
 const estimateGasForCreate2Deploy = async (deployer, contractJson, args = []) => {
     const salt = getSaltFromKey('');
@@ -38,7 +36,7 @@ const create2DeployContract = async (
         };
     }
 
-    const deployer = new Contract(deployerAddress, Create2Deployer.abi, wallet);
+    const deployer = new Contract(deployerAddress, IDeployer, wallet);
     const salt = getSaltFromKey(key);
     const factory = new ContractFactory(contractJson.abi, contractJson.bytecode);
     const bytecode = factory.getDeployTransaction(...args).data;
@@ -66,7 +64,7 @@ const create2DeployAndInitContract = async (
         };
     }
 
-    const deployer = new Contract(deployerAddress, Create2Deployer.abi, wallet);
+    const deployer = new Contract(deployerAddress, IDeployer, wallet);
     const salt = getSaltFromKey(key);
     const factory = new ContractFactory(contractJson.abi, contractJson.bytecode);
     const bytecode = factory.getDeployTransaction(...args).data;
@@ -81,7 +79,7 @@ const create2DeployAndInitContract = async (
 };
 
 const getCreate2Address = async (deployerAddress, wallet, contractJson, key, args = []) => {
-    const deployer = new Contract(deployerAddress, Create2Deployer.abi, wallet);
+    const deployer = new Contract(deployerAddress, IDeployer, wallet);
     const salt = getSaltFromKey(key);
 
     const factory = new ContractFactory(contractJson.abi, contractJson.bytecode);

@@ -25,7 +25,7 @@ describe('Mutlicall', () => {
         function4Data = (await test.populateTransaction.function4()).data;
     });
 
-    it('Shoult test the multicall', async () => {
+    it('should test the multicall', async () => {
         const nonce = Number(await test.nonce());
         await expect(test.multicall([function1Data, function2Data, function2Data, function1Data]))
             .to.emit(test, 'Function1Called')
@@ -38,7 +38,7 @@ describe('Mutlicall', () => {
             .withArgs(nonce + 3);
     });
 
-    it('Shoult test the multicall returns', async () => {
+    it('should test the multicall returns', async () => {
         const nonce = Number(await test.nonce());
         await expect(test.multicallTest([function2Data, function1Data, function2Data, function2Data]))
             .to.emit(test, 'Function2Called')
@@ -57,13 +57,13 @@ describe('Mutlicall', () => {
         }
     });
 
-    it('Shoult revert if any of the calls fail', async () => {
+    it('should revert if any of the calls fail', async () => {
         await expect(test.multicall([function1Data, function2Data, function3Data, function1Data])).to.be.revertedWith(
             'function3 failed',
         );
     });
 
-    it('Shoult revert with error if a call fails without revert data', async () => {
+    it('should revert with error if a call fails without revert data', async () => {
         await expect(test.multicall([function1Data, function4Data])).to.be.revertedWithCustomError(
             test,
             'MulticallFailed',

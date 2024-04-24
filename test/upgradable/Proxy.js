@@ -26,62 +26,6 @@ describe('Proxy', async () => {
         invalidProxyImplementationFactory = await ethers.getContractFactory('InvalidProxyImplementation', owner);
     });
 
-    describe('FixedProxy', async () => {
-        let fixedProxyFactory;
-        let fixedProxyImplementationFactory;
-
-        let fixedProxy;
-        let fixedProxyImplementation;
-
-        beforeEach(async () => {
-            fixedProxyFactory = await ethers.getContractFactory('FixedProxy', owner);
-            fixedProxyImplementationFactory = await ethers.getContractFactory('FixedImplementation', owner);
-            fixedProxyImplementation = await fixedProxyImplementationFactory.deploy().then((d) => d.deployed());
-
-            fixedProxy = await fixedProxyFactory.deploy(fixedProxyImplementation.address).then((d) => d.deployed());
-        });
-
-        it('should revert with invalid contract id', async () => {
-            fixedProxyFactory = await ethers.getContractFactory('TestFixedProxy', owner);
-            const invalidProxyImplementation = await invalidProxyImplementationFactory
-                .deploy()
-                .then((d) => d.deployed());
-
-            await expect(fixedProxyFactory.deploy(invalidProxyImplementation.address)).to.be.revertedWithCustomError(
-                fixedProxy,
-                'InvalidImplementation',
-            );
-        });
-
-        it('call to proxy invokes correct function in implementation', async () => {
-            const input = 123;
-
-            const implementationAsProxy = fixedProxyImplementationFactory.attach(fixedProxy.address);
-
-            let val = await implementationAsProxy.value();
-
-            expect(val).to.equal(0);
-
-            await implementationAsProxy.set(input);
-            val = await implementationAsProxy.value();
-
-            expect(val).to.equal(input);
-        });
-
-        it('should preserve the fixed proxy bytecode [ @skip-on-coverage ]', async () => {
-            const fixedProxyBytecode = fixedProxyFactory.bytecode;
-            const fixedProxyBytecodeHash = keccak256(fixedProxyBytecode);
-
-            const expected = {
-                istanbul: '0x7f1872745e5f87c15cfb884491d90619949f3c2039952e665efba135f482aa6a',
-                berlin: '0x6e68b4e648128044f488715574f76c6a08804437591a6bcd4fc9ce4c48b93206',
-                london: '0xe0fea3cc41b62725f54139764f597f39f4bb23aa16fd0165eaca932ada0c44fc',
-            }[getEVMVersion()];
-
-            expect(fixedProxyBytecodeHash).to.be.equal(expected);
-        });
-    });
-
     describe('Proxy & BaseProxy', async () => {
         let proxyFactory;
         let invalidSetupProxyImplementationFactory;
@@ -147,6 +91,17 @@ describe('Proxy', async () => {
             expect(proxyImplementation.address).to.equal(expectedAddress);
         });
 
+        it('should shadow setup function in proxy', async () => {
+            const setupParams = defaultAbiCoder.encode(['uint256', 'string'], [123, 'test']);
+
+            proxy = await proxyFactory
+                .deploy(proxyImplementation.address, owner.address, setupParams)
+                .then((d) => d.deployed());
+
+            const receipt = await proxy.setup(setupParams).then((tx) => tx.wait());
+            expect(receipt.events).to.be.empty;
+        });
+
         it('call to proxy invokes correct function in implementation', async () => {
             const setupParams = defaultAbiCoder.encode(['uint256', 'string'], [123, 'test']);
 
@@ -197,6 +152,73 @@ describe('Proxy', async () => {
             }[getEVMVersion()];
 
             expect(proxyBytecodeHash).to.be.equal(expected);
+        });
+    });
+
+    describe('FixedProxy', async () => {
+        let fixedProxyFactory;
+        let fixedProxyImplementationFactory;
+
+        let fixedProxy;
+        let fixedProxyImplementation;
+
+        beforeEach(async () => {
+            fixedProxyFactory = await ethers.getContractFactory('FixedProxy', owner);
+            fixedProxyImplementationFactory = await ethers.getContractFactory('FixedImplementation', owner);
+            fixedProxyImplementation = await fixedProxyImplementationFactory.deploy().then((d) => d.deployed());
+
+            fixedProxy = await fixedProxyFactory.deploy(fixedProxyImplementation.address).then((d) => d.deployed());
+        });
+
+        it('should revert with invalid contract id', async () => {
+            fixedProxyFactory = await ethers.getContractFactory('TestFixedProxy', owner);
+            const invalidProxyImplementation = await invalidProxyImplementationFactory
+                .deploy()
+                .then((d) => d.deployed());
+
+            await expect(fixedProxyFactory.deploy(invalidProxyImplementation.address)).to.be.revertedWithCustomError(
+                fixedProxy,
+                'InvalidImplementation',
+            );
+        });
+
+        it('should shadow setup function in fixed proxy', async () => {
+            const setupParams = defaultAbiCoder.encode(['uint256'], [123]);
+
+            const proxy = await fixedProxyFactory
+                .deploy(fixedProxyImplementation.address)
+                .then((d) => d.deployed());
+
+            const receipt = await proxy.setup(setupParams).then((tx) => tx.wait());
+            expect(receipt.events).to.be.empty;
+        });
+
+        it('call to proxy invokes correct function in implementation', async () => {
+            const input = 123;
+
+            const implementationAsProxy = fixedProxyImplementationFactory.attach(fixedProxy.address);
+
+            let val = await implementationAsProxy.value();
+
+            expect(val).to.equal(0);
+
+            await implementationAsProxy.set(input);
+            val = await implementationAsProxy.value();
+
+            expect(val).to.equal(input);
+        });
+
+        it('should preserve the fixed proxy bytecode [ @skip-on-coverage ]', async () => {
+            const fixedProxyBytecode = fixedProxyFactory.bytecode;
+            const fixedProxyBytecodeHash = keccak256(fixedProxyBytecode);
+
+            const expected = {
+                istanbul: '0x7f1872745e5f87c15cfb884491d90619949f3c2039952e665efba135f482aa6a',
+                berlin: '0x6e68b4e648128044f488715574f76c6a08804437591a6bcd4fc9ce4c48b93206',
+                london: '0xe0fea3cc41b62725f54139764f597f39f4bb23aa16fd0165eaca932ada0c44fc',
+            }[getEVMVersion()];
+
+            expect(fixedProxyBytecodeHash).to.be.equal(expected);
         });
     });
 

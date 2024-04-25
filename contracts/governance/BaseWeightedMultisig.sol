@@ -17,6 +17,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
 
     struct BaseWeightedMultisigStorage {
         uint256 epoch;
+        uint256 lastRotationTimestamp;
         mapping(uint256 => bytes32) signerHashByEpoch;
         mapping(bytes32 => uint256) epochBySignerHash;
     }
@@ -29,10 +30,21 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
     /// @return The domain separator for the signer proof
     bytes32 public immutable domainSeparator;
 
-    /// @param previousSignersRetentionEpochs The number of epochs to keep previous signers valid for signature verification
-    constructor(uint256 previousSignersRetentionEpochs, bytes32 domainSeparator_) {
-        previousSignersRetention = previousSignersRetentionEpochs;
+    /// @dev The minimum delay required between rotations
+    /// @return The minimum delay required between rotations
+    uint256 public immutable minimumRotationDelay;
+
+    /**
+     * @dev Initializes the contract.
+     * @dev Ownership of this contract should be transferred to the Gateway contract after deployment.
+     * @param previousSignersRetention_ The number of previous signers to retain
+     * @param domainSeparator_ The domain separator for the signer proof
+     * @param minimumRotationDelay_ The minimum delay required between rotations
+     */
+    constructor(uint256 previousSignersRetention_, bytes32 domainSeparator_, uint256 minimumRotationDelay_) {
+        previousSignersRetention = previousSignersRetention_;
         domainSeparator = domainSeparator_;
+        minimumRotationDelay = minimumRotationDelay_;
     }
 
     /**********************\
@@ -63,6 +75,14 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      */
     function epochBySignerHash(bytes32 signerHash) external view returns (uint256) {
         return _baseWeightedMultisigStorage().epochBySignerHash[signerHash];
+    }
+
+    /**
+     * @notice This function returns the timestamp for the last signer rotation
+     * @return uint256 The last rotation timestamp
+     */
+    function lastRotationTimestamp() external view returns (uint256) {
+        return _baseWeightedMultisigStorage().lastRotationTimestamp;
     }
 
     /*************************\
@@ -99,12 +119,15 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
     /**
      * @notice This function rotates the current signers with a new set of signers
      * @param newSigners The new weighted signers data
+     * @param enforceRotationDelay If true, the minimum rotation delay will be enforced
      * @dev The signers should be sorted by signer address in ascending order
      */
-    function _rotateSigners(WeightedSigners memory newSigners) internal {
+    function _rotateSigners(WeightedSigners memory newSigners, bool enforceRotationDelay) internal {
         BaseWeightedMultisigStorage storage slot = _baseWeightedMultisigStorage();
 
         _validateSigners(newSigners);
+
+        _updateRotationTimestamp(enforceRotationDelay);
 
         bytes memory newSignersData = abi.encode(newSigners);
         bytes32 newSignersHash = keccak256(newSignersData);
@@ -121,6 +144,24 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
     /**********************\
     |* Internal Functions *|
     \**********************/
+
+    /**
+     * @notice This function applies the rotation delay
+     */
+    function _updateRotationTimestamp(bool enforceRotationDelay) internal {
+        uint256 lastRotationTimestamp_ = _baseWeightedMultisigStorage().lastRotationTimestamp;
+        uint256 currentTimestamp = block.timestamp;
+
+        if (enforceRotationDelay && (currentTimestamp - lastRotationTimestamp_) < minimumRotationDelay) {
+            revert InsufficientRotationDelay(
+                minimumRotationDelay,
+                lastRotationTimestamp_,
+                currentTimestamp - lastRotationTimestamp_
+            );
+        }
+
+        _baseWeightedMultisigStorage().lastRotationTimestamp = currentTimestamp;
+    }
 
     /**
      * @notice This function takes messageHash and proof data and reverts if proof is invalid

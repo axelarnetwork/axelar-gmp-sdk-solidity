@@ -18,9 +18,11 @@ describe('AxelarAmplifierGateway', () => {
     const chainName = 'chain';
     const router = 'router';
     const domainSeparator = keccak256(toUtf8Bytes(chainName + router + 'axelar-1'));
+    const minimumRotationDelay = 0;
     const previousSignersRetention = 15;
 
     let user;
+    let operator;
     let signers;
     let weightedSigners;
 
@@ -32,6 +34,7 @@ describe('AxelarAmplifierGateway', () => {
     before(async () => {
         const wallets = await ethers.getSigners();
         user = wallets[0];
+        operator = wallets[1];
 
         signers = sortBy(
             Array.from({ length: numSigners }, (_, i) => wallets[i]),
@@ -83,9 +86,9 @@ describe('AxelarAmplifierGateway', () => {
     };
 
     const deployGateway = async () => {
-        const signers = defaultAbiCoder.encode([`${WEIGHTED_SIGNERS_TYPE}[]`], [[weightedSigners]]);
+        const signers = defaultAbiCoder.encode(['address', `${WEIGHTED_SIGNERS_TYPE}[]`], [operator.address, [weightedSigners]]);
 
-        implementation = await gatewayFactory.deploy(previousSignersRetention, domainSeparator);
+        implementation = await gatewayFactory.deploy(previousSignersRetention, domainSeparator, minimumRotationDelay);
         await implementation.deployTransaction.wait(network.config.confirmations);
 
         const proxy = await gatewayProxyFactory.deploy(implementation.address, user.address, signers);
@@ -118,6 +121,10 @@ describe('AxelarAmplifierGateway', () => {
             const contractId = await gateway.contractId();
             expect(contractId).to.equal(id('axelar-amplifier-gateway'));
         });
+
+        it('should return the correct operator', async () => {
+            expect(await gateway.operator()).to.equal(operator.address);
+        });
     });
 
     it('should validate storage constants', async () => {
@@ -126,7 +133,7 @@ describe('AxelarAmplifierGateway', () => {
         await testBaseGateway.deployTransaction.wait(network.config.confirmations);
 
         const testAxelarGatewayFactory = await ethers.getContractFactory('TestAxelarAmplifierGateway', user);
-        const testAxelarGateway = await testAxelarGatewayFactory.deploy(0, id('1'));
+        const testAxelarGateway = await testAxelarGatewayFactory.deploy(0, id('1'), 0);
         await testAxelarGateway.deployTransaction.wait(network.config.confirmations);
     });
 
@@ -589,6 +596,30 @@ describe('AxelarAmplifierGateway', () => {
             );
         });
 
+        it('should allow rotating signers from an old signer set from gateway operator', async () => {
+            const newSigners = {
+                signers: signers.map((wallet) => ({ signer: wallet.address, weight: 1 })),
+                threshold,
+                nonce: id('1'),
+            };
+
+            let proof = await getProof(ROTATE_SIGNERS, newSigners, weightedSigners, signers.slice(0, threshold));
+
+            await gateway.rotateSigners(newSigners, proof).then((tx) => tx.wait());
+
+            // sign off from an older signer set
+            const newSigners2 = {
+                signers: signers.map((wallet) => ({ signer: wallet.address, weight: 1 })),
+                threshold,
+                nonce: id('2'),
+            };
+            proof = await getProof(ROTATE_SIGNERS, newSigners2, weightedSigners, signers.slice(0, threshold));
+
+            await expect(gateway.connect(operator).rotateSigners(newSigners2, proof))
+                .to.emit(gateway, 'SignersRotated')
+                .withArgs(3, keccak256(encodeWeightedSigners(newSigners2)), encodeWeightedSigners(newSigners2));
+        });
+
         it('reject rotating to the same signers', async () => {
             const newSigners = {
                 signers: signers.map((wallet) => ({ signer: wallet.address, weight: 1 })),
@@ -644,7 +675,7 @@ describe('AxelarAmplifierGateway', () => {
         });
 
         it('should allow upgrading the implementation', async () => {
-            const newImplementation = await gatewayFactory.deploy(previousSignersRetention, domainSeparator);
+            const newImplementation = await gatewayFactory.deploy(previousSignersRetention, domainSeparator, minimumRotationDelay);
             await newImplementation.deployTransaction.wait(network.config.confirmations);
 
             const newImplementationCodehash = keccak256(await ethers.provider.getCode(newImplementation.address));
@@ -655,7 +686,7 @@ describe('AxelarAmplifierGateway', () => {
         });
 
         it('should allow upgrading the implementation with setup params', async () => {
-            const newImplementation = await gatewayFactory.deploy(previousSignersRetention, domainSeparator);
+            const newImplementation = await gatewayFactory.deploy(previousSignersRetention, domainSeparator, minimumRotationDelay);
             await newImplementation.deployTransaction.wait(network.config.confirmations);
 
             const newImplementationCodehash = keccak256(await ethers.provider.getCode(newImplementation.address));
@@ -666,7 +697,7 @@ describe('AxelarAmplifierGateway', () => {
                 nonce: id('1'),
             };
 
-            const setupParams = defaultAbiCoder.encode([`${WEIGHTED_SIGNERS_TYPE}[]`], [[newSigners]]);
+            const setupParams = defaultAbiCoder.encode(['address', `${WEIGHTED_SIGNERS_TYPE}[]`], [operator.address, [newSigners]]);
 
             await expect(gateway.upgrade(newImplementation.address, newImplementationCodehash, setupParams))
                 .to.emit(gateway, 'Upgraded')
@@ -676,7 +707,7 @@ describe('AxelarAmplifierGateway', () => {
         });
 
         it('reject upgrading with invalid setup params', async () => {
-            const newImplementation = await gatewayFactory.deploy(previousSignersRetention, domainSeparator);
+            const newImplementation = await gatewayFactory.deploy(previousSignersRetention, domainSeparator, minimumRotationDelay);
             await newImplementation.deployTransaction.wait(network.config.confirmations);
 
             const newImplementationCodehash = keccak256(await ethers.provider.getCode(newImplementation.address));

@@ -18,6 +18,8 @@ interface IAxelarAmplifierGateway is IBaseAmplifierGateway, IUpgradable {
     error InvalidSender(address sender);
     error InvalidOperator();
 
+    event OperatorshipTransferred(address newOperator);
+
     /**
      * @notice Approves an array of messages, signed by the Axelar signers.
      * @param  messages The array of messages to verify.

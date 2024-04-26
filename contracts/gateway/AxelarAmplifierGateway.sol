@@ -28,9 +28,11 @@ contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, U
      * @param domainSeparator_ The domain separator for the signer proof
      * @param minimumRotationDelay_ The minimum delay required between rotations
      */
-    constructor(uint256 previousSignersRetention_, bytes32 domainSeparator_, uint256 minimumRotationDelay_)
-        BaseWeightedMultisig(previousSignersRetention_, domainSeparator_, minimumRotationDelay_)
-    {}
+    constructor(
+        uint256 previousSignersRetention_,
+        bytes32 domainSeparator_,
+        uint256 minimumRotationDelay_
+    ) BaseWeightedMultisig(previousSignersRetention_, domainSeparator_, minimumRotationDelay_) {}
 
     /*****************\
     |* Upgradability *|
@@ -127,6 +129,8 @@ contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, U
         if (newOperator == address(0)) revert InvalidOperator();
 
         slot.operator = newOperator;
+
+        emit OperatorshipTransferred(newOperator);
     }
 
     /********************\

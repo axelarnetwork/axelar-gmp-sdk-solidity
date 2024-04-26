@@ -41,7 +41,11 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      * @param domainSeparator_ The domain separator for the signer proof
      * @param minimumRotationDelay_ The minimum delay required between rotations
      */
-    constructor(uint256 previousSignersRetention_, bytes32 domainSeparator_, uint256 minimumRotationDelay_) {
+    constructor(
+        uint256 previousSignersRetention_,
+        bytes32 domainSeparator_,
+        uint256 minimumRotationDelay_
+    ) {
         previousSignersRetention = previousSignersRetention_;
         domainSeparator = domainSeparator_;
         minimumRotationDelay = minimumRotationDelay_;

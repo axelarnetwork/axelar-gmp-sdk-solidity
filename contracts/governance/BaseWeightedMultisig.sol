@@ -122,6 +122,8 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
 
     /**
      * @notice This function rotates the current signers with a new set of signers
+     * @dev This function allows rotating to a repeat signer set. In this scenario, it's corresponding epoch will be updated to the latest epoch
+     * If rotation to a repeat signer set needs to be prevented, the caller is responsible for checking it.
      * @param newSigners The new weighted signers data
      * @param enforceRotationDelay If true, the minimum rotation delay will be enforced
      * @dev The signers should be sorted by signer address in ascending order
@@ -136,6 +138,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         bytes memory newSignersData = abi.encode(newSigners);
         bytes32 newSignersHash = keccak256(newSignersData);
 
+        // assign the next epoch to the new signers
         uint256 newEpoch = slot.epoch + 1;
         slot.epoch = newEpoch;
         slot.signerHashByEpoch[newEpoch] = newSignersHash;
@@ -150,7 +153,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
     \**********************/
 
     /**
-     * @notice This function applies the rotation delay
+     * @dev Updates the last rotation timestamp, and enforces the minimum rotation delay if specified
      */
     function _updateRotationTimestamp(bool enforceRotationDelay) internal {
         uint256 lastRotationTimestamp_ = _baseWeightedMultisigStorage().lastRotationTimestamp;

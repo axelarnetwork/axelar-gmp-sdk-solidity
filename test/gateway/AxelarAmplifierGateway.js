@@ -8,7 +8,7 @@ const {
 const { expect } = chai;
 
 const { encodeWeightedSigners, getWeightedSignersProof, WEIGHTED_SIGNERS_TYPE } = require('../../scripts/utils');
-const { expectRevert } = require('../utils');
+const { expectRevert, waitFor } = require('../utils');
 
 const APPROVE_MESSAGES = 0;
 const ROTATE_SIGNERS = 1;
@@ -88,7 +88,7 @@ describe('AxelarAmplifierGateway', () => {
         return getWeightedSignersProof(data, domainSeparator, weightedSigners, wallets);
     };
 
-    const deployGateway = async () => {
+    const deployGateway = async (minimumRotationDelay = 0) => {
         const signers = defaultAbiCoder.encode(
             ['address', `${WEIGHTED_SIGNERS_TYPE}[]`],
             [operator.address, [weightedSigners]],
@@ -752,6 +752,37 @@ describe('AxelarAmplifierGateway', () => {
                 'NotLatestSigners',
             );
         });
+    });
+
+    it('should allow rotating signers after the delay', async () => {
+        const minimumRotationDelay = 60; // seconds
+
+        await deployGateway(minimumRotationDelay);
+
+        const newSigners = {
+            ...weightedSigners,
+            nonce: id('1'),
+        };
+        const proof = await getProof(ROTATE_SIGNERS, newSigners, weightedSigners, signers.slice(0, threshold));
+
+        // reject rotation before the delay
+        await expectRevert(
+            (gasOptions) => gateway.rotateSigners(newSigners, proof, gasOptions),
+            gateway,
+            'InsufficientRotationDelay',
+        );
+
+        await waitFor(minimumRotationDelay);
+
+        // rotate signers after the delay
+        const epoch = (await gateway.epoch()).toNumber();
+        await expect(gateway.rotateSigners(newSigners, proof))
+            .to.emit(gateway, 'SignersRotated')
+            .withArgs(
+                epoch + 1,
+                keccak256(encodeWeightedSigners(newSigners)),
+                encodeWeightedSigners(newSigners),
+            );
     });
 
     describe('upgradability', () => {

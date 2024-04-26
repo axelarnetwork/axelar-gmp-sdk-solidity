@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import { Upgradable } from '../../upgradable/Upgradable.sol';
 
-contract UpgradableTest is Upgradable {
+contract TestUpgradable is Upgradable {
     uint256 public num;
 
     constructor() Upgradable() {
@@ -18,6 +18,6 @@ contract UpgradableTest is Upgradable {
     }
 
     function contractId() external pure override returns (bytes32) {
-        return keccak256('test');
+        return keccak256('proxy-implementation');
     }
 }

@@ -23,7 +23,12 @@ contract TestMulticall is Multicall {
     }
 
     function function3() external pure {
-        revert('Mock function revert');
+        revert('function3 failed');
+    }
+
+    function function4() external pure {
+        // solhint-disable-next-line reason-string
+        revert();
     }
 
     function multicallTest(bytes[] calldata data) external {

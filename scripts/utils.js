@@ -1,10 +1,17 @@
 const {
     ContractFactory,
-    utils: { keccak256, defaultAbiCoder, arrayify, hashMessage },
+    utils: { keccak256, defaultAbiCoder, arrayify, hashMessage, Interface },
 } = require('ethers');
 const http = require('http');
 const { outputJsonSync } = require('fs-extra');
 const { sortBy } = require('lodash');
+
+const IDeployer = new Interface([
+    'function deploy(bytes bytecode, bytes32 salt) external payable returns (address deployedAddress_)',
+    'function deployAndInit(bytes bytecode, bytes32 salt, bytes init) external payable returns (address deployedAddress_)',
+    'function deployedAddress(bytes bytecode, address sender, bytes32 salt) external view returns (address deployedAddress_)',
+    'event Deployed(address indexed deployedAddress, address indexed sender, bytes32 indexed salt, bytes32 bytecodeHash)',
+]);
 
 const deployContract = async (wallet, contractJson, args = [], options = {}) => {
     const factory = new ContractFactory(contractJson.abi, contractJson.bytecode, wallet);
@@ -116,6 +123,7 @@ const solidityObjectToTuple = (obj) => {
 };
 
 module.exports = {
+    IDeployer,
     getSaltFromKey,
     deployContract,
     setJSON,

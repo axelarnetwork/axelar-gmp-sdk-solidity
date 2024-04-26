@@ -1,8 +1,13 @@
-name: Publish Compiled Bytecode
+name: Publish Bytecode
 
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      TAG:
+        description: 'Release Tag'
+        required: true
 
 jobs:
   publish-bytecode:
@@ -35,19 +40,20 @@ jobs:
       - name: Clean artifacts
         run: npm run clean:artifacts
 
-      - name: Get the tag
-        id: release_tag
-        run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
+      - name: Get release tag
+        run: |
+          TAG=${{ github.event.inputs.TAG || github.ref }}
+          echo "release_tag=${TAG#refs/tags/}" >> "$GITHUB_ENV"
 
       - name: Create zip file
         working-directory: ./artifacts
         run: |
-            zip -r Bytecode-${{ steps.release_tag.outputs.VERSION }}.zip *
+          zip -r Bytecode-${{ env.release_tag }}.zip *
 
       - name: Upload Bytecode to release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ./artifacts/Bytecode-${{ steps.release_tag.outputs.VERSION }}.zip
-          tag: ${{ steps.release_tag.outputs.VERSION }}
+          file: ./artifacts/Bytecode-${{ env.release_tag }}.zip
+          tag: ${{ env.release_tag }}
           overwrite: true

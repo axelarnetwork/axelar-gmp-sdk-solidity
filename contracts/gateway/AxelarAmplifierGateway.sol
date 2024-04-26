@@ -3,259 +3,107 @@
 pragma solidity ^0.8.0;
 
 import { IAxelarAmplifierGateway } from '../interfaces/IAxelarAmplifierGateway.sol';
-import { IAxelarAmplifierGatewayAuth } from '../interfaces/IAxelarAmplifierGatewayAuth.sol';
-import { CommandType, Message } from '../types/AmplifierGatewayTypes.sol';
 
-contract AxelarAmplifierGateway is IAxelarAmplifierGateway {
-    /// @dev This slot contains all the storage for this contract in an upgrade-compatible manner
-    // keccak256('AxelarAmplifierGateway.Slot') - 1;
+import { CommandType, Message } from '../types/AmplifierGatewayTypes.sol';
+import { WeightedSigners, Proof } from '../types/WeightedMultisigTypes.sol';
+
+import { BaseWeightedMultisig } from '../governance/BaseWeightedMultisig.sol';
+import { BaseAmplifierGateway } from './BaseAmplifierGateway.sol';
+import { Upgradable } from '../upgradable/Upgradable.sol';
+
+contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, Upgradable, IAxelarAmplifierGateway {
+    /// @dev This slot contains the storage for this contract in an upgrade-compatible manner
+    /// keccak256('AxelarAmplifierGateway.Slot') - 1;
     bytes32 internal constant AXELAR_AMPLIFIER_GATEWAY_SLOT =
         0xca458dc12368669a3b8c292bc21c1b887ab1aa386fa3fcc1ed972afd74a330ca;
 
     struct AxelarAmplifierGatewayStorage {
-        mapping(bytes32 => bool) commands;
-        mapping(bytes32 => bool) approvals;
+        mapping(bytes32 => bool) rotations;
     }
 
-    IAxelarAmplifierGatewayAuth public immutable authModule;
+    constructor(uint256 previousSignersRetention_, bytes32 domainSeparator_)
+        BaseWeightedMultisig(previousSignersRetention_, domainSeparator_)
+    {}
 
-    constructor(address authModule_) {
-        if (authModule_.code.length == 0) revert InvalidAuthModule();
-
-        authModule = IAxelarAmplifierGatewayAuth(authModule_);
-    }
-
-    /******************\
-    |* Public Methods *|
-    \******************/
-
-    function callContract(
-        string calldata destinationChain,
-        string calldata destinationContractAddress,
-        bytes calldata payload
-    ) external {
-        emit ContractCall(msg.sender, destinationChain, destinationContractAddress, keccak256(payload), payload);
-    }
-
-    function isContractCallApproved(
-        bytes32 commandId,
-        string calldata sourceChain,
-        string calldata sourceAddress,
-        address contractAddress,
-        bytes32 payloadHash
-    ) external view override returns (bool) {
-        return _isContractCallApproved(commandId, sourceChain, sourceAddress, contractAddress, payloadHash);
-    }
-
-    function isMessageApproved(
-        string calldata messageId,
-        string calldata sourceChain,
-        string calldata sourceAddress,
-        address contractAddress,
-        bytes32 payloadHash
-    ) external view override returns (bool) {
-        bytes32 commandId = messageToCommandId(sourceChain, messageId);
-        return _isContractCallApproved(commandId, sourceChain, sourceAddress, contractAddress, payloadHash);
-    }
-
-    function validateContractCall(
-        bytes32 commandId,
-        string calldata sourceChain,
-        string calldata sourceAddress,
-        bytes32 payloadHash
-    ) external override returns (bool valid) {
-        valid = _validateContractCall(commandId, sourceChain, sourceAddress, payloadHash);
-    }
-
-    function validateMessage(
-        string calldata messageId,
-        string calldata sourceChain,
-        string calldata sourceAddress,
-        bytes32 payloadHash
-    ) external override returns (bool valid) {
-        bytes32 commandId = messageToCommandId(sourceChain, messageId);
-        valid = _validateContractCall(commandId, sourceChain, sourceAddress, payloadHash);
-    }
-
-    function isCommandExecuted(bytes32 commandId) public view override returns (bool) {
-        return _storage().commands[commandId];
-    }
+    /*****************\
+    |* Upgradability *|
+    \*****************/
 
     /**
-     * @notice Compute the commandId for a `Message`.
-     * @param sourceChain The name of the source chain as registered on Axelar.
-     * @param messageId The unique message id for the message.
-     * @return The commandId for the message.
+     * @notice Internal function to set up the contract with initial data
+     * @param data Initialization data for the contract
+     * @dev This function should be implemented in derived contracts.
      */
-    function messageToCommandId(string calldata sourceChain, string calldata messageId) public pure returns (bytes32) {
-        // Axelar prevents `sourceChain` to contain '_',
-        // hence we can use it as a separator with abi.encodePacked to avoid ambiguous encodings
-        return keccak256(abi.encodePacked(CommandType.ApproveMessages, sourceChain, '_', messageId));
+    function _setup(bytes calldata data) internal override {
+        WeightedSigners[] memory signers = abi.decode(data, (WeightedSigners[]));
+
+        for (uint256 i = 0; i < signers.length; i++) {
+            _rotateSigners(signers[i]);
+        }
     }
 
     /**********************\
     |* External Functions *|
     \**********************/
 
+    function contractId() external pure returns (bytes32) {
+        return keccak256('axelar-amplifier-gateway');
+    }
+
     /**
      * @notice Approves an array of messages, signed by the Axelar signers.
      * @param  messages The array of messages to verify.
      * @param  proof The proof signed by the Axelar signers for this command.
      */
-    function approveMessages(Message[] calldata messages, bytes calldata proof) external {
-        bytes32 dataHash = _computeDataHash(CommandType.ApproveMessages, abi.encode(messages));
+    function approveMessages(Message[] calldata messages, Proof calldata proof) external {
+        bytes32 dataHash = keccak256(abi.encode(CommandType.ApproveMessages, messages));
 
-        _verifyProof(dataHash, proof);
+        _validateProof(dataHash, proof);
 
-        uint256 length = messages.length;
-        if (length == 0) revert InvalidMessages();
-
-        for (uint256 i; i < length; ++i) {
-            Message calldata message = messages[i];
-            bytes32 commandId = messageToCommandId(message.sourceChain, message.messageId);
-
-            // Ignore if message has already been approved
-            if (isCommandExecuted(commandId)) {
-                continue;
-            }
-
-            _commandExecuted(commandId);
-
-            _approveMessage(commandId, message);
-        }
+        _approveMessages(messages);
     }
 
     /**
-     * @notice Update the signer data for the auth module.
-     * @param  newSignersData The data for the new signers.
+     * @notice Rotate the weighted signers, signed off by the latest Axelar signers.
+     * @param  newSigners The data for the new signers.
      * @param  proof The proof signed by the Axelar verifiers for this command.
      */
-    function rotateSigners(bytes calldata newSignersData, bytes calldata proof) external {
-        bytes32 dataHash = _computeDataHash(CommandType.RotateSigners, newSignersData);
-        bytes32 commandId = dataHash;
+    function rotateSigners(WeightedSigners memory newSigners, Proof calldata proof) external {
+        bytes32 dataHash = keccak256(abi.encode(CommandType.RotateSigners, newSigners));
 
-        if (isCommandExecuted(commandId)) {
-            revert CommandAlreadyExecuted(commandId);
+        if (_axelarAmplifierGatewayStorage().rotations[dataHash]) {
+            revert AlreadyRotated();
         }
 
-        bool isLatestSigners = _verifyProof(dataHash, proof);
+        bool isLatestSigners = _validateProof(dataHash, proof);
         if (!isLatestSigners) {
             revert NotLatestSigners();
         }
 
-        _commandExecuted(commandId);
+        _axelarAmplifierGatewayStorage().rotations[dataHash] = true;
 
-        authModule.rotateSigners(newSignersData);
-
-        // slither-disable-next-line reentrancy-events
-        emit SignersRotated(newSignersData);
-    }
-
-    /**********************\
-    |* Internal Functions *|
-    \**********************/
-
-    /**
-     * @dev This function computes the data hash that is used for signing
-     * @param commandType The type of command
-     * @param data The data that is being signed
-     * @return The hash of the data
-     */
-    function _computeDataHash(CommandType commandType, bytes memory data) internal pure returns (bytes32) {
-        return keccak256(abi.encodePacked(commandType, data));
+        _rotateSigners(newSigners);
     }
 
     /**
-     * @dev This function is used to mark a command as executed
+     * @notice This function takes dataHash and proof and reverts if proof is invalid
+     * @param dataHash The hash of the data being signed
+     * @param proof The proof from Axelar signers
+     * @return isLatestSigners True if provided signers are the current ones
      */
-    function _commandExecuted(bytes32 commandId) internal {
-        _storage().commands[commandId] = true;
-
-        emit Executed(commandId);
-    }
-
-    /**
-     * @dev This function verifies the proof data for a given data hash
-     * @param dataHash The hash of the data that was signed
-     * @param proof The data containing signers with signatures
-     * @return isLatestSigners True if the proof is signed by the latest signers
-     */
-    function _verifyProof(bytes32 dataHash, bytes calldata proof) internal view returns (bool isLatestSigners) {
-        return authModule.validateProof(dataHash, proof);
-    }
-
-    function _isContractCallApproved(
-        bytes32 commandId,
-        string calldata sourceChain,
-        string calldata sourceAddress,
-        address contractAddress,
-        bytes32 payloadHash
-    ) internal view returns (bool) {
-        bytes32 key = _getIsContractCallApprovedKey(
-            commandId,
-            sourceChain,
-            sourceAddress,
-            contractAddress,
-            payloadHash
-        );
-        return _storage().approvals[key];
-    }
-
-    function _validateContractCall(
-        bytes32 commandId,
-        string calldata sourceChain,
-        string calldata sourceAddress,
-        bytes32 payloadHash
-    ) internal returns (bool valid) {
-        bytes32 key = _getIsContractCallApprovedKey(commandId, sourceChain, sourceAddress, msg.sender, payloadHash);
-        valid = _storage().approvals[key];
-
-        if (valid) {
-            delete _storage().approvals[key];
-
-            emit ContractCallExecuted(commandId);
-        }
-    }
-
-    function _approveMessage(bytes32 commandId, Message calldata message) internal {
-        bytes32 key = _getIsContractCallApprovedKey(
-            commandId,
-            message.sourceChain,
-            message.sourceAddress,
-            message.contractAddress,
-            message.payloadHash
-        );
-        _storage().approvals[key] = true;
-
-        emit ContractCallApproved(
-            commandId,
-            message.messageId,
-            message.sourceChain,
-            message.sourceAddress,
-            message.contractAddress,
-            message.payloadHash
-        );
+    function validateProof(bytes32 dataHash, Proof calldata proof) external view returns (bool isLatestSigners) {
+        return _validateProof(dataHash, proof);
     }
 
     /********************\
     |* Pure Key Getters *|
     \********************/
 
-    function _getIsContractCallApprovedKey(
-        bytes32 commandId,
-        string calldata sourceChain,
-        string calldata sourceAddress,
-        address contractAddress,
-        bytes32 payloadHash
-    ) internal pure returns (bytes32) {
-        return keccak256(abi.encode(commandId, sourceChain, sourceAddress, contractAddress, payloadHash));
-    }
-
     /**
      * @notice Gets the specific storage location for preventing upgrade collisions
-     * @return slot containing the AxelarAmplifierGatewayStorage struct
+     * @return slot containing the storage struct
      */
-    function _storage() private pure returns (AxelarAmplifierGatewayStorage storage slot) {
+    function _axelarAmplifierGatewayStorage() private pure returns (AxelarAmplifierGatewayStorage storage slot) {
         assembly {
             slot.slot := AXELAR_AMPLIFIER_GATEWAY_SLOT
         }

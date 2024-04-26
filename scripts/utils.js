@@ -1,10 +1,17 @@
 const {
     ContractFactory,
-    utils: { keccak256, defaultAbiCoder, arrayify, hashMessage },
+    utils: { keccak256, defaultAbiCoder, arrayify, hashMessage, Interface },
 } = require('ethers');
 const http = require('http');
 const { outputJsonSync } = require('fs-extra');
 const { sortBy } = require('lodash');
+
+const IDeployer = new Interface([
+    'function deploy(bytes bytecode, bytes32 salt) external payable returns (address deployedAddress_)',
+    'function deployAndInit(bytes bytecode, bytes32 salt, bytes init) external payable returns (address deployedAddress_)',
+    'function deployedAddress(bytes bytecode, address sender, bytes32 salt) external view returns (address deployedAddress_)',
+    'event Deployed(address indexed deployedAddress, address indexed sender, bytes32 indexed salt, bytes32 bytecodeHash)',
+]);
 
 const deployContract = async (wallet, contractJson, args = [], options = {}) => {
     const factory = new ContractFactory(contractJson.abi, contractJson.bytecode, wallet);
@@ -76,11 +83,10 @@ const getWeightedSignersSet = (signerAddresses, weights, threshold) => {
     return defaultAbiCoder.encode(['address[]', 'uint256[]', 'uint256'], [sortedAddresses, sortedWeights, threshold]);
 };
 
+const WEIGHTED_SIGNERS_TYPE = 'tuple(tuple(address signer,uint128 weight)[] signers,uint128 threshold,bytes32 nonce)';
+
 const encodeWeightedSigners = (weightedSigners) => {
-    return defaultAbiCoder.encode(
-        ['tuple(tuple(address signer,uint128 weight)[] signers,uint128 threshold,bytes32 nonce)'],
-        [weightedSigners],
-    );
+    return defaultAbiCoder.encode([WEIGHTED_SIGNERS_TYPE], [weightedSigners]);
 };
 
 const encodeWeightedSignersMessage = (data, domainSeparator, weightedSignerHash) => {
@@ -97,12 +103,7 @@ const getWeightedSignersProof = async (data, domainSeparator, weightedSigners, w
 
     const signatures = await Promise.all(wallets.map((wallet) => wallet.signMessage(message)));
 
-    return defaultAbiCoder.encode(
-        [
-            'tuple(tuple(tuple(address signer,uint128 weight)[] signers,uint128 threshold,bytes32 nonce) signers,bytes[] signatures)',
-        ],
-        [{ signers: weightedSigners, signatures }],
-    );
+    return { signers: weightedSigners, signatures };
 };
 
 const encodeInterchainCallsBatch = (batchId, calls) =>
@@ -122,6 +123,7 @@ const solidityObjectToTuple = (obj) => {
 };
 
 module.exports = {
+    IDeployer,
     getSaltFromKey,
     deployContract,
     setJSON,
@@ -134,4 +136,6 @@ module.exports = {
     encodeWeightedSigners,
     encodeMessageHash,
     solidityObjectToTuple,
+
+    WEIGHTED_SIGNERS_TYPE,
 };

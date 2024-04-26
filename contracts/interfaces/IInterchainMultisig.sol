@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import { IBaseWeightedMultisig } from './IBaseWeightedMultisig.sol';
 import { ICaller } from './ICaller.sol';
-import { WeightedSigners } from '../types/WeightedMultisigTypes.sol';
+import { Proof, WeightedSigners } from '../types/WeightedMultisigTypes.sol';
 
 /**
  * @title IMultisig Interface
@@ -56,7 +56,7 @@ interface IInterchainMultisig is ICaller, IBaseWeightedMultisig {
      * @param proof The data containing signers with signatures
      * @return isLatestSigners True if provided signers are the current ones
      */
-    function validateProof(bytes32 dataHash, bytes calldata proof) external view returns (bool isLatestSigners);
+    function validateProof(bytes32 dataHash, Proof calldata proof) external view returns (bool isLatestSigners);
 
     /**
      * @notice Executes an external contract call.
@@ -69,16 +69,16 @@ interface IInterchainMultisig is ICaller, IBaseWeightedMultisig {
     function executeCalls(
         bytes32 batchId,
         Call[] calldata calls,
-        bytes calldata proof
+        Proof calldata proof
     ) external payable;
 
     /**
      * @notice Rotates the signers of the multisig
      * @notice This function is protected by the onlySelf modifier.
-     * @param newWeightedSigners The new weighted signers encoded as bytes
+     * @param newSigners The new weighted signers encoded as bytes
      * @dev This function is only callable by the contract itself after signature verification
      */
-    function rotateSigners(WeightedSigners memory newWeightedSigners) external;
+    function rotateSigners(WeightedSigners memory newSigners) external;
 
     /**
      * @notice Withdraws native token from the contract.

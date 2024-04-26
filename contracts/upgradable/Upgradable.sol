@@ -79,5 +79,5 @@ abstract contract Upgradable is Ownable, Implementation, IUpgradable {
      * @param data Initialization data for the contract
      * @dev This function should be implemented in derived contracts.
      */
-    function _setup(bytes calldata data) internal virtual {}
+    function _setup(bytes calldata data) internal virtual;
 }

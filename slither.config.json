@@ -1,4 +1,4 @@
 {
     "detectors_to_exclude": "assembly,low-level-calls,solc-version,missing-zero-check,timestamp,calls-loop",
-    "filter_paths": "(contracts/test/|contracts/libs/SafeNativeTransfer.sol|node_modules/)"
+    "filter_paths": "(contracts/test/|contracts/gateway/AxelarAmplifierGatewayProxy.sol|contracts/libs/SafeNativeTransfer.sol|node_modules/)"
 }

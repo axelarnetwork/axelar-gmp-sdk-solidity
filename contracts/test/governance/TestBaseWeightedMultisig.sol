@@ -8,25 +8,31 @@ import { Proof, WeightedSigners } from '../../types/WeightedMultisigTypes.sol';
 contract TestBaseWeightedMultisig is BaseWeightedMultisig {
     event DummyEvent();
 
-    constructor(uint256 previousSignersRetention_, bytes32 domainSeparator_)
-        BaseWeightedMultisig(previousSignersRetention_, domainSeparator_)
-    {
+    constructor(
+        uint256 previousSignersRetention_,
+        bytes32 domainSeparator_,
+        WeightedSigners memory initialSigners
+    ) BaseWeightedMultisig(previousSignersRetention_, domainSeparator_) {
         if (BASE_WEIGHTED_MULTISIG_SLOT != bytes32(uint256(keccak256('BaseWeightedMultisig.Slot')) - 1)) {
             revert('BaseWeightedMultisig.Slot');
         }
+
+        _rotateSigners(initialSigners);
     }
 
-    function rotateSigners(WeightedSigners memory newSigners) external {
+    function rotateSigners(WeightedSigners calldata newSigners) external {
         _rotateSigners(newSigners);
     }
 
+    function validateProof(bytes32 dataHash, Proof calldata proof) external view returns (bool isLatestSigners) {
+        return _validateProof(dataHash, proof);
+    }
+
     // use a non-view method to allow gas reporting in tests
-    function validateProof(bytes32 dataHash, bytes calldata proof) external returns (bool isLatestSigners) {
+    function validateProofCall(bytes32 dataHash, Proof calldata proof) external returns (bool isLatestSigners) {
         // emit an event to avoid compiler warning about making this into a view
         emit DummyEvent();
 
-        Proof memory proofData = abi.decode(proof, (Proof));
-
-        return _validateProof(dataHash, proofData);
+        return _validateProof(dataHash, proof);
     }
 }

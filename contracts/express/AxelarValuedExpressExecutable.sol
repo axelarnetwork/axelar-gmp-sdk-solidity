@@ -22,15 +22,30 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker, IAxel
         gateway = IAxelarGateway(gateway_);
     }
 
-    // Returns the amount of token that this call is worth. If `tokenAddress` is `0`, then value is in terms of the native token, otherwise it's in terms of the token address.
+    /**
+     * @notice Returns the amount of token that this call is worth.
+     * @param sourceChain The chain where the call originated
+     * @param sourceAddress The address where the call originated
+     * @param payload The call payload
+     * @return tokenAddress The address of the token
+     * @return value The value of the token
+     */
     function contractCallValue(
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
     ) public view virtual returns (address tokenAddress, uint256 value);
 
-    // Returns the amount of token that this call is worth. If `tokenAddress` is `0`, then value is in terms of the native token, otherwise it's in terms of the token address.
-    // The returned call value is in addition to the `amount` of token `symbol` being transferred with the call.
+    /**
+     * @notice Returns the amount of token that this call is worth.
+     * @param sourceChain The chain where the call originated
+     * @param sourceAddress The address where the call originated
+     * @param payload The call payload
+     * @param symbol The token symbol
+     * @param amount The token amount
+     * @return tokenAddress The address of the token
+     * @return value The value of the token
+     */
     function contractCallWithTokenValue(
         string calldata sourceChain,
         string calldata sourceAddress,
@@ -39,6 +54,13 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker, IAxel
         uint256 amount
     ) public view virtual returns (address tokenAddress, uint256 value);
 
+    /**
+     * @notice Executes the call with the given payload.
+     * @param commandId The command id
+     * @param sourceChain The chain where the call originated
+     * @param sourceAddress The address where the call originated
+     * @param payload The call payload
+     */
     function execute(
         bytes32 commandId,
         string calldata sourceChain,
@@ -53,8 +75,9 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker, IAxel
         address expressExecutor = _popExpressExecutor(commandId, sourceChain, sourceAddress, payloadHash);
 
         if (expressExecutor == address(0)) {
-            _allocateValue(sourceChain, sourceAddress, payload);
-            _execute(sourceChain, sourceAddress, payload);
+            (address tokenAddress, uint256 value) = _produceValue(sourceChain, sourceAddress, payload);
+
+            _processValue(sourceChain, sourceAddress, payload, tokenAddress, value, '');
             return;
         }
 
@@ -63,10 +86,20 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker, IAxel
 
         {
             (address tokenAddress, uint256 value) = contractCallValue(sourceChain, sourceAddress, payload);
-            _transferToExecutor(expressExecutor, tokenAddress, value);
+
+            _produceValueToExecutor(expressExecutor, tokenAddress, value);
         }
     }
 
+    /**
+     * @notice Executes the call with the given payload and token.
+     * @param commandId The command id
+     * @param sourceChain The chain where the call originated
+     * @param sourceAddress The address where the call originated
+     * @param payload The call payload
+     * @param tokenSymbol The token symbol
+     * @param amount The token amount
+     */
     function executeWithToken(
         bytes32 commandId,
         string calldata sourceChain,
@@ -97,7 +130,9 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker, IAxel
         );
 
         if (expressExecutor == address(0)) {
-            _executeWithToken(sourceChain, sourceAddress, payload, tokenSymbol, amount);
+            address tokenAddress = gateway.tokenAddresses(tokenSymbol);
+
+            _processValue(sourceChain, sourceAddress, payload, tokenAddress, amount, tokenSymbol);
             return;
         }
 
@@ -120,7 +155,7 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker, IAxel
                 tokenSymbol,
                 amount
             );
-            _transferToExecutor(expressExecutor, tokenAddress, value);
+            _produceValueToExecutor(expressExecutor, tokenAddress, value);
         }
 
         {
@@ -129,6 +164,13 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker, IAxel
         }
     }
 
+    /**
+     * @notice Express executes the call with the given payload.
+     * @param commandId The command id
+     * @param sourceChain The chain where the call originated
+     * @param sourceAddress The address where the call originated
+     * @param payload The call payload
+     */
     function expressExecute(
         bytes32 commandId,
         string calldata sourceChain,
@@ -144,14 +186,21 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker, IAxel
 
         _setExpressExecutor(commandId, sourceChain, sourceAddress, payloadHash, expressExecutor);
 
-        {
-            (address tokenAddress, uint256 value) = contractCallValue(sourceChain, sourceAddress, payload);
-            _transferFromExecutor(expressExecutor, tokenAddress, value);
-        }
+        (address tokenAddress, uint256 amount) = contractCallValue(sourceChain, sourceAddress, payload);
+        _transferFromExecutor(expressExecutor, tokenAddress, amount);
 
-        _execute(sourceChain, sourceAddress, payload);
+        _processValue(sourceChain, sourceAddress, payload, tokenAddress, amount, '');
     }
 
+    /**
+     * @notice Express executes the call with the given payload and token.
+     * @param commandId The command id
+     * @param sourceChain The chain where the call originated
+     * @param sourceAddress The address where the call originated
+     * @param payload The call payload
+     * @param symbol The token symbol
+     * @param amount The token amount
+     */
     function expressExecuteWithToken(
         bytes32 commandId,
         string calldata sourceChain,
@@ -196,20 +245,49 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker, IAxel
             _transferFromExecutor(expressExecutor, tokenAddress, value);
         }
 
-        {
-            address gatewayToken = gateway.tokenAddresses(symbol);
-            IERC20(gatewayToken).safeTransferFrom(expressExecutor, address(this), amount);
-        }
+        address gatewayToken = gateway.tokenAddresses(symbol);
+        IERC20(gatewayToken).safeTransferFrom(expressExecutor, address(this), amount);
 
-        _executeWithToken(sourceChain, sourceAddress, payload, symbol, amount);
+        _processValue(sourceChain, sourceAddress, payload, gatewayToken, amount, symbol);
     }
 
-    function _allocateValue(
+    /**
+     * @notice Gets the token address and value from the payload.
+     * @dev This function should be implemented by the child contract.
+     *      and used in the contractCallValue and _produceValue functions.
+     * @param payload The call payload
+     * @return tokenAddress The address of the token
+     * @return value The value of the token
+     */
+    function _decodeTokenValue(bytes calldata payload)
+        internal
+        view
+        virtual
+        returns (address tokenAddress, uint256 value);
+
+    /**
+     * @notice Produces the value of the call.
+     * @dev This function is called in the non-express GMP flow.
+     * @dev This could be a mint, unlock, or any other operation that produces value.
+     * @param sourceChain The chain where the call originated
+     * @param sourceAddress The address where the call originated
+     * @param payload The call payload
+     * @return tokenAddress The address of the token
+     * @return value The value of the token
+     */
+    function _produceValue(
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
-    ) internal virtual {}
+    ) internal virtual returns (address tokenAddress, uint256 value);
 
+    /**
+     * @notice Transfers the value of the call from the executor to the contract.
+     * @dev This function is called in the express GMP flow.
+     * @param expressExecutor The address of the executor
+     * @param tokenAddress The address of the token
+     * @param value The value of the token
+     */
     function _transferFromExecutor(
         address expressExecutor,
         address tokenAddress,
@@ -224,7 +302,14 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker, IAxel
         }
     }
 
-    function _transferToExecutor(
+    /**
+     * @notice Returns the token to the express executor.
+     * @dev This function is called in the express GMP flow.
+     * @param expressExecutor The address of the executor
+     * @param tokenAddress The address of the token
+     * @param value The value of the token
+     */
+    function _produceValueToExecutor(
         address expressExecutor,
         address tokenAddress,
         uint256 value
@@ -238,17 +323,22 @@ abstract contract AxelarValuedExpressExecutable is ExpressExecutorTracker, IAxel
         }
     }
 
-    function _execute(
-        string calldata sourceChain,
-        string calldata sourceAddress,
-        bytes calldata payload
-    ) internal virtual {}
-
-    function _executeWithToken(
+    /**
+     * @notice Processes the value of the express or normal call.
+     * @dev This function assumes that token value has already been transferred to the contract.
+     * @param sourceChain The chain where the call originated
+     * @param sourceAddress The address where the call originated
+     * @param payload The call payload
+     * @param tokenAddress The address of the token
+     * @param amount The value of the token
+     * @param tokenSymbol The token symbol for the gateway tokens
+     */
+    function _processValue(
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload,
-        string calldata tokenSymbol,
-        uint256 amount
-    ) internal virtual {}
+        address tokenAddress,
+        uint256 amount,
+        string memory tokenSymbol
+    ) internal virtual;
 }

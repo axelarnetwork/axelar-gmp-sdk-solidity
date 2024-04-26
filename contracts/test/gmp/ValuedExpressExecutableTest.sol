@@ -5,8 +5,14 @@ pragma solidity ^0.8.0;
 import { AxelarValuedExpressExecutable } from '../../express/AxelarValuedExpressExecutable.sol';
 
 contract AxelarValuedExpressExecutableTest is AxelarValuedExpressExecutable {
-    event Executed(string sourceChain, string sourceAddress, bytes payload);
-    event ExecutedWithToken(string sourceChain, string sourceAddress, bytes payload, string symbol, uint256 amount);
+    event ProcessedValueWithToken(
+        string sourceChain,
+        string sourceAddress,
+        bytes payload,
+        string symbol,
+        address tokenAddress,
+        uint256 amount
+    );
 
     uint256 public callValue;
     uint256 public callWithTokenValue;
@@ -24,41 +30,44 @@ contract AxelarValuedExpressExecutableTest is AxelarValuedExpressExecutable {
 
     // Returns the amount of native token that that this call is worth.
     function contractCallValue(
-        string calldata, /*sourceChain*/
-        string calldata, /*sourceAddress*/
-        bytes calldata /*payload*/
+        string calldata, /* sourceChain */
+        string calldata, /* sourceAddress */
+        bytes calldata payload
     ) public view override returns (address tokenAddress, uint256 value) {
-        value = callValue;
-        tokenAddress = expressToken;
+        (tokenAddress, value) = _decodeTokenValue(payload);
     }
 
     // Returns the amount of token that that this call is worth. If `native` is true then native token is used, otherwise the token specified by `symbol` is used.
     function contractCallWithTokenValue(
-        string calldata, /*sourceChain*/
-        string calldata, /*sourceAddress*/
-        bytes calldata, /*payload*/
-        string calldata, /*symbol*/
-        uint256 /*amount*/
+        string calldata, /* sourceChain */
+        string calldata, /* sourceAddress */
+        bytes calldata payload,
+        string calldata, /* symbol */
+        uint256 /* amount */
     ) public view override returns (address tokenAddress, uint256 value) {
-        value = callValue;
-        tokenAddress = expressToken;
+        (tokenAddress, value) = _decodeTokenValue(payload);
     }
 
-    function _execute(
+    function _decodeTokenValue(
+        bytes calldata /* payload */
+    ) internal view override returns (address tokenAddress, uint256 value) {
+        return (expressToken, callValue);
+    }
+
+    function _produceValue(
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
-    ) internal override {
-        emit Executed(sourceChain, sourceAddress, payload);
-    }
+    ) internal override returns (address tokenAddress, uint256 value) {}
 
-    function _executeWithToken(
+    function _processValue(
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload,
-        string calldata symbol,
-        uint256 amount
+        address tokenAddress,
+        uint256 amount,
+        string memory tokenSymbol
     ) internal override {
-        emit ExecutedWithToken(sourceChain, sourceAddress, payload, symbol, amount);
+        emit ProcessedValueWithToken(sourceChain, sourceAddress, payload, tokenSymbol, tokenAddress, amount);
     }
 }

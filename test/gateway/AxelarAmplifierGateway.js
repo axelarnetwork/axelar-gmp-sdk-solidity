@@ -778,11 +778,7 @@ describe('AxelarAmplifierGateway', () => {
         const epoch = (await gateway.epoch()).toNumber();
         await expect(gateway.rotateSigners(newSigners, proof))
             .to.emit(gateway, 'SignersRotated')
-            .withArgs(
-                epoch + 1,
-                keccak256(encodeWeightedSigners(newSigners)),
-                encodeWeightedSigners(newSigners),
-            );
+            .withArgs(epoch + 1, keccak256(encodeWeightedSigners(newSigners)), encodeWeightedSigners(newSigners));
     });
 
     describe('upgradability', () => {
@@ -820,17 +816,23 @@ describe('AxelarAmplifierGateway', () => {
                 threshold: threshold * 2,
                 nonce: id('1'),
             };
+            const newSigners2 = {
+                ...newSigners,
+                nonce: id('2'),
+            };
 
             const setupParams = defaultAbiCoder.encode(
                 ['address', `${WEIGHTED_SIGNERS_TYPE}[]`],
-                [operator.address, [newSigners]],
+                [operator.address, [newSigners, newSigners2]],
             );
 
             await expect(gateway.upgrade(newImplementation.address, newImplementationCodehash, setupParams))
                 .to.emit(gateway, 'Upgraded')
                 .withArgs(newImplementation.address)
                 .to.emit(gateway, 'SignersRotated')
-                .withArgs(2, keccak256(encodeWeightedSigners(newSigners)), encodeWeightedSigners(newSigners));
+                .withArgs(2, keccak256(encodeWeightedSigners(newSigners)), encodeWeightedSigners(newSigners))
+                .to.emit(gateway, 'SignersRotated')
+                .withArgs(3, keccak256(encodeWeightedSigners(newSigners2)), encodeWeightedSigners(newSigners2));
         });
 
         it('reject upgrading with invalid setup params', async () => {

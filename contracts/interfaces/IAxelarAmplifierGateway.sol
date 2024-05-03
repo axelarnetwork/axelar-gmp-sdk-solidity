@@ -15,6 +15,10 @@ import { Message } from '../types/AmplifierGatewayTypes.sol';
 interface IAxelarAmplifierGateway is IBaseAmplifierGateway, IUpgradable {
     error NotLatestSigners();
     error AlreadyRotated();
+    error InvalidSender(address sender);
+    error InvalidOperator();
+
+    event OperatorshipTransferred(address newOperator);
 
     /**
      * @notice Approves an array of messages, signed by the Axelar signers.
@@ -37,4 +41,16 @@ interface IAxelarAmplifierGateway is IBaseAmplifierGateway, IUpgradable {
      * @return isLatestSigners True if provided signers are the current ones
      */
     function validateProof(bytes32 dataHash, Proof calldata proof) external view returns (bool isLatestSigners);
+
+    /**
+     * @notice Returns the address of the gateway operator.
+     * @return The address of the operator.
+     */
+    function operator() external view returns (address);
+
+    /**
+     * @notice Transfer the operatorship to a new address.
+     * @param newOperator The address of the new operator.
+     */
+    function transferOperatorship(address newOperator) external;
 }

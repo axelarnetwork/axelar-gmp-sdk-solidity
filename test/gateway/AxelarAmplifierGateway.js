@@ -3,11 +3,12 @@ const chai = require('chai');
 const { ethers, network } = require('hardhat');
 const {
     utils: { id, keccak256, defaultAbiCoder, toUtf8Bytes, solidityKeccak256 },
+    constants: { AddressZero },
 } = ethers;
 const { expect } = chai;
 
 const { encodeWeightedSigners, getWeightedSignersProof, WEIGHTED_SIGNERS_TYPE } = require('../../scripts/utils');
-const { expectRevert } = require('../utils');
+const { expectRevert, waitFor } = require('../utils');
 
 const APPROVE_MESSAGES = 0;
 const ROTATE_SIGNERS = 1;
@@ -18,8 +19,11 @@ describe('AxelarAmplifierGateway', () => {
     const chainName = 'chain';
     const router = 'router';
     const domainSeparator = keccak256(toUtf8Bytes(chainName + router + 'axelar-1'));
+    const minimumRotationDelay = 0;
     const previousSignersRetention = 15;
 
+    let owner;
+    let operator;
     let user;
     let signers;
     let weightedSigners;
@@ -31,7 +35,9 @@ describe('AxelarAmplifierGateway', () => {
 
     before(async () => {
         const wallets = await ethers.getSigners();
-        user = wallets[0];
+        owner = wallets[0];
+        operator = wallets[1];
+        user = wallets[2];
 
         signers = sortBy(
             Array.from({ length: numSigners }, (_, i) => wallets[i]),
@@ -44,8 +50,8 @@ describe('AxelarAmplifierGateway', () => {
             nonce: id('0'),
         };
 
-        gatewayFactory = await ethers.getContractFactory('AxelarAmplifierGateway', user);
-        gatewayProxyFactory = await ethers.getContractFactory('AxelarAmplifierGatewayProxy', user);
+        gatewayFactory = await ethers.getContractFactory('AxelarAmplifierGateway', owner);
+        gatewayProxyFactory = await ethers.getContractFactory('AxelarAmplifierGatewayProxy', owner);
     });
 
     const getApproveMessageData = (messages) => {
@@ -82,13 +88,16 @@ describe('AxelarAmplifierGateway', () => {
         return getWeightedSignersProof(data, domainSeparator, weightedSigners, wallets);
     };
 
-    const deployGateway = async () => {
-        const signers = defaultAbiCoder.encode([`${WEIGHTED_SIGNERS_TYPE}[]`], [[weightedSigners]]);
+    const deployGateway = async (minimumRotationDelay = 0) => {
+        const signers = defaultAbiCoder.encode(
+            ['address', `${WEIGHTED_SIGNERS_TYPE}[]`],
+            [operator.address, [weightedSigners]],
+        );
 
-        implementation = await gatewayFactory.deploy(previousSignersRetention, domainSeparator);
+        implementation = await gatewayFactory.deploy(previousSignersRetention, domainSeparator, minimumRotationDelay);
         await implementation.deployTransaction.wait(network.config.confirmations);
 
-        const proxy = await gatewayProxyFactory.deploy(implementation.address, user.address, signers);
+        const proxy = await gatewayProxyFactory.deploy(implementation.address, owner.address, signers);
         await proxy.deployTransaction.wait(network.config.confirmations);
 
         gateway = gatewayFactory.attach(proxy.address);
@@ -118,15 +127,19 @@ describe('AxelarAmplifierGateway', () => {
             const contractId = await gateway.contractId();
             expect(contractId).to.equal(id('axelar-amplifier-gateway'));
         });
+
+        it('should return the correct operator', async () => {
+            expect(await gateway.operator()).to.equal(operator.address);
+        });
     });
 
     it('should validate storage constants', async () => {
-        const testBaseGatewayFactory = await ethers.getContractFactory('TestBaseAmplifierGateway', user);
+        const testBaseGatewayFactory = await ethers.getContractFactory('TestBaseAmplifierGateway', owner);
         const testBaseGateway = await testBaseGatewayFactory.deploy();
         await testBaseGateway.deployTransaction.wait(network.config.confirmations);
 
-        const testAxelarGatewayFactory = await ethers.getContractFactory('TestAxelarAmplifierGateway', user);
-        const testAxelarGateway = await testAxelarGatewayFactory.deploy(0, id('1'));
+        const testAxelarGatewayFactory = await ethers.getContractFactory('TestAxelarAmplifierGateway', owner);
+        const testAxelarGateway = await testAxelarGatewayFactory.deploy(0, id('1'), 0);
         await testAxelarGateway.deployTransaction.wait(network.config.confirmations);
     });
 
@@ -138,13 +151,90 @@ describe('AxelarAmplifierGateway', () => {
         it('should emit contract call event', async () => {
             const destinationChain = 'Destination';
             const destinationAddress = '0x123abc';
-            const payload = defaultAbiCoder.encode(['address'], [user.address]);
+            const payload = defaultAbiCoder.encode(['address'], [owner.address]);
 
-            const tx = await gateway.connect(user).callContract(destinationChain, destinationAddress, payload);
+            const tx = await gateway.connect(owner).callContract(destinationChain, destinationAddress, payload);
 
             expect(tx)
                 .to.emit(gateway, 'ContractCall')
-                .withArgs(user.address, destinationChain, destinationAddress, keccak256(payload), payload);
+                .withArgs(owner.address, destinationChain, destinationAddress, keccak256(payload), payload);
+        });
+    });
+
+    describe('roles', () => {
+        before(async () => {
+            await deployGateway();
+        });
+
+        it('should allow transferring ownership', async () => {
+            const tx = await gateway.connect(owner).transferOwnership(user.address);
+            await tx.wait();
+
+            await expect(tx).to.emit(gateway, 'OwnershipTransferred').withArgs(user.address);
+
+            expect(await gateway.owner()).to.equal(user.address);
+
+            // test transferring it again
+            await expect(gateway.connect(user).transferOwnership(owner.address))
+                .to.emit(gateway, 'OwnershipTransferred')
+                .withArgs(owner.address);
+
+            expect(await gateway.owner()).to.equal(owner.address);
+        });
+
+        it('should allow transferring operatorship', async () => {
+            await expect(gateway.connect(operator).transferOperatorship(user.address))
+                .to.emit(gateway, 'OperatorshipTransferred')
+                .withArgs(user.address);
+
+            expect(await gateway.operator()).to.equal(user.address);
+
+            // test transferring it again
+            await expect(gateway.connect(user).transferOperatorship(operator.address))
+                .to.emit(gateway, 'OperatorshipTransferred')
+                .withArgs(operator.address);
+
+            expect(await gateway.operator()).to.equal(operator.address);
+        });
+
+        it('should allow owner to transfer operatorship', async () => {
+            await expect(gateway.connect(owner).transferOperatorship(user.address))
+                .to.emit(gateway, 'OperatorshipTransferred')
+                .withArgs(user.address);
+
+            expect(await gateway.operator()).to.equal(user.address);
+
+            // test transferring it again
+            await expect(gateway.connect(owner).transferOperatorship(operator.address))
+                .to.emit(gateway, 'OperatorshipTransferred')
+                .withArgs(operator.address);
+
+            expect(await gateway.operator()).to.equal(operator.address);
+        });
+
+        it('reject transferring ownership by non-owner', async () => {
+            await expectRevert(
+                (gasOptions) => gateway.connect(operator).transferOwnership(operator.address, gasOptions),
+                gateway,
+                'NotOwner',
+            );
+        });
+
+        it('reject transferring operatorship by non-operator', async () => {
+            await expectRevert(
+                (gasOptions) => gateway.connect(user).transferOperatorship(user.address, gasOptions),
+                gateway,
+                'InvalidSender',
+                [user.address],
+            );
+        });
+
+        it('reject transferring operatorship to the zero address', async () => {
+            await expectRevert(
+                (gasOptions) => gateway.connect(operator).transferOperatorship(AddressZero, gasOptions),
+                gateway,
+                'InvalidOperator',
+            );
         });
     });
 
@@ -155,7 +245,7 @@ describe('AxelarAmplifierGateway', () => {
 
         it('should approve and validate message', async () => {
             const messageId = '1';
-            const payload = defaultAbiCoder.encode(['address'], [user.address]);
+            const payload = defaultAbiCoder.encode(['address'], [owner.address]);
             const payloadHash = keccak256(payload);
             const sourceChain = 'Source';
             const sourceAddress = 'address0x123';
@@ -166,7 +256,7 @@ describe('AxelarAmplifierGateway', () => {
                     messageId,
                     sourceChain,
                     sourceAddress,
-                    contractAddress: user.address,
+                    contractAddress: owner.address,
                     payloadHash,
                 },
             ];
@@ -177,19 +267,19 @@ describe('AxelarAmplifierGateway', () => {
 
             await expect(gateway.approveMessages(messages, proof))
                 .to.emit(gateway, 'ContractCallApproved')
-                .withArgs(commandId, messageId, sourceChain, sourceAddress, user.address, payloadHash);
+                .withArgs(commandId, messageId, sourceChain, sourceAddress, owner.address, payloadHash);
 
             const isApprovedBefore = await gateway.isMessageApproved(
                 messageId,
                 sourceChain,
                 sourceAddress,
-                user.address,
+                owner.address,
                 payloadHash,
             );
             expect(isApprovedBefore).to.be.true;
 
             await gateway
-                .connect(user)
+                .connect(owner)
                 .validateMessage(messageId, sourceChain, sourceAddress, payloadHash)
                 .then((tx) => tx.wait());
 
@@ -197,7 +287,7 @@ describe('AxelarAmplifierGateway', () => {
                 messageId,
                 sourceChain,
                 sourceAddress,
-                user.address,
+                owner.address,
                 payloadHash,
             );
             expect(isApprovedAfter).to.be.false;
@@ -205,7 +295,7 @@ describe('AxelarAmplifierGateway', () => {
 
         it('reject re-approving a message', async () => {
             const messageId = '1';
-            const payload = defaultAbiCoder.encode(['address'], [user.address]);
+            const payload = defaultAbiCoder.encode(['address'], [owner.address]);
             const payloadHash = keccak256(payload);
             const sourceChain = 'Source';
             const sourceAddress = 'address0x123';
@@ -216,7 +306,7 @@ describe('AxelarAmplifierGateway', () => {
                     messageId,
                     sourceChain,
                     sourceAddress,
-                    contractAddress: user.address,
+                    contractAddress: owner.address,
                     payloadHash,
                 },
             ];
@@ -227,13 +317,13 @@ describe('AxelarAmplifierGateway', () => {
 
             await expect(gateway.approveMessages(messages, proof))
                 .to.emit(gateway, 'ContractCallApproved')
-                .withArgs(commandId, messageId, sourceChain, sourceAddress, user.address, payloadHash);
+                .withArgs(commandId, messageId, sourceChain, sourceAddress, owner.address, payloadHash);
 
             const isApprovedBefore = await gateway.isMessageApproved(
                 messageId,
                 sourceChain,
                 sourceAddress,
-                user.address,
+                owner.address,
                 payloadHash,
             );
             expect(isApprovedBefore).to.be.true;
@@ -241,7 +331,7 @@ describe('AxelarAmplifierGateway', () => {
             expect(await gateway.isMessageExecuted(sourceChain, messageId)).to.be.false;
 
             await gateway
-                .connect(user)
+                .connect(owner)
                 .validateMessage(messageId, sourceChain, sourceAddress, payloadHash)
                 .then((tx) => tx.wait());
 
@@ -249,7 +339,7 @@ describe('AxelarAmplifierGateway', () => {
                 messageId,
                 sourceChain,
                 sourceAddress,
-                user.address,
+                owner.address,
                 payloadHash,
             );
             expect(isApprovedAfter).to.be.false;
@@ -259,7 +349,7 @@ describe('AxelarAmplifierGateway', () => {
 
         it('should approve and validate contract call', async () => {
             const messageId = '1';
-            const payload = defaultAbiCoder.encode(['address'], [user.address]);
+            const payload = defaultAbiCoder.encode(['address'], [owner.address]);
             const payloadHash = keccak256(payload);
             const sourceChain = 'Source';
             const sourceAddress = 'address0x123';
@@ -270,7 +360,7 @@ describe('AxelarAmplifierGateway', () => {
                     messageId,
                     sourceChain,
                     sourceAddress,
-                    contractAddress: user.address,
+                    contractAddress: owner.address,
                     payloadHash,
                 },
             ];
@@ -279,23 +369,25 @@ describe('AxelarAmplifierGateway', () => {
 
             await expect(gateway.approveMessages(messages, proof))
                 .to.emit(gateway, 'ContractCallApproved')
-                .withArgs(commandId, messageId, sourceChain, sourceAddress, user.address, payloadHash);
+                .withArgs(commandId, messageId, sourceChain, sourceAddress, owner.address, payloadHash);
 
             expect(
-                await gateway.isContractCallApproved(commandId, sourceChain, sourceAddress, user.address, payloadHash),
+                await gateway.isContractCallApproved(commandId, sourceChain, sourceAddress, owner.address, payloadHash),
             ).to.be.true;
 
-            await expect(gateway.connect(user).validateContractCall(commandId, sourceChain, sourceAddress, payloadHash))
+            await expect(
+                gateway.connect(owner).validateContractCall(commandId, sourceChain, sourceAddress, payloadHash),
+            )
                 .to.emit(gateway, 'ContractCallExecuted')
                 .withArgs(commandId);
 
             expect(
-                await gateway.isContractCallApproved(commandId, sourceChain, sourceAddress, user.address, payloadHash),
+                await gateway.isContractCallApproved(commandId, sourceChain, sourceAddress, owner.address, payloadHash),
             ).to.be.false;
 
             // already executed
             await expect(
-                gateway.connect(user).validateContractCall(commandId, sourceChain, sourceAddress, payloadHash),
+                gateway.connect(owner).validateContractCall(commandId, sourceChain, sourceAddress, payloadHash),
             ).to.not.emit(gateway, 'ContractCallExecuted');
 
             expect(await gateway.isCommandExecuted(commandId)).to.be.true;
@@ -304,7 +396,7 @@ describe('AxelarAmplifierGateway', () => {
         it('should approve and validate multiple contract calls', async () => {
             const messages = [];
             const numCommands = 10;
-            const payload = defaultAbiCoder.encode(['address'], [user.address]);
+            const payload = defaultAbiCoder.encode(['address'], [owner.address]);
             const payloadHash = keccak256(payload);
             const sourceChain = 'Source';
             const sourceAddress = 'address0x123';
@@ -316,7 +408,7 @@ describe('AxelarAmplifierGateway', () => {
                     messageId,
                     sourceChain,
                     sourceAddress,
-                    contractAddress: user.address,
+                    contractAddress: owner.address,
                     payloadHash,
                 });
             }
@@ -332,13 +424,13 @@ describe('AxelarAmplifierGateway', () => {
 
                 await expect(tx)
                     .to.emit(gateway, 'ContractCallApproved')
-                    .withArgs(commandId, messageId, sourceChain, sourceAddress, user.address, payloadHash);
+                    .withArgs(commandId, messageId, sourceChain, sourceAddress, owner.address, payloadHash);
 
                 const isApprovedBefore = await gateway.isMessageApproved(
                     messageId,
                     sourceChain,
                     sourceAddress,
-                    user.address,
+                    owner.address,
                     payloadHash,
                 );
 
@@ -349,13 +441,13 @@ describe('AxelarAmplifierGateway', () => {
                         commandId,
                         sourceChain,
                         sourceAddress,
-                        user.address,
+                        owner.address,
                         payloadHash,
                     ),
                 ).to.be.true;
 
                 await gateway
-                    .connect(user)
+                    .connect(owner)
                     .validateMessage(messageId, sourceChain, sourceAddress, payloadHash)
                     .then((tx) => tx.wait());
 
@@ -363,7 +455,7 @@ describe('AxelarAmplifierGateway', () => {
                     messageId,
                     sourceChain,
                     sourceAddress,
-                    user.address,
+                    owner.address,
                     payloadHash,
                 );
 
@@ -374,7 +466,7 @@ describe('AxelarAmplifierGateway', () => {
                         commandId,
                         sourceChain,
                         sourceAddress,
-                        user.address,
+                        owner.address,
                         payloadHash,
                     ),
                 ).to.be.false;
@@ -394,7 +486,7 @@ describe('AxelarAmplifierGateway', () => {
         });
 
         it('reject invalid contract call approval', async () => {
-            expect(await gateway.isContractCallApproved(id('1'), 'Chain', 'address', user.address, id('data'))).to.be
+            expect(await gateway.isContractCallApproved(id('1'), 'Chain', 'address', owner.address, id('data'))).to.be
                 .false;
 
             await expect(gateway.validateContractCall(id('1'), 'Chain', 'address', id('data'))).to.not.emit(
@@ -404,7 +496,7 @@ describe('AxelarAmplifierGateway', () => {
         });
 
         it('reject invalid message approval', async () => {
-            expect(await gateway.isMessageApproved('1', 'Chain', 'address', user.address, id('data'))).to.be.false;
+            expect(await gateway.isMessageApproved('1', 'Chain', 'address', owner.address, id('data'))).to.be.false;
 
             await expect(gateway.validateMessage('1', 'Chain', 'address', id('data'))).to.not.emit(
                 gateway,
@@ -414,7 +506,7 @@ describe('AxelarAmplifierGateway', () => {
 
         it('reject re-approving a message', async () => {
             const messageId = '1';
-            const payload = defaultAbiCoder.encode(['address'], [user.address]);
+            const payload = defaultAbiCoder.encode(['address'], [owner.address]);
             const payloadHash = keccak256(payload);
             const sourceChain = 'Source';
             const sourceAddress = 'address0x123';
@@ -425,7 +517,7 @@ describe('AxelarAmplifierGateway', () => {
                     messageId,
                     sourceChain,
                     sourceAddress,
-                    contractAddress: user.address,
+                    contractAddress: owner.address,
                     payloadHash,
                 },
             ];
@@ -434,19 +526,19 @@ describe('AxelarAmplifierGateway', () => {
 
             await expect(gateway.approveMessages(messages, proof))
                 .to.emit(gateway, 'ContractCallApproved')
-                .withArgs(commandId, messageId, sourceChain, sourceAddress, user.address, payloadHash);
+                .withArgs(commandId, messageId, sourceChain, sourceAddress, owner.address, payloadHash);
 
             const isApprovedBefore = await gateway.isMessageApproved(
                 messageId,
                 sourceChain,
                 sourceAddress,
-                user.address,
+                owner.address,
                 payloadHash,
             );
             expect(isApprovedBefore).to.be.true;
 
             await gateway
-                .connect(user)
+                .connect(owner)
                 .validateMessage(messageId, sourceChain, sourceAddress, payloadHash)
                 .then((tx) => tx.wait());
 
@@ -454,7 +546,7 @@ describe('AxelarAmplifierGateway', () => {
                 messageId,
                 sourceChain,
                 sourceAddress,
-                user.address,
+                owner.address,
                 payloadHash,
             );
             expect(isApprovedAfter).to.be.false;
@@ -464,8 +556,8 @@ describe('AxelarAmplifierGateway', () => {
             // try re-approving the same message
             await expect(gateway.approveMessages(messages, proof)).to.not.emit(gateway, 'ContractCallApproved');
 
-            expect(await gateway.isMessageApproved(messageId, sourceChain, sourceAddress, user.address, payloadHash)).to
-                .be.false;
+            expect(await gateway.isMessageApproved(messageId, sourceChain, sourceAddress, owner.address, payloadHash))
+                .to.be.false;
         });
     });
 
@@ -479,8 +571,8 @@ describe('AxelarAmplifierGateway', () => {
         beforeEach(async () => {
             await deployGateway();
 
-            contractAddress = user.address;
-            payload = defaultAbiCoder.encode(['address'], [user.address]);
+            contractAddress = owner.address;
+            payload = defaultAbiCoder.encode(['address'], [owner.address]);
             payloadHash = keccak256(payload);
         });
 
@@ -528,7 +620,7 @@ describe('AxelarAmplifierGateway', () => {
 
             await expect(gateway.approveMessages(messages, proof))
                 .to.emit(gateway, 'ContractCallApproved')
-                .withArgs(commandId, messageId, sourceChain, sourceAddress, user.address, payloadHash);
+                .withArgs(commandId, messageId, sourceChain, sourceAddress, owner.address, payloadHash);
         });
 
         it('should allow multiple rotations crossing the retention period', async () => {
@@ -568,7 +660,7 @@ describe('AxelarAmplifierGateway', () => {
 
                 await expect(gateway.approveMessages(messages, proof))
                     .to.emit(gateway, 'ContractCallApproved')
-                    .withArgs(commandId, `${i}`, sourceChain, sourceAddress, user.address, payloadHash);
+                    .withArgs(commandId, `${i}`, sourceChain, sourceAddress, owner.address, payloadHash);
             }
 
             // reject proof from outdated signer set
@@ -587,6 +679,30 @@ describe('AxelarAmplifierGateway', () => {
                 gateway,
                 'InvalidSigners',
             );
+        });
+
+        it('should allow rotating signers from an old signer set from gateway operator', async () => {
+            const newSigners = {
+                signers: signers.map((wallet) => ({ signer: wallet.address, weight: 1 })),
+                threshold,
+                nonce: id('1'),
+            };
+
+            let proof = await getProof(ROTATE_SIGNERS, newSigners, weightedSigners, signers.slice(0, threshold));
+
+            await gateway.rotateSigners(newSigners, proof).then((tx) => tx.wait());
+
+            // sign off from an older signer set
+            const newSigners2 = {
+                signers: signers.map((wallet) => ({ signer: wallet.address, weight: 1 })),
+                threshold,
+                nonce: id('2'),
+            };
+            proof = await getProof(ROTATE_SIGNERS, newSigners2, weightedSigners, signers.slice(0, threshold));
+
+            await expect(gateway.connect(operator).rotateSigners(newSigners2, proof))
+                .to.emit(gateway, 'SignersRotated')
+                .withArgs(3, keccak256(encodeWeightedSigners(newSigners2)), encodeWeightedSigners(newSigners2));
         });
 
         it('reject rotating to the same signers', async () => {
@@ -638,13 +754,44 @@ describe('AxelarAmplifierGateway', () => {
         });
     });
 
+    it('should allow rotating signers after the delay', async () => {
+        const minimumRotationDelay = 60; // seconds
+
+        await deployGateway(minimumRotationDelay);
+
+        const newSigners = {
+            ...weightedSigners,
+            nonce: id('1'),
+        };
+        const proof = await getProof(ROTATE_SIGNERS, newSigners, weightedSigners, signers.slice(0, threshold));
+
+        // reject rotation before the delay
+        await expectRevert(
+            (gasOptions) => gateway.rotateSigners(newSigners, proof, gasOptions),
+            gateway,
+            'InsufficientRotationDelay',
+        );
+
+        await waitFor(minimumRotationDelay);
+
+        // rotate signers after the delay
+        const epoch = (await gateway.epoch()).toNumber();
+        await expect(gateway.rotateSigners(newSigners, proof))
+            .to.emit(gateway, 'SignersRotated')
+            .withArgs(epoch + 1, keccak256(encodeWeightedSigners(newSigners)), encodeWeightedSigners(newSigners));
+    });
+
     describe('upgradability', () => {
         beforeEach(async () => {
             await deployGateway();
         });
 
         it('should allow upgrading the implementation', async () => {
-            const newImplementation = await gatewayFactory.deploy(previousSignersRetention, domainSeparator);
+            const newImplementation = await gatewayFactory.deploy(
+                previousSignersRetention,
+                domainSeparator,
+                minimumRotationDelay,
+            );
             await newImplementation.deployTransaction.wait(network.config.confirmations);
 
             const newImplementationCodehash = keccak256(await ethers.provider.getCode(newImplementation.address));
@@ -655,7 +802,11 @@ describe('AxelarAmplifierGateway', () => {
         });
 
         it('should allow upgrading the implementation with setup params', async () => {
-            const newImplementation = await gatewayFactory.deploy(previousSignersRetention, domainSeparator);
+            const newImplementation = await gatewayFactory.deploy(
+                previousSignersRetention,
+                domainSeparator,
+                minimumRotationDelay,
+            );
             await newImplementation.deployTransaction.wait(network.config.confirmations);
 
             const newImplementationCodehash = keccak256(await ethers.provider.getCode(newImplementation.address));
@@ -665,18 +816,31 @@ describe('AxelarAmplifierGateway', () => {
                 threshold: threshold * 2,
                 nonce: id('1'),
             };
+            const newSigners2 = {
+                ...newSigners,
+                nonce: id('2'),
+            };
 
-            const setupParams = defaultAbiCoder.encode([`${WEIGHTED_SIGNERS_TYPE}[]`], [[newSigners]]);
+            const setupParams = defaultAbiCoder.encode(
+                ['address', `${WEIGHTED_SIGNERS_TYPE}[]`],
+                [operator.address, [newSigners, newSigners2]],
+            );
 
             await expect(gateway.upgrade(newImplementation.address, newImplementationCodehash, setupParams))
                 .to.emit(gateway, 'Upgraded')
                 .withArgs(newImplementation.address)
                 .to.emit(gateway, 'SignersRotated')
-                .withArgs(2, keccak256(encodeWeightedSigners(newSigners)), encodeWeightedSigners(newSigners));
+                .withArgs(2, keccak256(encodeWeightedSigners(newSigners)), encodeWeightedSigners(newSigners))
+                .to.emit(gateway, 'SignersRotated')
+                .withArgs(3, keccak256(encodeWeightedSigners(newSigners2)), encodeWeightedSigners(newSigners2));
         });
 
         it('reject upgrading with invalid setup params', async () => {
-            const newImplementation = await gatewayFactory.deploy(previousSignersRetention, domainSeparator);
+            const newImplementation = await gatewayFactory.deploy(
+                previousSignersRetention,
+                domainSeparator,
+                minimumRotationDelay,
+            );
             await newImplementation.deployTransaction.wait(network.config.confirmations);
 
             const newImplementationCodehash = keccak256(await ethers.provider.getCode(newImplementation.address));

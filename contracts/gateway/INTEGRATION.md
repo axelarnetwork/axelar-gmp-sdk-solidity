@@ -1,12 +1,12 @@
 # Axelar Amplifier Gateway Integration
 
-Axelar Amplifier Gateway is a smart contract that lives on the external chain that is connecting to the Axelar Network. It faciliates sending and receiving of cross-chain messages to other chains via the Axelar Network. `AxelarAmplifierGateway` is the EVM reference implementation of the external gateway.
+Axelar Amplifier Gateway is a smart contract that lives on the external chain that is connecting to the Axelar Network. It facilitates sending and receiving of cross-chain messages to other chains via the Axelar Network. `AxelarAmplifierGateway` is the EVM [reference implementation](./AxelarAmplifierGateway.sol) of the external gateway.
 
 The following sections walk through the integration requirements when implementing the external gateway contract for a given chain. Other implementation details can vary, and we recommend to use the idiomatic design pattern specific to that chain where possible.
 
-## Entrypoints
+## Interface
 
-The following are the main entrypoints for the gateway contract.
+The following is the main interface exposed by the Axelar gateway contract.
 
 ```solidity
 // Initiate a cross-chain contract call
@@ -18,15 +18,25 @@ function approveMessages(Message[] calldata messages, Proof calldata proof) exte
 // Validate a message approval, and mark it as used
 function validateMessage(string calldata messageId, string calldata sourceChain, string calldata sourceAddress, bytes32 payloadHash) external returns (bool);
 
+// Query if a message is approved
+function isMessageApproved(string calldata messageId, string calldata sourceChain, string calldata sourceAddress, address contractAddress, bytes32 payloadHash) external view returns (bool);
+
+// Query if a message has been executed
+function isMessageExecuted(string calldata sourceChain, string calldata messageId) external view returns (bool);
+
 // Rotate to a new set of Axelar verifiers, signed off by the current Axelar verifiers
 function rotateSigners(WeightedSigners memory newSigners, Proof calldata proof) external;
+```
 
+The EVM Amplifier gateway also supports legacy methods for compatibility with the existing EVM `AxelarExecutable` contract. These aren't needed for gateway implementations for non-EVM chains.
+
+```solidity
 // Legacy method only needed on EVM chains for backwards compatibility.
 // Validate a message approval via the commandId, and mark it as used
 function validateContractCall(bytes32 commandId, string calldata sourceChain, string calldata sourceAddress, bytes32 payloadHash) external returns (bool);
 ```
 
-The following entrypoint is needed for the Axelar Executable interface that application contracts are expected to implement.
+The following entrypoint is needed for the `AxelarExecutable` interface that application contracts are expected to implement.
 
 ```solidity
 function execute(
@@ -67,8 +77,8 @@ The verifier/signer rotation flow looks like the following:
 
 ```mermaid
 flowchart LR
-    DG[Destination Gateway]
     AXL{Axelar Amplifier}
+    DG[Destination Gateway]
 
     AXL -.->|Verifier set change| AXL
     AXL -->|rotateSigners| DG
@@ -189,12 +199,12 @@ event ContractCall(
 );
 ```
 
-A `ContractCallApproved` event needs to be emitted for each message approval within `approveMessages`. The relayer for the destination chain listens for this event to execute the cross-chain contract call on the destination contract address (by calling `AxelarExecutable.execute`).
+A `MessageApproved` event needs to be emitted for each message approval within `approveMessages`. The relayer for the destination chain listens for this event to execute the cross-chain contract call on the destination contract address (by calling `AxelarExecutable.execute`).
 
-Note: Gateway contracts for non-EVM chains can omit exposing the `commandId` in the events, and use `sourcChain` with `messageId` combination for tracking the message. `commandId` is used for EVM gateway for backwards compatibility for applications, and requires the EVM relayer to maintain a `commandId` <-> `messageId` mapping.
+Note: `commandId` is included in the events for querying the event by legacy compatibility, and use `sourceChain` with `messageId` combination for tracking the message.
 
 ```solidity
-event ContractCallApproved(
+event MessageApproved(
     bytes32 indexed commandId,
     string messageId,
     string sourceChain,
@@ -204,13 +214,13 @@ event ContractCallApproved(
 );
 ```
 
-A `ContractCallExecuted` event needs to be emitted when `validateMessage` is called. The relayer for the destination chain listens for this event to mark the message as executed (by calling the Amplifier Relayer API). This is required for processing any excess gas refunds for the cross-chain message, indexing, debugging purposes.
+A `MessageExecuted` event needs to be emitted when `validateMessage` is called. The relayer for the destination chain listens for this event to mark the message as executed (by calling the Amplifier Relayer API). This is required for processing any excess gas refunds for the cross-chain message, indexing, debugging purposes.
 
 ```solidity
-event ContractCallExecuted(bytes32 indexed commandId);
+event MessageExecuted(bytes32 indexed commandId, string messageId, string sourceChain);
 ```
 
-A `SignersRotated` event needs to be emitted when `rotateSigners` is called. This event is required by Axelar verifiers to confirm the signer/verifier rotation was executed, so that Amplifier can switch to signing with the new verifier set. The relayer for the destination chain also listens for this event to initiate the confirmation of the verifier rotation on Amplifier.
+A `SignersRotated` event needs to be emitted by the gateway when `rotateSigners` is called. This event is required by Axelar verifiers to confirm the signer/verifier rotation was executed, so that Amplifier can switch to signing with the new verifier set. The relayer for the destination chain also listens for this event to initiate the confirmation of the verifier rotation on Amplifier.
 
 ```solidity
 event SignersRotated(uint256 indexed epoch, bytes32 indexed signersHash, bytes signers);
@@ -218,8 +228,14 @@ event SignersRotated(uint256 indexed epoch, bytes32 indexed signersHash, bytes s
 
 ## Upgradability
 
-The gateway contract is designed to be upgradable. The owner can upgrade the contract to a new version by calling the `upgrade` function. The new contract address is passed as an argument to the function. The new contract must be compatible with the existing storage layout. The gateway owner is expected to be the [governance contract](../governance/InterchainGovernance.sol) that can trigger upgrades by receiving GMP calls. The implementation of the upgrade method is expected to vary for non-EVM chains.
+The gateway contract is designed to be upgradable. The owner can upgrade the contract to a new version by calling the `upgrade` function. The new contract address is passed as an argument to the function. The new contract must be compatible with the existing storage layout. The gateway owner is expected to be the [governance contract](../governance/AxelarServiceGovernance.sol) that can trigger upgrades by receiving GMP calls. The implementation of the upgrade method is expected to vary for non-EVM chains.
+
+## Signer rotation delay
+
+The auth mechanism of the gateway contract tracks the recent list of signers that were active. This allows a recent signer set to recover the gateway in the event of a compromise of the latest signer set, or a bug in the gateway or Amplifier that allows rotating to a malicious signer set. To prevent the gateway contract from being lost by successive malicious rotations, a minimum delay is enforced between signer rotations (e.g. 1 day). This allows the decentralized governance to step in to react to any issues (for e.g. upgrade the gateway).
+
+Since the governance makes use of Axelar GMP calls as well, a compromised signer set, or exploit could potentially issue a governance proposal as well. Governance also has a timelock by default which makes reacting to issues slow. Hence, a gateway `operator` can be elected by governance that can collaborate with Axelar governance to bypass signer rotation and governance delays in emergencies. The operator can't perform these actions by itself. It still requires that signers have signed off on the action. This mechanism is useful as it's more unlikely that both the Axelar gateway/governance and the operator have been compromised at the same time.
 
 ## Testing
 
-Unit tests for the gateway can be found [here](../../test/gateway/AxelarAmplifierGateway.js) to use as reference for the implementation for another chain. Other than standard testing practices like code coverage, Axelar Amplifier devnet e2e testing framework will support adding connectors for different chains. More details to come.
+Unit tests for the gateway can be found [here](../../test/gateway/AxelarAmplifierGateway.js) to use as reference for the implementation for another chain. Other than standard testing practices like unit tests, code coverage, Axelar Amplifier devnet e2e testing framework will support adding connectors for different chains. More details to come.

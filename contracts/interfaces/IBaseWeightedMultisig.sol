@@ -8,6 +8,7 @@ interface IBaseWeightedMultisig {
     error MalformedSignatures();
     error LowSignaturesWeight();
     error InvalidWeights();
+    error InsufficientRotationDelay(uint256 minimumRotationDelay, uint256 lastRotationTimestamp, uint256 timeElapsed);
 
     event SignersRotated(uint256 indexed epoch, bytes32 indexed signersHash, bytes signers);
 
@@ -36,6 +37,12 @@ interface IBaseWeightedMultisig {
      * @return The epoch for the given hash
      */
     function epochBySignerHash(bytes32 signerHash) external view returns (uint256);
+
+    /**
+     * @notice This function returns the timestamp for the last signer rotation
+     * @return uint256 The last rotation timestamp
+     */
+    function lastRotationTimestamp() external view returns (uint256);
 
     /**
      * @notice Compute the message hash that is signed by the weighted signers

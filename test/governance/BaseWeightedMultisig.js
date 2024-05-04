@@ -59,6 +59,10 @@ describe('AxelarAmplifierAuth', () => {
             expect(await multisig.previousSignersRetention()).to.be.equal(previousSignersRetention);
         });
 
+        it('domainSeparator', async () => {
+            expect(await multisig.domainSeparator()).to.be.equal(domainSeparator);
+        });
+
         it('hashMessage', async () => {
             const data = '0x123abc123abc';
             const dataHash = keccak256(arrayify(data));
@@ -75,6 +79,12 @@ describe('AxelarAmplifierAuth', () => {
             const hash = keccak256(encodeWeightedSigners(weightedSigners));
             expect(await multisig.signerHashByEpoch(1)).to.be.equal(hash);
             expect(await multisig.epochBySignerHash(hash)).to.be.equal(1);
+        });
+
+        it('lastRotationTimestamp', async () => {
+            const currentTimestamp = Math.floor(Date.now() / 1000);
+
+            expect(await multisig.lastRotationTimestamp()).to.be.gt(currentTimestamp - 30);
         });
     });
 

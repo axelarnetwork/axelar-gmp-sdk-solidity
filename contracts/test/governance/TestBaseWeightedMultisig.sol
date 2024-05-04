@@ -12,16 +12,16 @@ contract TestBaseWeightedMultisig is BaseWeightedMultisig {
         uint256 previousSignersRetention_,
         bytes32 domainSeparator_,
         WeightedSigners memory initialSigners
-    ) BaseWeightedMultisig(previousSignersRetention_, domainSeparator_) {
+    ) BaseWeightedMultisig(previousSignersRetention_, domainSeparator_, 0) {
         if (BASE_WEIGHTED_MULTISIG_SLOT != bytes32(uint256(keccak256('BaseWeightedMultisig.Slot')) - 1)) {
             revert('BaseWeightedMultisig.Slot');
         }
 
-        _rotateSigners(initialSigners);
+        _rotateSigners(initialSigners, false);
     }
 
     function rotateSigners(WeightedSigners calldata newSigners) external {
-        _rotateSigners(newSigners);
+        _rotateSigners(newSigners, false);
     }
 
     function validateProof(bytes32 dataHash, Proof calldata proof) external view returns (bool isLatestSigners) {

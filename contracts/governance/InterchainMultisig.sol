@@ -36,12 +36,12 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
         string memory chainName,
         bytes32 domainSeparator_,
         WeightedSigners memory signers
-    ) BaseWeightedMultisig(0, domainSeparator_) {
+    ) BaseWeightedMultisig(0, domainSeparator_, 0) {
         if (bytes(chainName).length == 0) revert InvalidChainName();
 
         chainNameHash = keccak256(bytes(chainName));
 
-        _rotateSigners(signers);
+        _rotateSigners(signers, false);
     }
 
     modifier onlySelf() {
@@ -121,7 +121,7 @@ contract InterchainMultisig is Caller, BaseWeightedMultisig, IInterchainMultisig
      * @dev This function is only callable by the contract itself after signature verification
      */
     function rotateSigners(WeightedSigners memory newSigners) external onlySelf {
-        _rotateSigners(newSigners);
+        _rotateSigners(newSigners, false);
     }
 
     /**

@@ -25,6 +25,13 @@ abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
     |* Public Methods *|
     \******************/
 
+    /**
+     * @notice Sends a message to the specified destination chain and address with a given payload.
+     * This function is the entry point for general message passing between chains.
+     * @param destinationChain The chain where the destination contract exists. A registered chain name on Axelar must be used here
+     * @param destinationContractAddress The address of the contract to call on the destination chain
+     * @param payload The payload to be sent to the destination contract, usually representing an encoded function call with arguments
+     */
     function callContract(
         string calldata destinationChain,
         string calldata destinationContractAddress,
@@ -33,9 +40,19 @@ abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
         emit ContractCall(msg.sender, destinationChain, destinationContractAddress, keccak256(payload), payload);
     }
 
+    /**
+     * @notice Checks if a message is approved.
+     * @dev Determines whether a given message, identified by the sourceChain and messageId, is approved.
+     * @param sourceChain The name of the source chain.
+     * @param messageId The unique identifier of the message.
+     * @param sourceAddress The address of the sender on the source chain.
+     * @param contractAddress The address of the contract where the call will be executed.
+     * @param payloadHash The keccak256 hash of the payload data.
+     * @return True if the contract call is approved, false otherwise.
+     */
     function isMessageApproved(
-        string calldata messageId,
         string calldata sourceChain,
+        string calldata messageId,
         string calldata sourceAddress,
         address contractAddress,
         bytes32 payloadHash
@@ -55,9 +72,17 @@ abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
         return _baseAmplifierGatewayStorage().approvals[messageToCommandId(sourceChain, messageId)] == MESSAGE_EXECUTED;
     }
 
+    /**
+     * @notice Validates if a message is approved. If message was in approved status, status is updated to executed to avoid replay.
+     * @param sourceChain The name of the source chain.
+     * @param messageId The unique identifier of the message.
+     * @param sourceAddress The address of the sender on the source chain.
+     * @param payloadHash The keccak256 hash of the payload data.
+     * @return valid True if the message is approved, false otherwise.
+     */
     function validateMessage(
-        string calldata messageId,
         string calldata sourceChain,
+        string calldata messageId,
         string calldata sourceAddress,
         bytes32 payloadHash
     ) external override returns (bool valid) {
@@ -66,7 +91,7 @@ abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
     }
 
     /**
-     * @notice Compute the commandId for a `Message`.
+     * @notice Compute the commandId for a message.
      * @param sourceChain The name of the source chain as registered on Axelar.
      * @param messageId The unique message id for the message.
      * @return The commandId for the message.
@@ -158,7 +183,7 @@ abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
         if (valid) {
             _baseAmplifierGatewayStorage().approvals[commandId] = MESSAGE_EXECUTED;
 
-            emit ContractCallExecuted(commandId);
+            emit MessageExecuted(commandId);
         }
     }
 
@@ -172,10 +197,10 @@ abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
         );
         _baseAmplifierGatewayStorage().approvals[commandId] = messageHash;
 
-        emit ContractCallApproved(
+        emit MessageApproved(
             commandId,
-            message.messageId,
             message.sourceChain,
+            message.messageId,
             message.sourceAddress,
             message.contractAddress,
             message.payloadHash

@@ -209,9 +209,9 @@ Note: `commandId` is included in the events for querying the event by legacy com
 
 ```solidity
 event MessageApproved(
-    bytes32 indexed commandId,
-    string messageId,
     string sourceChain,
+    string messageId,
+    bytes32 indexed commandId,
     string sourceAddress,
     address indexed contractAddress,
     bytes32 indexed payloadHash
@@ -221,7 +221,7 @@ event MessageApproved(
 A `MessageExecuted` event needs to be emitted when `validateMessage` is called. The relayer for the destination chain listens for this event to mark the message as executed (by calling the Amplifier Relayer API). This is required for processing any excess gas refunds for the cross-chain message, indexing, debugging purposes.
 
 ```solidity
-event MessageExecuted(bytes32 indexed commandId, string messageId, string sourceChain);
+event MessageExecuted(bytes32 indexed commandId, string sourceChain, string messageId);
 ```
 
 A `SignersRotated` event needs to be emitted by the gateway when `rotateSigners` is called. This event is required by Axelar verifiers to confirm the signer/verifier rotation was executed, so that Amplifier can switch to signing with the new verifier set. The relayer for the destination chain also listens for this event to initiate the confirmation of the verifier rotation on Amplifier.

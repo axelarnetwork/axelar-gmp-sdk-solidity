@@ -39,14 +39,17 @@ contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, U
     \*****************/
 
     /**
-     * @notice Internal function to set up the contract with initial data
+     * @notice Internal function to set up the contract with initial data. This function is also called during upgrades.
+     * @dev The setup data consists of an optional new operator, and a list of signers to rotate too.
      * @param data Initialization data for the contract
      * @dev This function should be implemented in derived contracts.
      */
     function _setup(bytes calldata data) internal override {
         (address operator_, WeightedSigners[] memory signers) = abi.decode(data, (address, WeightedSigners[]));
 
-        _axelarAmplifierGatewayStorage().operator = operator_;
+        if (operator_ != address(0)) {
+            _transferOperatorship(operator_);
+        }
 
         for (uint256 i = 0; i < signers.length; i++) {
             _rotateSigners(signers[i], false);
@@ -122,20 +125,23 @@ contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, U
      * @param newOperator The address of the new operator.
      */
     function transferOperatorship(address newOperator) external {
-        AxelarAmplifierGatewayStorage storage slot = _axelarAmplifierGatewayStorage();
-
-        if (msg.sender != slot.operator && msg.sender != owner()) revert InvalidSender(msg.sender);
+        if (msg.sender != _axelarAmplifierGatewayStorage().operator && msg.sender != owner())
+            revert InvalidSender(msg.sender);
 
         if (newOperator == address(0)) revert InvalidOperator();
 
-        slot.operator = newOperator;
+        _transferOperatorship(newOperator);
+    }
+
+    /**********************\
+    |* Internal Functions *|
+    \**********************/
+
+    function _transferOperatorship(address newOperator) internal {
+        _axelarAmplifierGatewayStorage().operator = newOperator;
 
         emit OperatorshipTransferred(newOperator);
     }
-
-    /********************\
-    |* Pure Key Getters *|
-    \********************/
 
     /**
      * @notice Gets the specific storage location for preventing upgrade collisions

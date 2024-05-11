@@ -266,12 +266,12 @@ describe('AxelarAmplifierGateway', () => {
             expect(await gateway.validateProof(keccak256(getApproveMessageData(messages)), proof)).to.be.true;
 
             await expect(gateway.approveMessages(messages, proof))
-                .to.emit(gateway, 'ContractCallApproved')
-                .withArgs(commandId, messageId, sourceChain, sourceAddress, owner.address, payloadHash);
+                .to.emit(gateway, 'MessageApproved')
+                .withArgs(commandId, sourceChain, messageId, sourceAddress, owner.address, payloadHash);
 
             const isApprovedBefore = await gateway.isMessageApproved(
-                messageId,
                 sourceChain,
+                messageId,
                 sourceAddress,
                 owner.address,
                 payloadHash,
@@ -280,12 +280,12 @@ describe('AxelarAmplifierGateway', () => {
 
             await gateway
                 .connect(owner)
-                .validateMessage(messageId, sourceChain, sourceAddress, payloadHash)
+                .validateMessage(sourceChain, messageId, sourceAddress, payloadHash)
                 .then((tx) => tx.wait());
 
             const isApprovedAfter = await gateway.isMessageApproved(
-                messageId,
                 sourceChain,
+                messageId,
                 sourceAddress,
                 owner.address,
                 payloadHash,
@@ -316,12 +316,12 @@ describe('AxelarAmplifierGateway', () => {
             expect(await gateway.isMessageExecuted(sourceChain, messageId)).to.be.false;
 
             await expect(gateway.approveMessages(messages, proof))
-                .to.emit(gateway, 'ContractCallApproved')
-                .withArgs(commandId, messageId, sourceChain, sourceAddress, owner.address, payloadHash);
+                .to.emit(gateway, 'MessageApproved')
+                .withArgs(commandId, sourceChain, messageId, sourceAddress, owner.address, payloadHash);
 
             const isApprovedBefore = await gateway.isMessageApproved(
-                messageId,
                 sourceChain,
+                messageId,
                 sourceAddress,
                 owner.address,
                 payloadHash,
@@ -332,12 +332,12 @@ describe('AxelarAmplifierGateway', () => {
 
             await gateway
                 .connect(owner)
-                .validateMessage(messageId, sourceChain, sourceAddress, payloadHash)
+                .validateMessage(sourceChain, messageId, sourceAddress, payloadHash)
                 .then((tx) => tx.wait());
 
             const isApprovedAfter = await gateway.isMessageApproved(
-                messageId,
                 sourceChain,
+                messageId,
                 sourceAddress,
                 owner.address,
                 payloadHash,
@@ -368,8 +368,8 @@ describe('AxelarAmplifierGateway', () => {
             const proof = await getProof(APPROVE_MESSAGES, messages, weightedSigners, signers.slice(0, threshold));
 
             await expect(gateway.approveMessages(messages, proof))
-                .to.emit(gateway, 'ContractCallApproved')
-                .withArgs(commandId, messageId, sourceChain, sourceAddress, owner.address, payloadHash);
+                .to.emit(gateway, 'MessageApproved')
+                .withArgs(commandId, sourceChain, messageId, sourceAddress, owner.address, payloadHash);
 
             expect(
                 await gateway.isContractCallApproved(commandId, sourceChain, sourceAddress, owner.address, payloadHash),
@@ -378,7 +378,7 @@ describe('AxelarAmplifierGateway', () => {
             await expect(
                 gateway.connect(owner).validateContractCall(commandId, sourceChain, sourceAddress, payloadHash),
             )
-                .to.emit(gateway, 'ContractCallExecuted')
+                .to.emit(gateway, 'MessageExecuted')
                 .withArgs(commandId);
 
             expect(
@@ -388,7 +388,7 @@ describe('AxelarAmplifierGateway', () => {
             // already executed
             await expect(
                 gateway.connect(owner).validateContractCall(commandId, sourceChain, sourceAddress, payloadHash),
-            ).to.not.emit(gateway, 'ContractCallExecuted');
+            ).to.not.emit(gateway, 'MessageExecuted');
 
             expect(await gateway.isCommandExecuted(commandId)).to.be.true;
         });
@@ -423,12 +423,12 @@ describe('AxelarAmplifierGateway', () => {
                 const commandId = await gateway.messageToCommandId(sourceChain, messageId);
 
                 await expect(tx)
-                    .to.emit(gateway, 'ContractCallApproved')
-                    .withArgs(commandId, messageId, sourceChain, sourceAddress, owner.address, payloadHash);
+                    .to.emit(gateway, 'MessageApproved')
+                    .withArgs(commandId, sourceChain, messageId, sourceAddress, owner.address, payloadHash);
 
                 const isApprovedBefore = await gateway.isMessageApproved(
-                    messageId,
                     sourceChain,
+                    messageId,
                     sourceAddress,
                     owner.address,
                     payloadHash,
@@ -448,12 +448,12 @@ describe('AxelarAmplifierGateway', () => {
 
                 await gateway
                     .connect(owner)
-                    .validateMessage(messageId, sourceChain, sourceAddress, payloadHash)
+                    .validateMessage(sourceChain, messageId, sourceAddress, payloadHash)
                     .then((tx) => tx.wait());
 
                 const isApprovedAfter = await gateway.isMessageApproved(
-                    messageId,
                     sourceChain,
+                    messageId,
                     sourceAddress,
                     owner.address,
                     payloadHash,
@@ -491,16 +491,16 @@ describe('AxelarAmplifierGateway', () => {
 
             await expect(gateway.validateContractCall(id('1'), 'Chain', 'address', id('data'))).to.not.emit(
                 gateway,
-                'ContractCallExecuted',
+                'MessageExecuted',
             );
         });
 
         it('reject invalid message approval', async () => {
-            expect(await gateway.isMessageApproved('1', 'Chain', 'address', owner.address, id('data'))).to.be.false;
+            expect(await gateway.isMessageApproved('Chain', '1', 'address', owner.address, id('data'))).to.be.false;
 
-            await expect(gateway.validateMessage('1', 'Chain', 'address', id('data'))).to.not.emit(
+            await expect(gateway.validateMessage('Chain', '1', 'address', id('data'))).to.not.emit(
                 gateway,
-                'ContractCallExecuted',
+                'MessageExecuted',
             );
         });
 
@@ -525,12 +525,12 @@ describe('AxelarAmplifierGateway', () => {
             const proof = await getProof(APPROVE_MESSAGES, messages, weightedSigners, signers.slice(0, threshold));
 
             await expect(gateway.approveMessages(messages, proof))
-                .to.emit(gateway, 'ContractCallApproved')
-                .withArgs(commandId, messageId, sourceChain, sourceAddress, owner.address, payloadHash);
+                .to.emit(gateway, 'MessageApproved')
+                .withArgs(commandId, sourceChain, messageId, sourceAddress, owner.address, payloadHash);
 
             const isApprovedBefore = await gateway.isMessageApproved(
-                messageId,
                 sourceChain,
+                messageId,
                 sourceAddress,
                 owner.address,
                 payloadHash,
@@ -539,12 +539,12 @@ describe('AxelarAmplifierGateway', () => {
 
             await gateway
                 .connect(owner)
-                .validateMessage(messageId, sourceChain, sourceAddress, payloadHash)
+                .validateMessage(sourceChain, messageId, sourceAddress, payloadHash)
                 .then((tx) => tx.wait());
 
             const isApprovedAfter = await gateway.isMessageApproved(
-                messageId,
                 sourceChain,
+                messageId,
                 sourceAddress,
                 owner.address,
                 payloadHash,
@@ -554,9 +554,9 @@ describe('AxelarAmplifierGateway', () => {
             expect(await gateway.isCommandExecuted(commandId)).to.be.true;
 
             // try re-approving the same message
-            await expect(gateway.approveMessages(messages, proof)).to.not.emit(gateway, 'ContractCallApproved');
+            await expect(gateway.approveMessages(messages, proof)).to.not.emit(gateway, 'MessageApproved');
 
-            expect(await gateway.isMessageApproved(messageId, sourceChain, sourceAddress, owner.address, payloadHash))
+            expect(await gateway.isMessageApproved(sourceChain, messageId, sourceAddress, owner.address, payloadHash))
                 .to.be.false;
         });
     });
@@ -619,8 +619,8 @@ describe('AxelarAmplifierGateway', () => {
             expect(await gateway.validateProof(keccak256(getApproveMessageData(messages)), proof)).to.be.true;
 
             await expect(gateway.approveMessages(messages, proof))
-                .to.emit(gateway, 'ContractCallApproved')
-                .withArgs(commandId, messageId, sourceChain, sourceAddress, owner.address, payloadHash);
+                .to.emit(gateway, 'MessageApproved')
+                .withArgs(commandId, sourceChain, messageId, sourceAddress, owner.address, payloadHash);
         });
 
         it('should allow multiple rotations crossing the retention period', async () => {
@@ -659,8 +659,8 @@ describe('AxelarAmplifierGateway', () => {
                 const proof = await getProof(APPROVE_MESSAGES, messages, ithSigners, signers.slice(0, threshold));
 
                 await expect(gateway.approveMessages(messages, proof))
-                    .to.emit(gateway, 'ContractCallApproved')
-                    .withArgs(commandId, `${i}`, sourceChain, sourceAddress, owner.address, payloadHash);
+                    .to.emit(gateway, 'MessageApproved')
+                    .withArgs(commandId, sourceChain, `${i}`, sourceAddress, owner.address, payloadHash);
             }
 
             // reject proof from outdated signer set

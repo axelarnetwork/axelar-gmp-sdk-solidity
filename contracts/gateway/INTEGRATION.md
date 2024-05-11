@@ -88,6 +88,10 @@ flowchart LR
 
 You can find more details in our [docs](https://docs.axelar.dev/dev/general-message-passing/overview).
 
+## Code Style
+
+The EVM Amplifier gateway contract inherits both the base gateway logic, and the auth logic into a single contract. This is done to simplify the deployment and upgrade process for the gateway. The gateway contract is well within the bytecode size limit of EVM. However, this pattern may not be suitable for non-EVM chains. In those scenarios, it might be helpful to split the auth logic into a separate contract, that is owned by the gateway contract. Only the gateway should be allowed to call signer rotation on it. Furthermore, the auth contract should allow initializing a list of signer sets on deployments. This will be needed on upgrades, where a new auth contract deployment needs to be set up with the full list of recent signers.
+
 ## Message type
 
 A message has the following type. The `contractAddress` is the destination address receiving the contract call. It's type can be chosen based on the destination chain's contract address format, or left as string. Only the payload hash is required here.
@@ -119,7 +123,7 @@ struct WeightedSigners {
 }
 ```
 
-A `nonce` is assigned by Amplifier to distinguish between repeated signer sets (as it's possible to rotate to the same set of signers in the future). The hash of `WeightedSigners` is used to prevent replay of the rotation.
+A unique `nonce` is assigned by Amplifier to each signer set to distinguish between repeated signers (as it's possible to rotate to the same set of signers in the future). The hash of `WeightedSigners` is used to prevent replay of the rotation. The epoch is not used as a nonce, as that would cause sync issues between Amplifier protocol and the external gateway (in scenarios where signers are rotated as part of a contract upgrade).
 
 The Axelar verifiers construct a proof (signatures) over the following message hash. The proof type is:
 

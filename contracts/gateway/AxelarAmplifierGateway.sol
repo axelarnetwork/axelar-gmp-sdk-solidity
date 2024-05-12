@@ -33,6 +33,13 @@ contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, U
         uint256 minimumRotationDelay_
     ) BaseWeightedMultisig(previousSignersRetention_, domainSeparator_, minimumRotationDelay_) {}
 
+    modifier onlyOperatorOrOwner() {
+        address sender = msg.sender;
+        if (sender != _axelarAmplifierGatewayStorage().operator && sender != owner()) revert InvalidSender(sender);
+
+        _;
+    }
+
     /*****************\
     |* Upgradability *|
     \*****************/
@@ -119,10 +126,7 @@ contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, U
      * @notice Transfer the operatorship to a new address.
      * @param newOperator The address of the new operator.
      */
-    function transferOperatorship(address newOperator) external {
-        if (msg.sender != _axelarAmplifierGatewayStorage().operator && msg.sender != owner())
-            revert InvalidSender(msg.sender);
-
+    function transferOperatorship(address newOperator) external onlyOperatorOrOwner {
         if (newOperator == address(0)) revert InvalidOperator();
 
         _transferOperatorship(newOperator);

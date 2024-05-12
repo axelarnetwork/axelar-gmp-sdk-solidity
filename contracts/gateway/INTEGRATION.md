@@ -123,7 +123,9 @@ struct WeightedSigners {
 }
 ```
 
-A unique `nonce` is assigned by Amplifier to each signer set to distinguish between repeated signers (as it's possible to rotate to the same set of signers in the future). The hash of `WeightedSigners` is used to prevent replay of the rotation. The epoch is not used as a nonce, as that would cause sync issues between Amplifier protocol and the external gateway (in scenarios where signers are rotated as part of a contract upgrade).
+- For EVM, the signer is represented by the EVM `address` type since recoverable SECP256k1 ECDSA signatures are used. Amplifier also supports `ed25519` signatures that other gateway implementations can use if preferred. The signer could be represented by a public key as well.
+- Amplifier uses `u128` for the weights of each signer. At launch, every signer will have of weight of `1` but this is expected to change to stake based in the future.
+- A unique `nonce` is assigned by Amplifier to each signer set to distinguish between repeated signers (as it's possible to rotate to the same set of signers in the future). The hash of `WeightedSigners` is used to prevent replay of the rotation.
 
 The Axelar verifiers construct a proof (signatures) over the following message hash. The proof type is:
 
@@ -159,9 +161,7 @@ bytes32 messageHash = keccak256(abi.encodePacked('\x19Ethereum Signed Message:\n
 - `signersHash` is equal to `keccak256(abi.encode(signers))`, to commit to the signer set being used to sign the message.
 - `dataHash` is calculated as per above
 
-The encoding format can be customized for non-EVM chains, but it should consist of the above 3 values. EVM authentication uses this [format](https://ethereum.org/en/developers/docs/apis/json-rpc/#eth_sign) to sign arbitrary messages to distinguish them from EVM transactions. If using a custom encoding, the [multisig-prover](https://github.com/axelarnetwork/axelar-amplifier) contract on Axelar Amplifier needs to be extended to support this encoding format.
-
-The EVM gateway uses recoverable SECP256k1 ECDSA signatures. Amplifier also supports `ed25519` signatures that other gateway implementations can use if preferred.
+The encoding format can be customized for non-EVM chains, but it should consist of the above 3 values. EVM authentication uses this [format](https://ethereum.org/en/developers/docs/apis/json-rpc/#eth_sign) to sign arbitrary messages to distinguish them from EVM transactions. If using a custom encoding, the [multisig-prover](https://github.com/axelarnetwork/axelar-amplifier) contract on Axelar Amplifier needs to be extended to support this encoding format. Similar to the EVM encoding, consider adding an appropriate prefix to the message hash to distinguish it from the chain specific transaction format (if there's a spec for signing custom messages for that chain, that should be used ideally, and should be supported by the chain's client SDK to do it within scripts).
 
 ## Replay Prevention
 
@@ -203,28 +203,26 @@ event ContractCall(
 );
 ```
 
-A `MessageApproved` event needs to be emitted for each message approval within `approveMessages`. The relayer for the destination chain listens for this event to execute the cross-chain contract call on the destination contract address (by calling `AxelarExecutable.execute`).
-
-Note: `commandId` is included in the events for querying the event by legacy compatibility, and use `sourceChain` with `messageId` combination for tracking the message.
+A `MessageApproved` event needs to be emitted for each message approval within `approveMessages`. The relayer for the destination chain listens for this event to execute the cross-chain contract call on the destination contract address (by calling `AxelarExecutable.execute`). The relayer should use the combination of `sourceChain` with `messageId` for querying the message approval from Amplifier. The payload can be fetched via the Amplifier Relayer API (keyed by the payload hash). `commandId` (derived from `sourceChain` and `messageId`) is also included in the event for easier indexing (some chains like EVM chains allow efficient retrieval of events by indexed fields/topics).
 
 ```solidity
 event MessageApproved(
+    bytes32 indexed commandId,
     string sourceChain,
     string messageId,
-    bytes32 indexed commandId,
     string sourceAddress,
     address indexed contractAddress,
     bytes32 indexed payloadHash
 );
 ```
 
-A `MessageExecuted` event needs to be emitted when `validateMessage` is called. The relayer for the destination chain listens for this event to mark the message as executed (by calling the Amplifier Relayer API). This is required for processing any excess gas refunds for the cross-chain message, indexing, debugging purposes.
+A `MessageExecuted` event needs to be emitted when `validateMessage` is called. The relayer for the destination chain listens for this event to mark the message as executed (by calling the Amplifier Relayer API). This is required for processing any excess gas refunds for the cross-chain message on the source chain, indexing, and debugging purposes. Similar to above, `commandId` is also included. The event for the EVM gateway only emits `commandId` due to backwards compatibility with `validateContractCall` (since it doesn't get `messageId` as an argument).
 
 ```solidity
 event MessageExecuted(bytes32 indexed commandId, string sourceChain, string messageId);
 ```
 
-A `SignersRotated` event needs to be emitted by the gateway when `rotateSigners` is called. This event is required by Axelar verifiers to confirm the signer/verifier rotation was executed, so that Amplifier can switch to signing with the new verifier set. The relayer for the destination chain also listens for this event to initiate the confirmation of the verifier rotation on Amplifier.
+A `SignersRotated` event needs to be emitted by the gateway when `rotateSigners` is called. This event is required by Axelar verifiers to confirm the signer/verifier rotation was executed, so that Amplifier can switch to signing with the new verifier set. The relayer for the destination chain also listens for this event to initiate the confirmation of the verifier rotation on Amplifier. A typed `signers` field can be used for the event if the chain supports it.
 
 ```solidity
 event SignersRotated(uint256 indexed epoch, bytes32 indexed signersHash, bytes signers);
@@ -234,11 +232,13 @@ event SignersRotated(uint256 indexed epoch, bytes32 indexed signersHash, bytes s
 
 The gateway contract is designed to be upgradable. The owner can upgrade the contract to a new version by calling the `upgrade` function. The new contract address is passed as an argument to the function. The new contract must be compatible with the existing storage layout. The gateway owner is expected to be the [governance contract](../governance/AxelarServiceGovernance.sol) that can trigger upgrades by receiving GMP calls. The implementation of the upgrade method is expected to vary for non-EVM chains.
 
+The EVM gateway uses a proxy pattern for upgrades, i.e there's a fixed proxy contract that delegates calls to an implementation contract, while using the proxy contract's storage. The stored implementation contract address can be upgraded to a new contract, thus upgrading the logic (see [here](../upgradable/Upgradable.sol)).
+
 ## Signer rotation delay
 
 The auth mechanism of the gateway contract tracks the recent list of signers that were active. This allows a recent signer set to recover the gateway in the event of a compromise of the latest signer set, or a bug in the gateway or Amplifier that allows rotating to a malicious signer set. To prevent the gateway contract from being lost by successive malicious rotations, a minimum delay is enforced between signer rotations (e.g. 1 day). This allows the decentralized governance to step in to react to any issues (for e.g. upgrade the gateway).
 
-Since the governance makes use of Axelar GMP calls as well, a compromised signer set, or exploit could potentially issue a governance proposal as well. Governance also has a timelock by default which makes reacting to issues slow. Hence, a gateway `operator` can be elected by governance that can collaborate with Axelar governance to bypass signer rotation and governance delays in emergencies. The operator can't perform these actions by itself. It still requires that signers have signed off on the action. This mechanism is useful as it's more unlikely that both the Axelar gateway/governance and the operator have been compromised at the same time.
+Since the governance makes use of Axelar GMP calls as well, a compromised signer set, or exploit could potentially issue a governance proposal as well. Governance also has a timelock by default which makes reacting to issues slow. Hence, a gateway `operator` can be elected by gateway owner/governance that can collaborate with Axelar governance to bypass signer rotation and governance delays in emergencies. The operator can't perform these actions by itself. It still requires that signers have signed off on the action. This mechanism is useful as it's more unlikely that both the Axelar gateway/governance and the operator have been compromised at the same time.
 
 ## Testing
 

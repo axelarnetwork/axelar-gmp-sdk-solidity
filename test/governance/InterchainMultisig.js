@@ -285,7 +285,7 @@ describe('InterchainMultisig', () => {
                 return { signer: address, weight: 1 };
             }),
             threshold,
-            nonce: formatBytes32String('0'),
+            nonce: formatBytes32String('1'),
         };
         const call = [
             'Ethereum',

@@ -142,7 +142,10 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         uint256 newEpoch = slot.epoch + 1;
         slot.epoch = newEpoch;
         slot.signerHashByEpoch[newEpoch] = newSignersHash;
-        // if signer set is the same, old epoch will be overwritten
+
+        // signers must be distinct, since nonce should guarantee uniqueness even if signers are repeated
+        if (slot.epochBySignerHash[newSignersHash] != 0) revert DuplicateSigners(newSignersHash);
+
         slot.epochBySignerHash[newSignersHash] = newEpoch;
 
         emit SignersRotated(newEpoch, newSignersHash, newSignersData);
@@ -275,7 +278,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      * @notice Gets the specific storage location for preventing upgrade collisions
      * @return slot containing the BaseWeightedMultisigStorage struct
      */
-    function _baseWeightedMultisigStorage() private pure returns (BaseWeightedMultisigStorage storage slot) {
+    function _baseWeightedMultisigStorage() internal pure returns (BaseWeightedMultisigStorage storage slot) {
         assembly {
             slot.slot := BASE_WEIGHTED_MULTISIG_SLOT
         }

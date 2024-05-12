@@ -18,7 +18,6 @@ contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, U
         0xca458dc12368669a3b8c292bc21c1b887ab1aa386fa3fcc1ed972afd74a330ca;
 
     struct AxelarAmplifierGatewayStorage {
-        mapping(bytes32 => bool) rotations;
         address operator;
     }
 
@@ -81,15 +80,12 @@ contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, U
      * @notice Rotate the weighted signers, signed off by the latest Axelar signers.
      * @dev The minimum rotation delay is enforced by default, unless the caller is the gateway operator.
      * The gateway operator allows recovery in case of an incorrect/malicious rotation, while still requiring a valid proof from a recent signer set.
+     * Rotation to duplicate signers is rejected.
      * @param newSigners The data for the new signers.
      * @param proof The proof signed by the Axelar verifiers for this command.
      */
     function rotateSigners(WeightedSigners memory newSigners, Proof calldata proof) external {
         bytes32 dataHash = keccak256(abi.encode(CommandType.RotateSigners, newSigners));
-
-        if (_axelarAmplifierGatewayStorage().rotations[dataHash]) {
-            revert AlreadyRotated();
-        }
 
         bool enforceRotationDelay = msg.sender != _axelarAmplifierGatewayStorage().operator;
         bool isLatestSigners = _validateProof(dataHash, proof);
@@ -97,8 +93,7 @@ contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, U
             revert NotLatestSigners();
         }
 
-        _axelarAmplifierGatewayStorage().rotations[dataHash] = true;
-
+        // If newSigners is a repeat signer set, this will revert
         _rotateSigners(newSigners, enforceRotationDelay);
     }
 

@@ -723,7 +723,8 @@ describe('AxelarAmplifierGateway', () => {
             await expectRevert(
                 (gasOptions) => gateway.rotateSigners(newSigners, proof, gasOptions),
                 gateway,
-                'AlreadyRotated',
+                'DuplicateSigners',
+                keccak256(newSignersData),
             );
         });
 

@@ -14,7 +14,6 @@ import { Message } from '../types/AmplifierGatewayTypes.sol';
  */
 interface IAxelarAmplifierGateway is IBaseAmplifierGateway, IUpgradable {
     error NotLatestSigners();
-    error AlreadyRotated();
     error InvalidSender(address sender);
     error InvalidOperator();
 

@@ -11,7 +11,7 @@ const { expect } = chai;
 const { expectRevert, getRandomInt, getRandomSubarray } = require('../utils');
 const { getWeightedSignersProof, encodeWeightedSigners } = require('../../scripts/utils');
 
-describe('AxelarAmplifierAuth', () => {
+describe('BaseWeightedMultisig', () => {
     const numSigners = 3;
     const threshold = 2;
     const domainSeparator = keccak256(toUtf8Bytes('chain'));
@@ -90,8 +90,6 @@ describe('AxelarAmplifierAuth', () => {
 
     describe('rotateSigners', () => {
         describe('positive tests', () => {
-            let multisig;
-
             beforeEach(async () => {
                 multisig = await multisigFactory.deploy(previousSignersRetention, domainSeparator, weightedSigners);
                 await multisig.deployTransaction.wait(network.config.confirmations);
@@ -121,36 +119,6 @@ describe('AxelarAmplifierAuth', () => {
                     .withArgs(prevEpoch + 1, signersHash, encodeWeightedSigners(newSigners));
 
                 expect(await multisig.epoch()).to.be.equal(prevEpoch + 1);
-            });
-
-            it('should allow rotation to duplicate signers with the same nonce', async () => {
-                const newSigners = {
-                    signers: [
-                        {
-                            signer: '0x6D4017D4b1DCd36e6EA88b7900e8eC64A1D1315b',
-                            weight: 1,
-                        },
-                    ],
-                    threshold: 1,
-                    nonce: defaultNonce,
-                };
-                const encodedSigners = encodeWeightedSigners(newSigners);
-                const newSignersHash = keccak256(encodedSigners);
-
-                const prevEpoch = (await multisig.epoch()).toNumber();
-
-                await expect(multisig.rotateSigners(newSigners))
-                    .to.emit(multisig, 'SignersRotated')
-                    .withArgs(prevEpoch + 1, newSignersHash, encodedSigners);
-
-                expect(await multisig.epochBySignerHash(newSignersHash)).to.be.equal(prevEpoch + 1);
-
-                await expect(multisig.rotateSigners(newSigners))
-                    .to.emit(multisig, 'SignersRotated')
-                    .withArgs(prevEpoch + 2, newSignersHash, encodedSigners);
-
-                // Duplicate weighted signers should point to the new epoch
-                expect(await multisig.epochBySignerHash(newSignersHash)).to.be.equal(prevEpoch + 2);
             });
 
             it('should allow rotation to duplicate signers with different nonce', async () => {
@@ -225,6 +193,11 @@ describe('AxelarAmplifierAuth', () => {
         });
 
         describe('negative tests', () => {
+            before(async () => {
+                multisig = await multisigFactory.deploy(previousSignersRetention, domainSeparator, weightedSigners);
+                await multisig.deployTransaction.wait(network.config.confirmations);
+            });
+
             it('should revert if new signers length is zero', async () => {
                 await expectRevert(
                     (gasOptions) =>
@@ -271,6 +244,15 @@ describe('AxelarAmplifierAuth', () => {
                         ),
                     multisig,
                     'InvalidSigners',
+                );
+            });
+
+            it('should not allow rotation to duplicate signers with the same nonce', async () => {
+                await expectRevert(
+                    (gasOptions) => multisig.rotateSigners(weightedSigners, gasOptions),
+                    multisig,
+                    'DuplicateSigners',
+                    [keccak256(encodeWeightedSigners(weightedSigners))],
                 );
             });
 
@@ -424,13 +406,7 @@ describe('AxelarAmplifierAuth', () => {
                 const multisig = await multisigFactory.deploy(previousSignersRetention, domainSeparator, newSigners);
                 await multisig.deployTransaction.wait(network.config.confirmations);
 
-                const encodedSigners = encodeWeightedSigners(newSigners);
-
-                await expect(multisig.rotateSigners(newSigners))
-                    .to.emit(multisig, 'SignersRotated')
-                    .withArgs(2, keccak256(encodedSigners), encodedSigners);
-
-                const proof = await getWeightedSignersProof(data, domainSeparator, newSigners, [signers[0]]);
+                const proof = await getWeightedSignersProof(data, domainSeparator, newSigners, signers.slice(0, 1));
 
                 const isLatestSigners = await multisig.validateProof(dataHash, proof);
                 expect(isLatestSigners).to.be.true;

@@ -89,6 +89,14 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         return _baseWeightedMultisigStorage().lastRotationTimestamp;
     }
 
+    /**
+     * @notice This function returns the time elapsed (in secs) since the last rotation
+     * @return uint256 The time since the last rotation
+     */
+    function timeSinceRotation() external view returns (uint256) {
+        return block.timestamp - _baseWeightedMultisigStorage().lastRotationTimestamp;
+    }
+
     /*************************\
     |* Integration Functions *|
     \*************************/
@@ -234,7 +242,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      */
     function messageHashToSign(bytes32 signersHash, bytes32 dataHash) public view returns (bytes32) {
         // 96 is the length of the trailing bytes
-        return keccak256(abi.encodePacked('\x19Ethereum Signed Message:\n96', domainSeparator, signersHash, dataHash));
+        return keccak256(bytes.concat('\x19Ethereum Signed Message:\n96', domainSeparator, signersHash, dataHash));
     }
 
     /**

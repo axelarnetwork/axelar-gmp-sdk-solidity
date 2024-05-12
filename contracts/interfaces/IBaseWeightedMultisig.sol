@@ -46,6 +46,12 @@ interface IBaseWeightedMultisig {
     function lastRotationTimestamp() external view returns (uint256);
 
     /**
+     * @notice This function returns the time elapsed (in secs) since the last rotation
+     * @return uint256 The time since the last rotation
+     */
+    function timeSinceRotation() external view returns (uint256);
+
+    /**
      * @notice Compute the message hash that is signed by the weighted signers
      * @param signersHash The hash of the weighted signers that sign off on the data
      * @param dataHash The hash of the data

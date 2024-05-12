@@ -154,7 +154,7 @@ bytes32 dataHash = keccak256(abi.encode(CommandType.RotateSigners, newSigners));
 The message hash to be signed is then:
 
 ```solidity
-bytes32 messageHash = keccak256(abi.encodePacked('\x19Ethereum Signed Message:\n96', domainSeparator, signersHash, dataHash));
+bytes32 messageHash = keccak256(bytes.concat('\x19Ethereum Signed Message:\n96', domainSeparator, signersHash, dataHash));
 ```
 
 - `domainSeparator` is an opaque value created by Amplifier to distinguish distinct chains, that the external gateway should be initialized with.
@@ -173,8 +173,7 @@ The EVM gateway derives the command id as follows. External gateways for other c
 
 ```solidity
 // sourceChain is guaranteed to not contain `_` character
-// abi.encodePacked just concatenates the strings as bytes
-bytes32 commandId = keccak256(abi.encodePacked(sourceChain, '_', messageId));
+bytes32 commandId = keccak256(bytes(string.concat(sourceChain, '_', messageId)));
 ```
 
 Each message approval has one of the following 3 states, that it stores under the `commandId`:

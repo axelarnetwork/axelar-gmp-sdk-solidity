@@ -12,14 +12,18 @@ abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
     bytes32 internal constant BASE_AMPLIFIER_GATEWAY_SLOT =
         0x978b1ab9e384397ce0aab28eec0e3c25603b3210984045ad0e0f0a50d88cfc55;
 
+    /// @dev Message can be in one of three states: non-existent, approved, or executed
+    /// Non-existent: The message has not been seen before. Equal to 0
+    /// Approved: The message has been seen and approved. Equal to keccak256 of the message data
+    /// Executed: The message has been seen and executed. Equal to 1
     bytes32 internal constant MESSAGE_NONEXISTENT = 0;
     bytes32 internal constant MESSAGE_EXECUTED = bytes32(uint256(1));
 
+    /// @dev Storage for this contract
+    /// @param messages Mapping of commandId to message status
     struct BaseAmplifierGatewayStorage {
-        mapping(bytes32 => bytes32) approvals;
+        mapping(bytes32 => bytes32) messages;
     }
-
-    constructor() {}
 
     /******************\
     |* Public Methods *|
@@ -58,7 +62,7 @@ abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
         bytes32 payloadHash
     ) external view override returns (bool) {
         bytes32 commandId = messageToCommandId(sourceChain, messageId);
-        return _isContractCallApproved(commandId, sourceChain, sourceAddress, contractAddress, payloadHash);
+        return _isMessageApproved(commandId, sourceChain, sourceAddress, contractAddress, payloadHash);
     }
 
     /**
@@ -69,7 +73,7 @@ abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
      * @return True if the message is executed, false otherwise.
      */
     function isMessageExecuted(string calldata sourceChain, string calldata messageId) external view returns (bool) {
-        return _baseAmplifierGatewayStorage().approvals[messageToCommandId(sourceChain, messageId)] == MESSAGE_EXECUTED;
+        return _baseAmplifierGatewayStorage().messages[messageToCommandId(sourceChain, messageId)] == MESSAGE_EXECUTED;
     }
 
     /**
@@ -87,7 +91,7 @@ abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
         bytes32 payloadHash
     ) external override returns (bool valid) {
         bytes32 commandId = messageToCommandId(sourceChain, messageId);
-        valid = _validateContractCall(commandId, sourceChain, sourceAddress, payloadHash);
+        valid = _validateMessage(commandId, sourceChain, sourceAddress, payloadHash);
     }
 
     /**
@@ -97,19 +101,19 @@ abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
      * @return The commandId for the message.
      */
     function messageToCommandId(string calldata sourceChain, string calldata messageId) public pure returns (bytes32) {
-        // Axelar prevents `sourceChain` to contain '_',
-        // hence we can use it as a separator with abi.encodePacked to avoid ambiguous encodings
-        return keccak256(abi.encodePacked(sourceChain, '_', messageId));
+        // Axelar doesn't allow `sourceChain` to contain '_', hence this encoding is umambiguous
+        return keccak256(bytes(string.concat(sourceChain, '_', messageId)));
     }
 
     /*************************\
     |* Legacy Public Methods *|
     \*************************/
 
-    /// @dev The below methods are available for backwards compatibility with AxelarExecutable
+    /// @dev The below methods are available for backwards compatibility with the original AxelarExecutable
+    /// Other implementations can skip these methods.
 
     function isCommandExecuted(bytes32 commandId) public view override returns (bool) {
-        return _baseAmplifierGatewayStorage().approvals[commandId] != MESSAGE_NONEXISTENT;
+        return _baseAmplifierGatewayStorage().messages[commandId] != MESSAGE_NONEXISTENT;
     }
 
     function isContractCallApproved(
@@ -119,7 +123,7 @@ abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
         address contractAddress,
         bytes32 payloadHash
     ) external view override returns (bool) {
-        return _isContractCallApproved(commandId, sourceChain, sourceAddress, contractAddress, payloadHash);
+        return _isMessageApproved(commandId, sourceChain, sourceAddress, contractAddress, payloadHash);
     }
 
     function validateContractCall(
@@ -128,7 +132,7 @@ abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
         string calldata sourceAddress,
         bytes32 payloadHash
     ) external override returns (bool valid) {
-        valid = _validateContractCall(commandId, sourceChain, sourceAddress, payloadHash);
+        valid = _validateMessage(commandId, sourceChain, sourceAddress, payloadHash);
     }
 
     /*************************\
@@ -144,15 +148,10 @@ abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
         if (length == 0) revert InvalidMessages();
 
         for (uint256 i; i < length; ++i) {
-            Message calldata message = messages[i];
-            bytes32 commandId = messageToCommandId(message.sourceChain, message.messageId);
-
-            // Ignore if message has already been approved
-            if (isCommandExecuted(commandId)) {
-                continue;
-            }
-
-            _approveMessage(commandId, message);
+            // Ignores message if it has already been approved before
+            // TODO: add test coverage for scenarios where message is approved and re-approved again, approved + executed, and then re-approved again, approved in the same batch
+            // TODO: does multisig-prover check gas limit when batching? approval cost has now changed.
+            _approveMessage(messages[i]);
         }
     }
 
@@ -160,42 +159,55 @@ abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
     |* Internal Functions *|
     \**********************/
 
-    function _isContractCallApproved(
+    function _isMessageApproved(
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
         address contractAddress,
         bytes32 payloadHash
     ) internal view returns (bool) {
-        bytes32 messageHash = _messageApprovalHash(commandId, sourceChain, sourceAddress, contractAddress, payloadHash);
-        return _baseAmplifierGatewayStorage().approvals[commandId] == messageHash;
+        bytes32 messageHash = _messageHash(commandId, sourceChain, sourceAddress, contractAddress, payloadHash);
+        return _baseAmplifierGatewayStorage().messages[commandId] == messageHash;
     }
 
-    function _validateContractCall(
+    /**
+     * @dev For backwards compatibility with `validateContractCall`, `commandId` is used here instead of `messageId`.
+     */
+    function _validateMessage(
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes32 payloadHash
     ) internal returns (bool valid) {
-        bytes32 messageHash = _messageApprovalHash(commandId, sourceChain, sourceAddress, msg.sender, payloadHash);
-        valid = _baseAmplifierGatewayStorage().approvals[commandId] == messageHash;
+        bytes32 messageHash = _messageHash(commandId, sourceChain, sourceAddress, msg.sender, payloadHash);
+        valid = _baseAmplifierGatewayStorage().messages[commandId] == messageHash;
 
         if (valid) {
-            _baseAmplifierGatewayStorage().approvals[commandId] = MESSAGE_EXECUTED;
+            _baseAmplifierGatewayStorage().messages[commandId] = MESSAGE_EXECUTED;
 
             emit MessageExecuted(commandId);
         }
     }
 
-    function _approveMessage(bytes32 commandId, Message calldata message) internal {
-        bytes32 messageHash = _messageApprovalHash(
+    /**
+     * @dev Approves a message if it hasn't been approved before. The message status is set to approved.
+     */
+    function _approveMessage(Message calldata message) internal {
+        bytes32 commandId = messageToCommandId(message.sourceChain, message.messageId);
+
+        // Ignore if message has already been approved/executed
+        if (_baseAmplifierGatewayStorage().messages[commandId] != MESSAGE_NONEXISTENT) {
+            return;
+        }
+
+        bytes32 messageHash = _messageHash(
             commandId,
             message.sourceChain,
             message.sourceAddress,
             message.contractAddress,
             message.payloadHash
         );
-        _baseAmplifierGatewayStorage().approvals[commandId] = messageHash;
+        _baseAmplifierGatewayStorage().messages[commandId] = messageHash;
 
         emit MessageApproved(
             commandId,
@@ -211,7 +223,10 @@ abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
     |* Pure Key Getters *|
     \********************/
 
-    function _messageApprovalHash(
+    /**
+     * @dev For backwards compatibility with `validateContractCall`, `commandId` is used here instead of `messageId`.
+     */
+    function _messageHash(
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,

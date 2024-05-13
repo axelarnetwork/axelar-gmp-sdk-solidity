@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import { IBaseAmplifierGateway } from './IBaseAmplifierGateway.sol';
+import { IBaseWeightedMultisig } from './IBaseWeightedMultisig.sol';
 import { IUpgradable } from './IUpgradable.sol';
 
 import { WeightedSigners, Proof } from '../types/WeightedMultisigTypes.sol';
@@ -10,9 +11,9 @@ import { Message } from '../types/AmplifierGatewayTypes.sol';
 
 /**
  * @title IAxelarAmplifierGateway
- * @dev Interface for the Axelar Gateway that supports general message passing and contract call execution.
+ * @dev Interface for the Axelar Gateway that supports general message passing.
  */
-interface IAxelarAmplifierGateway is IBaseAmplifierGateway, IUpgradable {
+interface IAxelarAmplifierGateway is IBaseAmplifierGateway, IBaseWeightedMultisig, IUpgradable {
     error NotLatestSigners();
     error InvalidSender(address sender);
     error InvalidOperator();

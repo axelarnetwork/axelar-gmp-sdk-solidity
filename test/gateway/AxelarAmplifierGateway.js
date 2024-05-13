@@ -238,7 +238,7 @@ describe('AxelarAmplifierGateway', () => {
         });
     });
 
-    describe('validate contract call', async () => {
+    describe('validate message', async () => {
         beforeEach(async () => {
             await deployGateway();
         });
@@ -291,60 +291,6 @@ describe('AxelarAmplifierGateway', () => {
                 payloadHash,
             );
             expect(isApprovedAfter).to.be.false;
-        });
-
-        it('reject re-approving a message', async () => {
-            const messageId = '1';
-            const payload = defaultAbiCoder.encode(['address'], [owner.address]);
-            const payloadHash = keccak256(payload);
-            const sourceChain = 'Source';
-            const sourceAddress = 'address0x123';
-            const commandId = await gateway.messageToCommandId(sourceChain, messageId);
-
-            const messages = [
-                {
-                    messageId,
-                    sourceChain,
-                    sourceAddress,
-                    contractAddress: owner.address,
-                    payloadHash,
-                },
-            ];
-
-            const proof = await getProof(APPROVE_MESSAGES, messages, weightedSigners, signers.slice(0, threshold));
-
-            expect(await gateway.isMessageExecuted(sourceChain, messageId)).to.be.false;
-
-            await expect(gateway.approveMessages(messages, proof))
-                .to.emit(gateway, 'MessageApproved')
-                .withArgs(commandId, sourceChain, messageId, sourceAddress, owner.address, payloadHash);
-
-            const isApprovedBefore = await gateway.isMessageApproved(
-                sourceChain,
-                messageId,
-                sourceAddress,
-                owner.address,
-                payloadHash,
-            );
-            expect(isApprovedBefore).to.be.true;
-
-            expect(await gateway.isMessageExecuted(sourceChain, messageId)).to.be.false;
-
-            await gateway
-                .connect(owner)
-                .validateMessage(sourceChain, messageId, sourceAddress, payloadHash)
-                .then((tx) => tx.wait());
-
-            const isApprovedAfter = await gateway.isMessageApproved(
-                sourceChain,
-                messageId,
-                sourceAddress,
-                owner.address,
-                payloadHash,
-            );
-            expect(isApprovedAfter).to.be.false;
-
-            expect(await gateway.isMessageExecuted(sourceChain, messageId)).to.be.true;
         });
 
         it('should approve and validate contract call', async () => {
@@ -528,36 +474,37 @@ describe('AxelarAmplifierGateway', () => {
                 .to.emit(gateway, 'MessageApproved')
                 .withArgs(commandId, sourceChain, messageId, sourceAddress, owner.address, payloadHash);
 
-            const isApprovedBefore = await gateway.isMessageApproved(
-                sourceChain,
-                messageId,
-                sourceAddress,
-                owner.address,
-                payloadHash,
-            );
-            expect(isApprovedBefore).to.be.true;
+            expect(await gateway.isMessageApproved(sourceChain, messageId, sourceAddress, owner.address, payloadHash))
+                .to.be.true;
+            expect(await gateway.isMessageExecuted(sourceChain, messageId)).to.be.false;
+            expect(await gateway.isCommandExecuted(commandId)).to.be.true;
 
+            // re-approval should be a no-op
+            await expect(gateway.approveMessages(messages, proof)).to.not.emit(gateway, 'MessageApproved');
+
+            expect(await gateway.isMessageApproved(sourceChain, messageId, sourceAddress, owner.address, payloadHash))
+                .to.be.true;
+            expect(await gateway.isMessageExecuted(sourceChain, messageId)).to.be.false;
+            expect(await gateway.isCommandExecuted(commandId)).to.be.true;
+
+            // execute message
             await gateway
                 .connect(owner)
                 .validateMessage(sourceChain, messageId, sourceAddress, payloadHash)
                 .then((tx) => tx.wait());
 
-            const isApprovedAfter = await gateway.isMessageApproved(
-                sourceChain,
-                messageId,
-                sourceAddress,
-                owner.address,
-                payloadHash,
-            );
-            expect(isApprovedAfter).to.be.false;
-
+            expect(await gateway.isMessageApproved(sourceChain, messageId, sourceAddress, owner.address, payloadHash))
+                .to.be.false;
+            expect(await gateway.isMessageExecuted(sourceChain, messageId)).to.be.true;
             expect(await gateway.isCommandExecuted(commandId)).to.be.true;
 
-            // try re-approving the same message
+            // re-approving same message after execution should be a no-op as well
             await expect(gateway.approveMessages(messages, proof)).to.not.emit(gateway, 'MessageApproved');
 
             expect(await gateway.isMessageApproved(sourceChain, messageId, sourceAddress, owner.address, payloadHash))
                 .to.be.false;
+            expect(await gateway.isMessageExecuted(sourceChain, messageId)).to.be.true;
+            expect(await gateway.isCommandExecuted(commandId)).to.be.true;
         });
     });
 

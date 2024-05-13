@@ -231,7 +231,7 @@ event SignersRotated(uint256 indexed epoch, bytes32 indexed signersHash, bytes s
 
 The gateway contract is designed to be upgradable. The owner can upgrade the contract to a new version by calling the `upgrade` function. The new contract address is passed as an argument to the function. The new contract must be compatible with the existing storage layout. The gateway owner is expected to be the [governance contract](../governance/AxelarServiceGovernance.sol) that can trigger upgrades by receiving GMP calls. The implementation of the upgrade method is expected to vary for non-EVM chains.
 
-The EVM gateway uses a proxy pattern for upgrades, i.e there's a fixed proxy contract that delegates calls to an implementation contract, while using the proxy contract's storage. The stored implementation contract address can be upgraded to a new contract, thus upgrading the logic (see [here](../upgradable/Upgradable.sol)).
+The EVM gateway uses a proxy pattern for upgrades, i.e there's a fixed proxy contract that delegates calls to an implementation contract, while using the proxy contract's storage. The stored implementation contract address can be upgraded to a new contract, thus upgrading the logic (see [here](../upgradable/Upgradable.sol)). Due to this pattern, the EVM gateway gets initialized via a `_setup` method in addition to the static values set in the `constructor`.
 
 ## Signer rotation delay
 

@@ -149,8 +149,6 @@ abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
 
         for (uint256 i; i < length; ++i) {
             // Ignores message if it has already been approved before
-            // TODO: add test coverage for scenarios where message is approved and re-approved again, approved + executed, and then re-approved again, approved in the same batch
-            // TODO: does multisig-prover check gas limit when batching? approval cost has now changed.
             _approveMessage(messages[i]);
         }
     }
@@ -193,6 +191,7 @@ abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
      * @dev Approves a message if it hasn't been approved before. The message status is set to approved.
      */
     function _approveMessage(Message calldata message) internal {
+        // For other implementations, `sourceChain` and `messageId` tuple could be used as the mapping key directly.
         bytes32 commandId = messageToCommandId(message.sourceChain, message.messageId);
 
         // Ignore if message has already been approved/executed

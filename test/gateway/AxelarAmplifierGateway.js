@@ -777,10 +777,63 @@ describe('AxelarAmplifierGateway', () => {
             await expect(gateway.upgrade(newImplementation.address, newImplementationCodehash, setupParams))
                 .to.emit(gateway, 'Upgraded')
                 .withArgs(newImplementation.address)
+                .to.emit(gateway, 'OperatorshipTransferred')
+                .withArgs(operator.address)
                 .to.emit(gateway, 'SignersRotated')
                 .withArgs(2, keccak256(encodeWeightedSigners(newSigners)), encodeWeightedSigners(newSigners))
                 .to.emit(gateway, 'SignersRotated')
                 .withArgs(3, keccak256(encodeWeightedSigners(newSigners2)), encodeWeightedSigners(newSigners2));
+        });
+
+        it('should allow upgrading the implementation with setup params without operator', async () => {
+            const newImplementation = await gatewayFactory.deploy(
+                previousSignersRetention,
+                domainSeparator,
+                minimumRotationDelay,
+            );
+            await newImplementation.deployTransaction.wait(network.config.confirmations);
+
+            const newImplementationCodehash = keccak256(await ethers.provider.getCode(newImplementation.address));
+
+            const newSigners = {
+                signers: signers.map((wallet) => ({ signer: wallet.address, weight: 2 })),
+                threshold: threshold * 2,
+                nonce: id('1'),
+            };
+
+            const setupParams = defaultAbiCoder.encode(
+                ['address', `${WEIGHTED_SIGNERS_TYPE}[]`],
+                [AddressZero, [newSigners]],
+            );
+
+            await expect(gateway.upgrade(newImplementation.address, newImplementationCodehash, setupParams))
+                .to.emit(gateway, 'Upgraded')
+                .withArgs(newImplementation.address)
+                .to.emit(gateway, 'SignersRotated')
+                .withArgs(2, keccak256(encodeWeightedSigners(newSigners)), encodeWeightedSigners(newSigners))
+                .to.not.emit(gateway, 'OperatorshipTransferred');
+        });
+
+        it('should allow upgrading the implementation with setup params without rotations', async () => {
+            const newImplementation = await gatewayFactory.deploy(
+                previousSignersRetention,
+                domainSeparator,
+                minimumRotationDelay,
+            );
+            await newImplementation.deployTransaction.wait(network.config.confirmations);
+
+            const newImplementationCodehash = keccak256(await ethers.provider.getCode(newImplementation.address));
+
+            const setupParams = defaultAbiCoder.encode(
+                ['address', `${WEIGHTED_SIGNERS_TYPE}[]`],
+                [operator.address, []],
+            );
+
+            await expect(gateway.upgrade(newImplementation.address, newImplementationCodehash, setupParams))
+                .to.emit(gateway, 'Upgraded')
+                .withArgs(newImplementation.address)
+                .to.emit(gateway, 'OperatorshipTransferred')
+                .withArgs(operator.address);
         });
 
         it('reject upgrading with invalid setup params', async () => {

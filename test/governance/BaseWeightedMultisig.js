@@ -83,8 +83,17 @@ describe('BaseWeightedMultisig', () => {
 
         it('lastRotationTimestamp', async () => {
             const currentTimestamp = Math.floor(Date.now() / 1000);
+            const delta = 30;
 
-            expect(await multisig.lastRotationTimestamp()).to.be.gt(currentTimestamp - 30);
+            expect(await multisig.lastRotationTimestamp()).to.be.gt(currentTimestamp - delta);
+        });
+
+        it('timeSinceRotation', async () => {
+            const currentTimestamp = Math.floor(Date.now() / 1000);
+            const lastRotationTimestamp = await multisig.lastRotationTimestamp();
+            const delta = 30;
+
+            expect(await multisig.timeSinceRotation()).to.be.gt(currentTimestamp - lastRotationTimestamp - delta);
         });
     });
 

@@ -58,7 +58,7 @@ describe('AxelarAmplifierGateway', () => {
         return defaultAbiCoder.encode(
             [
                 'uint8',
-                'tuple(string messageId, string sourceChain, string sourceAddress, address contractAddress, bytes32 payloadHash)[] messages',
+                'tuple(string sourceChain, string messageId, string sourceAddress, address contractAddress, bytes32 payloadHash)[] messages',
             ],
             [APPROVE_MESSAGES, messages],
         );
@@ -253,8 +253,8 @@ describe('AxelarAmplifierGateway', () => {
 
             const messages = [
                 {
-                    messageId,
                     sourceChain,
+                    messageId,
                     sourceAddress,
                     contractAddress: owner.address,
                     payloadHash,
@@ -303,8 +303,8 @@ describe('AxelarAmplifierGateway', () => {
 
             const messages = [
                 {
-                    messageId,
                     sourceChain,
+                    messageId,
                     sourceAddress,
                     contractAddress: owner.address,
                     payloadHash,
@@ -351,8 +351,8 @@ describe('AxelarAmplifierGateway', () => {
                 const messageId = `${i}`;
 
                 messages.push({
-                    messageId,
                     sourceChain,
+                    messageId,
                     sourceAddress,
                     contractAddress: owner.address,
                     payloadHash,
@@ -460,8 +460,8 @@ describe('AxelarAmplifierGateway', () => {
 
             const messages = [
                 {
-                    messageId,
                     sourceChain,
+                    messageId,
                     sourceAddress,
                     contractAddress: owner.address,
                     payloadHash,
@@ -553,8 +553,8 @@ describe('AxelarAmplifierGateway', () => {
 
             const messages = [
                 {
-                    messageId,
                     sourceChain,
+                    messageId,
                     sourceAddress,
                     contractAddress,
                     payloadHash,
@@ -595,8 +595,8 @@ describe('AxelarAmplifierGateway', () => {
                 };
                 const messages = [
                     {
-                        messageId: `${i}`,
                         sourceChain,
+                        messageId: `${i}`,
                         sourceAddress,
                         contractAddress,
                         payloadHash,
@@ -613,8 +613,8 @@ describe('AxelarAmplifierGateway', () => {
             // reject proof from outdated signer set
             const messages = [
                 {
-                    messageId: '0',
                     sourceChain,
+                    messageId: '0',
                     sourceAddress,
                     contractAddress,
                     payloadHash,

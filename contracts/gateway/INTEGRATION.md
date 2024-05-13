@@ -16,10 +16,10 @@ function callContract(string calldata destinationChain, string calldata contract
 function approveMessages(Message[] calldata messages, Proof calldata proof) external;
 
 // Validate a message approval, and mark it as used
-function validateMessage(string calldata messageId, string calldata sourceChain, string calldata sourceAddress, bytes32 payloadHash) external returns (bool);
+function validateMessage(string calldata sourceChain, string calldata messageId, string calldata sourceAddress, bytes32 payloadHash) external returns (bool);
 
 // Query if a message is approved
-function isMessageApproved(string calldata messageId, string calldata sourceChain, string calldata sourceAddress, address contractAddress, bytes32 payloadHash) external view returns (bool);
+function isMessageApproved(string calldata sourceChain, string calldata messageId, string calldata sourceAddress, address contractAddress, bytes32 payloadHash) external view returns (bool);
 
 // Query if a message has been executed
 function isMessageExecuted(string calldata sourceChain, string calldata messageId) external view returns (bool);
@@ -40,8 +40,8 @@ The following entrypoint is needed for the `AxelarExecutable` interface that app
 
 ```solidity
 function execute(
-    string calldata messageId,
     string calldata sourceChain,
+    string calldata messageId,
     string calldata sourceAddress,
     bytes calldata payload
 ) external;
@@ -98,8 +98,8 @@ A message has the following type. The `contractAddress` is the destination addre
 
 ```solidity
 struct Message {
-    string messageId;
     string sourceChain;
+    string messageId;
     string sourceAddress;
     address contractAddress;
     bytes32 payloadHash;
@@ -241,4 +241,4 @@ Since the governance makes use of Axelar GMP calls as well, a compromised signer
 
 ## Testing
 
-Unit tests for the gateway can be found [here](../../test/gateway/AxelarAmplifierGateway.js) to use as reference for the implementation for another chain. Other than standard testing practices like unit tests, code coverage, Axelar Amplifier devnet e2e testing framework will support adding connectors for different chains. More details to come.
+Unit tests for the gateway, and auth mechanism can be found [here](../../test/gateway/AxelarAmplifierGateway.js), and [here](../../test/governance/BaseWeightedMultisig.js), respectively, to use as reference for the implementation for another chain. Other than standard testing practices like unit tests, code coverage, Axelar Amplifier devnet e2e testing framework will support adding connectors for different chains. More details to come.

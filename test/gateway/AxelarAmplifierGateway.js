@@ -8,7 +8,7 @@ const {
 const { expect } = chai;
 
 const { encodeWeightedSigners, getWeightedSignersProof, WEIGHTED_SIGNERS_TYPE } = require('../../scripts/utils');
-const { expectRevert, waitFor } = require('../utils');
+const { expectRevert, waitFor, getGasOptions } = require('../utils');
 
 const APPROVE_MESSAGES = 0;
 const ROTATE_SIGNERS = 1;
@@ -97,7 +97,7 @@ describe('AxelarAmplifierGateway', () => {
         implementation = await gatewayFactory.deploy(previousSignersRetention, domainSeparator, minimumRotationDelay);
         await implementation.deployTransaction.wait(network.config.confirmations);
 
-        const proxy = await gatewayProxyFactory.deploy(implementation.address, owner.address, signers);
+        const proxy = await gatewayProxyFactory.deploy(implementation.address, owner.address, signers, getGasOptions());
         await proxy.deployTransaction.wait(network.config.confirmations);
 
         gateway = gatewayFactory.attach(proxy.address);

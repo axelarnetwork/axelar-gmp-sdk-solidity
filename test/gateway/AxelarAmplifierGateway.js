@@ -8,7 +8,7 @@ const {
 const { expect } = chai;
 
 const { encodeWeightedSigners, getWeightedSignersProof, WEIGHTED_SIGNERS_TYPE } = require('../../scripts/utils');
-const { expectRevert, waitFor, getGasOptions } = require('../utils');
+const { expectRevert, waitFor, getGasOptions, isHardhat } = require('../utils');
 
 const APPROVE_MESSAGES = 0;
 const ROTATE_SIGNERS = 1;
@@ -586,6 +586,9 @@ describe('AxelarAmplifierGateway', () => {
                     .withArgs(i + 1, keccak256(encodedSigners), encodedSigners);
 
                 currentSigners = newSigners;
+
+                const timeDelay = isHardhat ? 12 * 60 * 60 : 5;
+                await waitFor(timeDelay);
             }
 
             for (let i = 1; i <= previousSignersRetention; i++) {

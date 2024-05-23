@@ -8,7 +8,7 @@ const {
 } = ethers;
 const { expect } = chai;
 
-const { expectRevert, getRandomInt, getRandomSubarray } = require('../utils');
+const { expectRevert, getRandomInt, getRandomSubarray, waitFor } = require('../utils');
 const { getWeightedSignersProof, encodeWeightedSigners } = require('../../scripts/utils');
 
 describe('BaseWeightedMultisig', () => {
@@ -148,6 +148,9 @@ describe('BaseWeightedMultisig', () => {
                 await expect(multisig.rotateSigners(newSigners))
                     .to.emit(multisig, 'SignersRotated')
                     .withArgs(prevEpoch + 1, newSignersHash, encodeWeightedSigners(newSigners));
+
+                const timeDelay = 5;
+                await waitFor(timeDelay);
 
                 const newSigners2 = { ...newSigners, nonce: id('1') };
                 const newSigners2Hash = keccak256(encodeWeightedSigners(newSigners2));

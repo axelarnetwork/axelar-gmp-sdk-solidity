@@ -586,6 +586,9 @@ describe('AxelarAmplifierGateway', () => {
                     .withArgs(i + 1, keccak256(encodedSigners), encodedSigners);
 
                 currentSigners = newSigners;
+
+                const timeDelay = 5;
+                await waitFor(timeDelay);
             }
 
             for (let i = 1; i <= previousSignersRetention; i++) {

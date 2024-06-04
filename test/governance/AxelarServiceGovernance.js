@@ -400,7 +400,7 @@ describe('AxelarServiceGovernance', () => {
 
         await expectRevert(
             async (gasOptions) =>
-                serviceGovernance.connect(governanceAddress.address).transferMultisig(newMultisig, gasOptions),
+                serviceGovernance.connect(governanceAddress).transferMultisig(newMultisig, gasOptions),
             serviceGovernance,
             'NotAuthorized',
         );

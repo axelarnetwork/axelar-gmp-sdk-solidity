@@ -7,7 +7,7 @@ const {
     constants: { AddressZero },
 } = ethers;
 const { expect } = chai;
-const { isHardhat, getPayloadAndProposalHash, getEVMVersion, expectRevert } = require('../utils');
+const { isHardhat, getPayloadAndProposalHash, getEVMVersion, expectRevert, waitFor } = require('../utils');
 
 describe('AxelarServiceGovernance', () => {
     let ownerWallet;
@@ -352,7 +352,7 @@ describe('AxelarServiceGovernance', () => {
         expect(newBalance).to.equal(oldBalance.add(nativeValue));
     });
 
-    it('should trasfer multisig address to new address', async () => {
+    it('should transfer multisig address to new address', async () => {
         const newMultisig = governanceAddress.address;
         await expect(serviceGovernance.connect(multisig).transferMultisig(newMultisig))
             .to.emit(serviceGovernance, 'MultisigTransferred')
@@ -366,12 +366,52 @@ describe('AxelarServiceGovernance', () => {
         );
     });
 
+    it('should transfer multisig by a governance proposal', async () => {
+        const govCommandID = formatBytes32String('10');
+        const newMultisig = serviceGovernance.address;
+        const transferCalldata = serviceGovernance.interface.encodeFunctionData('transferMultisig', [newMultisig]);
+
+        const [payload, proposalHash, eta] = await getPayloadAndProposalHash(
+            ScheduleTimeLockProposal,
+            serviceGovernance.address,
+            0,
+            transferCalldata,
+            timeDelay,
+        );
+
+        await expect(serviceGovernance.execute(govCommandID, governanceChain, governanceAddress.address, payload))
+            .to.emit(serviceGovernance, 'ProposalScheduled')
+            .withArgs(proposalHash, serviceGovernance.address, transferCalldata, 0, eta);
+
+        await waitFor(timeDelay);
+
+        const tx = await serviceGovernance.executeProposal(serviceGovernance.address, transferCalldata, 0);
+
+        const block = await ethers.provider.getBlock(tx.blockNumber);
+        const executionTimestamp = block.timestamp;
+
+        await expect(tx)
+            .to.emit(serviceGovernance, 'ProposalExecuted')
+            .withArgs(proposalHash, serviceGovernance.address, transferCalldata, 0, executionTimestamp)
+            .and.to.emit(serviceGovernance, 'MultisigTransferred')
+            .withArgs(governanceAddress.address, newMultisig);
+
+        await expect(await serviceGovernance.multisig()).to.equal(newMultisig);
+
+        await expectRevert(
+            async (gasOptions) =>
+                serviceGovernance.connect(governanceAddress).transferMultisig(newMultisig, gasOptions),
+            serviceGovernance,
+            'NotAuthorized',
+        );
+    });
+
     it('should preserve the bytecode [ @skip-on-coverage ]', async () => {
         const bytecode = serviceGovernanceFactory.bytecode;
         const bytecodeHash = keccak256(bytecode);
 
         const expected = {
-            london: '0xf5a298c73276406c136da5e9d6f102e5cbcc452376708b3864b6c0f0bf45d952',
+            london: '0x5e40ac38c1162aa207054ab1f4d6f9205cdde1627f644eb6dfdb0fbfe17445fd',
         }[getEVMVersion()];
 
         expect(bytecodeHash).to.be.equal(expected);

@@ -352,7 +352,7 @@ describe('AxelarServiceGovernance', () => {
         expect(newBalance).to.equal(oldBalance.add(nativeValue));
     });
 
-    it('should trasfer multisig address to new address', async () => {
+    it('should transfer multisig address to new address', async () => {
         const newMultisig = governanceAddress.address;
         await expect(serviceGovernance.connect(multisig).transferMultisig(newMultisig))
             .to.emit(serviceGovernance, 'MultisigTransferred')
@@ -386,16 +386,20 @@ describe('AxelarServiceGovernance', () => {
 
         await waitFor(timeDelay);
 
+
+        console.log(await serviceGovernance.multisig());
+
         const tx = await serviceGovernance.executeProposal(serviceGovernance.address, transferCalldata, 0);
 
         const block = await ethers.provider.getBlock(tx.blockNumber);
         const executionTimestamp = block.timestamp;
 
+
         await expect(tx)
             .to.emit(serviceGovernance, 'ProposalExecuted')
             .withArgs(proposalHash, serviceGovernance.address, transferCalldata, 0, executionTimestamp)
-            // .and.to.emit(serviceGovernance, 'MultisigTransferred')
-            // .withArgs(multisig.address, newMultisig);
+            .and.to.emit(serviceGovernance, 'MultisigTransferred')
+            .withArgs(governanceAddress.address, newMultisig);
 
         await expect(await serviceGovernance.multisig()).to.equal(newMultisig);
 

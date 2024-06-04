@@ -367,7 +367,7 @@ describe('AxelarServiceGovernance', () => {
     });
 
 
-    it('should trasfer multisig by a governance proposal', async () => {
+    it('should transfer multisig by a governance proposal', async () => {
         const govCommandID = formatBytes32String('10');
         const newMultisig = serviceGovernance.address;
         const transferCalldata = serviceGovernance.interface.encodeFunctionData('transferMultisig', [newMultisig]);

@@ -27,6 +27,11 @@ contract AxelarServiceGovernance is InterchainGovernance, IAxelarServiceGovernan
         _;
     }
 
+    modifier onlyMultisigOrSelf() {
+        if (msg.sender != multisig && msg.sender != address(this)) revert NotAuthorized();
+        _;
+    }
+
     /**
      * @notice Initializes the contract.
      * @param gateway_ The address of the Axelar gateway contract
@@ -83,7 +88,12 @@ contract AxelarServiceGovernance is InterchainGovernance, IAxelarServiceGovernan
         _call(target, callData, nativeValue);
     }
 
-    function transferMultisig(address newMultisig) external onlyMultisig {
+    /**
+     * @notice Transfers the multisig address to a new address
+     * @dev Only the current multisig or the governance can call this function
+     * @param newMultisig The new multisig address
+     */
+    function transferMultisig(address newMultisig) external onlyMultisigOrSelf {
         if (newMultisig == address(0)) revert InvalidMultisigAddress();
 
         emit MultisigTransferred(multisig, newMultisig);

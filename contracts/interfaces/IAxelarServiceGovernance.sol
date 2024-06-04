@@ -66,4 +66,11 @@ interface IAxelarServiceGovernance is IInterchainGovernance {
         bytes calldata callData,
         uint256 value
     ) external payable;
+
+    /**
+     * @notice Transfers the multisig address to a new address
+     * @dev Only the current multisig or the governance can call this function
+     * @param newMultisig The new multisig address
+     */
+    function transferMultisig(address newMultisig) external;
 }

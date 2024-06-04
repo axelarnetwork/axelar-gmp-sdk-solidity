@@ -399,7 +399,8 @@ describe('AxelarServiceGovernance', () => {
         await expect(await serviceGovernance.multisig()).to.equal(newMultisig);
 
         await expectRevert(
-            async (gasOptions) => serviceGovernance.connect(multisig).transferMultisig(newMultisig, gasOptions),
+            async (gasOptions) =>
+                serviceGovernance.connect(governanceAddress.address).transferMultisig(newMultisig, gasOptions),
             serviceGovernance,
             'NotAuthorized',
         );

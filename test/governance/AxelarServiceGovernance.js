@@ -366,7 +366,6 @@ describe('AxelarServiceGovernance', () => {
         );
     });
 
-
     it('should transfer multisig by a governance proposal', async () => {
         const govCommandID = formatBytes32String('10');
         const newMultisig = serviceGovernance.address;
@@ -386,14 +385,10 @@ describe('AxelarServiceGovernance', () => {
 
         await waitFor(timeDelay);
 
-
-        console.log(await serviceGovernance.multisig());
-
         const tx = await serviceGovernance.executeProposal(serviceGovernance.address, transferCalldata, 0);
 
         const block = await ethers.provider.getBlock(tx.blockNumber);
         const executionTimestamp = block.timestamp;
-
 
         await expect(tx)
             .to.emit(serviceGovernance, 'ProposalExecuted')
@@ -409,7 +404,6 @@ describe('AxelarServiceGovernance', () => {
             'NotAuthorized',
         );
     });
-
 
     it('should preserve the bytecode [ @skip-on-coverage ]', async () => {
         const bytecode = serviceGovernanceFactory.bytecode;

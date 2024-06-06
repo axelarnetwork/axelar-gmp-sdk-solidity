@@ -4,14 +4,13 @@ pragma solidity ^0.8.0;
 
 import { IAxelarServiceGovernance } from '../interfaces/IAxelarServiceGovernance.sol';
 import { InterchainGovernance } from './InterchainGovernance.sol';
-import { BaseMultisig } from './BaseMultisig.sol';
 
 /**
  * @title AxelarServiceGovernance Contract
  * @dev This contract is part of the Axelar Governance system, it inherits the Interchain Governance contract
  * with added functionality to approve and execute multisig proposals.
  */
-contract AxelarServiceGovernance is InterchainGovernance, BaseMultisig, IAxelarServiceGovernance {
+contract AxelarServiceGovernance is InterchainGovernance, IAxelarServiceGovernance {
     enum ServiceGovernanceCommand {
         ScheduleTimeLockProposal,
         CancelTimeLockProposal,
@@ -19,7 +18,19 @@ contract AxelarServiceGovernance is InterchainGovernance, BaseMultisig, IAxelarS
         CancelMultisigApproval
     }
 
+    address public multisig;
+
     mapping(bytes32 => bool) public multisigApprovals;
+
+    modifier onlyMultisig() {
+        if (msg.sender != multisig) revert NotAuthorized();
+        _;
+    }
+
+    modifier onlyMultisigOrSelf() {
+        if (msg.sender != multisig && msg.sender != address(this)) revert NotAuthorized();
+        _;
+    }
 
     /**
      * @notice Initializes the contract.
@@ -27,20 +38,18 @@ contract AxelarServiceGovernance is InterchainGovernance, BaseMultisig, IAxelarS
      * @param governanceChain_ The name of the governance chain
      * @param governanceAddress_ The address of the governance contract
      * @param minimumTimeDelay The minimum time delay for timelock operations
-     * @param cosigners The list of initial signers
-     * @param threshold The number of required signers to validate a transaction
+     * @param multisig_ The multisig contract address
      */
     constructor(
         address gateway_,
         string memory governanceChain_,
         string memory governanceAddress_,
         uint256 minimumTimeDelay,
-        address[] memory cosigners,
-        uint256 threshold
-    )
-        InterchainGovernance(gateway_, governanceChain_, governanceAddress_, minimumTimeDelay)
-        BaseMultisig(cosigners, threshold)
-    {}
+        address multisig_
+    ) InterchainGovernance(gateway_, governanceChain_, governanceAddress_, minimumTimeDelay) {
+        if (multisig_ == address(0)) revert InvalidMultisigAddress();
+        multisig = multisig_;
+    }
 
     /**
      * @notice Returns whether a multisig proposal has been approved
@@ -67,7 +76,7 @@ contract AxelarServiceGovernance is InterchainGovernance, BaseMultisig, IAxelarS
         address target,
         bytes calldata callData,
         uint256 nativeValue
-    ) external payable onlySigners {
+    ) external payable onlyMultisig {
         bytes32 proposalHash = _getProposalHash(target, callData, nativeValue);
 
         if (!multisigApprovals[proposalHash]) revert NotApproved();
@@ -77,6 +86,19 @@ contract AxelarServiceGovernance is InterchainGovernance, BaseMultisig, IAxelarS
         emit MultisigExecuted(proposalHash, target, callData, nativeValue);
 
         _call(target, callData, nativeValue);
+    }
+
+    /**
+     * @notice Transfers the multisig address to a new address
+     * @dev Only the current multisig or the governance can call this function
+     * @param newMultisig The new multisig address
+     */
+    function transferMultisig(address newMultisig) external onlyMultisigOrSelf {
+        if (newMultisig == address(0)) revert InvalidMultisigAddress();
+
+        emit MultisigTransferred(multisig, newMultisig);
+
+        multisig = newMultisig;
     }
 
     /**
@@ -108,18 +130,6 @@ contract AxelarServiceGovernance is InterchainGovernance, BaseMultisig, IAxelarS
             return;
         } else if (commandType == uint256(ServiceGovernanceCommand.ApproveMultisigProposal)) {
             multisigApprovals[proposalHash] = true;
-
-            // Reset all previous votes for this proposal
-            _resetSignerVotes(
-                keccak256(
-                    abi.encodeWithSelector(
-                        AxelarServiceGovernance.executeMultisigProposal.selector,
-                        target,
-                        callData,
-                        nativeValue
-                    )
-                )
-            );
 
             emit MultisigApproved(proposalHash, target, callData, nativeValue);
             return;

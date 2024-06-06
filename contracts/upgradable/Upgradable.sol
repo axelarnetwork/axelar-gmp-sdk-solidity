@@ -51,6 +51,10 @@ abstract contract Upgradable is Ownable, Implementation, IUpgradable {
 
         if (newImplementationCodeHash != newImplementation.codehash) revert InvalidCodeHash();
 
+        assembly {
+            sstore(_IMPLEMENTATION_SLOT, newImplementation)
+        }
+
         emit Upgraded(newImplementation);
 
         if (params.length > 0) {
@@ -58,10 +62,6 @@ abstract contract Upgradable is Ownable, Implementation, IUpgradable {
             (bool success, ) = newImplementation.delegatecall(abi.encodeWithSelector(this.setup.selector, params));
 
             if (!success) revert SetupFailed();
-        }
-
-        assembly {
-            sstore(_IMPLEMENTATION_SLOT, newImplementation)
         }
     }
 
@@ -79,5 +79,5 @@ abstract contract Upgradable is Ownable, Implementation, IUpgradable {
      * @param data Initialization data for the contract
      * @dev This function should be implemented in derived contracts.
      */
-    function _setup(bytes calldata data) internal virtual {}
+    function _setup(bytes calldata data) internal virtual;
 }

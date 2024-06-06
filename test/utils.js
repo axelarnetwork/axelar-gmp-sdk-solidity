@@ -67,12 +67,19 @@ const expectRevert = async (txFunc, contract, error, args) => {
     }
 };
 
+const getRandomSubarray = (arr, size) => {
+    const shuffled = arr.slice().sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, size);
+};
+
 module.exports = {
     bigNumberToNumber: (bigNumber) => bigNumber.toNumber(),
 
     getEVMVersion,
 
     getGasOptions,
+
+    getChainId: async () => (await ethers.provider.getNetwork()).chainId,
 
     getSignedExecuteInput: (data, wallet) =>
         wallet
@@ -87,6 +94,8 @@ module.exports = {
         ).then((signatures) => defaultAbiCoder.encode(['bytes', 'bytes[]'], [data, signatures])),
 
     getRandomInt,
+
+    getRandomSubarray,
 
     getRandomID: () => id(getRandomInt(1e10).toString()),
 

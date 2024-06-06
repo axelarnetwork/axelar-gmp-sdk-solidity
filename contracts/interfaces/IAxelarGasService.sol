@@ -2,7 +2,9 @@
 
 pragma solidity ^0.8.0;
 
-import { IUpgradable } from '../interfaces/IUpgradable.sol';
+import { GasInfo } from '../types/GasEstimationTypes.sol';
+import { IInterchainGasEstimation } from './IInterchainGasEstimation.sol';
+import { IUpgradable } from './IUpgradable.sol';
 
 /**
  * @title IAxelarGasService Interface
@@ -10,11 +12,13 @@ import { IUpgradable } from '../interfaces/IUpgradable.sol';
  * and refunds for cross-chain communication on the Axelar network.
  * @dev This interface inherits IUpgradable
  */
-interface IAxelarGasService is IUpgradable {
-    error NothingReceived();
+interface IAxelarGasService is IInterchainGasEstimation, IUpgradable {
     error InvalidAddress();
     error NotCollector();
     error InvalidAmounts();
+    error InvalidGasUpdates();
+    error InvalidParams();
+    error InsufficientGasPayment(uint256 required, uint256 provided);
 
     event GasPaidForContractCall(
         address indexed sourceAddress,
@@ -132,6 +136,30 @@ interface IAxelarGasService is IUpgradable {
         address token,
         uint256 amount
     );
+
+    /**
+     * @notice Pay for gas for any type of contract execution on a destination chain.
+     * @dev This function is called on the source chain before calling the gateway to execute a remote contract.
+     * @dev If estimateOnChain is true, the function will estimate the gas cost and revert if the payment is insufficient.
+     * @param sender The address making the payment
+     * @param destinationChain The target chain where the contract call will be made
+     * @param destinationAddress The target address on the destination chain
+     * @param payload Data payload for the contract call
+     * @param executionGasLimit The gas limit for the contract call
+     * @param estimateOnChain Flag to enable on-chain gas estimation
+     * @param refundAddress The address where refunds, if any, should be sent
+     * @param params Additional parameters for gas payment. This can be left empty for normal contract call payments.
+     */
+    function payGas(
+        address sender,
+        string calldata destinationChain,
+        string calldata destinationAddress,
+        bytes calldata payload,
+        uint256 executionGasLimit,
+        bool estimateOnChain,
+        address refundAddress,
+        bytes calldata params
+    ) external payable;
 
     /**
      * @notice Pay for gas using ERC20 tokens for a contract call on a destination chain.
@@ -265,7 +293,7 @@ interface IAxelarGasService is IUpgradable {
 
     /**
      * @notice Pay for gas using native currency for an express contract call on a destination chain.
-     * @dev This function is called on the source chain before calling the gateway to express execute a remote contract.
+     * @dev This function is called on the source chain before calling the gateway to execute a remote contract.
      * @param sender The address making the payment
      * @param destinationChain The target chain where the contract call will be made
      * @param destinationAddress The target address on the destination chain
@@ -282,7 +310,7 @@ interface IAxelarGasService is IUpgradable {
 
     /**
      * @notice Pay for gas using native currency for an express contract call with tokens on a destination chain.
-     * @dev This function is called on the source chain before calling the gateway to express execute a remote contract.
+     * @dev This function is called on the source chain before calling the gateway to execute a remote contract.
      * @param sender The address making the payment
      * @param destinationChain The target chain where the contract call with tokens will be made
      * @param destinationAddress The target address on the destination chain
@@ -360,6 +388,14 @@ interface IAxelarGasService is IUpgradable {
         uint256 logIndex,
         address refundAddress
     ) external payable;
+
+    /**
+     * @notice Updates the gas price for a specific chain.
+     * @dev This function is called by the gas oracle to update the gas prices for a specific chains.
+     * @param chains Array of chain names
+     * @param gasUpdates Array of gas updates
+     */
+    function updateGasInfo(string[] calldata chains, GasInfo[] calldata gasUpdates) external;
 
     /**
      * @notice Allows the gasCollector to collect accumulated fees from the contract.

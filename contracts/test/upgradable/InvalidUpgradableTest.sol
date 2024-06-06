@@ -8,4 +8,6 @@ contract InvalidUpgradableTest is Upgradable {
     function contractId() external pure override returns (bytes32) {
         return keccak256('invalid');
     }
+
+    function _setup(bytes calldata data) internal override {}
 }

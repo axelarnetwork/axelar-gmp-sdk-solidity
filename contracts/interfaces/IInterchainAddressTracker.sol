@@ -2,8 +2,6 @@
 
 pragma solidity ^0.8.0;
 
-import { IContractIdentifier } from './IContractIdentifier.sol';
-
 /**
  * @title IInterchainAddressTracker
  * @dev Manages trusted addresses by chain, keeps track of addresses supported by the Axelar gateway contract

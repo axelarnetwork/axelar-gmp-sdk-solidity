@@ -374,14 +374,6 @@ describe('BaseWeightedMultisig', () => {
                 await multisig.validateProofCall(dataHash, proof).then((tx) => tx.wait());
             });
 
-            it('validate the proof from the current signers with extra signatures', async () => {
-                // sign with all signers, i.e more than threshold
-                const proof = await getWeightedSignersProof(data, domainSeparator, weightedSigners, signers);
-
-                const isCurrentSigners = await multisig.validateProof(dataHash, proof);
-                expect(isCurrentSigners).to.be.true;
-            });
-
             it('validate the proof with last threshold signers', async () => {
                 const proof = await getWeightedSignersProof(
                     data,
@@ -479,6 +471,18 @@ describe('BaseWeightedMultisig', () => {
                     async (gasOptions) => multisig.validateProof(dataHash, proof, gasOptions),
                     multisig,
                     'LowSignaturesWeight',
+                );
+            });
+
+            it('reject the proof if number of total signatures exceed required signatures', async () => {
+                // sign with all signers, i.e more than threshold
+                const proof = await getWeightedSignersProof(data, domainSeparator, weightedSigners, signers);
+
+                await expectRevert(
+                    async (gasOptions) => multisig.validateProof(dataHash, proof),
+                    multisig,
+                    'InvalidSignaturesLength',
+                    [proof.signatures.length, signers.slice(0, threshold)],
                 );
             });
         });

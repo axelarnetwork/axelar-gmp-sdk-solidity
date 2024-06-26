@@ -107,6 +107,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      * @param proof The multisig proof data
      * @return isLatestSigners True if the proof is from the latest signer set
      * @dev The proof data should have signers, weights, threshold and signatures encoded
+     *      The proof is only valid if signers weight crosses threshold and there are no redundant signatures
      *      The signers and signatures should be sorted by signer address in ascending order
      *      Example: abi.encode([0x11..., 0x22..., 0x33...], [1, 1, 1], 2, [signature1, signature3])
      */
@@ -218,10 +219,10 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
 
             // weight needs to reach threshold
             if (totalWeight >= weightedSigners.threshold) {
-                // check if number of signatures exceed required amount of signatures
+                // check if there are redundant signatures
                 if (signaturesLength - i == 1) return;
 
-                revert ExcessiveSignaturesProvided(signaturesLength - i - 1);
+                revert RedundantSignaturesProvided(i + 1, signaturesLength);
             }
 
             // increasing signers index if match was found

@@ -474,15 +474,15 @@ describe('BaseWeightedMultisig', () => {
                 );
             });
 
-            it('reject the proof if number of total signatures exceed required signatures', async () => {
+            it('reject the proof if there are redundant signatures', async () => {
                 // sign with all signers, i.e more than threshold
                 const proof = await getWeightedSignersProof(data, domainSeparator, weightedSigners, signers);
 
                 await expectRevert(
                     async (gasOptions) => multisig.validateProof(dataHash, proof),
                     multisig,
-                    'ExcessiveSignaturesProvided',
-                    [proof.signatures.length - signers.slice(0, threshold)],
+                    'RedundantSignaturesProvided',
+                    [signers.slice(0, threshold), proof.signatures.length],
                 );
             });
         });

@@ -219,9 +219,9 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
             // weight needs to reach threshold
             if (totalWeight >= weightedSigners.threshold) {
                 // check if number of signatures exceed required amount of signatures
-                if (signaturesLength - 1 != i) revert InvalidSignaturesLength(signaturesLength, i + 1);
+                if (signaturesLength - i == 1) return;
 
-                return;
+                revert ExcessiveSignaturesProvided(signaturesLength - i - 1);
             }
 
             // increasing signers index if match was found

@@ -481,8 +481,8 @@ describe('BaseWeightedMultisig', () => {
                 await expectRevert(
                     async (gasOptions) => multisig.validateProof(dataHash, proof),
                     multisig,
-                    'InvalidSignaturesLength',
-                    [proof.signatures.length, signers.slice(0, threshold)],
+                    'ExcessiveSignaturesProvided',
+                    [proof.signatures.length - signers.slice(0, threshold)],
                 );
             });
         });

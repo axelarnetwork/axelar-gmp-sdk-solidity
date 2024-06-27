@@ -218,7 +218,7 @@ describe('AxelarAmplifierGateway', () => {
                 [AddressZero, [weightedSigners]],
             );
 
-            implementation = await gatewayFactory.deploy(
+            const implementation = await gatewayFactory.deploy(
                 previousSignersRetention,
                 domainSeparator,
                 minimumRotationDelay,
@@ -233,7 +233,7 @@ describe('AxelarAmplifierGateway', () => {
             );
             await proxy.deployTransaction.wait(network.config.confirmations);
 
-            gateway = gatewayFactory.attach(proxy.address);
+            const gateway = gatewayFactory.attach(proxy.address);
 
             expect(await gateway.operator()).to.equal(AddressZero);
         });

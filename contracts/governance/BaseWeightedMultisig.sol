@@ -220,7 +220,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
             // weight needs to reach threshold
             if (totalWeight >= weightedSigners.threshold) {
                 // validate the proof if there are no redundant signatures
-                if (signaturesLength - i == 1) return;
+                if (i + 1 == signaturesLength) return;
 
                 revert RedundantSignaturesProvided(i + 1, signaturesLength);
             }

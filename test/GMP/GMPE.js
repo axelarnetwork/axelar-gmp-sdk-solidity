@@ -578,9 +578,8 @@ describe('GMPE', async () => {
             await expect(expressTx)
                 .to.emit(contract, 'ExpressExecuted')
                 .withArgs(commandId, sourceChain, sourceAddress, payloadHash, ownerWallet.address)
-                .and.to.emit(contract, 'Executed')
-                .withArgs(sourceChain, sourceAddress, payload);
-
+                .and.to.emit(contract, 'ProcessedValueWithToken')
+                .withArgs(sourceChain, sourceAddress, payload, '', AddressZero, value);
             expressTx = contract.expressExecute(commandId, sourceChain, sourceAddress, payload, { value });
             await expect(expressTx).to.be.revertedWithCustomError(contract, 'ExpressExecutorAlreadySet');
         }
@@ -592,7 +591,9 @@ describe('GMPE', async () => {
 
         async function execution() {
             const executeTx = contract.execute(commandId, sourceChain, sourceAddress, payload);
-            await expect(executeTx).to.emit(contract, 'Executed').withArgs(sourceChain, sourceAddress, payload);
+            await expect(executeTx)
+                .to.emit(contract, 'ProcessedValueWithToken')
+                .withArgs(sourceChain, sourceAddress, payload, '', AddressZero, 0);
         }
 
         async function executionFailure() {
@@ -606,7 +607,7 @@ describe('GMPE', async () => {
             await expect(executeTx)
                 .to.emit(contract, 'ExpressExecutionFulfilled')
                 .withArgs(commandId, sourceChain, sourceAddress, payloadHash, ownerWallet.address)
-                .and.to.not.emit(contract, 'Executed');
+                .and.to.not.emit(contract, 'ProcessedValueWithToken');
             const newBalance = BigInt(await ownerWallet.provider.getBalance(ownerWallet.address));
             expect(newBalance - balance).to.equal(value);
         }
@@ -740,8 +741,8 @@ describe('GMPE', async () => {
                 .withArgs(ownerWallet.address, contract.address, value)
                 .and.to.emit(contract, 'ExpressExecuted')
                 .withArgs(commandId, sourceChain, sourceAddress, payloadHash, ownerWallet.address)
-                .and.to.emit(contract, 'Executed')
-                .withArgs(sourceChain, sourceAddress, payload);
+                .and.to.emit(contract, 'ProcessedValueWithToken')
+                .withArgs(sourceChain, sourceAddress, payload, '', tokenB.address, value);
 
             await (await tokenB.approve(contract.address, value)).wait();
 
@@ -759,7 +760,9 @@ describe('GMPE', async () => {
 
         async function execution() {
             const executeTx = contract.execute(commandId, sourceChain, sourceAddress, payload);
-            await expect(executeTx).to.emit(contract, 'Executed').withArgs(sourceChain, sourceAddress, payload);
+            await expect(executeTx)
+                .to.emit(contract, 'ProcessedValueWithToken')
+                .withArgs(sourceChain, sourceAddress, payload, '', AddressZero, 0);
         }
 
         async function expressFullfill() {
@@ -769,7 +772,7 @@ describe('GMPE', async () => {
                 .withArgs(contract.address, ownerWallet.address, value)
                 .and.to.emit(contract, 'ExpressExecutionFulfilled')
                 .withArgs(commandId, sourceChain, sourceAddress, payloadHash, ownerWallet.address)
-                .and.to.not.emit(contract, 'Executed');
+                .and.to.not.emit(contract, 'ProcessedValueWithToken');
         }
 
         before(async () => {
@@ -876,8 +879,8 @@ describe('GMPE', async () => {
                 .withArgs(ownerWallet.address, contract.address, amount)
                 .and.to.emit(contract, 'ExpressExecutedWithToken')
                 .withArgs(commandId, sourceChain, sourceAddress, payloadHash, tokenSymbol, amount, ownerWallet.address)
-                .and.to.emit(contract, 'ExecutedWithToken')
-                .withArgs(sourceChain, sourceAddress, payload, tokenSymbol, amount);
+                .and.to.emit(contract, 'ProcessedValueWithToken')
+                .withArgs(sourceChain, sourceAddress, payload, tokenSymbol, tokenA.address, amount);
 
             await (await tokenA.connect(ownerWallet).approve(contract.address, amount)).wait();
 
@@ -933,8 +936,8 @@ describe('GMPE', async () => {
             await expect(executeTx)
                 .to.emit(tokenA, 'Transfer')
                 .withArgs(destinationChainGateway.address, contract.address, amount)
-                .and.to.emit(contract, 'ExecutedWithToken')
-                .withArgs(sourceChain, sourceAddress, payload, tokenSymbol, amount);
+                .and.to.emit(contract, 'ProcessedValueWithToken')
+                .withArgs(sourceChain, sourceAddress, payload, tokenSymbol, tokenA.address, amount);
         }
 
         async function expressFullfill() {
@@ -947,7 +950,7 @@ describe('GMPE', async () => {
                 .withArgs(contract.address, ownerWallet.address, amount)
                 .and.to.emit(contract, 'ExpressExecutionWithTokenFulfilled')
                 .withArgs(commandId, sourceChain, sourceAddress, payloadHash, tokenSymbol, amount, ownerWallet.address)
-                .and.to.not.emit(contract, 'ExecutedWithToken');
+                .and.to.not.emit(contract, 'ProcessedValueWithToken');
             const newBalance = BigInt(await ownerWallet.provider.getBalance(ownerWallet.address));
             expect(newBalance - balance).to.equal(value);
         }
@@ -1092,8 +1095,8 @@ describe('GMPE', async () => {
                 .withArgs(ownerWallet.address, contract.address, value)
                 .and.to.emit(contract, 'ExpressExecutedWithToken')
                 .withArgs(commandId, sourceChain, sourceAddress, payloadHash, tokenSymbol, amount, ownerWallet.address)
-                .and.to.emit(contract, 'ExecutedWithToken')
-                .withArgs(sourceChain, sourceAddress, payload, tokenSymbol, amount);
+                .and.to.emit(contract, 'ProcessedValueWithToken')
+                .withArgs(sourceChain, sourceAddress, payload, tokenSymbol, tokenA.address, amount);
 
             await (await tokenA.connect(ownerWallet).approve(contract.address, amount)).wait();
             await (await tokenB.connect(ownerWallet).approve(contract.address, value)).wait();
@@ -1150,8 +1153,8 @@ describe('GMPE', async () => {
             await expect(executeTx)
                 .to.emit(tokenA, 'Transfer')
                 .withArgs(destinationChainGateway.address, contract.address, amount)
-                .and.to.emit(contract, 'ExecutedWithToken')
-                .withArgs(sourceChain, sourceAddress, payload, tokenSymbol, amount);
+                .and.to.emit(contract, 'ProcessedValueWithToken')
+                .withArgs(sourceChain, sourceAddress, payload, tokenSymbol, tokenA.address, amount);
         }
 
         async function executionFailure() {
@@ -1177,7 +1180,7 @@ describe('GMPE', async () => {
                 .withArgs(contract.address, ownerWallet.address, value)
                 .and.to.emit(contract, 'ExpressExecutionWithTokenFulfilled')
                 .withArgs(commandId, sourceChain, sourceAddress, payloadHash, tokenSymbol, amount, ownerWallet.address)
-                .and.to.not.emit(contract, 'ExecutedWithToken');
+                .and.to.not.emit(contract, 'ProcessedValueWithToken');
         }
 
         before(async () => {
@@ -1281,8 +1284,8 @@ describe('GMPE', async () => {
                 .withArgs(ownerWallet.address, contract.address, value)
                 .and.to.emit(contract, 'ExpressExecutedWithToken')
                 .withArgs(commandId, sourceChain, sourceAddress, payloadHash, tokenSymbol, amount, ownerWallet.address)
-                .and.to.emit(contract, 'ExecutedWithToken')
-                .withArgs(sourceChain, sourceAddress, payload, tokenSymbol, amount);
+                .and.to.emit(contract, 'ProcessedValueWithToken')
+                .withArgs(sourceChain, sourceAddress, payload, tokenSymbol, tokenA.address, amount);
 
             await (await tokenA.connect(ownerWallet).approve(contract.address, amount + value)).wait();
 
@@ -1336,8 +1339,8 @@ describe('GMPE', async () => {
             await expect(executeTx)
                 .to.emit(tokenA, 'Transfer')
                 .withArgs(destinationChainGateway.address, contract.address, amount)
-                .and.to.emit(contract, 'ExecutedWithToken')
-                .withArgs(sourceChain, sourceAddress, payload, tokenSymbol, amount);
+                .and.to.emit(contract, 'ProcessedValueWithToken')
+                .withArgs(sourceChain, sourceAddress, payload, tokenSymbol, tokenA.address, amount);
         }
 
         async function expressFullfill() {
@@ -1351,7 +1354,7 @@ describe('GMPE', async () => {
                 .withArgs(contract.address, ownerWallet.address, value)
                 .and.to.emit(contract, 'ExpressExecutionWithTokenFulfilled')
                 .withArgs(commandId, sourceChain, sourceAddress, payloadHash, tokenSymbol, amount, ownerWallet.address)
-                .and.to.not.emit(contract, 'ExecutedWithToken');
+                .and.to.not.emit(contract, 'ProcessedValueWithToken');
         }
 
         before(async () => {

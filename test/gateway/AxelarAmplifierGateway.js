@@ -212,6 +212,32 @@ describe('AxelarAmplifierGateway', () => {
             expect(await gateway.operator()).to.equal(operator.address);
         });
 
+        it('should allow deploying gateway with address 0 as the operator', async () => {
+            const signers = defaultAbiCoder.encode(
+                ['address', `${WEIGHTED_SIGNERS_TYPE}[]`],
+                [AddressZero, [weightedSigners]],
+            );
+
+            implementation = await gatewayFactory.deploy(
+                previousSignersRetention,
+                domainSeparator,
+                minimumRotationDelay,
+            );
+            await implementation.deployTransaction.wait(network.config.confirmations);
+
+            const proxy = await gatewayProxyFactory.deploy(
+                implementation.address,
+                owner.address,
+                signers,
+                getGasOptions(),
+            );
+            await proxy.deployTransaction.wait(network.config.confirmations);
+
+            gateway = gatewayFactory.attach(proxy.address);
+
+            expect(await gateway.operator()).to.equal(AddressZero);
+        });
+
         it('reject transferring ownership by non-owner', async () => {
             await expectRevert(
                 (gasOptions) => gateway.connect(operator).transferOwnership(operator.address, gasOptions),

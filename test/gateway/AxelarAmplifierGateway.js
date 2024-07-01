@@ -212,28 +212,10 @@ describe('AxelarAmplifierGateway', () => {
             expect(await gateway.operator()).to.equal(operator.address);
         });
 
-        it('should allow deploying gateway with address 0 as the operator', async () => {
-            const signers = defaultAbiCoder.encode(
-                ['address', `${WEIGHTED_SIGNERS_TYPE}[]`],
-                [AddressZero, [weightedSigners]],
-            );
-
-            const implementation = await gatewayFactory.deploy(
-                previousSignersRetention,
-                domainSeparator,
-                minimumRotationDelay,
-            );
-            await implementation.deployTransaction.wait(network.config.confirmations);
-
-            const proxy = await gatewayProxyFactory.deploy(
-                implementation.address,
-                owner.address,
-                signers,
-                getGasOptions(),
-            );
-            await proxy.deployTransaction.wait(network.config.confirmations);
-
-            const gateway = gatewayFactory.attach(proxy.address);
+        it('should allow transferring operatorship to the zero address', async () => {
+            await expect(gateway.connect(owner).transferOperatorship(AddressZero))
+                .to.emit(gateway, 'OperatorshipTransferred')
+                .withArgs(AddressZero);
 
             expect(await gateway.operator()).to.equal(AddressZero);
         });
@@ -252,14 +234,6 @@ describe('AxelarAmplifierGateway', () => {
                 gateway,
                 'InvalidSender',
                 [user.address],
-            );
-        });
-
-        it('reject transferring operatorship to the zero address', async () => {
-            await expectRevert(
-                (gasOptions) => gateway.connect(operator).transferOperatorship(AddressZero, gasOptions),
-                gateway,
-                'InvalidOperator',
             );
         });
     });

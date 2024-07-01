@@ -129,8 +129,6 @@ contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, U
      * @param newOperator The address of the new operator.
      */
     function transferOperatorship(address newOperator) external onlyOperatorOrOwner {
-        if (newOperator == address(0)) revert InvalidOperator();
-
         _transferOperatorship(newOperator);
     }
 

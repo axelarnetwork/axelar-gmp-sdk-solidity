@@ -16,7 +16,6 @@ import { Message } from '../types/AmplifierGatewayTypes.sol';
 interface IAxelarAmplifierGateway is IBaseAmplifierGateway, IBaseWeightedMultisig, IUpgradable {
     error NotLatestSigners();
     error InvalidSender(address sender);
-    error InvalidOperator();
 
     event OperatorshipTransferred(address newOperator);
 

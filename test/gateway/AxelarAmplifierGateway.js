@@ -212,6 +212,14 @@ describe('AxelarAmplifierGateway', () => {
             expect(await gateway.operator()).to.equal(operator.address);
         });
 
+        it('should allow transferring operatorship to the zero address', async () => {
+            await expect(gateway.connect(owner).transferOperatorship(AddressZero))
+                .to.emit(gateway, 'OperatorshipTransferred')
+                .withArgs(AddressZero);
+
+            expect(await gateway.operator()).to.equal(AddressZero);
+        });
+
         it('reject transferring ownership by non-owner', async () => {
             await expectRevert(
                 (gasOptions) => gateway.connect(operator).transferOwnership(operator.address, gasOptions),
@@ -226,14 +234,6 @@ describe('AxelarAmplifierGateway', () => {
                 gateway,
                 'InvalidSender',
                 [user.address],
-            );
-        });
-
-        it('reject transferring operatorship to the zero address', async () => {
-            await expectRevert(
-                (gasOptions) => gateway.connect(operator).transferOperatorship(AddressZero, gasOptions),
-                gateway,
-                'InvalidOperator',
             );
         });
     });

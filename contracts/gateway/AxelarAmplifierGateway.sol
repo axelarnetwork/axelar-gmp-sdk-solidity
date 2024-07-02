@@ -53,6 +53,8 @@ contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, U
     function _setup(bytes calldata data) internal override {
         (address operator_, WeightedSigners[] memory signers) = abi.decode(data, (address, WeightedSigners[]));
 
+        // operator is an optional parameter. The gateway owner can set it later via `transferOperatorship` if needed.
+        // This also simplifies setup for upgrades so if the current operator doesn't need to be changed, then it can be skipped, instead of having to specify the current operator again.
         if (operator_ != address(0)) {
             _transferOperatorship(operator_);
         }
@@ -124,11 +126,10 @@ contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, U
 
     /**
      * @notice Transfer the operatorship to a new address.
+     * @dev The owner or current operator can set the operator to address 0.
      * @param newOperator The address of the new operator.
      */
     function transferOperatorship(address newOperator) external onlyOperatorOrOwner {
-        if (newOperator == address(0)) revert InvalidOperator();
-
         _transferOperatorship(newOperator);
     }
 

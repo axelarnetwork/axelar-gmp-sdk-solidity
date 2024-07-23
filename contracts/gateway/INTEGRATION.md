@@ -242,3 +242,7 @@ Since the governance makes use of Axelar GMP calls as well, a compromised signer
 ## Testing
 
 Unit tests for the gateway, and auth mechanism can be found [here](../../test/gateway/AxelarAmplifierGateway.js), and [here](../../test/governance/BaseWeightedMultisig.js), respectively, to use as reference for the implementation for another chain. Other than standard testing practices like unit tests, code coverage, Axelar Amplifier devnet e2e testing framework will support adding connectors for different chains. More details to come.
+
+## Deployment
+
+The official `AxelarAmplifierGateway` contract deployment scripts are located in this [repo](https://github.com/axelarnetwork/axelar-contract-deployments/tree/main/evm#evm-deployment-scripts).

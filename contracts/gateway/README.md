@@ -4,6 +4,10 @@ Axelar Amplifier Gateway is a smart contract that lives on the external chain th
 
 Please see the [INTEGRATION.md](INTEGRATION.md) for more details on how to implement and integrate the external gateway contract for a given chain.
 
+## Documentation & Build
+
+Please refer to [README.md](https://github.com/axelarnetwork/axelar-gmp-sdk-solidity/blob/main/README.md) for documentation and build instructions.
+
 ## Deployment
 
 The official `AxelarAmplifierGateway` contract deployment scripts are located in this [repo](https://github.com/axelarnetwork/axelar-contract-deployments/tree/main/evm#evm-deployment-scripts).

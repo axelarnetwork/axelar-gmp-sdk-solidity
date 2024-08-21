@@ -46,7 +46,7 @@ abstract contract AxelarGMPExecutable is IAxelarGMPExecutable {
         if (!gateway().validateContractCall(commandId, sourceChain, sourceAddress, payloadHash))
             revert NotApprovedByGateway();
 
-        _execute(commandId, sourceChain, sourceAddress, payload);
+        _execute(commandId, sourceChain, sourceAddress, payload, payloadHash);
     }
 
     /**
@@ -61,7 +61,8 @@ abstract contract AxelarGMPExecutable is IAxelarGMPExecutable {
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
-        bytes calldata payload
+        bytes memory payload,
+        bytes32 payloadHash
     ) internal virtual;
 
     /**

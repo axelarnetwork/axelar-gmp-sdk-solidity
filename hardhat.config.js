@@ -9,7 +9,6 @@ if (process.env.CHECK_CONTRACT_SIZE) {
     require('hardhat-contract-sizer');
 }
 
-
 const { importNetworks, readJSON } = require('@axelar-network/axelar-chains-config');
 
 const env = process.env.ENV || 'testnet';
@@ -36,6 +35,8 @@ const optimizerSettings = {
     },
 };
 
+// Need to manually specify outputSelection settings for the hardhat-storage-layout plugin since we're using customized compiler settings.
+// https://www.npmjs.com/package/hardhat-storage-layout?activeTab=code
 const outputSelectionSettings = {
     "*": {
         "*": ["storageLayout"],
@@ -47,7 +48,7 @@ const defaultSettings = {
     settings: {
         evmVersion: process.env.EVM_VERSION || 'london',
         optimizer: optimizerSettings,
-        outputSelection: outputSelectionSettings,
+        outputSelection: process.env.STORAGE_LAYOUT ? {} : outputSelectionSettings,
     },
 };
 
@@ -57,7 +58,7 @@ const compilerSettings = {
     settings: {
         evmVersion: process.env.EVM_VERSION || 'london',
         optimizer: optimizerSettings,
-        outputSelection: outputSelectionSettings,
+        outputSelection: process.env.STORAGE_LAYOUT ? {} : outputSelectionSettings,
     },
 };
 

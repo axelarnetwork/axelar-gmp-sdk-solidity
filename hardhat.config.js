@@ -9,6 +9,7 @@ if (process.env.CHECK_CONTRACT_SIZE) {
     require('hardhat-contract-sizer');
 }
 
+
 const { importNetworks, readJSON } = require('@axelar-network/axelar-chains-config');
 
 const env = process.env.ENV || 'testnet';

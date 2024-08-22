@@ -13,8 +13,7 @@ contract GMPExecutableTest is AxelarGMPExecutable {
         bytes32, /*commandId*/
         string calldata, /*sourceChain*/
         string calldata, /*sourceAddress*/
-        bytes memory payload,
-        bytes32 payloadHash
+        bytes calldata payload
     ) internal override {
         uint256 num = abi.decode(payload, (uint256));
         emit Received(num);

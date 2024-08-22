@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import { IAxelarGMPGateway } from '../interfaces/IAxelarGMPGateway.sol';
+import { IAxelarGMPGatewayWithToken } from '../interfaces/IAxelarGMPGatewayWithToken.sol';
 import { IAxelarGMPExecutable } from '../interfaces/IAxelarGMPExecutable.sol';
 
 /**
@@ -46,7 +46,7 @@ abstract contract AxelarGMPExecutable is IAxelarGMPExecutable {
         if (!gateway().validateContractCall(commandId, sourceChain, sourceAddress, payloadHash))
             revert NotApprovedByGateway();
 
-        _execute(commandId, sourceChain, sourceAddress, payload, payloadHash);
+        _execute(commandId, sourceChain, sourceAddress, payload);
     }
 
     /**
@@ -61,15 +61,14 @@ abstract contract AxelarGMPExecutable is IAxelarGMPExecutable {
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
-        bytes memory payload,
-        bytes32 payloadHash
+        bytes calldata payload
     ) internal virtual;
 
     /**
      * @notice Returns the address of the AxelarGMPGateway contract.
      * @return The Axelar GMP Gateway instance.
      */
-    function gateway() public view returns (IAxelarGMPGateway) {
-        return IAxelarGMPGateway(gatewayAddress);
+    function gateway() public view returns (IAxelarGMPGatewayWithToken) {
+        return IAxelarGMPGatewayWithToken(gatewayAddress);
     }
 }

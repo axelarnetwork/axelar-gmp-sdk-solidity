@@ -2,13 +2,13 @@
 
 pragma solidity ^0.8.0;
 
-import { IAxelarExecutable } from './IAxelarExecutable.sol';
+import { IAxelarGMPExecutable } from './IAxelarGMPExecutable.sol';
 
 /**
  * @title IAxelarExpressExecutable
  * @notice Interface for the Axelar Express Executable contract.
  */
-interface IAxelarExpressExecutable is IAxelarExecutable {
+interface IAxelarExpressExecutable is IAxelarGMPExecutable {
     // Custom errors
     error AlreadyExecuted();
     error InsufficientValue();

@@ -68,7 +68,7 @@ abstract contract AxelarGMPExecutableWithToken is IAxelarGMPExecutableWithToken,
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
-        bytes memory payload,
+        bytes calldata payload,
         string calldata tokenSymbol,
         uint256 amount
     ) internal virtual;

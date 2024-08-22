@@ -46,7 +46,7 @@ REPORT_GAS=true npm run test
 
 Check storage layout of contracts.
 ```bash
-STORAGE_LAYOUT=true npx hardhat check
+STORAGE_LAYOUT=true npm run check
 ```
 
 Check contract bytecode size

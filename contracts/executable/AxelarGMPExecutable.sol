@@ -2,7 +2,6 @@
 
 pragma solidity ^0.8.0;
 
-import { Pausable } from '../utils/Pausable.sol';
 import { IAxelarGMPGatewayWithToken } from '../interfaces/IAxelarGMPGatewayWithToken.sol';
 import { IAxelarGMPExecutable } from '../interfaces/IAxelarGMPExecutable.sol';
 
@@ -11,7 +10,7 @@ import { IAxelarGMPExecutable } from '../interfaces/IAxelarGMPExecutable.sol';
  * @dev Abstract contract to be inherited by contracts that need to execute cross-chain commands via Axelar's Gateway.
  * It implements the IAxelarGMPExecutable interface.
  */
-abstract contract AxelarGMPExecutable is IAxelarGMPExecutable, Pausable {
+abstract contract AxelarGMPExecutable is IAxelarGMPExecutable {
     /// @dev Reference to the Axelar Gateway contract.
     address internal immutable gatewayAddress;
 
@@ -41,7 +40,7 @@ abstract contract AxelarGMPExecutable is IAxelarGMPExecutable, Pausable {
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
-    ) external whenNotPaused {
+    ) external {
         bytes32 payloadHash = keccak256(payload);
 
         if (!gateway().validateContractCall(commandId, sourceChain, sourceAddress, payloadHash))

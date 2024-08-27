@@ -4,19 +4,44 @@ pragma solidity ^0.8.0;
 
 import { IAxelarGMPGatewayWithToken } from '../interfaces/IAxelarGMPGatewayWithToken.sol';
 import { IAxelarGMPExecutableWithToken } from '../interfaces/IAxelarGMPExecutableWithToken.sol';
-import { AxelarGMPExecutable } from './AxelarGMPExecutable.sol';
+import { AxelarGMPExecutableBase } from './AxelarGMPExecutableBase.sol';
 
 /**
  * @title AxelarGMPExecutableWithToken
  * @dev Abstract contract to be inherited by contracts that need to execute cross-chain commands involving tokens via Axelar's Gateway.
- * It extends AxelarGMPExecutable and implements the IAxelarGMPExecutableWithToken interface.
+ * It extends AxelarGMPExecutableBase and implements the IAxelarGMPExecutableWithToken interface.
  */
-abstract contract AxelarGMPExecutableWithToken is IAxelarGMPExecutableWithToken, AxelarGMPExecutable {
+abstract contract AxelarGMPExecutableWithToken is IAxelarGMPExecutableWithToken, AxelarGMPExecutableBase {
     /**
-     * @dev Contract constructor that sets the Axelar Gateway With Token address and initializes AxelarGMPExecutable.
-     * @param gateway_ The address of the Axelar Gateway With Token contract.
+     * @dev Contract constructor that sets the Axelar Gateway address for cross-chain token transfers.
+     * Reverts if the provided address is the zero address.
+     * @param gateway_ The address of the Axelar Gateway contract with token functionality.
      */
-    constructor(address gateway_) AxelarGMPExecutable(gateway_) {}
+    constructor(address gateway_) AxelarGMPExecutableBase(gateway_) {}
+
+    /**
+     * @notice Executes the cross-chain command after validating it with the Axelar Gateway.
+     * @dev This function ensures the call is approved by Axelar Gateway before execution.
+     * It uses a hash of the payload for validation and internally calls _execute for the actual command execution.
+     * Reverts if the validation fails.
+     * @param commandId The identifier of the command to execute.
+     * @param sourceChain The name of the source chain from which the command originated.
+     * @param sourceAddress The address on the source chain that sent the command.
+     * @param payload The payload of the command to be executed.
+     */
+    function execute(
+        bytes32 commandId,
+        string calldata sourceChain,
+        string calldata sourceAddress,
+        bytes calldata payload
+    ) external {
+        bytes32 payloadHash = keccak256(payload);
+
+        if (!gateway().validateContractCall(commandId, sourceChain, sourceAddress, payloadHash))
+            revert NotApprovedByGateway();
+
+        _execute(commandId, sourceChain, sourceAddress, payload);
+    }
 
     /**
      * @notice Executes the cross-chain command with token transfer after validating it with the Axelar Gateway.
@@ -41,7 +66,7 @@ abstract contract AxelarGMPExecutableWithToken is IAxelarGMPExecutableWithToken,
         bytes32 payloadHash = keccak256(payload);
 
         if (
-            !gatewayWithToken().validateContractCallAndMint(
+            !gateway().validateContractCallAndMint(
                 commandId,
                 sourceChain,
                 sourceAddress,
@@ -75,9 +100,9 @@ abstract contract AxelarGMPExecutableWithToken is IAxelarGMPExecutableWithToken,
 
     /**
      * @notice Returns the address of the IAxelarGMPGatewayWithToken contract.
-     * @return The Axelar GMP Gateway with Token instance.
+     * @return The Axelar GMP Gateway With Token instance.
      */
-    function gatewayWithToken() internal view returns (IAxelarGMPGatewayWithToken) {
+    function gateway() public view returns (IAxelarGMPGatewayWithToken) {
         return IAxelarGMPGatewayWithToken(gatewayAddress);
     }
 }

@@ -8,7 +8,7 @@ import { IAxelarGMPGatewayWithToken } from './IAxelarGMPGatewayWithToken.sol';
 /**
  * @title IAxelarGMPExecutableWithToken
  * @dev Interface for a contract that can execute commands from Axelar Gateway involving token transfers.
- * It extends IAxelarGMPExecutableBase to include token-related functionality.
+ * It extends IAxelarGMPExecutable to include token-related functionality.
  */
 interface IAxelarGMPExecutableWithToken is IAxelarGMPExecutable {
     /**

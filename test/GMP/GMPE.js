@@ -594,7 +594,9 @@ describe('GMPE', async () => {
 
         async function execution() {
             const executeTx = contract.execute(commandId, sourceChain, sourceAddress, payload);
-            await expect(executeTx).to.emit(contract, 'Executed').withArgs(commandId, sourceChain, sourceAddress, payload);
+            await expect(executeTx)
+                .to.emit(contract, 'Executed')
+                .withArgs(commandId, sourceChain, sourceAddress, payload);
         }
 
         async function executionFailure() {
@@ -761,7 +763,9 @@ describe('GMPE', async () => {
 
         async function execution() {
             const executeTx = contract.execute(commandId, sourceChain, sourceAddress, payload);
-            await expect(executeTx).to.emit(contract, 'Executed').withArgs(commandId, sourceChain, sourceAddress, payload);
+            await expect(executeTx)
+                .to.emit(contract, 'Executed')
+                .withArgs(commandId, sourceChain, sourceAddress, payload);
         }
 
         async function expressFullfill() {

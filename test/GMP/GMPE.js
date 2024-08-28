@@ -291,7 +291,7 @@ describe('GMPE', async () => {
                 .to.emit(contract, 'ExpressExecuted')
                 .withArgs(commandId, sourceChain, sourceAddress, payloadHash, ownerWallet.address)
                 .and.to.emit(contract, 'Executed')
-                .withArgs(sourceChain, sourceAddress, payload);
+                .withArgs(commandId, sourceChain, sourceAddress, payload);
 
             expressTx = contract.expressExecute(commandId, sourceChain, sourceAddress, payload);
             await expect(expressTx).to.be.revertedWithCustomError(contract, 'ExpressExecutorAlreadySet');
@@ -309,7 +309,9 @@ describe('GMPE', async () => {
 
         async function execution() {
             const executeTx = contract.execute(commandId, sourceChain, sourceAddress, payload);
-            await expect(executeTx).to.emit(contract, 'Executed').withArgs(sourceChain, sourceAddress, payload);
+            await expect(executeTx)
+                .to.emit(contract, 'Executed')
+                .withArgs(commandId, sourceChain, sourceAddress, payload);
         }
 
         async function expressFullfill() {
@@ -425,7 +427,7 @@ describe('GMPE', async () => {
                 .and.to.emit(contract, 'ExpressExecutedWithToken')
                 .withArgs(commandId, sourceChain, sourceAddress, payloadHash, tokenSymbol, amount, ownerWallet.address)
                 .and.to.emit(contract, 'ExecutedWithToken')
-                .withArgs(sourceChain, sourceAddress, payload, tokenSymbol, amount);
+                .withArgs(commandId, sourceChain, sourceAddress, payload, tokenSymbol, amount);
 
             await (await tokenA.connect(ownerWallet).approve(contract.address, amount)).wait();
 
@@ -467,7 +469,7 @@ describe('GMPE', async () => {
                 .to.emit(tokenA, 'Transfer')
                 .withArgs(destinationChainGateway.address, contract.address, amount)
                 .and.to.emit(contract, 'ExecutedWithToken')
-                .withArgs(sourceChain, sourceAddress, payload, tokenSymbol, amount);
+                .withArgs(commandId, sourceChain, sourceAddress, payload, tokenSymbol, amount);
         }
 
         async function executionFailed() {

@@ -40,7 +40,7 @@ abstract contract AxelarGMPExecutable is IAxelarGMPExecutable {
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
-    ) external {
+    ) external virtual {
         bytes32 payloadHash = keccak256(payload);
 
         if (!gateway().validateContractCall(commandId, sourceChain, sourceAddress, payloadHash))

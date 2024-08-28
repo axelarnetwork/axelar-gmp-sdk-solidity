@@ -9,37 +9,48 @@ import { DestinationChainTokenSwapper } from './DestinationChainTokenSwapper.sol
 contract DestinationChainSwapExpress is AxelarExpressExecutable {
     DestinationChainTokenSwapper public immutable swapper;
 
-    event Executed(string sourceChain, string sourceAddress, bytes payload);
+    event Executed(bytes32 commandId, string sourceChain, string sourceAddress, bytes payload);
+    event ExecutedWithToken(
+        bytes32 commandId,
+        string sourceChain,
+        string sourceAddress,
+        bytes payload,
+        string symbol,
+        uint256 amount
+    );
 
     constructor(address gatewayAddress, address swapperAddress) AxelarExpressExecutable(gatewayAddress) {
         swapper = DestinationChainTokenSwapper(swapperAddress);
     }
 
     function _execute(
+        bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
     ) internal override {
-        emit Executed(sourceChain, sourceAddress, payload);
+        emit Executed(commandId, sourceChain, sourceAddress, payload);
     }
 
     function _executeWithToken(
+        bytes32 commandId,
         string calldata sourceChain,
-        string calldata,
+        string calldata sourceAddress,
         bytes calldata payload,
         string calldata tokenSymbolA,
         uint256 amount
     ) internal override {
         (string memory tokenSymbolB, string memory recipient) = abi.decode(payload, (string, string));
 
-        address tokenA = gateway.tokenAddresses(tokenSymbolA);
-        address tokenB = gateway.tokenAddresses(tokenSymbolB);
+        address tokenA = gateway().tokenAddresses(tokenSymbolA);
+        address tokenB = gateway().tokenAddresses(tokenSymbolB);
 
         IERC20(tokenA).approve(address(swapper), amount);
         uint256 convertedAmount = swapper.swap(tokenA, tokenB, amount, address(this));
 
-        IERC20(tokenB).approve(address(gateway), convertedAmount);
-        gateway.sendToken(sourceChain, recipient, tokenSymbolB, convertedAmount);
+        IERC20(tokenB).approve(address(gateway()), convertedAmount);
+        gateway().sendToken(sourceChain, recipient, tokenSymbolB, convertedAmount);
+        emit ExecutedWithToken(commandId, sourceChain, sourceAddress, payload, tokenSymbolA, amount);
     }
 
     function contractId() external pure returns (bytes32) {

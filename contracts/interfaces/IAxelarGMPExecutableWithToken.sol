@@ -36,7 +36,7 @@ interface IAxelarGMPExecutableWithToken {
         bytes calldata payload
     ) external;
 
-        /**
+    /**
      * @notice Executes the specified command sent from another chain and includes a token transfer.
      * @dev This function should be implemented to handle incoming commands that include token transfers.
      * It will be called by an implementation of `IAxelarGMPGatewayWithToken`.

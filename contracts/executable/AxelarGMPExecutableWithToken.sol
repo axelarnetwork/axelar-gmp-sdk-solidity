@@ -12,7 +12,7 @@ import { IAxelarGMPExecutableWithToken } from '../interfaces/IAxelarGMPExecutabl
  */
 abstract contract AxelarGMPExecutableWithToken is IAxelarGMPExecutableWithToken {
     /// @dev Reference to the Axelar Gateway contract.
-    address public immutable gatewayAddress;
+    address internal immutable gatewayAddress;
 
     /**
      * @dev Contract constructor that sets the Axelar Gateway address for cross-chain token transfers.

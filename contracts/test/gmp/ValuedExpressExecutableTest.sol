@@ -5,8 +5,15 @@ pragma solidity ^0.8.0;
 import { AxelarValuedExpressExecutable } from '../../express/AxelarValuedExpressExecutable.sol';
 
 contract AxelarValuedExpressExecutableTest is AxelarValuedExpressExecutable {
-    event Executed(string sourceChain, string sourceAddress, bytes payload);
-    event ExecutedWithToken(string sourceChain, string sourceAddress, bytes payload, string symbol, uint256 amount);
+    event Executed(bytes32 commandId, string sourceChain, string sourceAddress, bytes payload);
+    event ExecutedWithToken(
+        bytes32 commandId,
+        string sourceChain,
+        string sourceAddress,
+        bytes payload,
+        string symbol,
+        uint256 amount
+    );
 
     uint256 public callValue;
     uint256 public callWithTokenValue;
@@ -45,20 +52,22 @@ contract AxelarValuedExpressExecutableTest is AxelarValuedExpressExecutable {
     }
 
     function _execute(
+        bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
     ) internal override {
-        emit Executed(sourceChain, sourceAddress, payload);
+        emit Executed(commandId, sourceChain, sourceAddress, payload);
     }
 
     function _executeWithToken(
+        bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload,
         string calldata symbol,
         uint256 amount
     ) internal override {
-        emit ExecutedWithToken(sourceChain, sourceAddress, payload, symbol, amount);
+        emit ExecutedWithToken(commandId, sourceChain, sourceAddress, payload, symbol, amount);
     }
 }

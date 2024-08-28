@@ -23,10 +23,10 @@ abstract contract AxelarGMPExecutableWithToken is IAxelarGMPExecutableWithToken,
      * @dev This function ensures the call is approved by Axelar Gateway With Token before execution.
      * It uses a hash of the payload for validation and calls _executeWithToken for the actual command execution.
      * Reverts if the validation fails.
-     * @param commandId The identifier of the command to execute.
-     * @param sourceChain The name of the source chain from which the command originated.
-     * @param sourceAddress The address on the source chain that sent the command.
-     * @param payload The payload of the command to be executed.
+     * @param commandId The unique identifier of the cross-chain message being executed.
+     * @param sourceChain The name of the source chain from which the message originated.
+     * @param sourceAddress The address on the source chain that sent the message.
+     * @param payload The payload of the message payload.
      * @param tokenSymbol The symbol of the token to be transferred.
      * @param amount The amount of tokens to be transferred.
      */
@@ -37,7 +37,7 @@ abstract contract AxelarGMPExecutableWithToken is IAxelarGMPExecutableWithToken,
         bytes calldata payload,
         string calldata tokenSymbol,
         uint256 amount
-    ) external {
+    ) external virtual {
         bytes32 payloadHash = keccak256(payload);
 
         if (
@@ -57,10 +57,10 @@ abstract contract AxelarGMPExecutableWithToken is IAxelarGMPExecutableWithToken,
     /**
      * @dev Internal virtual function to be overridden by child contracts to execute the command with token transfer.
      * It allows child contracts to define their custom command execution logic involving tokens.
-     * @param commandId The identifier of the command to execute.
-     * @param sourceChain The name of the source chain from which the command originated.
-     * @param sourceAddress The address on the source chain that sent the command.
-     * @param payload The payload of the command to be executed.
+     * @param commandId The unique identifier of the cross-chain message being executed.
+     * @param sourceChain The name of the source chain from which the message originated.
+     * @param sourceAddress The address on the source chain that sent the message.
+     * @param payload The payload of the message payload.
      * @param tokenSymbol The symbol of the token to be transferred.
      * @param amount The amount of tokens to be transferred.
      */

@@ -24,4 +24,20 @@ contract TestAxelarValuedExpressExecutable is AxelarValuedExpressExecutable {
     ) public pure override returns (address tokenAddress, uint256 value) {
         return (address(0), 0);
     }
+
+    function _execute(
+        bytes32 commandId,
+        string calldata sourceChain,
+        string calldata sourceAddress,
+        bytes calldata payload
+    ) internal virtual override {}
+
+    function _executeWithToken(
+        bytes32 commandId,
+        string calldata sourceChain,
+        string calldata sourceAddress,
+        bytes calldata payload,
+        string calldata tokenSymbol,
+        uint256 amount
+    ) internal virtual override {}
 }

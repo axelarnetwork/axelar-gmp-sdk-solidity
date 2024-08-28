@@ -30,17 +30,17 @@ abstract contract AxelarGMPExecutable is IAxelarGMPExecutable {
      * @dev This function ensures the call is approved by Axelar Gateway before execution.
      * It uses a hash of the payload for validation and internally calls _execute for the actual command execution.
      * Reverts if the validation fails.
-     * @param commandId The identifier of the command to execute.
-     * @param sourceChain The name of the source chain from which the command originated.
-     * @param sourceAddress The address on the source chain that sent the command.
-     * @param payload The payload of the command to be executed.
+     * @param commandId The unique identifier of the cross-chain message being executed.
+     * @param sourceChain The name of the source chain from which the message originated.
+     * @param sourceAddress The address on the source chain that sent the message.
+     * @param payload The payload of the message payload.
      */
     function execute(
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
-    ) external {
+    ) external virtual {
         bytes32 payloadHash = keccak256(payload);
 
         if (!gateway().validateContractCall(commandId, sourceChain, sourceAddress, payloadHash))

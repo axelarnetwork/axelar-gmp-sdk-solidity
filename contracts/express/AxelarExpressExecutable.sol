@@ -2,33 +2,29 @@
 
 pragma solidity ^0.8.0;
 
-import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
+import { AxelarGMPExecutable } from '../executable/AxelarGMPExecutable.sol';
+import { AxelarGMPExecutableWithToken } from '../executable/AxelarGMPExecutableWithToken.sol';
+import { IAxelarGMPExecutable } from '../interfaces/IAxelarGMPExecutable.sol';
+import { IAxelarGMPExecutableWithToken } from '../interfaces/IAxelarGMPExecutableWithToken.sol';
 import { ExpressExecutorTracker } from './ExpressExecutorTracker.sol';
-
 import { SafeTokenTransferFrom, SafeTokenTransfer } from '../libs/SafeTransfer.sol';
 import { IERC20 } from '../interfaces/IERC20.sol';
 
-contract AxelarExpressExecutable is ExpressExecutorTracker {
+abstract contract AxelarExpressExecutable is ExpressExecutorTracker, AxelarGMPExecutableWithToken {
     using SafeTokenTransfer for IERC20;
     using SafeTokenTransferFrom for IERC20;
 
-    IAxelarGateway public immutable gateway;
-
-    constructor(address gateway_) {
-        if (gateway_ == address(0)) revert InvalidAddress();
-
-        gateway = IAxelarGateway(gateway_);
-    }
+    constructor(address gateway_) AxelarGMPExecutableWithToken(gateway_) {}
 
     function execute(
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
-    ) external {
+    ) external override(AxelarGMPExecutable, IAxelarGMPExecutable) {
         bytes32 payloadHash = keccak256(payload);
 
-        if (!gateway.validateContractCall(commandId, sourceChain, sourceAddress, payloadHash))
+        if (!gateway().validateContractCall(commandId, sourceChain, sourceAddress, payloadHash))
             revert NotApprovedByGateway();
 
         address expressExecutor = _popExpressExecutor(commandId, sourceChain, sourceAddress, payloadHash);
@@ -37,7 +33,7 @@ contract AxelarExpressExecutable is ExpressExecutorTracker {
             // slither-disable-next-line reentrancy-events
             emit ExpressExecutionFulfilled(commandId, sourceChain, sourceAddress, payloadHash, expressExecutor);
         } else {
-            _execute(sourceChain, sourceAddress, payload);
+            _execute(commandId, sourceChain, sourceAddress, payload);
         }
     }
 
@@ -48,10 +44,10 @@ contract AxelarExpressExecutable is ExpressExecutorTracker {
         bytes calldata payload,
         string calldata tokenSymbol,
         uint256 amount
-    ) external {
+    ) external override(AxelarGMPExecutableWithToken, IAxelarGMPExecutableWithToken) {
         bytes32 payloadHash = keccak256(payload);
         if (
-            !gateway.validateContractCallAndMint(
+            !gatewayWithToken().validateContractCallAndMint(
                 commandId,
                 sourceChain,
                 sourceAddress,
@@ -82,10 +78,10 @@ contract AxelarExpressExecutable is ExpressExecutorTracker {
                 expressExecutor
             );
 
-            address gatewayToken = gateway.tokenAddresses(tokenSymbol);
+            address gatewayToken = gatewayWithToken().tokenAddresses(tokenSymbol);
             IERC20(gatewayToken).safeTransfer(expressExecutor, amount);
         } else {
-            _executeWithToken(sourceChain, sourceAddress, payload, tokenSymbol, amount);
+            _executeWithToken(commandId, sourceChain, sourceAddress, payload, tokenSymbol, amount);
         }
     }
 
@@ -95,7 +91,7 @@ contract AxelarExpressExecutable is ExpressExecutorTracker {
         string calldata sourceAddress,
         bytes calldata payload
     ) external payable virtual {
-        if (gateway.isCommandExecuted(commandId)) revert AlreadyExecuted();
+        if (gateway().isCommandExecuted(commandId)) revert AlreadyExecuted();
 
         address expressExecutor = msg.sender;
         bytes32 payloadHash = keccak256(payload);
@@ -104,7 +100,7 @@ contract AxelarExpressExecutable is ExpressExecutorTracker {
 
         _setExpressExecutor(commandId, sourceChain, sourceAddress, payloadHash, expressExecutor);
 
-        _execute(sourceChain, sourceAddress, payload);
+        _execute(commandId, sourceChain, sourceAddress, payload);
     }
 
     function expressExecuteWithToken(
@@ -115,10 +111,10 @@ contract AxelarExpressExecutable is ExpressExecutorTracker {
         string calldata symbol,
         uint256 amount
     ) external payable virtual {
-        if (gateway.isCommandExecuted(commandId)) revert AlreadyExecuted();
+        if (gatewayWithToken().isCommandExecuted(commandId)) revert AlreadyExecuted();
 
         address expressExecutor = msg.sender;
-        address gatewayToken = gateway.tokenAddresses(symbol);
+        address gatewayToken = gatewayWithToken().tokenAddresses(symbol);
         bytes32 payloadHash = keccak256(payload);
 
         emit ExpressExecutedWithToken(
@@ -143,20 +139,6 @@ contract AxelarExpressExecutable is ExpressExecutorTracker {
 
         IERC20(gatewayToken).safeTransferFrom(expressExecutor, address(this), amount);
 
-        _executeWithToken(sourceChain, sourceAddress, payload, symbol, amount);
+        _executeWithToken(commandId, sourceChain, sourceAddress, payload, symbol, amount);
     }
-
-    function _execute(
-        string calldata sourceChain,
-        string calldata sourceAddress,
-        bytes calldata payload
-    ) internal virtual {}
-
-    function _executeWithToken(
-        string calldata sourceChain,
-        string calldata sourceAddress,
-        bytes calldata payload,
-        string calldata tokenSymbol,
-        uint256 amount
-    ) internal virtual {}
 }

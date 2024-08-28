@@ -37,6 +37,4 @@ contract AxelarExpressExecutableTest is AxelarExpressExecutable {
     ) internal override {
         emit ExecutedWithToken(commandId, sourceChain, sourceAddress, payload, symbol, amount);
     }
-
-    function gateway() external view override returns (IAxelarGMPGateway) {}
 }

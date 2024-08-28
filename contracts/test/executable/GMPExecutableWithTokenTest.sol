@@ -3,7 +3,6 @@
 pragma solidity ^0.8.0;
 
 import { AxelarGMPExecutableWithToken } from '../../executable/AxelarGMPExecutableWithToken.sol';
-import { IAxelarGMPGateway } from '../../interfaces/IAxelarGMPGateway.sol';
 
 contract GMPExecutableWithTokenTest is AxelarGMPExecutableWithToken {
     event Received(uint256 num);
@@ -32,6 +31,4 @@ contract GMPExecutableWithTokenTest is AxelarGMPExecutableWithToken {
         uint256 num = abi.decode(payload, (uint256));
         emit ReceivedWithToken(num, gatewayWithToken().tokenAddresses(tokenSymbol), amount);
     }
-
-    function gateway() external view override returns (IAxelarGMPGateway) {}
 }

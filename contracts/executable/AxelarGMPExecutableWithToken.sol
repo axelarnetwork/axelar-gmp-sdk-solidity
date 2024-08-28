@@ -3,27 +3,21 @@
 pragma solidity ^0.8.0;
 
 import { IAxelarGMPGatewayWithToken } from '../interfaces/IAxelarGMPGatewayWithToken.sol';
+import { IAxelarGMPExecutable } from '../interfaces/IAxelarGMPExecutable.sol';
 import { IAxelarGMPExecutableWithToken } from '../interfaces/IAxelarGMPExecutableWithToken.sol';
+import { AxelarGMPExecutable } from './AxelarGMPExecutable.sol';
 
 /**
  * @title AxelarGMPExecutableWithToken
  * @dev Abstract contract to be inherited by contracts that need to execute cross-chain commands involving tokens via Axelar's Gateway.
- * It implements the IAxelarGMPExecutableWithToken interface.
+ * It extends AxelarGMPExecutable and implements the IAxelarGMPExecutableWithToken interface.
  */
-abstract contract AxelarGMPExecutableWithToken is IAxelarGMPExecutableWithToken {
-    /// @dev Reference to the Axelar Gateway contract.
-    address internal immutable gatewayAddress;
-
+abstract contract AxelarGMPExecutableWithToken is IAxelarGMPExecutableWithToken, AxelarGMPExecutable {
     /**
-     * @dev Contract constructor that sets the Axelar Gateway address for cross-chain token transfers.
-     * Reverts if the provided address is the zero address.
-     * @param gateway_ The address of the Axelar Gateway contract with token functionality.
+     * @dev Contract constructor that sets the Axelar Gateway With Token address and initializes AxelarGMPExecutable.
+     * @param gateway_ The address of the Axelar Gateway With Token contract.
      */
-    constructor(address gateway_) {
-        if (gateway_ == address(0)) revert InvalidAddress();
-
-        gatewayAddress = gateway_;
-    }
+    constructor(address gateway_) AxelarGMPExecutable(gateway_) {}
 
     /**
      * @notice Executes the cross-chain command after validating it with the Axelar Gateway.
@@ -40,7 +34,7 @@ abstract contract AxelarGMPExecutableWithToken is IAxelarGMPExecutableWithToken 
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
-    ) external virtual {
+    ) external virtual override(AxelarGMPExecutable, IAxelarGMPExecutable) {
         bytes32 payloadHash = keccak256(payload);
 
         if (!gatewayWithToken().validateContractCall(commandId, sourceChain, sourceAddress, payloadHash))
@@ -62,7 +56,7 @@ abstract contract AxelarGMPExecutableWithToken is IAxelarGMPExecutableWithToken 
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
-    ) internal virtual;
+    ) internal virtual override;
 
     /**
      * @notice Executes the cross-chain command with token transfer after validating it with the Axelar Gateway.

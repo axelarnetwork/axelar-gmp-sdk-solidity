@@ -5,7 +5,6 @@ pragma solidity ^0.8.0;
 import { AxelarExpressExecutable } from '../../express/AxelarExpressExecutable.sol';
 import { IERC20 } from '../../interfaces/IERC20.sol';
 import { DestinationChainTokenSwapper } from './DestinationChainTokenSwapper.sol';
-import { IAxelarGMPGateway } from '../../interfaces/IAxelarGMPGateway.sol';
 
 contract DestinationChainSwapExpress is AxelarExpressExecutable {
     DestinationChainTokenSwapper public immutable swapper;
@@ -57,6 +56,4 @@ contract DestinationChainSwapExpress is AxelarExpressExecutable {
     function contractId() external pure returns (bytes32) {
         return keccak256('destination-chain-swap-express');
     }
-
-    function gateway() external view override returns (IAxelarGMPGateway) {}
 }

@@ -3,7 +3,6 @@
 pragma solidity ^0.8.0;
 
 import { AxelarValuedExpressExecutable } from '../../express/AxelarValuedExpressExecutable.sol';
-import { IAxelarGMPGateway } from '../../interfaces/IAxelarGMPGateway.sol';
 
 contract TestAxelarValuedExpressExecutable is AxelarValuedExpressExecutable {
     constructor(address gateway_) AxelarValuedExpressExecutable(gateway_) {}
@@ -41,6 +40,4 @@ contract TestAxelarValuedExpressExecutable is AxelarValuedExpressExecutable {
         string calldata tokenSymbol,
         uint256 amount
     ) internal virtual override {}
-
-    function gateway() external view override returns (IAxelarGMPGateway) {}
 }

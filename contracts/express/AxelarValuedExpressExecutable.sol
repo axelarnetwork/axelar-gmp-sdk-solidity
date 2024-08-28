@@ -5,7 +5,6 @@ pragma solidity ^0.8.0;
 import { AxelarGMPExecutableWithToken } from '../executable/AxelarGMPExecutableWithToken.sol';
 import { IAxelarGMPExecutable } from '../interfaces/IAxelarGMPExecutable.sol';
 import { IAxelarGMPExecutableWithToken } from '../interfaces/IAxelarGMPExecutableWithToken.sol';
-import { IAxelarGMPGatewayWithToken } from '../interfaces/IAxelarGMPGatewayWithToken.sol';
 import { IERC20 } from '../interfaces/IERC20.sol';
 import { IAxelarValuedExpressExecutable } from '../interfaces/IAxelarValuedExpressExecutable.sol';
 import { SafeTokenTransferFrom, SafeTokenTransfer } from '../libs/SafeTransfer.sol';

@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.0;
 
+import { AxelarGMPExecutable } from '../executable/AxelarGMPExecutable.sol';
 import { AxelarGMPExecutableWithToken } from '../executable/AxelarGMPExecutableWithToken.sol';
 import { IAxelarGMPExecutable } from '../interfaces/IAxelarGMPExecutable.sol';
 import { IAxelarGMPExecutableWithToken } from '../interfaces/IAxelarGMPExecutableWithToken.sol';
@@ -20,10 +21,10 @@ abstract contract AxelarExpressExecutable is ExpressExecutorTracker, AxelarGMPEx
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
-    ) external override(AxelarGMPExecutableWithToken, IAxelarGMPExecutable) {
+    ) external override(AxelarGMPExecutable, IAxelarGMPExecutable) {
         bytes32 payloadHash = keccak256(payload);
 
-        if (!gatewayWithToken().validateContractCall(commandId, sourceChain, sourceAddress, payloadHash))
+        if (!gateway().validateContractCall(commandId, sourceChain, sourceAddress, payloadHash))
             revert NotApprovedByGateway();
 
         address expressExecutor = _popExpressExecutor(commandId, sourceChain, sourceAddress, payloadHash);
@@ -90,7 +91,7 @@ abstract contract AxelarExpressExecutable is ExpressExecutorTracker, AxelarGMPEx
         string calldata sourceAddress,
         bytes calldata payload
     ) external payable virtual {
-        if (gatewayWithToken().isCommandExecuted(commandId)) revert AlreadyExecuted();
+        if (gateway().isCommandExecuted(commandId)) revert AlreadyExecuted();
 
         address expressExecutor = msg.sender;
         bytes32 payloadHash = keccak256(payload);

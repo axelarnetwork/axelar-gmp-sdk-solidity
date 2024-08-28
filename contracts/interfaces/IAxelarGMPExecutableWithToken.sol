@@ -3,7 +3,6 @@
 pragma solidity ^0.8.0;
 
 import { IAxelarGMPExecutable } from './IAxelarGMPExecutable.sol';
-import { IAxelarGMPGatewayWithToken } from './IAxelarGMPGatewayWithToken.sol';
 
 /**
  * @title IAxelarGMPExecutableWithToken
@@ -30,10 +29,4 @@ interface IAxelarGMPExecutableWithToken is IAxelarGMPExecutable {
         string calldata tokenSymbol,
         uint256 amount
     ) external;
-
-    /**
-     * @notice Returns the address of the IAxelarGMPGatewayWithToken contract.
-     * @return The Axelar GMP Gateway With Token contract associated with this executable contract.
-     */
-    function gatewayWithToken() external view returns (IAxelarGMPGatewayWithToken);
 }

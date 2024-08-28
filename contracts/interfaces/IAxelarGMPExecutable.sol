@@ -21,6 +21,12 @@ interface IAxelarGMPExecutable {
     error NotApprovedByGateway();
 
     /**
+     * @notice Returns the address of the AxelarGMPGateway contract.
+     * @return The Axelar GMP Gateway contract associated with this executable contract.
+     */
+    function gateway() external view returns (IAxelarGMPGateway);
+
+    /**
      * @notice Executes the specified command sent from another chain.
      * @dev This function is called by the Axelar Gateway to carry out cross-chain commands.
      * Reverts if the call is not approved by the gateway or other checks fail.
@@ -35,10 +41,4 @@ interface IAxelarGMPExecutable {
         string calldata sourceAddress,
         bytes calldata payload
     ) external;
-
-    /**
-     * @notice Returns the address of the AxelarGMPGateway contract.
-     * @return The Axelar GMP Gateway contract associated with this executable contract.
-     */
-    function gateway() external view returns (IAxelarGMPGateway);
 }

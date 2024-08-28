@@ -43,7 +43,7 @@ abstract contract AxelarGMPExecutableWithToken is IAxelarGMPExecutableWithToken 
     ) external virtual {
         bytes32 payloadHash = keccak256(payload);
 
-        if (!gateway().validateContractCall(commandId, sourceChain, sourceAddress, payloadHash))
+        if (!gatewayWithToken().validateContractCall(commandId, sourceChain, sourceAddress, payloadHash))
             revert NotApprovedByGateway();
 
         _execute(commandId, sourceChain, sourceAddress, payload);
@@ -87,7 +87,7 @@ abstract contract AxelarGMPExecutableWithToken is IAxelarGMPExecutableWithToken 
         bytes32 payloadHash = keccak256(payload);
 
         if (
-            !gateway().validateContractCallAndMint(
+            !gatewayWithToken().validateContractCallAndMint(
                 commandId,
                 sourceChain,
                 sourceAddress,
@@ -123,7 +123,7 @@ abstract contract AxelarGMPExecutableWithToken is IAxelarGMPExecutableWithToken 
      * @notice Returns the address of the IAxelarGMPGatewayWithToken contract.
      * @return The Axelar GMP Gateway With Token instance.
      */
-    function gateway() public view returns (IAxelarGMPGatewayWithToken) {
+    function gatewayWithToken() public view returns (IAxelarGMPGatewayWithToken) {
         return IAxelarGMPGatewayWithToken(gatewayAddress);
     }
 }

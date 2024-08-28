@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import { AxelarExpressExecutable } from '../../express/AxelarExpressExecutable.sol';
+import { IAxelarGMPGateway } from '../../interfaces/IAxelarGMPGateway.sol';
 
 contract TestAxelarExpressExecutable is AxelarExpressExecutable {
     constructor(address gateway_) AxelarExpressExecutable(gateway_) {
@@ -11,4 +12,22 @@ contract TestAxelarExpressExecutable is AxelarExpressExecutable {
             PREFIX_EXPRESS_EXECUTE_WITH_TOKEN != keccak256('express-execute-with-token')
         ) revert('invalid express execute prefix');
     }
+
+    function _execute(
+        bytes32 commandId,
+        string calldata sourceChain,
+        string calldata sourceAddress,
+        bytes calldata payload
+    ) internal virtual override {}
+
+    function _executeWithToken(
+        bytes32 commandId,
+        string calldata sourceChain,
+        string calldata sourceAddress,
+        bytes calldata payload,
+        string calldata tokenSymbol,
+        uint256 amount
+    ) internal virtual override {}
+
+    function gateway() external view override returns (IAxelarGMPGateway) {}
 }

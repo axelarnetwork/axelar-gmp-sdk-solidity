@@ -5,6 +5,7 @@ pragma solidity ^0.8.0;
 import { AxelarExpressExecutable } from '../../express/AxelarExpressExecutable.sol';
 import { IERC20 } from '../../interfaces/IERC20.sol';
 import { DestinationChainTokenSwapper } from './DestinationChainTokenSwapper.sol';
+import { IAxelarGMPGateway } from '../../interfaces/IAxelarGMPGateway.sol';
 
 contract DestinationChainSwapExpress is AxelarExpressExecutable {
     DestinationChainTokenSwapper public immutable swapper;
@@ -42,18 +43,20 @@ contract DestinationChainSwapExpress is AxelarExpressExecutable {
     ) internal override {
         (string memory tokenSymbolB, string memory recipient) = abi.decode(payload, (string, string));
 
-        address tokenA = gateway().tokenAddresses(tokenSymbolA);
-        address tokenB = gateway().tokenAddresses(tokenSymbolB);
+        address tokenA = gatewayWithToken().tokenAddresses(tokenSymbolA);
+        address tokenB = gatewayWithToken().tokenAddresses(tokenSymbolB);
 
         IERC20(tokenA).approve(address(swapper), amount);
         uint256 convertedAmount = swapper.swap(tokenA, tokenB, amount, address(this));
 
-        IERC20(tokenB).approve(address(gateway()), convertedAmount);
-        gateway().sendToken(sourceChain, recipient, tokenSymbolB, convertedAmount);
+        IERC20(tokenB).approve(address(gatewayWithToken()), convertedAmount);
+        gatewayWithToken().sendToken(sourceChain, recipient, tokenSymbolB, convertedAmount);
         emit ExecutedWithToken(commandId, sourceChain, sourceAddress, payload, tokenSymbolA, amount);
     }
 
     function contractId() external pure returns (bytes32) {
         return keccak256('destination-chain-swap-express');
     }
+
+    function gateway() external view override returns (IAxelarGMPGateway) {}
 }

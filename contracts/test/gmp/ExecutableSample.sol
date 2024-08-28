@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import { AxelarExpressExecutable } from '../../express/AxelarExpressExecutable.sol';
+import { IAxelarGMPGateway } from '../../interfaces/IAxelarGMPGateway.sol';
 
 contract ExecutableSample is AxelarExpressExecutable {
     string public value;
@@ -10,6 +11,14 @@ contract ExecutableSample is AxelarExpressExecutable {
     string public sourceAddress;
 
     event Executed(bytes32 commandId, string sourceChain, string sourceAddress, bytes payload);
+    event ExecutedWithToken(
+        bytes32 commandId,
+        string sourceChain,
+        string sourceAddress,
+        bytes payload,
+        string symbol,
+        uint256 amount
+    );
 
     constructor(address gateway_) AxelarExpressExecutable(gateway_) {}
 
@@ -21,7 +30,7 @@ contract ExecutableSample is AxelarExpressExecutable {
     ) external payable {
         bytes memory payload = abi.encode(value_);
 
-        gateway().callContract(destinationChain, destinationAddress, payload);
+        gatewayWithToken().callContract(destinationChain, destinationAddress, payload);
     }
 
     // Handles calls created by setAndSend. Updates this contract's value
@@ -36,4 +45,17 @@ contract ExecutableSample is AxelarExpressExecutable {
         sourceAddress = sourceAddress_;
         emit Executed(commandId_, sourceChain, sourceAddress, payload_);
     }
+
+    function _executeWithToken(
+        bytes32 commandId_,
+        string calldata sourceChain_,
+        string calldata sourceAddress_,
+        bytes calldata payload_,
+        string calldata tokenSymbol_,
+        uint256 amount_
+    ) internal override {
+        emit ExecutedWithToken(commandId_, sourceChain_, sourceAddress_, payload_, tokenSymbol_, amount_);
+    }
+
+    function gateway() external view override returns (IAxelarGMPGateway) {}
 }

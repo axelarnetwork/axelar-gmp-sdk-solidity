@@ -35,11 +35,22 @@ const optimizerSettings = {
     },
 };
 
+// Need to manually specify outputSelection settings for the hardhat-storage-layout plugin since we're using customized compiler settings.
+// https://www.npmjs.com/package/hardhat-storage-layout?activeTab=code
+const outputSelectionSettings = process.env.STORAGE_LAYOUT
+    ? {
+          '*': {
+              '*': ['storageLayout'],
+          },
+      }
+    : {};
+
 const defaultSettings = {
     version: '0.8.23',
     settings: {
         evmVersion: process.env.EVM_VERSION || 'london',
         optimizer: optimizerSettings,
+        outputSelection: outputSelectionSettings,
     },
 };
 
@@ -49,6 +60,7 @@ const compilerSettings = {
     settings: {
         evmVersion: process.env.EVM_VERSION || 'london',
         optimizer: optimizerSettings,
+        outputSelection: outputSelectionSettings,
     },
 };
 

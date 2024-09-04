@@ -200,8 +200,6 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         uint256 signerIndex;
         uint256 totalWeight;
 
-        if (signaturesLength == 0) revert LowSignaturesWeight();
-
         // looking for signers within signers
         // this requires both signers and signatures to be sorted
         // having it sorted allows us to avoid the full inner loop to find a match

@@ -206,13 +206,6 @@ describe('InterchainGovernance', () => {
                 interchainGovernance.executeProposal(target, invalidCalldata, nativeValue, { value: nativeValue }),
             ).to.be.revertedWithCustomError(interchainGovernance, 'ExecutionFailed');
         });
-/*
-ahram
-        it('should revert on execute with token', async () => {
-            await expect(
-                interchainGovernance.executeWithToken(govCommandID, governanceChain, AddressZero, '0x', 'abc', 123),
-            ).to.be.revertedWithCustomError(interchainGovernance, 'TokenNotSupported');
-        });*/
     });
 
     describe('positive tests', () => {

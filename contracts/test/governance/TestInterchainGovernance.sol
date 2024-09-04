@@ -16,20 +16,11 @@ contract TestInterchainGovernance is InterchainGovernance {
     ) InterchainGovernance(gatewayAddress, governanceChain_, governanceAddress_, minimumTimeDelay) {}
 
     function executeProposalAction(
+        bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
     ) external {
-        _execute(sourceChain, sourceAddress, payload);
-    }
-
-    function executeToken(
-        string calldata sourceChain,
-        string calldata sourceAddress,
-        bytes calldata payload,
-        string calldata tokenSymbol,
-        uint256 amount
-    ) external pure {
-        _executeWithToken(sourceChain, sourceAddress, payload, tokenSymbol, amount);
+        _execute(commandId, sourceChain, sourceAddress, payload);
     }
 }

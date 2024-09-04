@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import { AxelarExecutable } from '../executable/AxelarExecutable.sol';
+import { AxelarGMPExecutable } from '../executable/AxelarGMPExecutable.sol';
 import { TimeLock } from '../utils/TimeLock.sol';
 import { SafeNativeTransfer } from '../libs/SafeNativeTransfer.sol';
 import { IInterchainGovernance } from '../interfaces/IInterchainGovernance.sol';
@@ -13,7 +13,7 @@ import { Caller } from '../utils/Caller.sol';
  * @notice This contract handles cross-chain governance actions. It includes functionality
  * to create, cancel, and execute governance proposals.
  */
-contract InterchainGovernance is AxelarExecutable, TimeLock, Caller, IInterchainGovernance {
+contract InterchainGovernance is AxelarGMPExecutable, TimeLock, Caller, IInterchainGovernance {
     using SafeNativeTransfer for address;
 
     enum GovernanceCommand {
@@ -38,7 +38,7 @@ contract InterchainGovernance is AxelarExecutable, TimeLock, Caller, IInterchain
         string memory governanceChain_,
         string memory governanceAddress_,
         uint256 minimumTimeDelay
-    ) AxelarExecutable(gateway_) TimeLock(minimumTimeDelay) {
+    ) AxelarGMPExecutable(gateway_) TimeLock(minimumTimeDelay) {
         if (bytes(governanceChain_).length == 0 || bytes(governanceAddress_).length == 0) {
             revert InvalidAddress();
         }
@@ -126,6 +126,7 @@ contract InterchainGovernance is AxelarExecutable, TimeLock, Caller, IInterchain
      * @param payload The payload of the proposal
      */
     function _execute(
+        bytes32, /* commandId */
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
@@ -181,20 +182,6 @@ contract InterchainGovernance is AxelarExecutable, TimeLock, Caller, IInterchain
         uint256 nativeValue
     ) internal pure returns (bytes32) {
         return keccak256(abi.encode(target, callData, nativeValue));
-    }
-
-    /**
-     * @notice Overrides internal function of AxelarExecutable, will always revert
-     * as this governance module does not support execute with token.
-     */
-    function _executeWithToken(
-        string calldata, /* sourceChain */
-        string calldata, /* sourceAddress */
-        bytes calldata, /* payload */
-        string calldata, /* tokenSymbol */
-        uint256 /* amount */
-    ) internal pure override {
-        revert TokenNotSupported();
     }
 
     /**

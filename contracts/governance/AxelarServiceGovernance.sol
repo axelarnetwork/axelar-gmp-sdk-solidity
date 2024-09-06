@@ -18,17 +18,17 @@ contract AxelarServiceGovernance is InterchainGovernance, IAxelarServiceGovernan
         CancelMultisigApproval
     }
 
-    address public multisig;
+    address public operator;
 
     mapping(bytes32 => bool) public multisigApprovals;
 
-    modifier onlyMultisig() {
-        if (msg.sender != multisig) revert NotAuthorized();
+    modifier onlyOperator() {
+        if (msg.sender != operator) revert NotAuthorized();
         _;
     }
 
-    modifier onlyMultisigOrSelf() {
-        if (msg.sender != multisig && msg.sender != address(this)) revert NotAuthorized();
+    modifier onlyOperatorOrSelf() {
+        if (msg.sender != operator && msg.sender != address(this)) revert NotAuthorized();
         _;
     }
 
@@ -38,17 +38,17 @@ contract AxelarServiceGovernance is InterchainGovernance, IAxelarServiceGovernan
      * @param governanceChain_ The name of the governance chain
      * @param governanceAddress_ The address of the governance contract
      * @param minimumTimeDelay The minimum time delay for timelock operations
-     * @param multisig_ The multisig contract address
+     * @param operator_ The operator address
      */
     constructor(
         address gateway_,
         string memory governanceChain_,
         string memory governanceAddress_,
         uint256 minimumTimeDelay,
-        address multisig_
+        address operator_
     ) InterchainGovernance(gateway_, governanceChain_, governanceAddress_, minimumTimeDelay) {
-        if (multisig_ == address(0)) revert InvalidMultisigAddress();
-        multisig = multisig_;
+        if (operator_ == address(0)) revert InvalidOperatorAddress();
+        operator = operator_;
     }
 
     /**
@@ -76,7 +76,7 @@ contract AxelarServiceGovernance is InterchainGovernance, IAxelarServiceGovernan
         address target,
         bytes calldata callData,
         uint256 nativeValue
-    ) external payable onlyMultisig {
+    ) external payable onlyOperator {
         bytes32 proposalHash = _getProposalHash(target, callData, nativeValue);
 
         if (!multisigApprovals[proposalHash]) revert NotApproved();
@@ -89,16 +89,16 @@ contract AxelarServiceGovernance is InterchainGovernance, IAxelarServiceGovernan
     }
 
     /**
-     * @notice Transfers the multisig address to a new address
-     * @dev Only the current multisig or the governance can call this function
-     * @param newMultisig The new multisig address
+     * @notice Transfers the operator address to a new address
+     * @dev Only the current operator or the governance can call this function
+     * @param newOperator The new operator address
      */
-    function transferMultisig(address newMultisig) external onlyMultisigOrSelf {
-        if (newMultisig == address(0)) revert InvalidMultisigAddress();
+    function transferOperator(address newOperator) external onlyOperatorOrSelf {
+        if (newOperator == address(0)) revert InvalidOperatorAddress();
 
-        emit MultisigTransferred(multisig, newMultisig);
+        emit OperatorTransferred(operator, newOperator);
 
-        multisig = newMultisig;
+        operator = newOperator;
     }
 
     /**

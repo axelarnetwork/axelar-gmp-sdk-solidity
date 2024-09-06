@@ -32,7 +32,7 @@ describe('AxelarServiceGovernance', () => {
     const ScheduleTimeLockProposal = 0;
     const CancelTimeLockProposal = 1;
     const ApproveMultisigProposal = 2;
-    const CancelMultisigApproval = 3;
+    const CancelOperatorApproval = 3;
     const InvalidCommand = 4;
 
     before(async () => {
@@ -74,15 +74,15 @@ describe('AxelarServiceGovernance', () => {
                     gasOptions,
                 ),
             serviceGovernanceFactory,
-            'InvalidOperatorAddress',
+            'InvalidOperator',
         );
     });
 
     it('should revert on invalid operator transfer', async () => {
         await expectRevert(
-            async (gasOptions) => serviceGovernance.connect(operator).transferOperator(AddressZero, gasOptions),
+            async (gasOptions) => serviceGovernance.connect(operator).transferOperatorship(AddressZero, gasOptions),
             serviceGovernance,
-            'InvalidOperatorAddress',
+            'InvalidOperator',
         );
     });
 
@@ -200,7 +200,7 @@ describe('AxelarServiceGovernance', () => {
 
         const payloadCancel = defaultAbiCoder.encode(
             ['uint256', 'address', 'bytes', 'uint256', 'uint256'],
-            [CancelMultisigApproval, target, calldata, nativeValue, 0],
+            [CancelOperatorApproval, target, calldata, nativeValue, 0],
         );
 
         await expect(serviceGovernance.execute(govCommandID, governanceChain, governanceAddress.address, payload))
@@ -306,7 +306,7 @@ describe('AxelarServiceGovernance', () => {
             .withArgs(proposalHash, target, calldata, nativeValue);
 
         [payload, proposalHash] = await getPayloadAndProposalHash(
-            CancelMultisigApproval,
+            CancelOperatorApproval,
             target,
             nativeValue,
             calldata,
@@ -354,13 +354,13 @@ describe('AxelarServiceGovernance', () => {
 
     it('should transfer operator address to new address', async () => {
         const newOperator = governanceAddress.address;
-        await expect(serviceGovernance.connect(operator).transferOperator(newOperator))
-            .to.emit(serviceGovernance, 'OperatorTransferred')
+        await expect(serviceGovernance.connect(operator).transferOperatorship(newOperator))
+            .to.emit(serviceGovernance, 'OperatorshipTransferred')
             .withArgs(operator.address, newOperator);
         await expect(await serviceGovernance.operator()).to.equal(newOperator);
 
         await expectRevert(
-            async (gasOptions) => serviceGovernance.connect(operator).transferOperator(newOperator, gasOptions),
+            async (gasOptions) => serviceGovernance.connect(operator).transferOperatorship(newOperator, gasOptions),
             serviceGovernance,
             'NotAuthorized',
         );
@@ -369,7 +369,7 @@ describe('AxelarServiceGovernance', () => {
     it('should transfer multisig by a governance proposal', async () => {
         const govCommandID = formatBytes32String('10');
         const newOperator = serviceGovernance.address;
-        const transferCalldata = serviceGovernance.interface.encodeFunctionData('transferOperator', [newOperator]);
+        const transferCalldata = serviceGovernance.interface.encodeFunctionData('transferOperatorship', [newOperator]);
 
         const [payload, proposalHash, eta] = await getPayloadAndProposalHash(
             ScheduleTimeLockProposal,
@@ -393,14 +393,14 @@ describe('AxelarServiceGovernance', () => {
         await expect(tx)
             .to.emit(serviceGovernance, 'ProposalExecuted')
             .withArgs(proposalHash, serviceGovernance.address, transferCalldata, 0, executionTimestamp)
-            .and.to.emit(serviceGovernance, 'OperatorTransferred')
+            .and.to.emit(serviceGovernance, 'OperatorshipTransferred')
             .withArgs(governanceAddress.address, newOperator);
 
         await expect(await serviceGovernance.operator()).to.equal(newOperator);
 
         await expectRevert(
             async (gasOptions) =>
-                serviceGovernance.connect(governanceAddress).transferOperator(newOperator, gasOptions),
+                serviceGovernance.connect(governanceAddress).transferOperatorship(newOperator, gasOptions),
             serviceGovernance,
             'NotAuthorized',
         );
@@ -411,7 +411,7 @@ describe('AxelarServiceGovernance', () => {
         const bytecodeHash = keccak256(bytecode);
 
         const expected = {
-            london: '0x49dc6dac6da0ef91eb578121106c9524e0cc3b9b7643f6e2d8cfc758e258bfec',
+            london: '0x451263411dea09e2958967d2d392fa8b91236e0101856a25b0bb90c892e90fe3',
         }[getEVMVersion()];
 
         expect(bytecodeHash).to.be.equal(expected);

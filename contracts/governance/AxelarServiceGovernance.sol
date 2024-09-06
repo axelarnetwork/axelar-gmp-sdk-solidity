@@ -15,12 +15,12 @@ contract AxelarServiceGovernance is InterchainGovernance, IAxelarServiceGovernan
         ScheduleTimeLockProposal,
         CancelTimeLockProposal,
         ApproveMultisigProposal,
-        CancelMultisigApproval
+        CancelOperatorApproval
     }
 
     address public operator;
 
-    mapping(bytes32 => bool) public multisigApprovals;
+    mapping(bytes32 => bool) public operatorApprovals;
 
     modifier onlyOperator() {
         if (msg.sender != operator) revert NotAuthorized();
@@ -47,7 +47,7 @@ contract AxelarServiceGovernance is InterchainGovernance, IAxelarServiceGovernan
         uint256 minimumTimeDelay,
         address operator_
     ) InterchainGovernance(gateway_, governanceChain_, governanceAddress_, minimumTimeDelay) {
-        if (operator_ == address(0)) revert InvalidOperatorAddress();
+        if (operator_ == address(0)) revert InvalidOperator();
         operator = operator_;
     }
 
@@ -63,7 +63,7 @@ contract AxelarServiceGovernance is InterchainGovernance, IAxelarServiceGovernan
         bytes calldata callData,
         uint256 nativeValue
     ) external view returns (bool) {
-        return multisigApprovals[_getProposalHash(target, callData, nativeValue)];
+        return operatorApprovals[_getProposalHash(target, callData, nativeValue)];
     }
 
     /**
@@ -79,9 +79,9 @@ contract AxelarServiceGovernance is InterchainGovernance, IAxelarServiceGovernan
     ) external payable onlyOperator {
         bytes32 proposalHash = _getProposalHash(target, callData, nativeValue);
 
-        if (!multisigApprovals[proposalHash]) revert NotApproved();
+        if (!operatorApprovals[proposalHash]) revert NotApproved();
 
-        multisigApprovals[proposalHash] = false;
+        operatorApprovals[proposalHash] = false;
 
         emit MultisigExecuted(proposalHash, target, callData, nativeValue);
 
@@ -93,10 +93,10 @@ contract AxelarServiceGovernance is InterchainGovernance, IAxelarServiceGovernan
      * @dev Only the current operator or the governance can call this function
      * @param newOperator The new operator address
      */
-    function transferOperator(address newOperator) external onlyOperatorOrSelf {
-        if (newOperator == address(0)) revert InvalidOperatorAddress();
+    function transferOperatorship(address newOperator) external onlyOperatorOrSelf {
+        if (newOperator == address(0)) revert InvalidOperator();
 
-        emit OperatorTransferred(operator, newOperator);
+        emit OperatorshipTransferred(operator, newOperator);
 
         operator = newOperator;
     }
@@ -129,12 +129,12 @@ contract AxelarServiceGovernance is InterchainGovernance, IAxelarServiceGovernan
             emit ProposalCancelled(proposalHash, target, callData, nativeValue, eta);
             return;
         } else if (commandType == uint256(ServiceGovernanceCommand.ApproveMultisigProposal)) {
-            multisigApprovals[proposalHash] = true;
+            operatorApprovals[proposalHash] = true;
 
             emit MultisigApproved(proposalHash, target, callData, nativeValue);
             return;
-        } else if (commandType == uint256(ServiceGovernanceCommand.CancelMultisigApproval)) {
-            multisigApprovals[proposalHash] = false;
+        } else if (commandType == uint256(ServiceGovernanceCommand.CancelOperatorApproval)) {
+            operatorApprovals[proposalHash] = false;
 
             emit MultisigCancelled(proposalHash, target, callData, nativeValue);
             return;

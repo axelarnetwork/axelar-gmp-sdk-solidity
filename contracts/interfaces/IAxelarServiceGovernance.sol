@@ -9,7 +9,7 @@ import { IInterchainGovernance } from './IInterchainGovernance.sol';
  * @dev This interface extends IInterchainGovernance and IMultisigBase for multisig proposal actions
  */
 interface IAxelarServiceGovernance is IInterchainGovernance {
-    error InvalidOperatorAddress();
+    error InvalidOperator();
     error NotApproved();
     error NotAuthorized();
 
@@ -34,14 +34,14 @@ interface IAxelarServiceGovernance is IInterchainGovernance {
         uint256 nativeValue
     );
 
-    event OperatorTransferred(address indexed oldOperator, address indexed newOperator);
+    event OperatorshipTransferred(address indexed oldOperator, address indexed newOperator);
 
     /**
      * @notice Returns whether a multisig proposal has been approved
      * @param proposalHash The hash of the proposal
      * @return bool True if the proposal has been approved, False otherwise
      */
-    function multisigApprovals(bytes32 proposalHash) external view returns (bool);
+    function operatorApprovals(bytes32 proposalHash) external view returns (bool);
 
     /**
      * @notice Returns whether a multisig proposal has been approved
@@ -72,5 +72,5 @@ interface IAxelarServiceGovernance is IInterchainGovernance {
      * @dev Only the current operator or the governance can call this function
      * @param newOperator The new operator address
      */
-    function transferOperator(address newOperator) external;
+    function transferOperatorship(address newOperator) external;
 }

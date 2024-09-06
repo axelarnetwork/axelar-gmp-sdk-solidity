@@ -56,7 +56,7 @@ Multisig operations demand multi-signatory authorization for proposal execution.
 
 ## Axelar Service Governance
 
-Building upon the Interchain Governance Contract, the Service Governance Contract is specifically designed to manage operations that require coordination. By incorporating `MultisigBase`, it introduces the functionality to approve, execute, and cancel multisig proposals, in addition to schedule and cancel TimeLock proposals. This is intended to be used as the owner for services such as the Interchain token service contract, allowing Axelar governance to manage it.
+Building upon the Interchain Governance Contract, the Service Governance Contract is specifically designed to manage operations that require coordination. Axelar Service Governance introduces the functionality to approve, execute, and cancel operator proposals, in addition to schedule and cancel TimeLock proposals. This is intended to be used as the owner for services such as the Interchain token service contract, allowing Axelar governance to manage it.
 
 ### Service Governance Operations
 
@@ -66,10 +66,10 @@ The contract orchestrates four governance operations:
 
 - **Cancel TimeLock Proposal**: Again, similar to Interchain Governance, it cancels an existing governance proposal.
 
-- **Approve Multisig Proposal**: This function enables multisig proposal approval by setting the proposal's approval status to true. It resets any previous voting and signals successful approval via a MultisigApproved event.
+- **Approve Operator Proposal**: This function enables operator proposal approval by setting the proposal's approval status to true. It resets any previous voting and signals successful approval via a OperatorProposalApproved event.
 
-- **Cancel Multisig Approval**: Cancels an approved multisig proposal, setting the approval status of the proposal to false and indicating successful cancellation through a `MultisigCancelled` event.
+- **Cancel Operator Approval**: Cancels an approved operator proposal, setting the approval status of the proposal to false and indicating successful cancellation through a `OperatorProposalCancelled` event.
 
-### Secure Execution of Multisig Proposals
+### Secure Execution of Operator Proposals
 
-Each time a new multisig proposal receives approval from governance, the multisig voting count is reset to 0. This ensures that any previous votes on similar proposals will not affect the new proposal. When a multisig proposal gathers the required number of signatory approvals, it becomes ready for execution. Before execution, the contract verifies the proposal's approval status. If the status is set to false, the transaction is reverted. Once executed successfully, the approval status of the proposal is reset, and a MultisigExecuted event gets emitted.
+Each time a new operator proposal receives approval from governance, the operator voting count is reset to 0. This ensures that any previous votes on similar proposals will not affect the new proposal. When a operator proposal gathers the required number of signatory approvals, it becomes ready for execution. Before execution, the contract verifies the proposal's approval status. If the status is set to false, the transaction is reverted. Once executed successfully, the approval status of the proposal is reset, and a OperatorProposalExecuted event gets emitted.

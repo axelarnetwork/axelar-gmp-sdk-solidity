@@ -8,13 +8,13 @@ import { InterchainGovernance } from './InterchainGovernance.sol';
 /**
  * @title AxelarServiceGovernance Contract
  * @dev This contract is part of the Axelar Governance system, it inherits the Interchain Governance contract
- * with added functionality to approve and execute multisig proposals.
+ * with added functionality to approve and execute operator proposals.
  */
 contract AxelarServiceGovernance is InterchainGovernance, IAxelarServiceGovernance {
     enum ServiceGovernanceCommand {
         ScheduleTimeLockProposal,
         CancelTimeLockProposal,
-        ApproveMultisigProposal,
+        ApproveOperatorProposal,
         CancelOperatorApproval
     }
 
@@ -52,13 +52,13 @@ contract AxelarServiceGovernance is InterchainGovernance, IAxelarServiceGovernan
     }
 
     /**
-     * @notice Returns whether a multisig proposal has been approved
+     * @notice Returns whether an operator proposal has been approved
      * @param target The address of the contract targeted by the proposal
      * @param callData The call data to be sent to the target contract
      * @param nativeValue The amount of native tokens to be sent to the target contract
      * @return bool True if the proposal has been approved, False otherwise
      */
-    function isMultisigProposalApproved(
+    function isOperatorProposalApproved(
         address target,
         bytes calldata callData,
         uint256 nativeValue
@@ -67,12 +67,12 @@ contract AxelarServiceGovernance is InterchainGovernance, IAxelarServiceGovernan
     }
 
     /**
-     * @notice Executes a multisig proposal.
+     * @notice Executes an operator proposal.
      * @param target The target address the proposal will call
      * @param callData The data that encodes the function and arguments to call on the target contract
      * @param nativeValue The value of native token to be sent to the target contract
      */
-    function executeMultisigProposal(
+    function executeOperatorProposal(
         address target,
         bytes calldata callData,
         uint256 nativeValue
@@ -83,7 +83,7 @@ contract AxelarServiceGovernance is InterchainGovernance, IAxelarServiceGovernan
 
         operatorApprovals[proposalHash] = false;
 
-        emit MultisigExecuted(proposalHash, target, callData, nativeValue);
+        emit OperatorExecuted(proposalHash, target, callData, nativeValue);
 
         _call(target, callData, nativeValue);
     }
@@ -128,15 +128,15 @@ contract AxelarServiceGovernance is InterchainGovernance, IAxelarServiceGovernan
 
             emit ProposalCancelled(proposalHash, target, callData, nativeValue, eta);
             return;
-        } else if (commandType == uint256(ServiceGovernanceCommand.ApproveMultisigProposal)) {
+        } else if (commandType == uint256(ServiceGovernanceCommand.ApproveOperatorProposal)) {
             operatorApprovals[proposalHash] = true;
 
-            emit MultisigApproved(proposalHash, target, callData, nativeValue);
+            emit OperatorApproved(proposalHash, target, callData, nativeValue);
             return;
         } else if (commandType == uint256(ServiceGovernanceCommand.CancelOperatorApproval)) {
             operatorApprovals[proposalHash] = false;
 
-            emit MultisigCancelled(proposalHash, target, callData, nativeValue);
+            emit OperatorCancelled(proposalHash, target, callData, nativeValue);
             return;
         } else {
             revert InvalidCommand();

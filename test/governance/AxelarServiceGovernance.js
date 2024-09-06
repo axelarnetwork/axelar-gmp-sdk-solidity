@@ -31,7 +31,7 @@ describe('AxelarServiceGovernance', () => {
 
     const ScheduleTimeLockProposal = 0;
     const CancelTimeLockProposal = 1;
-    const ApproveMultisigProposal = 2;
+    const ApproveOperatorProposal = 2;
     const CancelOperatorApproval = 3;
     const InvalidCommand = 4;
 
@@ -149,50 +149,50 @@ describe('AxelarServiceGovernance', () => {
             .withArgs(proposalHash, target, calldata, nativeValue, eta);
     });
 
-    it('should approve a multisig proposal', async () => {
+    it('should approve a operator proposal', async () => {
         const govCommandID = formatBytes32String('4');
         const nativeValue = 400;
 
         const [payload, proposalHash] = await getPayloadAndProposalHash(
-            ApproveMultisigProposal,
+            ApproveOperatorProposal,
             target,
             nativeValue,
             calldata,
         );
 
         await expect(serviceGovernance.execute(govCommandID, governanceChain, governanceAddress.address, payload))
-            .to.emit(serviceGovernance, 'MultisigApproved')
+            .to.emit(serviceGovernance, 'OperatorApproved')
             .withArgs(proposalHash, target, calldata, nativeValue);
     });
 
-    it('should return whether or not a multisig proposal is approved', async () => {
+    it('should return whether or not a operator proposal is approved', async () => {
         const govCommandID = formatBytes32String('5');
         const nativeValue = 500;
 
         const [payload, proposalHash] = await getPayloadAndProposalHash(
-            ApproveMultisigProposal,
+            ApproveOperatorProposal,
             target,
             nativeValue,
             calldata,
         );
 
-        let isApproved = await serviceGovernance.isMultisigProposalApproved(target, calldata, nativeValue);
+        let isApproved = await serviceGovernance.isOperatorProposalApproved(target, calldata, nativeValue);
         expect(isApproved).to.be.false;
 
         await expect(serviceGovernance.execute(govCommandID, governanceChain, governanceAddress.address, payload))
-            .to.emit(serviceGovernance, 'MultisigApproved')
+            .to.emit(serviceGovernance, 'OperatorApproved')
             .withArgs(proposalHash, target, calldata, nativeValue);
 
-        isApproved = await serviceGovernance.isMultisigProposalApproved(target, calldata, nativeValue);
+        isApproved = await serviceGovernance.isOperatorProposalApproved(target, calldata, nativeValue);
         expect(isApproved).to.be.true;
     });
 
-    it('should re-approve a multisig proposal after cancelling it', async () => {
+    it('should re-approve a operator proposal after cancelling it', async () => {
         const govCommandID = formatBytes32String('6');
         const nativeValue = 600;
 
         const [payload, proposalHash] = await getPayloadAndProposalHash(
-            ApproveMultisigProposal,
+            ApproveOperatorProposal,
             target,
             nativeValue,
             calldata,
@@ -204,38 +204,38 @@ describe('AxelarServiceGovernance', () => {
         );
 
         await expect(serviceGovernance.execute(govCommandID, governanceChain, governanceAddress.address, payload))
-            .to.emit(serviceGovernance, 'MultisigApproved')
+            .to.emit(serviceGovernance, 'OperatorApproved')
             .withArgs(proposalHash, target, calldata, nativeValue);
 
         await expect(serviceGovernance.execute(govCommandID, governanceChain, governanceAddress.address, payloadCancel))
-            .to.emit(serviceGovernance, 'MultisigCancelled')
+            .to.emit(serviceGovernance, 'OperatorCancelled')
             .withArgs(proposalHash, target, calldata, nativeValue);
 
         await expect(serviceGovernance.execute(govCommandID, governanceChain, governanceAddress.address, payload))
-            .to.emit(serviceGovernance, 'MultisigApproved')
+            .to.emit(serviceGovernance, 'OperatorApproved')
             .withArgs(proposalHash, target, calldata, nativeValue);
     });
 
-    it('should revert on executing a multisig proposal if called by non-multisig', async () => {
+    it('should revert on executing a operator proposal if called by non-operator', async () => {
         await expectRevert(
             async (gasOptions) =>
-                serviceGovernance.connect(ownerWallet).executeMultisigProposal(target, calldata, 0, gasOptions),
+                serviceGovernance.connect(ownerWallet).executeOperatorProposal(target, calldata, 0, gasOptions),
             serviceGovernance,
             'NotAuthorized',
         );
     });
 
-    it('should revert on executing a multisig proposal if proposal is not approved', async () => {
+    it('should revert on executing a operator proposal if proposal is not approved', async () => {
         await expectRevert(
             async (gasOptions) =>
-                serviceGovernance.connect(operator).executeMultisigProposal(target, calldata, 0, gasOptions),
+                serviceGovernance.connect(operator).executeOperatorProposal(target, calldata, 0, gasOptions),
             serviceGovernance,
             'NotApproved',
         );
     });
 
-    it('should revert on executing a multisig proposal if call to target fails', async () => {
-        const ApproveMultisigProposal = 2;
+    it('should revert on executing a operator proposal if call to target fails', async () => {
+        const ApproveOperatorProposal = 2;
         const govCommandID = formatBytes32String('7');
         const nativeValue = 700;
 
@@ -244,19 +244,19 @@ describe('AxelarServiceGovernance', () => {
         const invalidCalldata = invalidTargetInterface.encodeFunctionData('set');
 
         const [payload, proposalHash] = await getPayloadAndProposalHash(
-            ApproveMultisigProposal,
+            ApproveOperatorProposal,
             target,
             nativeValue,
             invalidCalldata,
         );
 
         await expect(serviceGovernance.execute(govCommandID, governanceChain, governanceAddress.address, payload))
-            .to.emit(serviceGovernance, 'MultisigApproved')
+            .to.emit(serviceGovernance, 'OperatorApproved')
             .withArgs(proposalHash, target, invalidCalldata, nativeValue);
 
         await expectRevert(
             async (gasOptions) =>
-                serviceGovernance.connect(operator).executeMultisigProposal(target, invalidCalldata, nativeValue, {
+                serviceGovernance.connect(operator).executeOperatorProposal(target, invalidCalldata, nativeValue, {
                     value: nativeValue,
                     ...gasOptions,
                 }),
@@ -265,44 +265,44 @@ describe('AxelarServiceGovernance', () => {
         );
     });
 
-    it('should execute a multisig proposal', async () => {
+    it('should execute a operator proposal', async () => {
         const govCommandID = formatBytes32String('8');
         const nativeValue = 800;
 
         const [payload, proposalHash] = await getPayloadAndProposalHash(
-            ApproveMultisigProposal,
+            ApproveOperatorProposal,
             target,
             nativeValue,
             calldata,
         );
 
         await expect(serviceGovernance.execute(govCommandID, governanceChain, governanceAddress.address, payload))
-            .to.emit(serviceGovernance, 'MultisigApproved')
+            .to.emit(serviceGovernance, 'OperatorApproved')
             .withArgs(proposalHash, target, calldata, nativeValue);
 
         await expect(
             serviceGovernance
                 .connect(operator)
-                .executeMultisigProposal(target, calldata, nativeValue, { value: nativeValue }),
+                .executeOperatorProposal(target, calldata, nativeValue, { value: nativeValue }),
         )
-            .to.emit(serviceGovernance, 'MultisigExecuted')
+            .to.emit(serviceGovernance, 'OperatorExecuted')
             .withArgs(proposalHash, target, calldata, nativeValue)
             .and.to.emit(targetContract, 'TargetCalled');
     });
 
-    it('should cancel an approved multisig proposal', async () => {
+    it('should cancel an approved operator proposal', async () => {
         const govCommandID = formatBytes32String('9');
         const nativeValue = 900;
 
         let [payload, proposalHash] = await getPayloadAndProposalHash(
-            ApproveMultisigProposal,
+            ApproveOperatorProposal,
             target,
             nativeValue,
             calldata,
         );
 
         await expect(serviceGovernance.execute(govCommandID, governanceChain, governanceAddress.address, payload))
-            .to.emit(serviceGovernance, 'MultisigApproved')
+            .to.emit(serviceGovernance, 'OperatorApproved')
             .withArgs(proposalHash, target, calldata, nativeValue);
 
         [payload, proposalHash] = await getPayloadAndProposalHash(
@@ -313,23 +313,23 @@ describe('AxelarServiceGovernance', () => {
         );
 
         await expect(serviceGovernance.execute(govCommandID, governanceChain, governanceAddress.address, payload))
-            .to.emit(serviceGovernance, 'MultisigCancelled')
+            .to.emit(serviceGovernance, 'OperatorCancelled')
             .withArgs(proposalHash, target, calldata, nativeValue);
     });
 
-    it('should execute a multisig proposal and increase balance of target', async () => {
+    it('should execute a operator proposal and increase balance of target', async () => {
         const govCommandID = formatBytes32String('10');
         const nativeValue = 1000;
 
         const [payload, proposalHash] = await getPayloadAndProposalHash(
-            ApproveMultisigProposal,
+            ApproveOperatorProposal,
             target,
             nativeValue,
             calldata,
         );
 
         await expect(serviceGovernance.execute(govCommandID, governanceChain, governanceAddress.address, payload))
-            .to.emit(serviceGovernance, 'MultisigApproved')
+            .to.emit(serviceGovernance, 'OperatorApproved')
             .withArgs(proposalHash, target, calldata, nativeValue);
 
         await ownerWallet
@@ -341,10 +341,10 @@ describe('AxelarServiceGovernance', () => {
 
         const oldBalance = await ethers.provider.getBalance(target);
 
-        const tx = await serviceGovernance.connect(operator).executeMultisigProposal(target, calldata, nativeValue);
+        const tx = await serviceGovernance.connect(operator).executeOperatorProposal(target, calldata, nativeValue);
 
         await expect(tx)
-            .to.emit(serviceGovernance, 'MultisigExecuted')
+            .to.emit(serviceGovernance, 'OperatorExecuted')
             .withArgs(proposalHash, target, calldata, nativeValue)
             .and.to.emit(targetContract, 'TargetCalled');
 
@@ -366,7 +366,7 @@ describe('AxelarServiceGovernance', () => {
         );
     });
 
-    it('should transfer multisig by a governance proposal', async () => {
+    it('should transfer operatorship by a governance proposal', async () => {
         const govCommandID = formatBytes32String('10');
         const newOperator = serviceGovernance.address;
         const transferCalldata = serviceGovernance.interface.encodeFunctionData('transferOperatorship', [newOperator]);
@@ -411,7 +411,7 @@ describe('AxelarServiceGovernance', () => {
         const bytecodeHash = keccak256(bytecode);
 
         const expected = {
-            london: '0x451263411dea09e2958967d2d392fa8b91236e0101856a25b0bb90c892e90fe3',
+            london: '0x887cfc32099cde0389bc1f3f134f808dcdd51e718194ace8d423f5270f36f6fd',
         }[getEVMVersion()];
 
         expect(bytecodeHash).to.be.equal(expected);

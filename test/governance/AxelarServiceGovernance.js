@@ -161,7 +161,7 @@ describe('AxelarServiceGovernance', () => {
         );
 
         await expect(serviceGovernance.execute(govCommandID, governanceChain, governanceAddress.address, payload))
-            .to.emit(serviceGovernance, 'OperatorApproved')
+            .to.emit(serviceGovernance, 'OperatorProposalApproved')
             .withArgs(proposalHash, target, calldata, nativeValue);
     });
 
@@ -180,7 +180,7 @@ describe('AxelarServiceGovernance', () => {
         expect(isApproved).to.be.false;
 
         await expect(serviceGovernance.execute(govCommandID, governanceChain, governanceAddress.address, payload))
-            .to.emit(serviceGovernance, 'OperatorApproved')
+            .to.emit(serviceGovernance, 'OperatorProposalApproved')
             .withArgs(proposalHash, target, calldata, nativeValue);
 
         isApproved = await serviceGovernance.isOperatorProposalApproved(target, calldata, nativeValue);
@@ -204,15 +204,15 @@ describe('AxelarServiceGovernance', () => {
         );
 
         await expect(serviceGovernance.execute(govCommandID, governanceChain, governanceAddress.address, payload))
-            .to.emit(serviceGovernance, 'OperatorApproved')
+            .to.emit(serviceGovernance, 'OperatorProposalApproved')
             .withArgs(proposalHash, target, calldata, nativeValue);
 
         await expect(serviceGovernance.execute(govCommandID, governanceChain, governanceAddress.address, payloadCancel))
-            .to.emit(serviceGovernance, 'OperatorCancelled')
+            .to.emit(serviceGovernance, 'OperatorProposalCancelled')
             .withArgs(proposalHash, target, calldata, nativeValue);
 
         await expect(serviceGovernance.execute(govCommandID, governanceChain, governanceAddress.address, payload))
-            .to.emit(serviceGovernance, 'OperatorApproved')
+            .to.emit(serviceGovernance, 'OperatorProposalApproved')
             .withArgs(proposalHash, target, calldata, nativeValue);
     });
 
@@ -251,7 +251,7 @@ describe('AxelarServiceGovernance', () => {
         );
 
         await expect(serviceGovernance.execute(govCommandID, governanceChain, governanceAddress.address, payload))
-            .to.emit(serviceGovernance, 'OperatorApproved')
+            .to.emit(serviceGovernance, 'OperatorProposalApproved')
             .withArgs(proposalHash, target, invalidCalldata, nativeValue);
 
         await expectRevert(
@@ -277,7 +277,7 @@ describe('AxelarServiceGovernance', () => {
         );
 
         await expect(serviceGovernance.execute(govCommandID, governanceChain, governanceAddress.address, payload))
-            .to.emit(serviceGovernance, 'OperatorApproved')
+            .to.emit(serviceGovernance, 'OperatorProposalApproved')
             .withArgs(proposalHash, target, calldata, nativeValue);
 
         await expect(
@@ -285,7 +285,7 @@ describe('AxelarServiceGovernance', () => {
                 .connect(operator)
                 .executeOperatorProposal(target, calldata, nativeValue, { value: nativeValue }),
         )
-            .to.emit(serviceGovernance, 'OperatorExecuted')
+            .to.emit(serviceGovernance, 'OperatorProposalExecuted')
             .withArgs(proposalHash, target, calldata, nativeValue)
             .and.to.emit(targetContract, 'TargetCalled');
     });
@@ -302,7 +302,7 @@ describe('AxelarServiceGovernance', () => {
         );
 
         await expect(serviceGovernance.execute(govCommandID, governanceChain, governanceAddress.address, payload))
-            .to.emit(serviceGovernance, 'OperatorApproved')
+            .to.emit(serviceGovernance, 'OperatorProposalApproved')
             .withArgs(proposalHash, target, calldata, nativeValue);
 
         [payload, proposalHash] = await getPayloadAndProposalHash(
@@ -313,7 +313,7 @@ describe('AxelarServiceGovernance', () => {
         );
 
         await expect(serviceGovernance.execute(govCommandID, governanceChain, governanceAddress.address, payload))
-            .to.emit(serviceGovernance, 'OperatorCancelled')
+            .to.emit(serviceGovernance, 'OperatorProposalCancelled')
             .withArgs(proposalHash, target, calldata, nativeValue);
     });
 
@@ -329,7 +329,7 @@ describe('AxelarServiceGovernance', () => {
         );
 
         await expect(serviceGovernance.execute(govCommandID, governanceChain, governanceAddress.address, payload))
-            .to.emit(serviceGovernance, 'OperatorApproved')
+            .to.emit(serviceGovernance, 'OperatorProposalApproved')
             .withArgs(proposalHash, target, calldata, nativeValue);
 
         await ownerWallet
@@ -344,7 +344,7 @@ describe('AxelarServiceGovernance', () => {
         const tx = await serviceGovernance.connect(operator).executeOperatorProposal(target, calldata, nativeValue);
 
         await expect(tx)
-            .to.emit(serviceGovernance, 'OperatorExecuted')
+            .to.emit(serviceGovernance, 'OperatorProposalExecuted')
             .withArgs(proposalHash, target, calldata, nativeValue)
             .and.to.emit(targetContract, 'TargetCalled');
 
@@ -411,7 +411,7 @@ describe('AxelarServiceGovernance', () => {
         const bytecodeHash = keccak256(bytecode);
 
         const expected = {
-            london: '0x887cfc32099cde0389bc1f3f134f808dcdd51e718194ace8d423f5270f36f6fd',
+            london: '0x87891d8e17e62bddae5afa47c6231b236207b7c9cfff0810bc62b226a3765600',
         }[getEVMVersion()];
 
         expect(bytecodeHash).to.be.equal(expected);

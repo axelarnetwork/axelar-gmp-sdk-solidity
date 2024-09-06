@@ -83,7 +83,7 @@ contract AxelarServiceGovernance is InterchainGovernance, IAxelarServiceGovernan
 
         operatorApprovals[proposalHash] = false;
 
-        emit OperatorExecuted(proposalHash, target, callData, nativeValue);
+        emit OperatorProposalExecuted(proposalHash, target, callData, nativeValue);
 
         _call(target, callData, nativeValue);
     }
@@ -131,12 +131,12 @@ contract AxelarServiceGovernance is InterchainGovernance, IAxelarServiceGovernan
         } else if (commandType == uint256(ServiceGovernanceCommand.ApproveOperatorProposal)) {
             operatorApprovals[proposalHash] = true;
 
-            emit OperatorApproved(proposalHash, target, callData, nativeValue);
+            emit OperatorProposalApproved(proposalHash, target, callData, nativeValue);
             return;
         } else if (commandType == uint256(ServiceGovernanceCommand.CancelOperatorApproval)) {
             operatorApprovals[proposalHash] = false;
 
-            emit OperatorCancelled(proposalHash, target, callData, nativeValue);
+            emit OperatorProposalCancelled(proposalHash, target, callData, nativeValue);
             return;
         } else {
             revert InvalidCommand();

@@ -13,21 +13,21 @@ interface IAxelarServiceGovernance is IInterchainGovernance {
     error NotApproved();
     error NotAuthorized();
 
-    event OperatorApproved(
+    event OperatorProposalApproved(
         bytes32 indexed proposalHash,
         address indexed targetContract,
         bytes callData,
         uint256 nativeValue
     );
 
-    event OperatorCancelled(
+    event OperatorProposalCancelled(
         bytes32 indexed proposalHash,
         address indexed targetContract,
         bytes callData,
         uint256 nativeValue
     );
 
-    event OperatorExecuted(
+    event OperatorProposalExecuted(
         bytes32 indexed proposalHash,
         address indexed targetContract,
         bytes callData,

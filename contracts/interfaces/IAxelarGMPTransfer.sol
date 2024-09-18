@@ -25,7 +25,7 @@ interface IAxelarGMPTransfer {
         string sourceChain,
         string destinationChain,
         string destinationAddress,
-        string recipientAddress,
+        bytes recipient,
         string tokenAddress,
         uint256 amount,
         uint256 decimals

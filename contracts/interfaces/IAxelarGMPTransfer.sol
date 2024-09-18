@@ -24,7 +24,7 @@ interface IAxelarGMPTransfer {
         address indexed sender,
         string sourceChain,
         string destinationChain,
-        string destinationAddress,
+        string destinationContractAddress,
         bytes recipient,
         string tokenAddress,
         uint256 amount,

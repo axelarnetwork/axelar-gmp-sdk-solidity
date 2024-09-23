@@ -66,10 +66,10 @@ The contract orchestrates four governance operations:
 
 - **Cancel TimeLock Proposal**: Again, similar to Interchain Governance, it cancels an existing governance proposal.
 
-- **Approve Operator Proposal**: This function enables operator proposal approval by setting the proposal's approval status to true. It resets any previous voting and signals successful approval via a OperatorProposalApproved event.
+- **Approve Operator Proposal**: This function enables operator proposal approval by setting the proposal's approval status to true. It resets any previous voting and signals successful approval via an OperatorProposalApproved event.
 
-- **Cancel Operator Approval**: Cancels an approved operator proposal, setting the approval status of the proposal to false and indicating successful cancellation through a `OperatorProposalCancelled` event.
+- **Cancel Operator Approval**: Cancels an approved operator proposal, setting the approval status of the proposal to false and indicating successful cancellation through an `OperatorProposalCancelled` event.
 
 ### Secure Execution of Operator Proposals
 
-Each time a new operator proposal receives approval from governance, the operator voting count is reset to 0. This ensures that any previous votes on similar proposals will not affect the new proposal. When a operator proposal gathers the required number of signatory approvals, it becomes ready for execution. Before execution, the contract verifies the proposal's approval status. If the status is set to false, the transaction is reverted. Once executed successfully, the approval status of the proposal is reset, and a OperatorProposalExecuted event gets emitted.
+Each time a new operator proposal receives approval from governance, the operator voting count is reset to 0. This ensures that any previous votes on similar proposals will not affect the new proposal. When an operator proposal gathers the required number of signatory approvals, it becomes ready for execution. Before execution, the contract verifies the proposal's approval status. If the status is set to false, the transaction is reverted. Once executed successfully, the approval status of the proposal is reset, and an OperatorProposalExecuted event gets emitted.

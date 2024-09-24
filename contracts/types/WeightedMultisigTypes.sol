@@ -6,7 +6,6 @@ pragma solidity ^0.8.0;
  * @notice This struct represents the weighted signers payload
  * @param signers The list of signers
  * @param weights The list of weights
- * @param threshold The threshold for the signers
  */
 struct WeightedSigner {
     address signer;

@@ -411,7 +411,7 @@ describe('AxelarServiceGovernance', () => {
         const bytecodeHash = keccak256(bytecode);
 
         const expected = {
-            london: '0x87891d8e17e62bddae5afa47c6231b236207b7c9cfff0810bc62b226a3765600',
+            london: '0x2c8ea09d5c343652a353da978b2a9e7249331076e9e2b8f0ece9dc83c30ac1d0',
         }[getEVMVersion()];
 
         expect(bytecodeHash).to.be.equal(expected);

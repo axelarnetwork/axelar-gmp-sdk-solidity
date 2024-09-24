@@ -77,14 +77,14 @@ contract InterchainGovernance is AxelarGMPExecutable, TimeLock, Caller, IInterch
      * @param target The address of the contract targeted by the proposal
      * @param callData The call data to be sent to the target contract
      * @param nativeValue The amount of native tokens to be sent to the target contract
-     * @return uint256 The ETA of the proposal
+     * @return eta The ETA of the proposal
      */
     function getProposalEta(
         address target,
         bytes calldata callData,
         uint256 nativeValue
-    ) external view returns (uint256) {
-        return _getTimeLockEta(_getProposalHash(target, callData, nativeValue));
+    ) external view returns (uint256 eta) {
+        eta = _getTimeLockEta(_getProposalHash(target, callData, nativeValue));
     }
 
     /**
@@ -174,14 +174,15 @@ contract InterchainGovernance is AxelarGMPExecutable, TimeLock, Caller, IInterch
     }
 
     /**
-     * @dev Get proposal hash using the target, callData, and nativeValue
+     * @notice Get proposal hash using the target, callData, and nativeValue
+     * @return hash The proposal hash
      */
     function _getProposalHash(
         address target,
         bytes memory callData,
         uint256 nativeValue
-    ) internal pure returns (bytes32) {
-        return keccak256(abi.encode(target, callData, nativeValue));
+    ) internal pure returns (bytes32 hash) {
+        hash = keccak256(abi.encode(target, callData, nativeValue));
     }
 
     /**

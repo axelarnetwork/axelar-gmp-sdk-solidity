@@ -53,18 +53,18 @@ contract BaseMultisig is IBaseMultisig {
 
     /**
      * @notice Returns the current signer threshold
-     * @return uint The signer threshold
+     * @return threshold The signer threshold
      */
-    function signerThreshold() external view override returns (uint256) {
-        return signers.threshold;
+    function signerThreshold() external view override returns (uint256 threshold) {
+        threshold = signers.threshold;
     }
 
     /**
      * @notice Returns an array of current signers
-     * @return array of signer addresses
+     * @return signersAccounts array of signer addresses
      */
-    function signerAccounts() external view override returns (address[] memory) {
-        return signers.accounts;
+    function signerAccounts() external view override returns (address[] memory signersAccounts) {
+        signersAccounts = signers.accounts;
     }
 
     /**
@@ -85,10 +85,10 @@ contract BaseMultisig is IBaseMultisig {
 
     /**
      * @notice Get the number of votes for a topic
-     * @return uint256 indicating the number of votes for a topic
+     * @return singerVotesCount indicating the number of votes for a topic
      */
-    function getSignerVotesCount(bytes32 topic) external view override returns (uint256) {
-        return votingPerTopic[signerEpoch][topic].voteCount;
+    function getSignerVotesCount(bytes32 topic) external view override returns (uint256 singerVotesCount) {
+        singerVotesCount = votingPerTopic[signerEpoch][topic].voteCount;
     }
 
     /***********\

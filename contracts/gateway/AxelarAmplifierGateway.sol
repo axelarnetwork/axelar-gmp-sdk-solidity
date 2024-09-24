@@ -113,15 +113,15 @@ contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, U
      * @return isLatestSigners True if provided signers are the current ones
      */
     function validateProof(bytes32 dataHash, Proof calldata proof) external view returns (bool isLatestSigners) {
-        return _validateProof(dataHash, proof);
+        isLatestSigners = _validateProof(dataHash, proof);
     }
 
     /**
      * @notice Returns the address of the gateway operator.
-     * @return The address of the operator.
+     * @return operatorAddress The address of the operator.
      */
-    function operator() external view returns (address) {
-        return _axelarAmplifierGatewayStorage().operator;
+    function operator() external view returns (address operatorAddress) {
+        operatorAddress = _axelarAmplifierGatewayStorage().operator;
     }
 
     /**

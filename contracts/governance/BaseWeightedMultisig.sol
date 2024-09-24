@@ -57,44 +57,44 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
 
     /**
      * @notice This function returns the current signers epoch
-     * @return uint256 The current signers epoch
+     * @return epoch_ The current signers epoch
      */
-    function epoch() external view returns (uint256) {
-        return _baseWeightedMultisigStorage().epoch;
+    function epoch() external view returns (uint256 epoch_) {
+        epoch_ = _baseWeightedMultisigStorage().epoch;
     }
 
     /**
      * @notice This function returns the signers hash for a given epoch
      * @param signerEpoch The given epoch
-     * @return bytes32 The signers hash for the given epoch
+     * @return singerHashByEpoch_ The signers hash for the given epoch
      */
-    function signerHashByEpoch(uint256 signerEpoch) external view returns (bytes32) {
-        return _baseWeightedMultisigStorage().signerHashByEpoch[signerEpoch];
+    function signerHashByEpoch(uint256 signerEpoch) external view returns (bytes32 singerHashByEpoch_) {
+        singerHashByEpoch_ = _baseWeightedMultisigStorage().signerHashByEpoch[signerEpoch];
     }
 
     /**
      * @notice This function returns the epoch for a given signers hash
      * @param signerHash The signers hash
-     * @return uint256 The epoch for the given signers hash
+     * @return epochBySingerHash_ The epoch for the given signers hash
      */
-    function epochBySignerHash(bytes32 signerHash) external view returns (uint256) {
-        return _baseWeightedMultisigStorage().epochBySignerHash[signerHash];
+    function epochBySignerHash(bytes32 signerHash) external view returns (uint256 epochBySingerHash_) {
+        epochBySingerHash_ = _baseWeightedMultisigStorage().epochBySignerHash[signerHash];
     }
 
     /**
      * @notice This function returns the timestamp for the last signer rotation
-     * @return uint256 The last rotation timestamp
+     * @return lastRotationTimestamp_ The last rotation timestamp
      */
-    function lastRotationTimestamp() external view returns (uint256) {
-        return _baseWeightedMultisigStorage().lastRotationTimestamp;
+    function lastRotationTimestamp() external view returns (uint256 lastRotationTimestamp_) {
+        lastRotationTimestamp_ = _baseWeightedMultisigStorage().lastRotationTimestamp;
     }
 
     /**
      * @notice This function returns the time elapsed (in secs) since the last rotation
-     * @return uint256 The time since the last rotation
+     * @return timeSinceRotation_ The time since the last rotation
      */
-    function timeSinceRotation() external view returns (uint256) {
-        return block.timestamp - _baseWeightedMultisigStorage().lastRotationTimestamp;
+    function timeSinceRotation() external view returns (uint256 timeSinceRotation_) {
+        timeSinceRotation_ = (block.timestamp - _baseWeightedMultisigStorage().lastRotationTimestamp);
     }
 
     /*************************\
@@ -242,11 +242,11 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      *
      * @param signersHash The hash of the weighted signers that sign off on the data
      * @param dataHash The hash of the data
-     * @return The message hash to be signed
+     * @return hash The message hash to be signed
      */
-    function messageHashToSign(bytes32 signersHash, bytes32 dataHash) public view returns (bytes32) {
+    function messageHashToSign(bytes32 signersHash, bytes32 dataHash) public view returns (bytes32 hash) {
         // 96 is the length of the trailing bytes
-        return keccak256(bytes.concat('\x19Ethereum Signed Message:\n96', domainSeparator, signersHash, dataHash));
+        hash = keccak256(bytes.concat('\x19Ethereum Signed Message:\n96', domainSeparator, signersHash, dataHash));
     }
 
     /**

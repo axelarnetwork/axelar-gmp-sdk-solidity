@@ -87,7 +87,10 @@ interface IBaseAmplifierGateway is IAxelarGMPGateway {
      * @notice Compute the commandId for a message.
      * @param sourceChain The name of the source chain as registered on Axelar.
      * @param messageId The unique message id for the message.
-     * @return The commandId for the message.
+     * @return hash The commandId for the message.
      */
-    function messageToCommandId(string calldata sourceChain, string calldata messageId) external pure returns (bytes32);
+    function messageToCommandId(string calldata sourceChain, string calldata messageId)
+        external
+        pure
+        returns (bytes32 hash);
 }

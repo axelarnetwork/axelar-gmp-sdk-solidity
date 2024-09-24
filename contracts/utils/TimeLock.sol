@@ -25,10 +25,10 @@ contract TimeLock is ITimeLock {
     /**
      * @notice Returns the timestamp after which the TimeLock may be executed.
      * @param hash The hash of the timelock
-     * @return uint The timestamp after which the timelock with the given hash can be executed
+     * @return timelockEta The timestamp after which the timelock with the given hash can be executed
      */
-    function getTimeLock(bytes32 hash) external view override returns (uint256) {
-        return _getTimeLockEta(hash);
+    function getTimeLock(bytes32 hash) external view override returns (uint256 timelockEta) {
+        timelockEta = _getTimeLockEta(hash);
     }
 
     /**

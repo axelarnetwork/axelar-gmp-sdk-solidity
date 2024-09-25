@@ -83,10 +83,10 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
 
     /**
      * @notice This function returns the timestamp for the last signer rotation
-     * @return lastRotationTimestamp_ The last rotation timestamp
+     * @return uint256 The last rotation timestamp
      */
-    function lastRotationTimestamp() external view returns (uint256 lastRotationTimestamp_) {
-        lastRotationTimestamp_ = _baseWeightedMultisigStorage().lastRotationTimestamp;
+    function lastRotationTimestamp() external view returns (uint256) {
+        return _baseWeightedMultisigStorage().lastRotationTimestamp;
     }
 
     /**
@@ -94,7 +94,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      * @return uint256 The time since the last rotation
      */
     function timeSinceRotation() external view returns (uint256) {
-        block.timestamp - _baseWeightedMultisigStorage().lastRotationTimestamp;
+        return block.timestamp - _baseWeightedMultisigStorage().lastRotationTimestamp;
     }
 
     /*************************\
@@ -242,7 +242,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      *
      * @param signersHash The hash of the weighted signers that sign off on the data
      * @param dataHash The hash of the data
-     * @return bytes32 The message hash to be signed
+     * @return The message hash to be signed
      */
     function messageHashToSign(bytes32 signersHash, bytes32 dataHash) public view returns (bytes32) {
         // 96 is the length of the trailing bytes

@@ -132,8 +132,9 @@ describe('GMPExecutableWithToken', () => {
                 await expect(execute)
                     .to.emit(GMPExecutableWithToken, 'InterchainTransferReceived')
                     .withArgs(
-                        userWallet.address.toString(),
                         sourceChain,
+                        userWallet.address.toString(),
+                        payload,
                         GMPExecutableWithToken.address.toLowerCase(),
                         await destinationChainGateway.tokenAddresses(symbolA),
                         swapAmount,

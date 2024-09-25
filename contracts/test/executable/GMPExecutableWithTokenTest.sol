@@ -25,14 +25,15 @@ contract GMPExecutableWithTokenTest is AxelarGMPExecutableWithToken, IInterchain
         bytes32 /*commandId*/,
         string calldata sourceChain,
         string calldata sourceAddress,
-        bytes calldata,
+        bytes calldata payload,
         string calldata tokenSymbol,
         uint256 amount
     ) internal override {
         // Emit InterchainTransferReceived event
         emit InterchainTransferReceived(
-            sourceAddress,
             sourceChain,
+            sourceAddress,
+            payload,
             abi.encodePacked(address(this)),
             gatewayWithToken().tokenAddresses(tokenSymbol),
             amount

@@ -35,11 +35,19 @@ interface IInterchainTransferSent {
 interface IInterchainTransferReceived {
     /**
      * @dev Emitted when an interchain transfer is received, providing details for volume tracking.
-     * @param sender The address of the caller that initiated the transfer on the source chain.
      * @param sourceChain The Axelar chain identifier of the source chain.
+     * @param sourceAddress The address of the contract that initiated the transfer on the source chain.
+     * @param sender The address of the sender in case it is different from the source contract address
      * @param recipient The address of the final recipient of the transferred assets on the destination chain.
      * @param token The address of the token contract on the destination chain.
      * @param amount The amount (in atomic units) of tokens received.
      */
-    event InterchainTransferReceived(string sender, string sourceChain, bytes recipient, address token, uint256 amount);
+    event InterchainTransferReceived(
+        string sourceChain,
+        string sourceAddress,
+        bytes sender,
+        bytes recipient,
+        address token,
+        uint256 amount
+    );
 }

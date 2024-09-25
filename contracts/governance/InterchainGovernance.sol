@@ -174,8 +174,7 @@ contract InterchainGovernance is AxelarGMPExecutable, TimeLock, Caller, IInterch
     }
 
     /**
-     * @notice Get proposal hash using the target, callData, and nativeValue
-     * @return The proposal hash
+     * @dev Get proposal hash using the target, callData, and nativeValue
      */
     function _getProposalHash(
         address target,

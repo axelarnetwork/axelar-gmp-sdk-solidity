@@ -170,6 +170,7 @@ abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
 
     /**
      * @dev For backwards compatibility with `validateContractCall`, `commandId` is used here instead of `messageId`.
+     * @return valid True if message is valid
      */
     function _validateMessage(
         bytes32 commandId,
@@ -224,6 +225,7 @@ abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
 
     /**
      * @dev For backwards compatibility with `validateContractCall`, `commandId` is used here instead of `messageId`.
+     * @return bytes32 the message hash
      */
     function _messageHash(
         bytes32 commandId,

@@ -380,7 +380,7 @@ describe('InterchainGovernance', () => {
         const bytecodeHash = keccak256(bytecode);
 
         const expected = {
-            london: '0x034b9b57bed553b7c9cfa5e4a14304776b65d8a3caefc87df9339203b04df56e',
+            london: '0xb909177113ad762effa23767ebfa25c9f9a4521abb452794ac96a97340d09333',
         }[getEVMVersion()];
 
         expect(bytecodeHash).to.be.equal(expected);

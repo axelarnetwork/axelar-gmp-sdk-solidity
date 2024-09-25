@@ -118,10 +118,10 @@ contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, U
 
     /**
      * @notice Returns the address of the gateway operator.
-     * @return operatorAddress The address of the operator.
+     * @return address The address of the operator.
      */
-    function operator() external view returns (address operatorAddress) {
-        operatorAddress = _axelarAmplifierGatewayStorage().operator;
+    function operator() external view returns (address) {
+        return _axelarAmplifierGatewayStorage().operator;
     }
 
     /**

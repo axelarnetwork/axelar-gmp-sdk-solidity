@@ -98,15 +98,11 @@ abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
      * @notice Compute the commandId for a message.
      * @param sourceChain The name of the source chain as registered on Axelar.
      * @param messageId The unique message id for the message.
-     * @return commandId The commandId for the message.
+     * @return The commandId for the message.
      */
-    function messageToCommandId(string calldata sourceChain, string calldata messageId)
-        public
-        pure
-        returns (bytes32 commandId)
-    {
+    function messageToCommandId(string calldata sourceChain, string calldata messageId) public pure returns (bytes32) {
         // Axelar doesn't allow `sourceChain` to contain '_', hence this encoding is umambiguous
-        commandId = keccak256(bytes(string.concat(sourceChain, '_', messageId)));
+        return keccak256(bytes(string.concat(sourceChain, '_', messageId)));
     }
 
     /*************************\
@@ -229,7 +225,7 @@ abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
 
     /**
      * @dev For backwards compatibility with `validateContractCall`, `commandId` is used here instead of `messageId`.
-     * @return hash the message hash
+     * @return bytes32 the message hash
      */
     function _messageHash(
         bytes32 commandId,
@@ -237,8 +233,8 @@ abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
         string calldata sourceAddress,
         address contractAddress,
         bytes32 payloadHash
-    ) internal pure returns (bytes32 hash) {
-        hash = keccak256(abi.encode(commandId, sourceChain, sourceAddress, contractAddress, payloadHash));
+    ) internal pure returns (bytes32) {
+        return keccak256(abi.encode(commandId, sourceChain, sourceAddress, contractAddress, payloadHash));
     }
 
     /**

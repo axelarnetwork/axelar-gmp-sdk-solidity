@@ -22,7 +22,7 @@ interface IInterchainTransferSent {
         string destinationContractAddress,
         bytes recipient,
         address token,
-        uint256 amount,
+        uint256 amount
     );
 }
 
@@ -41,11 +41,5 @@ interface IInterchainTransferReceived {
      * @param token The address of the token contract on the destination chain.
      * @param amount The amount (in atomic units) of tokens received.
      */
-    event InterchainTransferReceived(
-        string sender,
-        string sourceChain,
-        bytes recipient,
-        address token,
-        uint256 amount,
-    );
+    event InterchainTransferReceived(string sender, string sourceChain, bytes recipient, address token, uint256 amount);
 }

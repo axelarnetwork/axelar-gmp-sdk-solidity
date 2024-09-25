@@ -130,10 +130,14 @@ describe('GMPExecutableWithToken', () => {
                 );
 
                 await expect(execute)
-                    .to.emit(GMPExecutableWithToken, 'ReceivedWithToken')
-                    .withArgs(num, tokenA.address, swapAmount)
-                    .to.emit(tokenA, 'Transfer')
-                    .withArgs(destinationChainGateway.address, GMPExecutableWithToken.address, swapAmount);
+                    .to.emit(GMPExecutableWithToken, 'InterchainTransferReceived')
+                    .withArgs(
+                        userWallet.address.toString(),
+                        sourceChain,
+                        GMPExecutableWithToken.address.toLowerCase(),
+                        await destinationChainGateway.tokenAddresses(symbolA),
+                        swapAmount,
+                    );
             });
         });
 

@@ -5,6 +5,8 @@ pragma solidity ^0.8.0;
 import { AxelarAmplifierGateway } from '../../gateway/AxelarAmplifierGateway.sol';
 
 contract TestAxelarAmplifierGateway is AxelarAmplifierGateway {
+    string public name = 'TestAxelarAmplifierGateway';
+
     constructor(
         uint256 previousSignersRetention_,
         bytes32 domainSeparator_,

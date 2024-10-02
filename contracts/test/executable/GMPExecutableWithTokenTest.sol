@@ -22,10 +22,10 @@ contract GMPExecutableWithTokenTest is AxelarGMPExecutableWithToken, IInterchain
     }
 
     function _executeWithToken(
-        bytes32 /* commandId */,
+        bytes32 /*commandId*/,
         string calldata sourceChain,
         string calldata sourceAddress,
-        bytes calldata /* payload */,
+        bytes calldata /*payload*/,
         string calldata tokenSymbol,
         uint256 amount
     ) internal override {

@@ -46,7 +46,7 @@ interface IInterchainTransferReceived {
         string sourceChain,
         string sourceAddress,
         bytes sender,
-        bytes recipient,
+        address indexed recipient,
         address token,
         uint256 amount
     );

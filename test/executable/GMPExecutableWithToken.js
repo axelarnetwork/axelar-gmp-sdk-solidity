@@ -2,7 +2,7 @@
 
 const chai = require('chai');
 const {
-    utils: { defaultAbiCoder, keccak256, id },
+    utils: { defaultAbiCoder, toUtf8Bytes, keccak256, id },
 } = require('ethers');
 const { expect } = chai;
 const { ethers } = require('hardhat');
@@ -30,7 +30,6 @@ describe('GMPExecutableWithToken', () => {
 
     before(async () => {
         [ownerWallet, userWallet] = await ethers.getSigners();
-
         gatewayFactory = await ethers.getContractFactory('MockGateway', ownerWallet);
         tokenFactory = await ethers.getContractFactory('ERC20MintableBurnable', ownerWallet);
         GMPExecutableWithTokenFactory = await ethers.getContractFactory('GMPExecutableWithTokenTest', ownerWallet);
@@ -86,6 +85,7 @@ describe('GMPExecutableWithToken', () => {
                 const approveCommandId = getRandomID();
                 const sourceTxHash = keccak256('0x123abc123abc');
                 const sourceEventIndex = 17;
+                const userWalletAddress = userWallet.address.toString();
 
                 const approveWithMintData = defaultAbiCoder.encode(
                     ['string', 'string', 'address', 'bytes32', 'string', 'uint256', 'bytes32', 'uint256'],
@@ -111,7 +111,7 @@ describe('GMPExecutableWithToken', () => {
                     .withArgs(
                         approveCommandId,
                         sourceChain,
-                        userWallet.address.toString(),
+                        userWalletAddress,
                         GMPExecutableWithToken.address,
                         payloadHash,
                         symbolA,
@@ -123,7 +123,7 @@ describe('GMPExecutableWithToken', () => {
                 const execute = await GMPExecutableWithToken.executeWithToken(
                     approveCommandId,
                     sourceChain,
-                    userWallet.address.toString(),
+                    userWalletAddress,
                     payload,
                     symbolA,
                     swapAmount,
@@ -133,9 +133,9 @@ describe('GMPExecutableWithToken', () => {
                     .to.emit(GMPExecutableWithToken, 'InterchainTransferReceived')
                     .withArgs(
                         sourceChain,
-                        userWallet.address.toString(),
-                        payload,
-                        GMPExecutableWithToken.address.toLowerCase(),
+                        userWalletAddress,
+                        toUtf8Bytes(userWalletAddress),
+                        GMPExecutableWithToken.address,
                         await destinationChainGateway.tokenAddresses(symbolA),
                         swapAmount,
                     );

@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import { AxelarGMPExecutableWithToken } from '../../executable/AxelarGMPExecutableWithToken.sol';
-import { IInterchainTransferReceived } from '../../interfaces/IAxelarGMPTransfer.sol';
+import { IInterchainTransferReceived } from '../../interfaces/IInterchainTransfer.sol';
 
 contract GMPExecutableWithTokenTest is AxelarGMPExecutableWithToken, IInterchainTransferReceived {
     event Received(uint256 num);
@@ -22,10 +22,10 @@ contract GMPExecutableWithTokenTest is AxelarGMPExecutableWithToken, IInterchain
     }
 
     function _executeWithToken(
-        bytes32 /*commandId*/,
+        bytes32 /* commandId */,
         string calldata sourceChain,
         string calldata sourceAddress,
-        bytes calldata payload,
+        bytes calldata /* payload */,
         string calldata tokenSymbol,
         uint256 amount
     ) internal override {
@@ -34,7 +34,7 @@ contract GMPExecutableWithTokenTest is AxelarGMPExecutableWithToken, IInterchain
             sourceChain,
             sourceAddress,
             bytes(sourceAddress),
-            abi.encodePacked(address(this)),
+            address(this),
             gatewayWithToken().tokenAddresses(tokenSymbol),
             amount
         );

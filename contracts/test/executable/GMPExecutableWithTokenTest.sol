@@ -33,7 +33,7 @@ contract GMPExecutableWithTokenTest is AxelarGMPExecutableWithToken, IInterchain
         emit InterchainTransferReceived(
             sourceChain,
             sourceAddress,
-            payload,
+            bytes(sourceAddress),
             abi.encodePacked(address(this)),
             gatewayWithToken().tokenAddresses(tokenSymbol),
             amount

@@ -53,7 +53,7 @@ contract BaseMultisig is IBaseMultisig {
 
     /**
      * @notice Returns the current signer threshold
-     * @return uint The signer threshold
+     * @return uint256 The signer threshold
      */
     function signerThreshold() external view override returns (uint256) {
         return signers.threshold;

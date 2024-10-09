@@ -2,14 +2,15 @@
 
 pragma solidity ^0.8.0;
 
-import { AxelarExecutable } from '../../executable/AxelarExecutable.sol';
+import { AxelarGMPExecutable } from '../../executable/AxelarGMPExecutable.sol';
 
-contract DestinationChainReceiver is AxelarExecutable {
+contract DestinationChainReceiver is AxelarGMPExecutable {
     event Received(uint256 num);
 
-    constructor(address gatewayAddress) AxelarExecutable(gatewayAddress) {}
+    constructor(address gatewayAddress) AxelarGMPExecutable(gatewayAddress) {}
 
     function _execute(
+        bytes32, /*commandId*/
         string calldata, /*sourceChain*/
         string calldata, /*sourceAddress*/
         bytes calldata payload

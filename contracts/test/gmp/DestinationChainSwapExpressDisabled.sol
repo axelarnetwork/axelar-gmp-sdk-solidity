@@ -3,7 +3,6 @@
 pragma solidity ^0.8.0;
 
 import { AxelarGMPExecutableWithToken } from '../../executable/AxelarGMPExecutableWithToken.sol';
-import { IAxelarGMPGatewayWithToken } from '../../interfaces/IAxelarGMPGatewayWithToken.sol';
 import { IERC20 } from '../../interfaces/IERC20.sol';
 import { DestinationChainTokenSwapper } from './DestinationChainTokenSwapper.sol';
 
@@ -35,14 +34,14 @@ contract DestinationChainSwapExpressDisabled is AxelarGMPExecutableWithToken {
     ) internal override {
         (string memory tokenSymbolB, string memory recipient) = abi.decode(payload, (string, string));
 
-        address tokenA = IAxelarGMPGatewayWithToken(gatewayAddress).tokenAddresses(tokenSymbolA);
-        address tokenB = IAxelarGMPGatewayWithToken(gatewayAddress).tokenAddresses(tokenSymbolB);
+        address tokenA = gatewayWithToken().tokenAddresses(tokenSymbolA);
+        address tokenB = gatewayWithToken().tokenAddresses(tokenSymbolB);
 
         IERC20(tokenA).approve(address(swapper), amount);
         uint256 convertedAmount = swapper.swap(tokenA, tokenB, amount, address(this));
 
-        IERC20(tokenB).approve(address(gatewayAddress), convertedAmount);
-        IAxelarGMPGatewayWithToken(gatewayAddress).sendToken(sourceChain, recipient, tokenSymbolB, convertedAmount);
+        IERC20(tokenB).approve(address(gateway()), convertedAmount);
+        gatewayWithToken().sendToken(sourceChain, recipient, tokenSymbolB, convertedAmount);
     }
 
     function contractId() external pure returns (bytes32) {

@@ -2,8 +2,15 @@
 
 pragma solidity ^0.8.0;
 
-import { AxelarExecutable } from '../../executable/AxelarExecutable.sol';
+import { AxelarGMPExecutable } from '../../executable/AxelarGMPExecutable.sol';
 
-contract TestAxelarExecutable is AxelarExecutable {
-    constructor(address gateway_) AxelarExecutable(gateway_) {}
+contract TestAxelarGMPExecutable is AxelarGMPExecutable {
+    constructor(address gateway_) AxelarGMPExecutable(gateway_) {}
+
+    function _execute(
+        bytes32, /*commandId*/
+        string calldata, /*sourceChain*/
+        string calldata, /*sourceAddress*/
+        bytes calldata /*payload*/
+    ) internal override {}
 }

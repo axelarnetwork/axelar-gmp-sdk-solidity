@@ -2,44 +2,46 @@
 
 pragma solidity ^0.8.0;
 
-import { AxelarExecutable } from '../../executable/AxelarExecutable.sol';
+import { AxelarGMPExecutableWithToken } from '../../executable/AxelarGMPExecutableWithToken.sol';
 import { IERC20 } from '../../interfaces/IERC20.sol';
 import { DestinationChainTokenSwapper } from './DestinationChainTokenSwapper.sol';
 
-contract DestinationChainSwapExpressDisabled is AxelarExecutable {
+contract DestinationChainSwapExpressDisabled is AxelarGMPExecutableWithToken {
     DestinationChainTokenSwapper public immutable swapper;
 
-    event Executed(string sourceChain, string sourceAddress, bytes payload);
+    event Executed(bytes32 commandId, string sourceChain, string sourceAddress, bytes payload);
 
-    constructor(address gatewayAddress, address swapperAddress) AxelarExecutable(gatewayAddress) {
+    constructor(address gatewayAddress, address swapperAddress) AxelarGMPExecutableWithToken(gatewayAddress) {
         swapper = DestinationChainTokenSwapper(swapperAddress);
     }
 
     function _execute(
+        bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
     ) internal override {
-        emit Executed(sourceChain, sourceAddress, payload);
+        emit Executed(commandId, sourceChain, sourceAddress, payload);
     }
 
     function _executeWithToken(
+        bytes32, /*commandId*/
         string calldata sourceChain,
-        string calldata,
+        string calldata, /*sourceAddress*/
         bytes calldata payload,
         string calldata tokenSymbolA,
         uint256 amount
     ) internal override {
         (string memory tokenSymbolB, string memory recipient) = abi.decode(payload, (string, string));
 
-        address tokenA = gateway.tokenAddresses(tokenSymbolA);
-        address tokenB = gateway.tokenAddresses(tokenSymbolB);
+        address tokenA = gatewayWithToken().tokenAddresses(tokenSymbolA);
+        address tokenB = gatewayWithToken().tokenAddresses(tokenSymbolB);
 
         IERC20(tokenA).approve(address(swapper), amount);
         uint256 convertedAmount = swapper.swap(tokenA, tokenB, amount, address(this));
 
-        IERC20(tokenB).approve(address(gateway), convertedAmount);
-        gateway.sendToken(sourceChain, recipient, tokenSymbolB, convertedAmount);
+        IERC20(tokenB).approve(address(gateway()), convertedAmount);
+        gatewayWithToken().sendToken(sourceChain, recipient, tokenSymbolB, convertedAmount);
     }
 
     function contractId() external pure returns (bytes32) {

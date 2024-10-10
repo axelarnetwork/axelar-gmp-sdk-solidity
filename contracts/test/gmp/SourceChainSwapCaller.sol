@@ -2,11 +2,11 @@
 
 pragma solidity ^0.8.0;
 
-import { IAxelarGateway } from '../../interfaces/IAxelarGateway.sol';
+import { IAxelarGatewayWithToken } from '../../interfaces/IAxelarGatewayWithToken.sol';
 import { IERC20 } from '../../interfaces/IERC20.sol';
 
 contract SourceChainSwapCaller {
-    IAxelarGateway public gateway;
+    IAxelarGatewayWithToken public gateway;
     string public destinationChain;
     string public executableAddress;
 
@@ -15,7 +15,7 @@ contract SourceChainSwapCaller {
         string memory destinationChain_,
         string memory executableAddress_
     ) {
-        gateway = IAxelarGateway(gateway_);
+        gateway = IAxelarGatewayWithToken(gateway_);
         destinationChain = destinationChain_;
         executableAddress = executableAddress_;
     }

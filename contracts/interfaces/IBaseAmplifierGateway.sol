@@ -2,13 +2,13 @@
 
 pragma solidity ^0.8.0;
 
-import { IAxelarGMPGateway } from './IAxelarGMPGateway.sol';
+import { IAxelarGateway } from './IAxelarGateway.sol';
 
 /**
  * @title IBaseAmplifierGateway
  * @dev Interface for the Base Axelar Amplifier Gateway that supports cross-chain messaging.
  */
-interface IBaseAmplifierGateway is IAxelarGMPGateway {
+interface IBaseAmplifierGateway is IAxelarGateway {
     /**********\
     |* Errors *|
     \**********/

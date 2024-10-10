@@ -2,26 +2,26 @@
 
 pragma solidity ^0.8.0;
 
-import { AxelarGMPExecutable } from '../executable/AxelarGMPExecutable.sol';
-import { AxelarGMPExecutableWithToken } from '../executable/AxelarGMPExecutableWithToken.sol';
-import { IAxelarGMPExecutable } from '../interfaces/IAxelarGMPExecutable.sol';
-import { IAxelarGMPExecutableWithToken } from '../interfaces/IAxelarGMPExecutableWithToken.sol';
+import { AxelarExecutable } from '../executable/AxelarExecutable.sol';
+import { AxelarExecutableWithToken } from '../executable/AxelarExecutableWithToken.sol';
+import { IAxelarExecutable } from '../interfaces/IAxelarExecutable.sol';
+import { IAxelarExecutableWithToken } from '../interfaces/IAxelarExecutableWithToken.sol';
 import { ExpressExecutorTracker } from './ExpressExecutorTracker.sol';
 import { SafeTokenTransferFrom, SafeTokenTransfer } from '../libs/SafeTransfer.sol';
 import { IERC20 } from '../interfaces/IERC20.sol';
 
-abstract contract AxelarExpressExecutable is ExpressExecutorTracker, AxelarGMPExecutableWithToken {
+abstract contract AxelarExpressExecutable is ExpressExecutorTracker, AxelarExecutableWithToken {
     using SafeTokenTransfer for IERC20;
     using SafeTokenTransferFrom for IERC20;
 
-    constructor(address gateway_) AxelarGMPExecutableWithToken(gateway_) {}
+    constructor(address gateway_) AxelarExecutableWithToken(gateway_) {}
 
     function execute(
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes calldata payload
-    ) external override(AxelarGMPExecutable, IAxelarGMPExecutable) {
+    ) external override(AxelarExecutable, IAxelarExecutable) {
         bytes32 payloadHash = keccak256(payload);
 
         if (!gateway().validateContractCall(commandId, sourceChain, sourceAddress, payloadHash))
@@ -44,7 +44,7 @@ abstract contract AxelarExpressExecutable is ExpressExecutorTracker, AxelarGMPEx
         bytes calldata payload,
         string calldata tokenSymbol,
         uint256 amount
-    ) external override(AxelarGMPExecutableWithToken, IAxelarGMPExecutableWithToken) {
+    ) external override(AxelarExecutableWithToken, IAxelarExecutableWithToken) {
         bytes32 payloadHash = keccak256(payload);
         if (
             !gatewayWithToken().validateContractCallAndMint(

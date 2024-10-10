@@ -2,14 +2,14 @@
 
 pragma solidity ^0.8.0;
 
-import { IAxelarGMPGateway } from './IAxelarGMPGateway.sol';
+import { IAxelarGateway } from './IAxelarGateway.sol';
 
 /**
- * @title IAxelarGMPGatewayWithToken
+ * @title IAxelarGatewayWithToken
  * @dev Interface for the Axelar Gateway that supports cross-chain token transfers coupled with general message passing.
- * It extends IAxelarGMPGateway to include token-related functionality.
+ * It extends IAxelarGateway to include token-related functionality.
  */
-interface IAxelarGMPGatewayWithToken is IAxelarGMPGateway {
+interface IAxelarGatewayWithToken is IAxelarGateway {
     /**
      * @notice Emitted when a token is sent to another chain.
      * @dev Logs the attempt to send tokens to a recipient on another chain.

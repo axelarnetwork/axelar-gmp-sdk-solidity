@@ -2,16 +2,16 @@
 
 pragma solidity ^0.8.0;
 
-import { AxelarGMPExecutableWithToken } from '../../executable/AxelarGMPExecutableWithToken.sol';
+import { AxelarExecutableWithToken } from '../../executable/AxelarExecutableWithToken.sol';
 import { IERC20 } from '../../interfaces/IERC20.sol';
 import { DestinationChainTokenSwapper } from './DestinationChainTokenSwapper.sol';
 
-contract DestinationChainSwapExpressDisabled is AxelarGMPExecutableWithToken {
+contract DestinationChainSwapExpressDisabled is AxelarExecutableWithToken {
     DestinationChainTokenSwapper public immutable swapper;
 
     event Executed(bytes32 commandId, string sourceChain, string sourceAddress, bytes payload);
 
-    constructor(address gatewayAddress, address swapperAddress) AxelarGMPExecutableWithToken(gatewayAddress) {
+    constructor(address gatewayAddress, address swapperAddress) AxelarExecutableWithToken(gatewayAddress) {
         swapper = DestinationChainTokenSwapper(swapperAddress);
     }
 

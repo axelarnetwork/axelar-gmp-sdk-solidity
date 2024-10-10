@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import { AxelarGMPExecutable } from '../executable/AxelarGMPExecutable.sol';
+import { AxelarExecutable } from '../executable/AxelarExecutable.sol';
 import { TimeLock } from '../utils/TimeLock.sol';
 import { SafeNativeTransfer } from '../libs/SafeNativeTransfer.sol';
 import { IInterchainGovernance } from '../interfaces/IInterchainGovernance.sol';
@@ -13,7 +13,7 @@ import { Caller } from '../utils/Caller.sol';
  * @notice This contract handles cross-chain governance actions. It includes functionality
  * to create, cancel, and execute governance proposals.
  */
-contract InterchainGovernance is AxelarGMPExecutable, TimeLock, Caller, IInterchainGovernance {
+contract InterchainGovernance is AxelarExecutable, TimeLock, Caller, IInterchainGovernance {
     using SafeNativeTransfer for address;
 
     enum GovernanceCommand {
@@ -38,7 +38,7 @@ contract InterchainGovernance is AxelarGMPExecutable, TimeLock, Caller, IInterch
         string memory governanceChain_,
         string memory governanceAddress_,
         uint256 minimumTimeDelay
-    ) AxelarGMPExecutable(gateway_) TimeLock(minimumTimeDelay) {
+    ) AxelarExecutable(gateway_) TimeLock(minimumTimeDelay) {
         if (bytes(governanceChain_).length == 0 || bytes(governanceAddress_).length == 0) {
             revert InvalidAddress();
         }

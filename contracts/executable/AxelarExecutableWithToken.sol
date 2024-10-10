@@ -2,21 +2,21 @@
 
 pragma solidity ^0.8.0;
 
-import { IAxelarGMPGatewayWithToken } from '../interfaces/IAxelarGMPGatewayWithToken.sol';
-import { IAxelarGMPExecutableWithToken } from '../interfaces/IAxelarGMPExecutableWithToken.sol';
-import { AxelarGMPExecutable } from './AxelarGMPExecutable.sol';
+import { IAxelarGatewayWithToken } from '../interfaces/IAxelarGatewayWithToken.sol';
+import { IAxelarExecutableWithToken } from '../interfaces/IAxelarExecutableWithToken.sol';
+import { AxelarExecutable } from './AxelarExecutable.sol';
 
 /**
- * @title AxelarGMPExecutableWithToken
+ * @title AxelarExecutableWithToken
  * @dev Abstract contract to be inherited by contracts that need to execute cross-chain commands involving tokens via Axelar's Gateway.
- * It extends AxelarGMPExecutable and implements the IAxelarGMPExecutableWithToken interface.
+ * It extends AxelarExecutable and implements the IAxelarExecutableWithToken interface.
  */
-abstract contract AxelarGMPExecutableWithToken is IAxelarGMPExecutableWithToken, AxelarGMPExecutable {
+abstract contract AxelarExecutableWithToken is IAxelarExecutableWithToken, AxelarExecutable {
     /**
-     * @dev Contract constructor that sets the Axelar Gateway With Token address and initializes AxelarGMPExecutable.
+     * @dev Contract constructor that sets the Axelar Gateway With Token address and initializes AxelarExecutable.
      * @param gateway_ The address of the Axelar Gateway With Token contract.
      */
-    constructor(address gateway_) AxelarGMPExecutable(gateway_) {}
+    constructor(address gateway_) AxelarExecutable(gateway_) {}
 
     /**
      * @notice Executes the cross-chain command with token transfer after validating it with the Axelar Gateway.
@@ -74,10 +74,10 @@ abstract contract AxelarGMPExecutableWithToken is IAxelarGMPExecutableWithToken,
     ) internal virtual;
 
     /**
-     * @notice Returns the address of the IAxelarGMPGatewayWithToken contract.
+     * @notice Returns the address of the IAxelarGatewayWithToken contract.
      * @return The Axelar GMP Gateway with Token instance.
      */
-    function gatewayWithToken() internal view returns (IAxelarGMPGatewayWithToken) {
-        return IAxelarGMPGatewayWithToken(gatewayAddress);
+    function gatewayWithToken() internal view returns (IAxelarGatewayWithToken) {
+        return IAxelarGatewayWithToken(gatewayAddress);
     }
 }

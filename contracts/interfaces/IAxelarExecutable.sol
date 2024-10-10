@@ -2,14 +2,14 @@
 
 pragma solidity ^0.8.0;
 
-import { IAxelarGMPGateway } from './IAxelarGMPGateway.sol';
+import { IAxelarGateway } from './IAxelarGateway.sol';
 
 /**
- * @title IAxelarGMPExecutable
+ * @title IAxelarExecutable
  * @dev Interface for a contract that is executable by Axelar Gateway's cross-chain message passing.
  * It defines a standard interface to execute commands sent from another chain.
  */
-interface IAxelarGMPExecutable {
+interface IAxelarExecutable {
     /**
      * @dev Thrown when a function is called with an invalid address.
      */
@@ -24,7 +24,7 @@ interface IAxelarGMPExecutable {
      * @notice Returns the address of the AxelarGMPGateway contract.
      * @return The Axelar GMP Gateway contract associated with this executable contract.
      */
-    function gateway() external view returns (IAxelarGMPGateway);
+    function gateway() external view returns (IAxelarGateway);
 
     /**
      * @notice Executes the specified command sent from another chain.

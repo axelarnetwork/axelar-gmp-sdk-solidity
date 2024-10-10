@@ -11,13 +11,13 @@ const {
 } = ethers;
 const getRandomID = () => id(Math.floor(Math.random() * 1e10).toString());
 
-describe('GMPExecutable', () => {
+describe('AxelarExecutable', () => {
     let gatewayFactory;
 
     let destinationChainGateway;
 
-    let GMPExecutableFactory;
-    let GMPExecutable;
+    let AxelarExecutableFactory;
+    let AxelarExecutable;
 
     let ownerWallet;
     let userWallet;
@@ -29,22 +29,22 @@ describe('GMPExecutable', () => {
         [ownerWallet, userWallet] = await ethers.getSigners();
 
         gatewayFactory = await ethers.getContractFactory('MockGateway', ownerWallet);
-        GMPExecutableFactory = await ethers.getContractFactory('GMPExecutableTest', ownerWallet);
+        AxelarExecutableFactory = await ethers.getContractFactory('AxelarExecutableTest', ownerWallet);
     });
 
-    describe('AxelarGMPExecutable', () => {
+    describe('AxelarAxelarExecutable', () => {
         describe('Call Contract', () => {
             beforeEach(async () => {
                 destinationChainGateway = await gatewayFactory.deploy().then((d) => d.deployed());
 
-                GMPExecutable = await GMPExecutableFactory.deploy(destinationChainGateway.address).then((d) =>
+                AxelarExecutable = await AxelarExecutableFactory.deploy(destinationChainGateway.address).then((d) =>
                     d.deployed(),
                 );
             });
 
             it('should revert when deployed with empty gateway', async () => {
                 try {
-                    await GMPExecutableFactory.deploy(AddressZero);
+                    await AxelarExecutableFactory.deploy(AddressZero);
                 } catch (e) {
                     expect(e.message).to.contain('InvalidAddress');
                 }
@@ -55,14 +55,14 @@ describe('GMPExecutable', () => {
 
                 const approveCommandId = getRandomID();
 
-                const receive = GMPExecutable.execute(
+                const receive = AxelarExecutable.execute(
                     approveCommandId,
                     sourceChain,
                     userWallet.address.toString(),
                     payload,
                 );
 
-                await expect(receive).to.be.revertedWithCustomError(GMPExecutable, 'NotApprovedByGateway');
+                await expect(receive).to.be.revertedWithCustomError(AxelarExecutable, 'NotApprovedByGateway');
             });
 
             it('should call contract on another chain', async () => {
@@ -78,7 +78,7 @@ describe('GMPExecutable', () => {
                     [
                         sourceChain,
                         userWallet.address,
-                        GMPExecutable.address,
+                        AxelarExecutable.address,
                         payloadHash,
                         sourceTxHash,
                         sourceEventIndex,
@@ -93,20 +93,20 @@ describe('GMPExecutable', () => {
                         approveCommandId,
                         sourceChain,
                         userWallet.address.toString(),
-                        GMPExecutable.address,
+                        AxelarExecutable.address,
                         payloadHash,
                         sourceTxHash,
                         sourceEventIndex,
                     );
 
-                const receive = await GMPExecutable.execute(
+                const receive = await AxelarExecutable.execute(
                     approveCommandId,
                     sourceChain,
                     userWallet.address.toString(),
                     payload,
                 );
 
-                await expect(receive).to.emit(GMPExecutable, 'Received').withArgs(num);
+                await expect(receive).to.emit(AxelarExecutable, 'Received').withArgs(num);
             });
         });
     });

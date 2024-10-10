@@ -2,13 +2,13 @@
 
 pragma solidity ^0.8.0;
 
-import { IAxelarGateway } from '../../interfaces/IAxelarGateway.sol';
+import { IAxelarGatewayWithToken } from '../../interfaces/IAxelarGatewayWithToken.sol';
 import { IERC20 } from '../../interfaces/IERC20.sol';
 import { IERC20MintableBurnable } from '../../interfaces/IERC20MintableBurnable.sol';
 
 import { ERC20MintableBurnable } from '../token/ERC20MintableBurnable.sol';
 
-contract MockGateway is IAxelarGateway {
+contract MockGateway is IAxelarGatewayWithToken {
     enum TokenType {
         InternalBurnable,
         InternalBurnableFrom,
@@ -44,6 +44,36 @@ contract MockGateway is IAxelarGateway {
     mapping(bytes32 => uint256) public uints;
     mapping(bytes32 => string) public strings;
     mapping(bytes32 => bytes32) public bytes32s;
+
+    event Executed(bytes32 indexed commandId);
+    event TokenDeployed(string symbol, address tokenAddresses);
+    event ContractCallApproved(
+        bytes32 indexed commandId,
+        string sourceChain,
+        string sourceAddress,
+        address indexed contractAddress,
+        bytes32 indexed payloadHash,
+        bytes32 sourceTxHash,
+        uint256 sourceEventIndex
+    );
+
+    event TokenMintLimitUpdated(string symbol, uint256 limit);
+
+    error NotSelf();
+    error InvalidCodeHash();
+    error SetupFailed();
+    error InvalidAuthModule();
+    error InvalidTokenDeployer();
+    error InvalidAmount();
+    error InvalidCommands();
+    error TokenDoesNotExist(string symbol);
+    error TokenAlreadyExists(string symbol);
+    error TokenDeployFailed(string symbol);
+    error TokenContractDoesNotExist(address token);
+    error BurnFailed(string symbol);
+    error MintFailed(string symbol);
+    error InvalidSetMintLimitsParams();
+    error ExceedMintLimit(string symbol);
 
     function governance() external pure returns (address) {
         return address(0);
@@ -180,27 +210,27 @@ contract MockGateway is IAxelarGateway {
         return address(0);
     }
 
-    function tokenMintLimit(string memory symbol) public view override returns (uint256) {
+    function tokenMintLimit(string memory symbol) public view returns (uint256) {
         return uints[_getTokenMintLimitKey(symbol)];
     }
 
-    function tokenMintAmount(string memory symbol) public view override returns (uint256) {
+    function tokenMintAmount(string memory symbol) public view returns (uint256) {
         return uints[_getTokenMintAmountKey(symbol, block.timestamp / 6 hours)];
     }
 
-    function allTokensFrozen() external pure override returns (bool) {
+    function allTokensFrozen() external pure returns (bool) {
         return false;
     }
 
-    function implementation() public view override returns (address) {
+    function implementation() public view returns (address) {
         return addresses[KEY_IMPLEMENTATION];
     }
 
-    function tokenAddresses(string memory symbol) public view override returns (address) {
+    function tokenAddresses(string memory symbol) public view returns (address) {
         return addresses[_getTokenAddressKey(symbol)];
     }
 
-    function tokenFrozen(string memory) external pure override returns (bool) {
+    function tokenFrozen(string memory) external pure returns (bool) {
         return false;
     }
 
@@ -548,19 +578,19 @@ contract MockGateway is IAxelarGateway {
     |* Unimplemented *|
     \*****************/
 
-    function execute(bytes calldata input) external override {}
+    function execute(bytes calldata input) external {}
 
-    function setTokenMintLimits(string[] calldata symbols, uint256[] calldata limits) external override {}
+    function setTokenMintLimits(string[] calldata symbols, uint256[] calldata limits) external {}
 
-    function setup(bytes calldata params) external override {}
+    function setup(bytes calldata params) external {}
 
     function upgrade(
         address newImplementation,
         bytes32 newImplementationCodeHash,
         bytes calldata setupParams
-    ) external override {}
+    ) external {}
 
-    function contractId() external pure override returns (bytes32) {
+    function contractId() external pure returns (bytes32) {
         return keccak256('MockGateway');
     }
 }

@@ -2,18 +2,18 @@
 
 pragma solidity ^0.8.0;
 
-import { IAxelarGMPExecutable } from './IAxelarGMPExecutable.sol';
+import { IAxelarExecutable } from './IAxelarExecutable.sol';
 
 /**
- * @title IAxelarGMPExecutableWithToken
+ * @title IAxelarExecutableWithToken
  * @dev Interface for a contract that can execute commands from Axelar Gateway involving token transfers.
- * It extends IAxelarGMPExecutable to include token-related functionality.
+ * It extends IAxelarExecutable to include token-related functionality.
  */
-interface IAxelarGMPExecutableWithToken is IAxelarGMPExecutable {
+interface IAxelarExecutableWithToken is IAxelarExecutable {
     /**
      * @notice Executes the specified command sent from another chain and includes a token transfer.
      * @dev This function should be implemented to handle incoming commands that include token transfers.
-     * It will be called by an implementation of `IAxelarGMPGatewayWithToken`.
+     * It will be called by an implementation of `IAxelarGatewayWithToken`.
      * @param commandId The identifier of the command to execute.
      * @param sourceChain The name of the source chain from where the command originated.
      * @param sourceAddress The address on the source chain that sent the command.

@@ -20,7 +20,6 @@ contract MockGateway is IAxelarGatewayWithToken {
     bytes32 internal constant PREFIX_TOKEN_TYPE = keccak256('token-type');
     bytes32 internal constant PREFIX_CONTRACT_CALL_APPROVED = keccak256('contract-call-approved');
     bytes32 internal constant PREFIX_CONTRACT_CALL_APPROVED_WITH_MINT = keccak256('contract-call-approved-with-mint');
-    bytes32 internal constant PREFIX_TOKEN_DAILY_MINT_AMOUNT = keccak256('token-daily-mint-amount');
 
     mapping(bytes32 => bool) public bools;
     mapping(bytes32 => address) public addresses;
@@ -153,10 +152,6 @@ contract MockGateway is IAxelarGatewayWithToken {
     |* Getters *|
     \***********/
 
-    function tokenMintAmount(string memory symbol) public view returns (uint256) {
-        return uints[_getTokenMintAmountKey(symbol, block.timestamp / 6 hours)];
-    }
-
     function tokenAddresses(string memory symbol) public view returns (address) {
         return addresses[_getTokenAddressKey(symbol)];
     }
@@ -282,8 +277,6 @@ contract MockGateway is IAxelarGatewayWithToken {
     ) internal {
         address tokenAddress = tokenAddresses(symbol);
 
-        _setTokenMintAmount(symbol, tokenMintAmount(symbol) + amount);
-
         if (_getTokenType(symbol) == TokenType.External) {
             _callERC20Token(tokenAddress, abi.encodeWithSelector(IERC20.transfer.selector, account, amount));
         } else {
@@ -322,10 +315,6 @@ contract MockGateway is IAxelarGatewayWithToken {
     /********************\
     |* Pure Key Getters *|
     \********************/
-
-    function _getTokenMintAmountKey(string memory symbol, uint256 day) internal pure returns (bytes32) {
-        return keccak256(abi.encodePacked(PREFIX_TOKEN_DAILY_MINT_AMOUNT, symbol, day));
-    }
 
     function _getTokenTypeKey(string memory symbol) internal pure returns (bytes32) {
         return keccak256(abi.encodePacked(PREFIX_TOKEN_TYPE, symbol));
@@ -394,10 +383,6 @@ contract MockGateway is IAxelarGatewayWithToken {
     /********************\
     |* Internal Setters *|
     \********************/
-
-    function _setTokenMintAmount(string memory symbol, uint256 amount) internal {
-        uints[_getTokenMintAmountKey(symbol, block.timestamp / 6 hours)] = amount;
-    }
 
     function _setTokenType(string memory symbol, TokenType tokenType) internal {
         uints[_getTokenTypeKey(symbol)] = uint256(tokenType);

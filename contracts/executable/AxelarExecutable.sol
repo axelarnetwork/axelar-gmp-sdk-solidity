@@ -2,15 +2,15 @@
 
 pragma solidity ^0.8.0;
 
-import { IAxelarGMPGateway } from '../interfaces/IAxelarGMPGateway.sol';
-import { IAxelarGMPExecutable } from '../interfaces/IAxelarGMPExecutable.sol';
+import { IAxelarGateway } from '../interfaces/IAxelarGateway.sol';
+import { IAxelarExecutable } from '../interfaces/IAxelarExecutable.sol';
 
 /**
- * @title AxelarGMPExecutable
+ * @title AxelarExecutable
  * @dev Abstract contract to be inherited by contracts that need to execute cross-chain commands via Axelar's Gateway.
- * It implements the IAxelarGMPExecutable interface.
+ * It implements the IAxelarExecutable interface.
  */
-abstract contract AxelarGMPExecutable is IAxelarGMPExecutable {
+abstract contract AxelarExecutable is IAxelarExecutable {
     /// @dev Reference to the Axelar Gateway contract.
     address internal immutable gatewayAddress;
 
@@ -65,10 +65,10 @@ abstract contract AxelarGMPExecutable is IAxelarGMPExecutable {
     ) internal virtual;
 
     /**
-     * @notice Returns the address of the AxelarGMPGateway contract.
-     * @return The Axelar GMP Gateway instance.
+     * @notice Returns the address of the AxelarGateway contract.
+     * @return The Axelar Gateway instance.
      */
-    function gateway() public view returns (IAxelarGMPGateway) {
-        return IAxelarGMPGateway(gatewayAddress);
+    function gateway() public view returns (IAxelarGateway) {
+        return IAxelarGateway(gatewayAddress);
     }
 }

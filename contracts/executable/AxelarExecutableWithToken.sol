@@ -75,7 +75,7 @@ abstract contract AxelarExecutableWithToken is IAxelarExecutableWithToken, Axela
 
     /**
      * @notice Returns the address of the IAxelarGatewayWithToken contract.
-     * @return The Axelar GMP Gateway with Token instance.
+     * @return The Axelar Gateway with Token instance.
      */
     function gatewayWithToken() internal view returns (IAxelarGatewayWithToken) {
         return IAxelarGatewayWithToken(gatewayAddress);

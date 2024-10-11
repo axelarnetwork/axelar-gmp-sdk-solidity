@@ -13,12 +13,9 @@ const getRandomID = () => id(Math.floor(Math.random() * 1e10).toString());
 
 describe('AxelarExecutable', () => {
     let gatewayFactory;
-
     let destinationChainGateway;
-
-    let AxelarExecutableFactory;
-    let AxelarExecutable;
-
+    let executableFactory;
+    let executable;
     let ownerWallet;
     let userWallet;
 
@@ -29,7 +26,7 @@ describe('AxelarExecutable', () => {
         [ownerWallet, userWallet] = await ethers.getSigners();
 
         gatewayFactory = await ethers.getContractFactory('MockGateway', ownerWallet);
-        AxelarExecutableFactory = await ethers.getContractFactory('AxelarExecutableTest', ownerWallet);
+        executableFactory = await ethers.getContractFactory('AxelarExecutableTest', ownerWallet);
     });
 
     describe('AxelarAxelarExecutable', () => {
@@ -37,14 +34,12 @@ describe('AxelarExecutable', () => {
             beforeEach(async () => {
                 destinationChainGateway = await gatewayFactory.deploy().then((d) => d.deployed());
 
-                AxelarExecutable = await AxelarExecutableFactory.deploy(destinationChainGateway.address).then((d) =>
-                    d.deployed(),
-                );
+                executable = await executableFactory.deploy(destinationChainGateway.address).then((d) => d.deployed());
             });
 
             it('should revert when deployed with empty gateway', async () => {
                 try {
-                    await AxelarExecutableFactory.deploy(AddressZero);
+                    await executableFactory.deploy(AddressZero);
                 } catch (e) {
                     expect(e.message).to.contain('InvalidAddress');
                 }
@@ -55,14 +50,14 @@ describe('AxelarExecutable', () => {
 
                 const approveCommandId = getRandomID();
 
-                const receive = AxelarExecutable.execute(
+                const receive = executable.execute(
                     approveCommandId,
                     sourceChain,
                     userWallet.address.toString(),
                     payload,
                 );
 
-                await expect(receive).to.be.revertedWithCustomError(AxelarExecutable, 'NotApprovedByGateway');
+                await expect(receive).to.be.revertedWithCustomError(executable, 'NotApprovedByGateway');
             });
 
             it('should call contract on another chain', async () => {
@@ -75,14 +70,7 @@ describe('AxelarExecutable', () => {
 
                 const approveData = defaultAbiCoder.encode(
                     ['string', 'string', 'address', 'bytes32', 'bytes32', 'uint256'],
-                    [
-                        sourceChain,
-                        userWallet.address,
-                        AxelarExecutable.address,
-                        payloadHash,
-                        sourceTxHash,
-                        sourceEventIndex,
-                    ],
+                    [sourceChain, userWallet.address, executable.address, payloadHash, sourceTxHash, sourceEventIndex],
                 );
 
                 const approveExecute = await destinationChainGateway.approveContractCall(approveData, approveCommandId);
@@ -93,20 +81,20 @@ describe('AxelarExecutable', () => {
                         approveCommandId,
                         sourceChain,
                         userWallet.address.toString(),
-                        AxelarExecutable.address,
+                        executable.address,
                         payloadHash,
                         sourceTxHash,
                         sourceEventIndex,
                     );
 
-                const receive = await AxelarExecutable.execute(
+                const receive = await executable.execute(
                     approveCommandId,
                     sourceChain,
                     userWallet.address.toString(),
                     payload,
                 );
 
-                await expect(receive).to.emit(AxelarExecutable, 'Received').withArgs(num);
+                await expect(receive).to.emit(executable, 'Received').withArgs(num);
             });
         });
     });

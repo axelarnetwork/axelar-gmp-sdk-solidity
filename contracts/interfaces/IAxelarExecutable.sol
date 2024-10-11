@@ -21,8 +21,8 @@ interface IAxelarExecutable {
     error NotApprovedByGateway();
 
     /**
-     * @notice Returns the address of the AxelarGMPGateway contract.
-     * @return The Axelar GMP Gateway contract associated with this executable contract.
+     * @notice Returns the address of the AxelarGateway contract.
+     * @return The Axelar Gateway contract associated with this executable contract.
      */
     function gateway() external view returns (IAxelarGateway);
 

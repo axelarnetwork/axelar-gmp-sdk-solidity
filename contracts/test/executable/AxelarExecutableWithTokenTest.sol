@@ -3,8 +3,9 @@
 pragma solidity ^0.8.0;
 
 import { AxelarExecutableWithToken } from '../../executable/AxelarExecutableWithToken.sol';
+import { IInterchainTransferReceived } from '../../interfaces/IInterchainTransfer.sol';
 
-contract AxelarExecutableWithTokenTest is AxelarExecutableWithToken {
+contract AxelarExecutableWithTokenTest is AxelarExecutableWithToken, IInterchainTransferReceived {
     event Received(uint256 num);
     event ReceivedWithToken(uint256 num, address tokenAddress, uint256 amount);
 
@@ -22,13 +23,19 @@ contract AxelarExecutableWithTokenTest is AxelarExecutableWithToken {
 
     function _executeWithToken(
         bytes32, /*commandId*/
-        string calldata, /*sourceChain*/
-        string calldata, /*sourceAddress*/
-        bytes calldata payload,
+        string calldata sourceChain,
+        string calldata sourceAddress,
+        bytes calldata, /*payload*/
         string calldata tokenSymbol,
         uint256 amount
     ) internal override {
-        uint256 num = abi.decode(payload, (uint256));
-        emit ReceivedWithToken(num, gatewayWithToken().tokenAddresses(tokenSymbol), amount);
+        emit InterchainTransferReceived(
+            sourceChain,
+            sourceAddress,
+            bytes(sourceAddress),
+            address(this),
+            gatewayWithToken().tokenAddresses(tokenSymbol),
+            amount
+        );
     }
 }

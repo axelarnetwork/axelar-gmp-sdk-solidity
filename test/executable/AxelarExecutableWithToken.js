@@ -2,7 +2,7 @@
 
 const chai = require('chai');
 const {
-    utils: { defaultAbiCoder, keccak256, id },
+    utils: { defaultAbiCoder, toUtf8Bytes, keccak256, id },
 } = require('ethers');
 const { expect } = chai;
 const { ethers } = require('hardhat');
@@ -30,7 +30,6 @@ describe('AxelarExecutableWithToken', () => {
 
     before(async () => {
         [ownerWallet, userWallet] = await ethers.getSigners();
-
         gatewayFactory = await ethers.getContractFactory('MockGateway', ownerWallet);
         tokenFactory = await ethers.getContractFactory('ERC20MintableBurnable', ownerWallet);
         AxelarExecutableWithTokenFactory = await ethers.getContractFactory(
@@ -89,6 +88,7 @@ describe('AxelarExecutableWithToken', () => {
                 const approveCommandId = getRandomID();
                 const sourceTxHash = keccak256('0x123abc123abc');
                 const sourceEventIndex = 17;
+                const userWalletAddress = userWallet.address.toString();
 
                 const approveWithMintData = defaultAbiCoder.encode(
                     ['string', 'string', 'address', 'bytes32', 'string', 'uint256', 'bytes32', 'uint256'],
@@ -114,7 +114,7 @@ describe('AxelarExecutableWithToken', () => {
                     .withArgs(
                         approveCommandId,
                         sourceChain,
-                        userWallet.address.toString(),
+                        userWalletAddress,
                         AxelarExecutableWithToken.address,
                         payloadHash,
                         symbolA,
@@ -126,17 +126,22 @@ describe('AxelarExecutableWithToken', () => {
                 const execute = await AxelarExecutableWithToken.executeWithToken(
                     approveCommandId,
                     sourceChain,
-                    userWallet.address.toString(),
+                    userWalletAddress,
                     payload,
                     symbolA,
                     swapAmount,
                 );
 
                 await expect(execute)
-                    .to.emit(AxelarExecutableWithToken, 'ReceivedWithToken')
-                    .withArgs(num, tokenA.address, swapAmount)
-                    .to.emit(tokenA, 'Transfer')
-                    .withArgs(destinationChainGateway.address, AxelarExecutableWithToken.address, swapAmount);
+                    .to.emit(AxelarExecutableWithToken, 'InterchainTransferReceived')
+                    .withArgs(
+                        sourceChain,
+                        userWalletAddress,
+                        toUtf8Bytes(userWalletAddress),
+                        AxelarExecutableWithToken.address,
+                        await destinationChainGateway.tokenAddresses(symbolA),
+                        swapAmount,
+                    );
             });
         });
 

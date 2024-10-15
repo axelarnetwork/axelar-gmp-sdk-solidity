@@ -138,7 +138,7 @@ describe('AxelarExecutableWithToken', () => {
                         sourceChain,
                         userWalletAddress,
                         toUtf8Bytes(userWalletAddress),
-                        GMPExecutableWithToken.address,
+                        AxelarExecutableWithToken.address,
                         await destinationChainGateway.tokenAddresses(symbolA),
                         swapAmount,
                     );

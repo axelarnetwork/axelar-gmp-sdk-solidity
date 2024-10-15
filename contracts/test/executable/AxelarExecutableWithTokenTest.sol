@@ -12,9 +12,9 @@ contract AxelarExecutableWithTokenTest is AxelarExecutableWithToken, IInterchain
     constructor(address gatewayAddress) AxelarExecutableWithToken(gatewayAddress) {}
 
     function _execute(
-        bytes32 /*commandId*/,
-        string calldata /*sourceChain*/,
-        string calldata /*sourceAddress*/,
+        bytes32, /*commandId*/
+        string calldata, /*sourceChain*/
+        string calldata, /*sourceAddress*/
         bytes calldata payload
     ) internal override {
         uint256 num = abi.decode(payload, (uint256));
@@ -22,10 +22,10 @@ contract AxelarExecutableWithTokenTest is AxelarExecutableWithToken, IInterchain
     }
 
     function _executeWithToken(
-        bytes32 /*commandId*/,
+        bytes32, /*commandId*/
         string calldata sourceChain,
         string calldata sourceAddress,
-        bytes calldata /*payload*/,
+        bytes calldata, /*payload*/
         string calldata tokenSymbol,
         uint256 amount
     ) internal override {

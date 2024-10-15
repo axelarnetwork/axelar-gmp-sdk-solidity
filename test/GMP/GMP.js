@@ -66,7 +66,6 @@ describe('GMP', () => {
                 destinationChainGateway = await gatewayFactory.deploy().then((d) => d.deployed());
 
                 tokenA = await tokenFactory.deploy(nameA, symbolA, decimals).then((d) => d.deployed());
-
                 tokenB = await tokenFactory.deploy(nameB, symbolB, decimals).then((d) => d.deployed());
 
                 await sourceChainGateway.deployToken(

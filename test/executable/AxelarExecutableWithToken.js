@@ -8,15 +8,15 @@ const { expect } = chai;
 const { ethers } = require('hardhat');
 const getRandomID = () => id(Math.floor(Math.random() * 1e10).toString());
 
-describe('GMPExecutableWithToken', () => {
+describe('AxelarExecutableWithToken', () => {
     let gatewayFactory;
     let tokenFactory;
 
     let destinationChainGateway;
     let tokenA;
 
-    let GMPExecutableWithTokenFactory;
-    let GMPExecutableWithToken;
+    let AxelarExecutableWithTokenFactory;
+    let AxelarExecutableWithToken;
 
     let ownerWallet;
     let userWallet;
@@ -32,10 +32,13 @@ describe('GMPExecutableWithToken', () => {
         [ownerWallet, userWallet] = await ethers.getSigners();
         gatewayFactory = await ethers.getContractFactory('MockGateway', ownerWallet);
         tokenFactory = await ethers.getContractFactory('ERC20MintableBurnable', ownerWallet);
-        GMPExecutableWithTokenFactory = await ethers.getContractFactory('GMPExecutableWithTokenTest', ownerWallet);
+        AxelarExecutableWithTokenFactory = await ethers.getContractFactory(
+            'AxelarExecutableWithTokenTest',
+            ownerWallet,
+        );
     });
 
-    describe('AxelarGMPExecutableWithToken', () => {
+    describe('AxelarAxelarExecutableWithToken', () => {
         describe('Call Contract with Token', () => {
             beforeEach(async () => {
                 destinationChainGateway = await gatewayFactory.deploy().then((d) => d.deployed());
@@ -52,7 +55,7 @@ describe('GMPExecutableWithToken', () => {
                     )
                     .then((t) => t.wait());
 
-                GMPExecutableWithToken = await GMPExecutableWithTokenFactory.deploy(
+                AxelarExecutableWithToken = await AxelarExecutableWithTokenFactory.deploy(
                     destinationChainGateway.address,
                 ).then((d) => d.deployed());
 
@@ -66,7 +69,7 @@ describe('GMPExecutableWithToken', () => {
 
                 const approveCommandId = getRandomID();
 
-                const execute = GMPExecutableWithToken.executeWithToken(
+                const execute = AxelarExecutableWithToken.executeWithToken(
                     approveCommandId,
                     sourceChain,
                     userWallet.address.toString(),
@@ -74,7 +77,7 @@ describe('GMPExecutableWithToken', () => {
                     symbolA,
                     swapAmount,
                 );
-                await expect(execute).to.be.revertedWithCustomError(GMPExecutableWithToken, 'NotApprovedByGateway');
+                await expect(execute).to.be.revertedWithCustomError(AxelarExecutableWithToken, 'NotApprovedByGateway');
             });
 
             it('should execute with token on remote chain', async () => {
@@ -92,7 +95,7 @@ describe('GMPExecutableWithToken', () => {
                     [
                         sourceChain,
                         userWallet.address,
-                        GMPExecutableWithToken.address,
+                        AxelarExecutableWithToken.address,
                         payloadHash,
                         symbolA,
                         swapAmount,
@@ -112,7 +115,7 @@ describe('GMPExecutableWithToken', () => {
                         approveCommandId,
                         sourceChain,
                         userWalletAddress,
-                        GMPExecutableWithToken.address,
+                        AxelarExecutableWithToken.address,
                         payloadHash,
                         symbolA,
                         swapAmount,
@@ -120,7 +123,7 @@ describe('GMPExecutableWithToken', () => {
                         sourceEventIndex,
                     );
 
-                const execute = await GMPExecutableWithToken.executeWithToken(
+                const execute = await AxelarExecutableWithToken.executeWithToken(
                     approveCommandId,
                     sourceChain,
                     userWalletAddress,
@@ -130,7 +133,7 @@ describe('GMPExecutableWithToken', () => {
                 );
 
                 await expect(execute)
-                    .to.emit(GMPExecutableWithToken, 'InterchainTransferReceived')
+                    .to.emit(AxelarExecutableWithToken, 'InterchainTransferReceived')
                     .withArgs(
                         sourceChain,
                         userWalletAddress,
@@ -146,7 +149,7 @@ describe('GMPExecutableWithToken', () => {
             beforeEach(async () => {
                 destinationChainGateway = await gatewayFactory.deploy().then((d) => d.deployed());
 
-                GMPExecutableWithToken = await GMPExecutableWithTokenFactory.deploy(
+                AxelarExecutableWithToken = await AxelarExecutableWithTokenFactory.deploy(
                     destinationChainGateway.address,
                 ).then((d) => d.deployed());
             });
@@ -156,14 +159,14 @@ describe('GMPExecutableWithToken', () => {
 
                 const approveCommandId = getRandomID();
 
-                const receive = GMPExecutableWithToken.execute(
+                const receive = AxelarExecutableWithToken.execute(
                     approveCommandId,
                     sourceChain,
                     userWallet.address.toString(),
                     payload,
                 );
 
-                await expect(receive).to.be.revertedWithCustomError(GMPExecutableWithToken, 'NotApprovedByGateway');
+                await expect(receive).to.be.revertedWithCustomError(AxelarExecutableWithToken, 'NotApprovedByGateway');
             });
 
             it('should call contract on another chain', async () => {
@@ -179,7 +182,7 @@ describe('GMPExecutableWithToken', () => {
                     [
                         sourceChain,
                         userWallet.address,
-                        GMPExecutableWithToken.address,
+                        AxelarExecutableWithToken.address,
                         payloadHash,
                         sourceTxHash,
                         sourceEventIndex,
@@ -194,20 +197,20 @@ describe('GMPExecutableWithToken', () => {
                         approveCommandId,
                         sourceChain,
                         userWallet.address.toString(),
-                        GMPExecutableWithToken.address,
+                        AxelarExecutableWithToken.address,
                         payloadHash,
                         sourceTxHash,
                         sourceEventIndex,
                     );
 
-                const receive = await GMPExecutableWithToken.execute(
+                const receive = await AxelarExecutableWithToken.execute(
                     approveCommandId,
                     sourceChain,
                     userWallet.address.toString(),
                     payload,
                 );
 
-                await expect(receive).to.emit(GMPExecutableWithToken, 'Received').withArgs(num);
+                await expect(receive).to.emit(AxelarExecutableWithToken, 'Received').withArgs(num);
             });
         });
     });

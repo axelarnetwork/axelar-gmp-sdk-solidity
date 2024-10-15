@@ -10,6 +10,7 @@ contract DestinationChainReceiver is AxelarExecutable {
     constructor(address gatewayAddress) AxelarExecutable(gatewayAddress) {}
 
     function _execute(
+        bytes32, /*commandId*/
         string calldata, /*sourceChain*/
         string calldata, /*sourceAddress*/
         bytes calldata payload

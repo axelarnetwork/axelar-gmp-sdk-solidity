@@ -4,6 +4,8 @@ Axelar Amplifier Gateway is a smart contract that lives on the external chain th
 
 The following sections walk through the integration requirements when implementing the external gateway contract for a given chain. Other implementation details can vary, and we recommend to use the idiomatic design pattern specific to that chain where possible.
 
+We also recommend that integrators create an `INTEGRATION.md` for their implementation of this reference, detailing the specifics of the implementation, including any deviations from the reference.
+
 ## Interface
 
 The following is the main interface exposed by the Axelar gateway contract.
@@ -190,7 +192,7 @@ Signer rotation has it's own replay prevention as described in an earlier sectio
 
 There are certain events that the gateway contract is required to emit.
 
-A `ContractCall` event needs to be emitted within `callContract`. This event is required by the Axelar verifiers to verify that the message was sent. Furthermore, the relayer for that chain will also monitor this event to trigger confirmation of the message on Axelar Amplifier (via the Amplifier Relayer API in practice that simplifies interacting with the Axelar network). Axelar verifiers run the `ampd` process that will check if this event was present in the provided tx. `ampd` needs to be extended to support event verification for a specific chain, see example [here](https://github.com/axelarnetwork/axelar-amplifier/tree/7e65688e7304a44436627fc3193483d24a10a14d/ampd/src/sui).
+A `ContractCall` event needs to be emitted within `callContract`. This event specifies the actual message being sent and is required by the Axelar verifiers to verify that the message was sent. Furthermore, the relayer for that chain will also monitor this event to trigger confirmation of the message on Axelar Amplifier (via the Amplifier Relayer API in practice that simplifies interacting with the Axelar network). Axelar verifiers run the `ampd` process that will check if this event was present in the provided tx. `ampd` needs to be extended to support event verification for a specific chain, see example [here](https://github.com/axelarnetwork/axelar-amplifier/tree/81b60615c1a76ffbd6da600e6e698d1dd9504ef1/ampd/src/sui).
 
 ```solidity
 event ContractCall(
@@ -239,9 +241,18 @@ The auth mechanism of the gateway contract tracks the recent list of signers tha
 
 Since the governance makes use of Axelar GMP calls as well, a compromised signer set, or exploit could potentially issue a governance proposal as well. Governance also has a timelock by default which makes reacting to issues slow. Hence, a gateway `operator` can be elected by gateway owner/governance that can collaborate with Axelar governance to bypass signer rotation and governance delays in emergencies. The operator can't perform these actions by itself. It still requires that signers have signed off on the action. This mechanism is useful as it's more unlikely that both the Axelar gateway/governance and the operator have been compromised at the same time.
 
+## Limits
+
+Due to the nature of blockchains, several limits are imposed on what users and contracts can do. These limits can differ significantly between different blockchains. The following details some important limits for this integration. We recommend mentioning the specific limits for your implementation in your own `INTEGRATION.md` doc.
+
+1. **Cross-chain Message Size**: The largest message that can be sent to another chain is restricted by the max size of an event allowed in a transaction for the chain. It can also be indirectly restricted by the max transaction size of the chain. We recommend that the chain supports a minimum of `10KB` for the event/transaction size limit, and ideally more than `64KB` to be flexible. A smaller limit might require implementing a workaround, and requires further discussion.
+2. **Chain names**: The Amplifier protocol requires that chain names must be ASCII characters of length less than `20`. Lower case must be used except for a few legacy chain connections on mainnet (`Ethereum`, `Avalanche`, `Polygon`, `Fantom`, and `Moonbeam`). The reference external gateway does not perform these checks for gas efficiency, and since Amplifier doesn't allow registering invalid chain names, so misuse will be easily caught during testing due to failure to verify the message.
+3. **Signer Set Size**: The weighted multisig auth mechanism has an arbitrary number of signers. In practice, a minimum of `40` signers should be supported to enforce a minimum security standard for all chains, and ideally over a `100` should be allowed. The signing threshold is expected to be set to `2/3`, hence verification of a minimum of `27` signatures should be supported, and ideally over `67`.
+4. **Message Approval Batching**: The gateway accepts a batch of message approvals via `approveMessages`. This batch size is configurable and corresponds to the batch of messages that `construct_proof` was called on in Amplifier. The relayer is responsible for choosing this batch size. Increased batching allows amortizing the gas cost of proof validation across many messages (if they're being executed within a similar time window). The max batch size is dictated by the transaction/block gas limit and size. The EVM gateway consumes `~34k` gas for every additional message approval in the batch.
+
 ## Testing
 
-Unit tests for the gateway, and auth mechanism can be found [here](../../test/gateway/AxelarAmplifierGateway.js), and [here](../../test/governance/BaseWeightedMultisig.js), respectively, to use as reference for the implementation for another chain. Other than standard testing practices like unit tests, code coverage, Axelar Amplifier devnet e2e testing framework will support adding connectors for different chains. More details to come.
+Unit tests for the gateway, and auth mechanism can be found [here](../../test/gateway/AxelarAmplifierGateway.js), and [here](../../test/governance/BaseWeightedMultisig.js), respectively, to use as reference for testing the implementation for another chain. Other than standard testing practices like unit tests, code coverage, Axelar Amplifier devnet e2e testing framework will support adding connectors for different chains. More details to come.
 
 ## Deployment
 

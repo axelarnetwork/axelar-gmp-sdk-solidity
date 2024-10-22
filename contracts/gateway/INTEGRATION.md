@@ -192,7 +192,7 @@ Signer rotation has it's own replay prevention as described in an earlier sectio
 
 There are certain events that the gateway contract is required to emit.
 
-A `ContractCall` event needs to be emitted within `callContract`. This event specifies the actual message being sent and is required by the Axelar verifiers to verify that the message was sent. Furthermore, the relayer for that chain will also monitor this event to trigger confirmation of the message on Axelar Amplifier (via the Amplifier Relayer API in practice that simplifies interacting with the Axelar network). Axelar verifiers run the `ampd` process that will check if this event was present in the provided tx. `ampd` needs to be extended to support event verification for a specific chain, see example [here](https://github.com/axelarnetwork/axelar-amplifier/tree/81b60615c1a76ffbd6da600e6e698d1dd9504ef1/ampd/src/sui).
+A `ContractCall` event must be emitted within `callContract`. This event specifies the actual message being sent and is required by the Axelar verifiers to verify that the message was sent. Furthermore, the relayer for that chain will also monitor this event to trigger confirmation of the message on Axelar Amplifier (via the Amplifier Relayer API in practice that simplifies interacting with the Axelar network). Axelar verifiers run the `ampd` process that will check if this event was present in the provided tx. `ampd` needs to be extended to support event verification for a specific chain, see example [here](https://github.com/axelarnetwork/axelar-amplifier/tree/81b60615c1a76ffbd6da600e6e698d1dd9504ef1/ampd/src/sui).
 
 ```solidity
 event ContractCall(
@@ -231,7 +231,7 @@ event SignersRotated(uint256 indexed epoch, bytes32 indexed signersHash, bytes s
 
 ## Upgradability
 
-The gateway contract must be upgradable. An owner should be set that has the permission to upgrade the contract. The gateway owner should be allowed to be either an account, or another contract. Test deployments will set the owner to some wallet, but production deployments can use a multisig account/contract, and eventually a governance contract. For stable production deployments, the ownership is expected to be transferred to the [AxelarServiceGovernance](../governance/AxelarServiceGovernance.sol) contract that can trigger upgrades by receiving cross-chain messages. This contract has to be implemented for the integration.
+The gateway contract must be upgradable. A gateway owner should be set which has the permission to upgrade the contract. The gateway owner should be allowed to be either an account, or another contract. Test deployments will set the owner to some wallet, but production deployments can use a multisig account/contract, and eventually a governance contract. For stable production deployments, the ownership is expected to be transferred to the [AxelarServiceGovernance](../governance/AxelarServiceGovernance.sol) contract which can trigger upgrades by receiving cross-chain messages. This contract must be implemented for the integration.
 
 The EVM gateway uses a proxy pattern for upgrades, i.e there's a fixed proxy contract that delegates calls to an implementation contract, while using the proxy contract's storage. The owner can upgrade the contract to a new version by calling the `upgrade` function. The new contract address is passed as an argument to the function. The stored implementation contract address is updated to the new contract address, thus upgrading the logic (see [here](../upgradable/Upgradable.sol)). Due to this pattern, the EVM gateway gets initialized via a `_setup` method in addition to the static values set in the `constructor`. The new contract must be compatible with the existing storage layout.
 
@@ -247,28 +247,28 @@ Since the governance makes use of Axelar GMP calls as well, a compromised signer
 
 Due to the nature of blockchains, several limits are imposed on what users and contracts can do. These limits can differ significantly between different blockchains. The following details some important limits for this integration. We recommend mentioning the specific limits for your implementation in your own `INTEGRATION.md` doc. If the minimum requirements can't be met, potential workarounds or implications of the limitations will need to be discussed further.
 
-1. **Cross-chain Message Size**: The largest message that can be sent to another chain is restricted by the max size of an event allowed in a transaction for the chain. It can also be indirectly restricted by the max transaction size of the chain. We recommend that the chain supports a minimum of `16KB` for the event/transaction size limit, and ideally more than `64KB` to be flexible. A smaller limit might require implementing a workaround, and requires further discussion.
+1. **Cross-chain Message Size**: The largest message that can be sent to another chain is restricted by the max size of an event allowed in a transaction for the chain. It can also be indirectly restricted by the max transaction size of the chain. We recommend that the chain supports a minimum of `16KB` for the event/transaction size limit, and ideally more than `64KB` to be flexible.
 2. **Chain names**: The Amplifier protocol requires that chain names must be ASCII characters of length less than `20`. Lower case must be used except for a few legacy chain connections on mainnet (`Ethereum`, `Avalanche`, `Polygon`, `Fantom`, and `Moonbeam`, found [here](https://github.com/axelarnetwork/axelar-contract-deployments/blob/main/axelar-chains-config/info/mainnet.json#L6)). The reference external gateway does not perform these checks for gas efficiency, and since Amplifier doesn't allow registering invalid chain names, misuse is easily caught during testing due to failure to verify the message.
 3. **Signer Set Size**: The weighted multisig auth mechanism has an arbitrary number of signers. In practice, a minimum of `40` signers should be supported to enforce a minimum security standard for all chains, and ideally at least `100` signers should be allowed. The signing threshold is expected to be set to `2/3`, hence verification of a minimum of `27` signatures should be supported, and ideally at least `67`.
 4. **Message Approval Batching**: The gateway accepts a batch of message approvals via `approveMessages`. This batch size is configurable and corresponds to the batch of messages that `construct_proof` was called on in Amplifier. The relayer is responsible for choosing this batch size. Increased batching allows amortizing the gas cost of proof validation across many messages (if they're being executed within a similar time window). The max batch size is dictated by the transaction/block gas limit and size. The EVM gateway consumes `~34k` gas for every additional message approval in the batch.
 5. **Storage limit**: The gateway contract stores message execution status. The number of messages stored is arbitrary and will grow over time. Messages that have been executed can't be deleted to prevent replay of approvals. Implementations should support a practically unlimited number of messages to be stored (e.g. `2^64`).
-6. **Event Retention**: Cross-chain messages and signer rotations are verified by fetching events from the chain's node. We recommend that events can be retained for 2 months, and at a minimum for 2 weeks to allow processing of stuck messages, or signer rotations. These could be stuck due to being missed by the relayer, or due to insufficient gas paid by the app (but adds the gas later to process it).
+6. **Event Retention**: Cross-chain messages and signer rotations are verified by fetching events from the chain's node. We recommend that events be retained for 2 months, and at a minimum for 2 weeks to allow processing of stuck messages or signer rotations. These could be stuck due to being missed by the relayer, or due to insufficient gas paid by the app (but adds the gas later to process it).
 
 The limit recommendations are summarized in the following table. The limits applicable for the EVM gateway on Ethereum (assuming a block gas limit of 30M) are also shown for comparison.
 
 | Limit | Minimum | Recommended | Ethereum Gateway |
 |-|-|-|-|
-| Cross-chain Message Size | 16 KB | > 64 KB | > 1 MB |
+| Cross-chain Message Size | 16 KB | 64 KB | > 1 MB |
 | Chain Name Length | < 20 ASCII chars | - | - |
-| Signer Set Size | 40 signers | > 100 signers | > 200 |
+| Signer Set Size | 40 signers | 100 signers | > 200 |
 | Signature Verification | 27 signatures | 67 signatures | > 100 (~3k gas per signature) |
 | Message Approval Batching | 1 | Configurable | > 500 (~34k gas per message) |
-| Storage Limit for Messages | Practically unlimited (> 2^64) | - | Practically unlimited |
+| Storage Limit for Messages | Practically unlimited (2^64) | Practically unlimited (2^64) | Practically unlimited |
 | Event Retention | 2 weeks | 2 months | Unlimited (tunable in node config) |
 
 ## Testing
 
-Unit tests for the gateway, and auth mechanism can be found [here](../../test/gateway/AxelarAmplifierGateway.js), and [here](../../test/governance/BaseWeightedMultisig.js), respectively, to use as reference for testing the implementation for another chain. Other than standard testing practices like unit tests, code coverage, Axelar Amplifier devnet e2e testing framework will support adding connectors for different chains. More details to come.
+Unit tests for the gateway, and auth mechanism can be found [here](../../test/gateway/AxelarAmplifierGateway.js), and [here](../../test/governance/BaseWeightedMultisig.js), respectively, to use as reference for testing the implementation for another chain. In addition to standard testing practices like unit tests, code coverage, Axelar Amplifier devnet e2e testing framework will support adding connectors for different chains. More details to come.
 
 ## Deployment
 

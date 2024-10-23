@@ -131,8 +131,8 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
 
     /**
      * @notice This function rotates the current signers with a new set of signers
-     * @dev This function allows rotating to a repeat signer set. In this scenario, it's corresponding epoch will be updated to the latest epoch
-     * If rotation to a repeat signer set needs to be prevented, the caller is responsible for checking it.
+     * @dev Rotation to repeated signers is not allowed.
+     * While the individual signer addresses and weights can be repeated, the nonce must be different.
      * @param newSigners The new weighted signers data
      * @param enforceRotationDelay If true, the minimum rotation delay will be enforced
      * @dev The signers should be sorted by signer address in ascending order

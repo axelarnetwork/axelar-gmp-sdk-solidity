@@ -2,4 +2,4 @@
 '@axelar-network/axelar-gmp-sdk-solidity': patch
 ---
 
-fit: revert use named return changes
+reverted use of named return value in RolesBase to not change bytecode of InterchainToken

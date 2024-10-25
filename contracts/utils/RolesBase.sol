@@ -57,11 +57,15 @@ contract RolesBase is IRolesBase {
      * @param roles The roles to convert
      * @return accountRoles The roles in uint256 format
      */
-    function _toAccountRoles(uint8[] memory roles) internal pure returns (uint256 accountRoles) {
+    function _toAccountRoles(uint8[] memory roles) internal pure returns (uint256) {
         uint256 length = roles.length;
+        uint256 accountRoles;
+
         for (uint256 i = 0; i < length; ++i) {
             accountRoles |= (1 << roles[i]);
         }
+
+        return accountRoles;
     }
 
     /**
@@ -70,7 +74,7 @@ contract RolesBase is IRolesBase {
      * @return key The key of the roles mapping
      */
     function _rolesKey(address account) internal view virtual returns (bytes32 key) {
-        key = keccak256(abi.encodePacked(ROLES_PREFIX, account));
+        return keccak256(abi.encodePacked(ROLES_PREFIX, account));
     }
 
     /**
@@ -104,7 +108,7 @@ contract RolesBase is IRolesBase {
      * @return key The key of the proposed roles mapping
      */
     function _proposalKey(address fromAccount, address toAccount) internal view virtual returns (bytes32 key) {
-        key = keccak256(abi.encodePacked(PROPOSE_ROLES_PREFIX, fromAccount, toAccount));
+        return keccak256(abi.encodePacked(PROPOSE_ROLES_PREFIX, fromAccount, toAccount));
     }
 
     /**

@@ -34,7 +34,7 @@ abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
      * This function is the entry point for general message passing between chains.
      * @param destinationChain The chain where the destination contract exists. A registered chain name on Axelar must be used here
      * @param destinationContractAddress The address of the contract to call on the destination chain
-     * @param payload The payload to be sent to the destination contract, usually representing an encoded function call with arguments
+     * @param payload The payload to be sent to the destination contract
      */
     function callContract(
         string calldata destinationChain,

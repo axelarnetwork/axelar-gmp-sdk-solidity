@@ -11,14 +11,11 @@ const {
 } = ethers;
 const getRandomID = () => id(Math.floor(Math.random() * 1e10).toString());
 
-describe('GMPExecutable', () => {
+describe('AxelarExecutable', () => {
     let gatewayFactory;
-
     let destinationChainGateway;
-
-    let GMPExecutableFactory;
-    let GMPExecutable;
-
+    let executableFactory;
+    let executable;
     let ownerWallet;
     let userWallet;
 
@@ -29,22 +26,20 @@ describe('GMPExecutable', () => {
         [ownerWallet, userWallet] = await ethers.getSigners();
 
         gatewayFactory = await ethers.getContractFactory('MockGateway', ownerWallet);
-        GMPExecutableFactory = await ethers.getContractFactory('GMPExecutableTest', ownerWallet);
+        executableFactory = await ethers.getContractFactory('AxelarExecutableTest', ownerWallet);
     });
 
-    describe('AxelarGMPExecutable', () => {
+    describe('AxelarAxelarExecutable', () => {
         describe('Call Contract', () => {
             beforeEach(async () => {
                 destinationChainGateway = await gatewayFactory.deploy().then((d) => d.deployed());
 
-                GMPExecutable = await GMPExecutableFactory.deploy(destinationChainGateway.address).then((d) =>
-                    d.deployed(),
-                );
+                executable = await executableFactory.deploy(destinationChainGateway.address).then((d) => d.deployed());
             });
 
             it('should revert when deployed with empty gateway', async () => {
                 try {
-                    await GMPExecutableFactory.deploy(AddressZero);
+                    await executableFactory.deploy(AddressZero);
                 } catch (e) {
                     expect(e.message).to.contain('InvalidAddress');
                 }
@@ -55,14 +50,14 @@ describe('GMPExecutable', () => {
 
                 const approveCommandId = getRandomID();
 
-                const receive = GMPExecutable.execute(
+                const receive = executable.execute(
                     approveCommandId,
                     sourceChain,
                     userWallet.address.toString(),
                     payload,
                 );
 
-                await expect(receive).to.be.revertedWithCustomError(GMPExecutable, 'NotApprovedByGateway');
+                await expect(receive).to.be.revertedWithCustomError(executable, 'NotApprovedByGateway');
             });
 
             it('should call contract on another chain', async () => {
@@ -75,14 +70,7 @@ describe('GMPExecutable', () => {
 
                 const approveData = defaultAbiCoder.encode(
                     ['string', 'string', 'address', 'bytes32', 'bytes32', 'uint256'],
-                    [
-                        sourceChain,
-                        userWallet.address,
-                        GMPExecutable.address,
-                        payloadHash,
-                        sourceTxHash,
-                        sourceEventIndex,
-                    ],
+                    [sourceChain, userWallet.address, executable.address, payloadHash, sourceTxHash, sourceEventIndex],
                 );
 
                 const approveExecute = await destinationChainGateway.approveContractCall(approveData, approveCommandId);
@@ -93,20 +81,20 @@ describe('GMPExecutable', () => {
                         approveCommandId,
                         sourceChain,
                         userWallet.address.toString(),
-                        GMPExecutable.address,
+                        executable.address,
                         payloadHash,
                         sourceTxHash,
                         sourceEventIndex,
                     );
 
-                const receive = await GMPExecutable.execute(
+                const receive = await executable.execute(
                     approveCommandId,
                     sourceChain,
                     userWallet.address.toString(),
                     payload,
                 );
 
-                await expect(receive).to.emit(GMPExecutable, 'Received').withArgs(num);
+                await expect(receive).to.emit(executable, 'Received').withArgs(num);
             });
         });
     });

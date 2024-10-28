@@ -2,15 +2,15 @@
 
 pragma solidity ^0.8.0;
 
-import { IAxelarGMPExecutable } from './IAxelarGMPExecutable.sol';
+import { IAxelarExecutable } from './IAxelarExecutable.sol';
 import { ICaller } from './ICaller.sol';
 import { ITimeLock } from './ITimeLock.sol';
 
 /**
  * @title IInterchainGovernance Interface
- * @notice This interface extends IAxelarGMPExecutable for interchain governance mechanisms.
+ * @notice This interface extends IAxelarExecutable for interchain governance mechanisms.
  */
-interface IInterchainGovernance is IAxelarGMPExecutable, ICaller, ITimeLock {
+interface IInterchainGovernance is IAxelarExecutable, ICaller, ITimeLock {
     error NotGovernance();
     error NotSelf();
     error InvalidCommand();

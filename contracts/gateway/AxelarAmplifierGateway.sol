@@ -11,6 +11,13 @@ import { BaseWeightedMultisig } from '../governance/BaseWeightedMultisig.sol';
 import { BaseAmplifierGateway } from './BaseAmplifierGateway.sol';
 import { Upgradable } from '../upgradable/Upgradable.sol';
 
+/**
+ * @title AxelarAmplifierGateway
+ * @notice AxelarAmplifierGateway is the contract that allows apps on EVM chains
+ * to send and receive cross-chain messages via the Axelar Amplifier protocol.
+ * It handles cross-chain message passing (implemented by BaseAmplifierGateway),
+ * and signer rotation (implemented by BaseWeightedMultisig).
+ */
 contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, Upgradable, IAxelarAmplifierGateway {
     /// @dev This slot contains the storage for this contract in an upgrade-compatible manner
     /// keccak256('AxelarAmplifierGateway.Slot') - 1;
@@ -113,7 +120,7 @@ contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, U
      * @return isLatestSigners True if provided signers are the current ones
      */
     function validateProof(bytes32 dataHash, Proof calldata proof) external view returns (bool isLatestSigners) {
-        return _validateProof(dataHash, proof);
+        isLatestSigners = _validateProof(dataHash, proof);
     }
 
     /**

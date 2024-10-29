@@ -29,7 +29,7 @@ contract AxelarValuedExpressExecutableTest is AxelarValuedExpressExecutableWithT
         callValue = callValue_;
     }
 
-    // Returns the amount of native token that that this call is worth.
+    // Returns the amount of token (corresponding to `tokenAddress`) that this call is worth. If `tokenAddress` is address(0), then amount is in terms of the native token.
     function contractCallValue(
         string calldata, /*sourceChain*/
         string calldata, /*sourceAddress*/
@@ -39,7 +39,7 @@ contract AxelarValuedExpressExecutableTest is AxelarValuedExpressExecutableWithT
         tokenAddress = expressToken;
     }
 
-    // Returns the amount of token that that this call is worth. If `native` is true then native token is used, otherwise the token specified by `symbol` is used.
+    // Returns the amount of token (corresponding to `tokenAddress`) that this call is worth. If `tokenAddress` is address(0), then amount is in terms of the native token.
     function contractCallWithTokenValue(
         string calldata, /*sourceChain*/
         string calldata, /*sourceAddress*/

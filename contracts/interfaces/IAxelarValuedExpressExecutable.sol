@@ -11,7 +11,7 @@ import { IAxelarExpressExecutable } from './IAxelarExpressExecutable.sol';
 interface IAxelarValuedExpressExecutable is IAxelarExpressExecutable {
     /**
      * @dev Returns the value (token address and amount) associated with a contract call
-     * @param sourceChain The source blockchain.
+     * @param sourceChain The source chain.
      * @param sourceAddress The source address.
      * @param payload The payload data.
      * @return tokenAddress The address of the token used.

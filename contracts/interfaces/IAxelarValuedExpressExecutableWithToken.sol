@@ -12,7 +12,7 @@ import { IAxelarValuedExpressExecutable } from './IAxelarValuedExpressExecutable
 interface IAxelarValuedExpressExecutableWithToken is IAxelarExpressExecutableWithToken, IAxelarValuedExpressExecutable {
     /**
      * @dev Returns the value (token address and amount) associated with a contract call with token.
-     * @param sourceChain The source blockchain.
+     * @param sourceChain The source chain.
      * @param sourceAddress The source address.
      * @param payload The payload data.
      * @param symbol The token symbol.

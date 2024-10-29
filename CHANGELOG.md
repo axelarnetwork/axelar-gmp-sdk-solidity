@@ -1,5 +1,12 @@
 # @axelar-network/axelar-gmp-sdk-solidity
 
+## 6.0.2
+
+### Patch Changes
+
+-   7ecf8e3: split express executable gateway token contracts
+-   53c9a1e: update signerHash to signersHash
+
 ## 6.0.1
 
 ### Patch Changes

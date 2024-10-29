@@ -18,8 +18,8 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
     struct BaseWeightedMultisigStorage {
         uint256 epoch;
         uint256 lastRotationTimestamp;
-        mapping(uint256 => bytes32) signerHashByEpoch;
-        mapping(bytes32 => uint256) epochBySignerHash;
+        mapping(uint256 => bytes32) signersHashByEpoch;
+        mapping(bytes32 => uint256) epochBySignersHash;
     }
 
     /// @dev Previous signers retention. 0 means only the current signers are valid
@@ -68,17 +68,17 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      * @param signerEpoch The given epoch
      * @return bytes32 The signers hash for the given epoch
      */
-    function signerHashByEpoch(uint256 signerEpoch) external view returns (bytes32) {
-        return _baseWeightedMultisigStorage().signerHashByEpoch[signerEpoch];
+    function signersHashByEpoch(uint256 signerEpoch) external view returns (bytes32) {
+        return _baseWeightedMultisigStorage().signersHashByEpoch[signerEpoch];
     }
 
     /**
      * @notice This function returns the epoch for a given signers hash
-     * @param signerHash The signers hash
+     * @param signersHash The signers hash
      * @return uint256 The epoch for the given signers hash
      */
-    function epochBySignerHash(bytes32 signerHash) external view returns (uint256) {
-        return _baseWeightedMultisigStorage().epochBySignerHash[signerHash];
+    function epochBySignersHash(bytes32 signersHash) external view returns (uint256) {
+        return _baseWeightedMultisigStorage().epochBySignersHash[signersHash];
     }
 
     /**
@@ -117,7 +117,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         WeightedSigners calldata signers = proof.signers;
 
         bytes32 signersHash = keccak256(abi.encode(signers));
-        uint256 signerEpoch = slot.epochBySignerHash[signersHash];
+        uint256 signerEpoch = slot.epochBySignersHash[signersHash];
         uint256 currentEpoch = slot.epoch;
 
         isLatestSigners = signerEpoch == currentEpoch;
@@ -150,12 +150,12 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
         // assign the next epoch to the new signers
         uint256 newEpoch = slot.epoch + 1;
         slot.epoch = newEpoch;
-        slot.signerHashByEpoch[newEpoch] = newSignersHash;
+        slot.signersHashByEpoch[newEpoch] = newSignersHash;
 
         // signers must be distinct, since nonce should guarantee uniqueness even if signers are repeated
-        if (slot.epochBySignerHash[newSignersHash] != 0) revert DuplicateSigners(newSignersHash);
+        if (slot.epochBySignersHash[newSignersHash] != 0) revert DuplicateSigners(newSignersHash);
 
-        slot.epochBySignerHash[newSignersHash] = newEpoch;
+        slot.epochBySignersHash[newSignersHash] = newEpoch;
 
         emit SignersRotated(newEpoch, newSignersHash, newSignersData);
     }

@@ -75,10 +75,10 @@ describe('BaseWeightedMultisig', () => {
             expect(messageHash).to.be.equal(expectedMessageHash);
         });
 
-        it('signerHashByEpoch and epochBySignerHash', async () => {
+        it('signersHashByEpoch and epochBySignersHash', async () => {
             const hash = keccak256(encodeWeightedSigners(weightedSigners));
-            expect(await multisig.signerHashByEpoch(1)).to.be.equal(hash);
-            expect(await multisig.epochBySignerHash(hash)).to.be.equal(1);
+            expect(await multisig.signersHashByEpoch(1)).to.be.equal(hash);
+            expect(await multisig.epochBySignersHash(hash)).to.be.equal(1);
         });
 
         it('lastRotationTimestamp', async () => {
@@ -160,8 +160,8 @@ describe('BaseWeightedMultisig', () => {
                     .withArgs(prevEpoch + 2, newSigners2Hash, encodeWeightedSigners(newSigners2));
 
                 // Both weighted signer should be available
-                expect(await multisig.epochBySignerHash(newSignersHash)).to.be.equal(prevEpoch + 1);
-                expect(await multisig.epochBySignerHash(newSigners2Hash)).to.be.equal(prevEpoch + 2);
+                expect(await multisig.epochBySignersHash(newSignersHash)).to.be.equal(prevEpoch + 1);
+                expect(await multisig.epochBySignersHash(newSigners2Hash)).to.be.equal(prevEpoch + 2);
             });
 
             it('should allow signer rotation to a large set of 40 signers', async () => {

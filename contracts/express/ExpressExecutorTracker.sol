@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.0;
 
-import { IAxelarExpressExecutable } from '../interfaces/IAxelarExpressExecutable.sol';
+abstract contract ExpressExecutorTracker {
+    error ExpressExecutorAlreadySet();
 
-abstract contract ExpressExecutorTracker is IAxelarExpressExecutable {
     bytes32 internal constant PREFIX_EXPRESS_EXECUTE = keccak256('express-execute');
     bytes32 internal constant PREFIX_EXPRESS_EXECUTE_WITH_TOKEN = keccak256('express-execute-with-token');
 
@@ -38,12 +38,12 @@ abstract contract ExpressExecutorTracker is IAxelarExpressExecutable {
         );
     }
 
-    function getExpressExecutor(
+    function _getExpressExecutor(
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes32 payloadHash
-    ) external view returns (address expressExecutor) {
+    ) internal view returns (address expressExecutor) {
         bytes32 slot = _expressExecuteSlot(commandId, sourceChain, sourceAddress, payloadHash);
 
         assembly {
@@ -51,14 +51,14 @@ abstract contract ExpressExecutorTracker is IAxelarExpressExecutable {
         }
     }
 
-    function getExpressExecutorWithToken(
+    function _getExpressExecutorWithToken(
         bytes32 commandId,
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes32 payloadHash,
         string calldata symbol,
         uint256 amount
-    ) external view returns (address expressExecutor) {
+    ) internal view returns (address expressExecutor) {
         bytes32 slot = _expressExecuteWithTokenSlot(commandId, sourceChain, sourceAddress, payloadHash, symbol, amount);
 
         assembly {

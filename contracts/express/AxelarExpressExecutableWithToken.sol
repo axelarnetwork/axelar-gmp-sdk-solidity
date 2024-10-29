@@ -6,11 +6,16 @@ import { AxelarExecutable } from '../executable/AxelarExecutable.sol';
 import { AxelarExecutableWithToken } from '../executable/AxelarExecutableWithToken.sol';
 import { IAxelarExecutable } from '../interfaces/IAxelarExecutable.sol';
 import { IAxelarExecutableWithToken } from '../interfaces/IAxelarExecutableWithToken.sol';
+import { IAxelarExpressExecutableWithToken } from '../interfaces/IAxelarExpressExecutableWithToken.sol';
 import { ExpressExecutorTracker } from './ExpressExecutorTracker.sol';
 import { SafeTokenTransferFrom, SafeTokenTransfer } from '../libs/SafeTransfer.sol';
 import { IERC20 } from '../interfaces/IERC20.sol';
 
-abstract contract AxelarExpressExecutable is ExpressExecutorTracker, AxelarExecutableWithToken {
+abstract contract AxelarExpressExecutableWithToken is
+    IAxelarExpressExecutableWithToken,
+    ExpressExecutorTracker,
+    AxelarExecutableWithToken
+{
     using SafeTokenTransfer for IERC20;
     using SafeTokenTransferFrom for IERC20;
 
@@ -140,5 +145,50 @@ abstract contract AxelarExpressExecutable is ExpressExecutorTracker, AxelarExecu
         IERC20(gatewayToken).safeTransferFrom(expressExecutor, address(this), amount);
 
         _executeWithToken(commandId, sourceChain, sourceAddress, payload, symbol, amount);
+    }
+
+    /**
+     * @notice Returns the express executor for a given command.
+     * @param commandId The commandId for the contractCall.
+     * @param sourceChain The source chain.
+     * @param sourceAddress The source address.
+     * @param payloadHash The hash of the payload.
+     * @return expressExecutor The address of the express executor.
+     */
+    function getExpressExecutor(
+        bytes32 commandId,
+        string calldata sourceChain,
+        string calldata sourceAddress,
+        bytes32 payloadHash
+    ) external view returns (address expressExecutor) {
+        expressExecutor = _getExpressExecutor(commandId, sourceChain, sourceAddress, payloadHash);
+    }
+
+    /**
+     * @notice Returns the express executor with token for a given command.
+     * @param commandId The commandId for the contractCallWithToken.
+     * @param sourceChain The source chain.
+     * @param sourceAddress The source address.
+     * @param payloadHash The hash of the payload.
+     * @param symbol The token symbol.
+     * @param amount The amount of tokens.
+     * @return expressExecutor The address of the express executor.
+     */
+    function getExpressExecutorWithToken(
+        bytes32 commandId,
+        string calldata sourceChain,
+        string calldata sourceAddress,
+        bytes32 payloadHash,
+        string calldata symbol,
+        uint256 amount
+    ) external view returns (address expressExecutor) {
+        expressExecutor = _getExpressExecutorWithToken(
+            commandId,
+            sourceChain,
+            sourceAddress,
+            payloadHash,
+            symbol,
+            amount
+        );
     }
 }

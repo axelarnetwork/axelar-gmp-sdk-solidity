@@ -2,10 +2,10 @@
 
 pragma solidity ^0.8.0;
 
-import { AxelarValuedExpressExecutable } from '../../express/AxelarValuedExpressExecutable.sol';
+import { AxelarValuedExpressExecutableWithToken } from '../../express/AxelarValuedExpressExecutableWithToken.sol';
 
-contract TestAxelarValuedExpressExecutable is AxelarValuedExpressExecutable {
-    constructor(address gateway_) AxelarValuedExpressExecutable(gateway_) {}
+contract TestAxelarValuedExpressExecutable is AxelarValuedExpressExecutableWithToken {
+    constructor(address gateway_) AxelarValuedExpressExecutableWithToken(gateway_) {}
 
     function contractCallValue(
         string calldata, /* sourceChain */

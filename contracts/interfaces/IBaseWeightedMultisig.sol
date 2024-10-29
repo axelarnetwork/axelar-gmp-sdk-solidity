@@ -28,10 +28,10 @@ interface IBaseWeightedMultisig {
 
     /**
      * @dev Returns the hash for a given signers epoch
-     * @param epoch The epoch to get the hash for
+     * @param signerEpoch The epoch to get the hash for
      * @return The hash for the given epoch
      */
-    function signersHashByEpoch(uint256 epoch) external view returns (bytes32);
+    function signersHashByEpoch(uint256 signerEpoch) external view returns (bytes32);
 
     /**
      * @dev Returns the epoch for a given hash

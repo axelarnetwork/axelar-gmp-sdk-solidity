@@ -65,11 +65,11 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
 
     /**
      * @notice This function returns the signers hash for a given epoch
-     * @param epoch The given epoch
+     * @param signerEpoch The given epoch
      * @return bytes32 The signers hash for the given epoch
      */
-    function signersHashByEpoch(uint256 epoch) external view returns (bytes32) {
-        return _baseWeightedMultisigStorage().signersHashByEpoch[epoch];
+    function signersHashByEpoch(uint256 signerEpoch) external view returns (bytes32) {
+        return _baseWeightedMultisigStorage().signersHashByEpoch[signerEpoch];
     }
 
     /**

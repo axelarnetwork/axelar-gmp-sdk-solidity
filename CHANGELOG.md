@@ -4,7 +4,7 @@
 
 ### Patch Changes
 
--   7ecf8e3: split express executable gateway token contracts
+-   7ecf8e3: split express executable gateway token contracts. Use `*WithToken` variants of express executables if you need gateway token support
 -   53c9a1e: update signerHash to signersHash
 
 ## 6.0.1

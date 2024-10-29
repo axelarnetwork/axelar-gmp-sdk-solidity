@@ -1,5 +1,11 @@
 # @axelar-network/axelar-gmp-sdk-solidity
 
+## 6.0.3
+
+### Patch Changes
+
+-   cb4385d: add public access for the publish config
+
 ## 6.0.2
 
 ### Patch Changes

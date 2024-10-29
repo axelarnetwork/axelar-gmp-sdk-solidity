@@ -2,11 +2,11 @@
 
 pragma solidity ^0.8.0;
 
-import { AxelarExpressExecutable } from '../../express/AxelarExpressExecutable.sol';
+import { AxelarExpressExecutableWithToken } from '../../express/AxelarExpressExecutableWithToken.sol';
 import { IERC20 } from '../../interfaces/IERC20.sol';
 import { DestinationChainTokenSwapper } from './DestinationChainTokenSwapper.sol';
 
-contract DestinationChainSwapExpress is AxelarExpressExecutable {
+contract DestinationChainSwapExpress is AxelarExpressExecutableWithToken {
     DestinationChainTokenSwapper public immutable swapper;
 
     event Executed(bytes32 commandId, string sourceChain, string sourceAddress, bytes payload);
@@ -19,7 +19,7 @@ contract DestinationChainSwapExpress is AxelarExpressExecutable {
         uint256 amount
     );
 
-    constructor(address gatewayAddress, address swapperAddress) AxelarExpressExecutable(gatewayAddress) {
+    constructor(address gatewayAddress, address swapperAddress) AxelarExpressExecutableWithToken(gatewayAddress) {
         swapper = DestinationChainTokenSwapper(swapperAddress);
     }
 

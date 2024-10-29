@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.0;
 
-import { AxelarValuedExpressExecutable } from '../../express/AxelarValuedExpressExecutable.sol';
+import { AxelarValuedExpressExecutableWithToken } from '../../express/AxelarValuedExpressExecutableWithToken.sol';
 
-contract AxelarValuedExpressExecutableTest is AxelarValuedExpressExecutable {
+contract AxelarValuedExpressExecutableTest is AxelarValuedExpressExecutableWithToken {
     event Executed(bytes32 commandId, string sourceChain, string sourceAddress, bytes payload);
     event ExecutedWithToken(
         bytes32 commandId,
@@ -19,7 +19,7 @@ contract AxelarValuedExpressExecutableTest is AxelarValuedExpressExecutable {
     uint256 public callWithTokenValue;
     address public expressToken;
 
-    constructor(address gateway_) AxelarValuedExpressExecutable(gateway_) {}
+    constructor(address gateway_) AxelarValuedExpressExecutableWithToken(gateway_) {}
 
     function setExpressToken(address expressToken_) external {
         expressToken = expressToken_;

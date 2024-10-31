@@ -85,7 +85,7 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      * @notice This function returns the timestamp for the last signer rotation
      * @return uint256 The last rotation timestamp
      */
-    function lastRotationTimestamp() external view returns (uint256) {
+    function lastRotationTimestamp() public view returns (uint256) {
         return _baseWeightedMultisigStorage().lastRotationTimestamp;
     }
 
@@ -93,8 +93,8 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      * @notice This function returns the time elapsed (in secs) since the last rotation
      * @return uint256 The time since the last rotation
      */
-    function timeSinceRotation() external view returns (uint256) {
-        return block.timestamp - _baseWeightedMultisigStorage().lastRotationTimestamp;
+    function timeSinceRotation() public view returns (uint256) {
+        return block.timestamp - lastRotationTimestamp();
     }
 
     /*************************\
@@ -168,18 +168,13 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
      * @dev Updates the last rotation timestamp, and enforces the minimum rotation delay if specified
      */
     function _updateRotationTimestamp(bool enforceRotationDelay) internal {
-        uint256 lastRotationTimestamp_ = _baseWeightedMultisigStorage().lastRotationTimestamp;
-        uint256 currentTimestamp = block.timestamp;
+        uint256 timeSinceRotation_ = timeSinceRotation();
 
-        if (enforceRotationDelay && (currentTimestamp - lastRotationTimestamp_) < minimumRotationDelay) {
-            revert InsufficientRotationDelay(
-                minimumRotationDelay,
-                lastRotationTimestamp_,
-                currentTimestamp - lastRotationTimestamp_
-            );
+        if (enforceRotationDelay && timeSinceRotation_ < minimumRotationDelay) {
+            revert InsufficientRotationDelay(minimumRotationDelay, lastRotationTimestamp(), timeSinceRotation_);
         }
 
-        _baseWeightedMultisigStorage().lastRotationTimestamp = currentTimestamp;
+        _baseWeightedMultisigStorage().lastRotationTimestamp = block.timestamp;
     }
 
     /**

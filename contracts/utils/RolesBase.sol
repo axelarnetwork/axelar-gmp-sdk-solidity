@@ -142,6 +142,16 @@ contract RolesBase is IRolesBase {
     }
 
     /**
+     * @notice Internal function to revoke any proposed roles between two accounts.
+     * @dev Sets the proposed roles from `fromAccount` to `toAccount` to zero, effectively canceling any pending role transfer.
+     * @param fromAccount The address proposing the role transfer.
+     * @param toAccount The address set to receive the proposed roles.
+     */
+    function _revokeProposedRoles(address fromAccount, address toAccount) internal {
+        _setProposedRoles(fromAccount, toAccount, 0);
+    }
+
+    /**
      * @notice Internal function to add a role to an account.
      * @dev emits a RolesAdded event.
      * @param account The address to add the role to
@@ -342,7 +352,6 @@ contract RolesBase is IRolesBase {
             revert InvalidProposedRoles(fromAccount, toAccount, accountRoles);
         }
 
-        _setProposedRoles(fromAccount, toAccount, 0);
         _transferAccountRoles(fromAccount, toAccount, accountRoles);
     }
 
@@ -390,6 +399,7 @@ contract RolesBase is IRolesBase {
     ) internal {
         if (!_hasAllTheRoles(_getRoles(fromAccount), accountRoles)) revert MissingAllRoles(fromAccount, accountRoles);
 
+        _revokeProposedRoles(fromAccount, toAccount);
         _removeAccountRoles(fromAccount, accountRoles);
         _addAccountRoles(toAccount, accountRoles);
     }

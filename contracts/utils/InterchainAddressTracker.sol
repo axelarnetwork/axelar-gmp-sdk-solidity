@@ -23,7 +23,7 @@ contract InterchainAddressTracker is IInterchainAddressTracker {
     /**
      * @dev Gets the name of the chain this is deployed at
      */
-    function chainName() external view returns (string memory chainName_) {
+    function chainName() public view returns (string memory chainName_) {
         chainName_ = StringStorage.get(_CHAIN_NAME_SLOT);
     }
 

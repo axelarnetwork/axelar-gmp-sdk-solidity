@@ -1,5 +1,11 @@
 # @axelar-network/axelar-gmp-sdk-solidity
 
+## 6.0.4
+
+### Patch Changes
+
+-   f25a2d4: Allowed chainName() to be accessible internally in InterchainAddressTracker
+
 ## 6.0.3
 
 ### Patch Changes

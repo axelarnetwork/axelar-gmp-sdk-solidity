@@ -243,8 +243,10 @@ A multisig might be used for certain privileged roles in the smart contracts, e.
 
 For EVM chains, a custom [Multisig contract](../governance/Multisig.sol) is being used. However, another approach might make sense for other chain integrations. If the chain supports native multisig accounts, that might be preferrable. If it doesn't or it's capability is limited, we recommend using the preferred Multisig contract that's standard in the ecosystem (e.g. for EVM chains, [Safe](https://github.com/safe-global/safe-smart-account) is the most popular multisig). If this isn't available, then a custom contract needs to be written.
 
+For contracts that live on Axelar Amplifier itself, the Axelar governance can be the owner. For other privileged roles, the native multisig accounts on Axelar can be used if needed.
+
 Requirements:
-1. Supports a `k`-of-`n` signer set. `n` is unlikely to be greater than 10.
+1. Supports a `k`-of-`n` signer set. `n` is not expected to be greater than 10.
 2. A method to update the signer set to a new one, signed off by the current signer set.
 3. A method to execute another arbitrary contract, signed off by the current signer set. If arbitrary execution isn't supported, the multisig needs to be able to execute `transferOwnership`, `transferOperatorship`, `upgrade` methods on an arbitrary contract, along with specific methods in different contracts that are intended to be callable from the privileged role (e.g. `rotateSigners` on the Gateway can be called by the `operator`).
 4. Multisig signing can be performed offline, ideally with hardware wallet support.

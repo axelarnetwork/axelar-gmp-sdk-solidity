@@ -26,13 +26,11 @@ jobs:
         with:
           toolchain: stable
 
-      - name: Install Cyfrinup
+      - name: Install Cyfrinup and Aderyn
         run: |
           curl -L https://raw.githubusercontent.com/Cyfrin/aderyn/dev/cyfrinup/install | bash
           source ~/.bashrc
-
-      - name: Install Aderyn
-        run: cyfrinup
+          cyfrinup
 
       - name: Run Aderyn
         run: aderyn

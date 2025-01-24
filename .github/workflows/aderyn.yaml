@@ -1,0 +1,36 @@
+name: Aderyn Static Analysis
+
+on:
+  -pull_request
+  push:
+    branches:
+      - ci/aderyn-analysis
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  aderyn:
+    runs-on: blacksmith-2vcpu-ubuntu-2204
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Install Cyfrinup
+        run: |
+          curl -L https://raw.githubusercontent.com/Cyfrin/aderyn/dev/cyfrinup/install | bash
+          source ~/.bashrc
+
+      - name: Install Aderyn
+        run: cyfrinup
+
+      - name: Run Aderyn
+        run: aderyn
+
+   

@@ -1,10 +1,14 @@
 name: Aderyn Static Analysis
 
 on:
-  -pull_request
+  pull_request:
+    branches:
+      - ci/aderyn-analysis
+      - main
   push:
     branches:
       - ci/aderyn-analysis
+
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

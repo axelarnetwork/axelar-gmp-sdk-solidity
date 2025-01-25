@@ -28,4 +28,9 @@ jobs:
       - name: Run Aderyn Analysis
         run: aderyn .
 
+      - uses: actions/upload-artifact@v3
+        with:
+          name: aderyn-report
+          path: report.md
+
    

@@ -5,6 +5,7 @@ on:
     branches:
       - ci/aderyn-analysis
       - main
+    types: [ready_for_review, converted_to_draft]
   push:
     branches:
       - ci/aderyn-analysis

@@ -29,7 +29,8 @@ jobs:
       - name: Install Cyfrinup and Aderyn
         run: |
           curl -L https://raw.githubusercontent.com/Cyfrin/aderyn/dev/cyfrinup/install | bash
-          source /home/runner/.bashrc
+          echo "PATH=$HOME/.local/bin:$PATH" >> $GITHUB_ENV
+          source ~/.bashrc
           cyfrinup
 
       - name: Run Aderyn

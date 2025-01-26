@@ -15,7 +15,8 @@ jobs:
     runs-on: blacksmith-2vcpu-ubuntu-2204
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
       - name: Setup Rust
         uses: actions-rs/toolchain@v1
@@ -25,12 +26,11 @@ jobs:
       - name: Install Aderyn
         run: cargo install --git https://github.com/Cyfrin/aderyn.git
 
-      - name: Run Aderyn Analysis
-        run: aderyn .
+      - name: Upload Aderyn Report
+        run: aderyn --output report.md .
 
-      - uses: actions/upload-artifact@v3
+      - name: Upload Aderyn Report as Artifact
+        uses: actions/upload-artifact@v3
         with:
           name: aderyn-report
           path: report.md
-
-   

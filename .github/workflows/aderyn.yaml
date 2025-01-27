@@ -24,13 +24,13 @@ jobs:
           toolchain: stable
 
       - name: Install Aderyn
-        run: cargo install --git https://github.com/Cyfrin/aderyn.git
+        run: cargo install --git https://github.com/Cyfrin/aderyn.git --tag v0.3.3
 
       - name: Upload Aderyn Report
         run: aderyn --output report.md .
 
       - name: Upload Aderyn Report as Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: aderyn-report
           path: report.md

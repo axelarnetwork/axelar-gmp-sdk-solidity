@@ -19,14 +19,12 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Install Aderyn
         run: cargo install --git https://github.com/Cyfrin/aderyn.git --tag v0.3.3
 
-      - name: Upload Aderyn Report
+      - name: Generate Aderyn Report
         run: aderyn --output report.md .
 
       - name: Upload Aderyn Report as Artifact

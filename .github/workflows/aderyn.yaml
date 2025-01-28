@@ -20,6 +20,9 @@ jobs:
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
+        
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
 
       - name: Install Aderyn
         run: cargo install --git https://github.com/Cyfrin/aderyn.git --tag v0.3.3

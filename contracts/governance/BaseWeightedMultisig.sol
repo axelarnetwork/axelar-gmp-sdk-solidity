@@ -23,15 +23,12 @@ abstract contract BaseWeightedMultisig is IBaseWeightedMultisig {
     }
 
     /// @dev Previous signers retention. 0 means only the current signers are valid
-    /// @return The number of epochs to keep the signers valid for signature verification
     uint256 public immutable previousSignersRetention;
 
     /// @dev The domain separator for the signer proof
-    /// @return The domain separator for the signer proof
     bytes32 public immutable domainSeparator;
 
     /// @dev The minimum delay required between rotations
-    /// @return The minimum delay required between rotations
     uint256 public immutable minimumRotationDelay;
 
     /**

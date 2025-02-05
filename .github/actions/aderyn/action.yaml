@@ -27,9 +27,11 @@ runs:
 
     - name: Install Aderyn
       run: cargo install --git https://github.com/Cyfrin/aderyn.git --tag ${{ inputs.aderyn_version }}
+      shell: bash
 
     - name: Generate Aderyn Report
       run: aderyn --output report.md .
+      shell: bash
 
     - name: Upload Aderyn Report as Artifact
       uses: actions/upload-artifact@v4

@@ -58,9 +58,3 @@ runs:
 
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v3
-
-    - name: Deploy to GitHub Pages
-      id: deployment
-      uses: actions/deploy-pages@v4
-      with:
-        environment: ${{ inputs.environment_name }}

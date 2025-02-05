@@ -1,0 +1,60 @@
+name: "Upload Docs"
+description: "Build and upload documentation to GitHub Pages"
+
+inputs:
+  branches:
+    description: "Branches to trigger the workflow on"
+    required: false
+    default: "main,ci/evm-docs-to-github-pages"
+  environment_name:
+    description: "Name of the deployment environment"
+    required: false
+    default: "github-pages"
+    
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup tools
+      uses: ./.github/actions/setup-tools
+      with:
+        install-nodejs: 'true'
+
+    - name: Install Solidity docgen
+      run: npm install -g solidity-docgen
+
+    - name: Create docs directory
+      run: mkdir -p docs
+
+    - name: Build Solidity documentation
+      run: npx hardhat docgen
+
+    - name: Generate Overview Documentation
+      run: npm run generate-overview-docs
+
+    - name: Add YAML front matter for Jekyll
+      run: |
+        find docs -name '*.md' -exec sh -c 'sed -i "" "1s/^/---\nlayout: default\n---\n/" "$0"' {} \;
+
+    - name: Update Links in Markdown Files to HTML
+      run: |
+        find docs -name '*.md' -exec sh -c 'sed -i "" "s/href=\"\([^\"]*\)\.md\([#^\"]*\)\?\"/href=\"\1.html\2\"/g" "$0"' {} \;
+
+    - name: Setup Github Pages
+      uses: actions/configure-pages@v5
+
+    - name: Build with Jekyll
+      uses: actions/jekyll-build-pages@v1
+      with:
+        source: ./docs
+
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v3
+
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
+      with:
+        environment: ${{ inputs.environment_name }}

@@ -21,7 +21,7 @@ jobs:
           branches: main,ci/evm-docs-to-github-pages
           environment_name: github-pages
   deploy:
-    needs: build
+    needs: upload-docs
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

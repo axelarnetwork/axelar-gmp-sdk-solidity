@@ -30,7 +30,13 @@ runs:
       shell: bash
 
     - name: Generate Aderyn Report
-      run: aderyn --output report.md .
+      id: run_aderyn
+      run: |
+        aderyn --output report.md . 2>&1 | tee aderyn_output.log
+        if grep -q "warning:" aderyn_output.log || grep -q "Found issues" aderyn_output.log; then
+          echo "Aderyn analysis found warnings or issues."
+          exit 1
+        fi
       shell: bash
 
     - name: Upload Aderyn Report as Artifact

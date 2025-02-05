@@ -1,6 +1,6 @@
 name: "Upload Docs"
-description: "Build and upload documentation to GitHub Pages"
 
+description: "Build and upload documentation to GitHub Pages"
 inputs:
   branches:
     description: "Branches to trigger the workflow on"
@@ -24,23 +24,29 @@ runs:
 
     - name: Install Solidity docgen
       run: npm install -g solidity-docgen
+      shell: bash
 
     - name: Create docs directory
       run: mkdir -p docs
+      shell: bash
 
     - name: Build Solidity documentation
       run: npx hardhat docgen
+      shell: bash
 
     - name: Generate Overview Documentation
       run: npm run generate-overview-docs
+      shell: bash
 
     - name: Add YAML front matter for Jekyll
       run: |
         find docs -name '*.md' -exec sh -c 'sed -i "" "1s/^/---\nlayout: default\n---\n/" "$0"' {} \;
+      shell: bash
 
     - name: Update Links in Markdown Files to HTML
       run: |
         find docs -name '*.md' -exec sh -c 'sed -i "" "s/href=\"\([^\"]*\)\.md\([#^\"]*\)\?\"/href=\"\1.html\2\"/g" "$0"' {} \;
+      shell: bash
 
     - name: Setup Github Pages
       uses: actions/configure-pages@v5

@@ -33,6 +33,7 @@ function generateIndex(dir, output) {
 
     // Check if README.md exists at the top level and append its contents
     const readmePath = path.join(__dirname, '..', 'README.md');
+    
     if (fs.existsSync(readmePath)) {
         const readmeContent = fs.readFileSync(readmePath, 'utf-8');
         content += `\n\n${readmeContent}`;

@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - name: Run Aderyn Static Analysis
-        uses: ./.github/actions/aderyn
+        uses: axelarnetwork/axelar-gmp-sdk-solidity/.github/actions/aderyn@ci/aderyn_analysis
         with:
           rust_toolchain: stable
           aderyn_version: v0.3.3

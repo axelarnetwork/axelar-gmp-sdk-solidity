@@ -15,23 +15,8 @@ jobs:
     runs-on: blacksmith-2vcpu-ubuntu-2204
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-        
-      - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2
-
-      - name: Install Aderyn
-        run: cargo install --git https://github.com/Cyfrin/aderyn.git --tag v0.3.3
-
-      - name: Generate Aderyn Report
-        run: aderyn --output report.md .
-
-      - name: Upload Aderyn Report as Artifact
-        uses: actions/upload-artifact@v4
+      - name: Run Aderyn Static Analysis
+        uses: ./.github/actions/aderyn
         with:
-          name: aderyn-report
-          path: report.md
+          rust_toolchain: stable
+          aderyn_version: v0.3.3

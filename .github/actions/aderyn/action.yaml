@@ -1,0 +1,38 @@
+name: "Aderyn Static Analysis"
+description: "Run Aderyn static analysis and upload the report as an artifact"
+
+inputs:
+  rust_toolchain:
+    description: "Rust toolchain version"
+    required: true
+    default: "stable"
+  aderyn_version:
+    description: "Aderyn version to install"
+    required: true
+    default: "v0.3.3"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: ${{ inputs.rust_toolchain }}
+
+    - name: Cache Rust dependencies
+      uses: Swatinem/rust-cache@v2
+
+    - name: Install Aderyn
+      run: cargo install --git https://github.com/Cyfrin/aderyn.git --tag ${{ inputs.aderyn_version }}
+
+    - name: Generate Aderyn Report
+      run: aderyn --output report.md .
+
+    - name: Upload Aderyn Report as Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: aderyn-report
+        path: report.md

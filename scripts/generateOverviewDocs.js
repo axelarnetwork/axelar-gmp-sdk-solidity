@@ -1,11 +1,13 @@
+'use strict';
+
 const fs = require('fs');
 const path = require('path');
 
 const parentDir = 'docs';
 const parentOutput = path.join(parentDir, 'index.md');
 
-function generateIndex(dir, output) {
-    let content = '# Solidity API\n\n';
+function generateIndex(dir, outputFile) {
+    let content = '# Docs\n\n';
 
     // List all Markdown files in the directory under "Contracts"
     const files = fs.readdirSync(dir).filter((file) => file.endsWith('.md') && file !== 'index.md');
@@ -34,13 +36,15 @@ function generateIndex(dir, output) {
     // Check if README.md exists at the top level and append its contents
     const readmePath = path.join(__dirname, '..', 'README.md');
 
-    if (fs.existsSync(readmePath)) {
+    if (fs.existsSync(readmePath) && dir === parentDir) {
         const readmeContent = fs.readFileSync(readmePath, 'utf-8');
         content += `\n\n${readmeContent}`;
     }
 
-    fs.writeFileSync(output, content);
-    console.log(`Generated ${output}`);
+    fs.writeFileSync(outputFile, content);
+    console.log(`Generated ${outputFile}`);
 }
 
-generateIndex(parentDir, parentOutput);
+if (require.main === module) {
+    generateIndex(parentDir, parentOutput);
+}

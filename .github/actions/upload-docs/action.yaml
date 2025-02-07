@@ -14,14 +14,6 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup tools
-      uses: ./.github/actions/setup-tools
-      with:
-        install-nodejs: 'true'
-
     - name: Install Solidity docgen
       run: npm install -g solidity-docgen
       shell: bash

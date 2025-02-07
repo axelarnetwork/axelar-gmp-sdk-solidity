@@ -36,6 +36,7 @@ runs:
 
     - name: Generate Overview Documentation
       run: npm run generate-overview-docs
+      shell: bash
 
     - name: Add YAML front matter for Jekyll
       run: |

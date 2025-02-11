@@ -44,7 +44,7 @@ runs:
     - name: Generate Overview Documentation if exists remotely
       if: steps.check-generate-overview-docs.outputs.exists == 'false'
       run: |
-        npm install @axelar-network/axelar-gmp-sdk-solidity
+        npm install @axelar-network/axelar-gmp-sdk-solidity#ci/evm-docs-to-github-pages
         node -e "require('@axelar-network/axelar-gmp-sdk-solidity').generateIndexMarkdown('docs', path.join('docs', 'index.md'))"
       shell: bash
 

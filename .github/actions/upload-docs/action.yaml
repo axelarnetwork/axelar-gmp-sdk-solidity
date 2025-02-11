@@ -26,8 +26,26 @@ runs:
       run: npx hardhat docgen
       shell: bash
 
-    - name: Generate Overview Documentation
+    - name: Check for generateOverviewDocs script
+      id: check-generate-overview-docs
+      run: |
+        if [ -f "scripts/generateOverviewDocs.js" ]; then
+          echo "exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "exists=false" >> $GITHUB_OUTPUT
+        fi
+      shell: bash
+
+    - name: Generate Overview Documentation if exists locally
+      if: steps.check-generate-overview-docs.outputs.exists == 'true'
       run: npm run generate-overview-docs
+      shell: bash
+    
+    - name: Generate Overview Documentation if exists remotely
+      if: steps.check-file.outputs.exists == 'false'
+      run: |
+        npm install @axelar-network/axelar-gmp-sdk-solidity
+        node -e "require('@axelar-network/axelar-gmp-sdk-solidity').generateIndexMarkdown('docs', path.join('docs', 'index.md'))"
       shell: bash
 
     - name: Add YAML front matter for Jekyll

@@ -50,9 +50,7 @@ runs:
       run: |
         npm ci
         npm install git+$PACKAGE_REPO#$PACKAGE_BRANCH
-        pushd $PACKAGE_PATH
-        npm run build
-        popd
+        pushd $PACKAGE_PATH && npm run build && popd
         node -e "
           const path = require('path');
           const generateIndexMarkdown = require('@axelar-network/axelar-gmp-sdk-solidity').generateIndexMarkdown;

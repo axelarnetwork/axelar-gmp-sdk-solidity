@@ -49,5 +49,5 @@ if (require.main === module) {
 }
 
 module.exports = {
-    generateIndexMarkdown
+    generateIndexMarkdown,
 };

@@ -42,7 +42,7 @@ runs:
       shell: bash
     
     - name: Generate Overview Documentation if exists remotely
-      if: steps.check-file.outputs.exists == 'false'
+      if: steps.check-generate-overview-docs.outputs.exists == 'false'
       run: |
         npm install @axelar-network/axelar-gmp-sdk-solidity
         node -e "require('@axelar-network/axelar-gmp-sdk-solidity').generateIndexMarkdown('docs', path.join('docs', 'index.md'))"

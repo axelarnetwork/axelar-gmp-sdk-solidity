@@ -1,6 +1,6 @@
 name: "Upload Docs"
 
-description: "Build and upload documentation to GitHub Pages"
+description: "Build and upload docs to GitHub Pages"
 inputs:
   branches:
     description: "Branches to trigger the workflow on"

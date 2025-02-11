@@ -31,7 +31,7 @@ function generateIndexMarkdown(dir, outputFile, topLevelDir = 'docs') {
     }
 
     // Check if README.md exists at the top level and append its contents
-    const readmePath = path.join(__dirname, '..', 'README.md');
+    const readmePath = path.join(topLevelDir, 'README.md');
 
     if (fs.existsSync(readmePath) && dir === topLevelDir) {
         const readmeContent = fs.readFileSync(readmePath, 'utf-8');

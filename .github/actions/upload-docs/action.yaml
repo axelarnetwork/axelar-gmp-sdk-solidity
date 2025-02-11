@@ -47,7 +47,7 @@ runs:
         npm ci
         npm install git+https://github.com/axelarnetwork/axelar-gmp-sdk-solidity.git#ci/evm-docs-to-github-pages
         pushd node_modules/@axelar-network/axelar-gmp-sdk-solidity && npm run build && popd
-        node -e "const path = require('path'); require('@axelar-network/axelar-gmp-sdk-solidity').generateIndexMarkdown('docs', path.join('docs', 'index.md'))"
+        node -e "const path = require('path'); require('@axelar-network/axelar-gmp-sdk-solidity').generateIndexMarkdown('docs', 'docs/index.md')"
       shell: bash
 
     - name: Add YAML front matter for Jekyll

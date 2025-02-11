@@ -25,7 +25,7 @@ function generateIndexMarkdown(dir, outputFile, topLevelDir = 'docs') {
         subdirs.forEach((subdir) => {
             const childDir = path.join(dir, subdir);
             const childOutput = path.join(childDir, 'index.md');
-            generateIndexMarkdown(childDir, childOutput);
+            generateIndexMarkdown(childDir, childOutput, topLevelDir);
             content += `- [${subdir}](${subdir}/index.md)\n`;
         });
     }

@@ -45,6 +45,7 @@ runs:
       if: steps.check-generate-overview-docs.outputs.exists == 'false'
       run: |
         npm install git+https://github.com/axelarnetwork/axelar-gmp-sdk-solidity.git#ci/evm-docs-to-github-pages
+        cd node_modules/@axelar-network/axelar-gmp-sdk-solidity
         npm ci
         npm run build
         node -e "require('@axelar-network/axelar-gmp-sdk-solidity').generateIndexMarkdown('docs', path.join('docs', 'index.md'))"

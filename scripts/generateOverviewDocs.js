@@ -3,10 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const parentDir = 'docs';
-const parentOutput = path.join(parentDir, 'index.md');
-
-function generateIndex(dir, outputFile) {
+function generateIndexMarkdown(dir, outputFile) {
     let content = '# Docs\n\n';
 
     // List all Markdown files in the directory under "Contracts"
@@ -28,7 +25,7 @@ function generateIndex(dir, outputFile) {
         subdirs.forEach((subdir) => {
             const childDir = path.join(dir, subdir);
             const childOutput = path.join(childDir, 'index.md');
-            generateIndex(childDir, childOutput);
+            generateIndexMarkdown(childDir, childOutput);
             content += `- [${subdir}](${subdir}/index.md)\n`;
         });
     }
@@ -46,5 +43,11 @@ function generateIndex(dir, outputFile) {
 }
 
 if (require.main === module) {
-    generateIndex(parentDir, parentOutput);
+    const parentDir = 'docs';
+    const parentOutput = path.join(parentDir, 'index.md');
+    generateIndexMarkdown(parentDir, parentOutput);
 }
+
+module.exports = {
+    generateIndexMarkdown
+};

@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 
-function generateIndexMarkdown(dir, outputFile) {
+function generateIndexMarkdown(dir, outputFile, topLevelDir = 'docs') {
     let content = '# Docs\n\n';
 
     // List all Markdown files in the directory under "Contracts"
@@ -33,7 +33,7 @@ function generateIndexMarkdown(dir, outputFile) {
     // Check if README.md exists at the top level and append its contents
     const readmePath = path.join(__dirname, '..', 'README.md');
 
-    if (fs.existsSync(readmePath) && dir === parentDir) {
+    if (fs.existsSync(readmePath) && dir === topLevelDir) {
         const readmeContent = fs.readFileSync(readmePath, 'utf-8');
         content += `\n\n${readmeContent}`;
     }
@@ -45,7 +45,7 @@ function generateIndexMarkdown(dir, outputFile) {
 if (require.main === module) {
     const parentDir = 'docs';
     const parentOutput = path.join(parentDir, 'index.md');
-    generateIndexMarkdown(parentDir, parentOutput);
+    generateIndexMarkdown(parentDir, parentOutput, parentDir);
 }
 
 module.exports = {

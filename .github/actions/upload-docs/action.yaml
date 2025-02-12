@@ -19,11 +19,20 @@ runs:
   using: "composite"
   steps:
     - name: Create docs directory
-      run: mkdir -p docs
+      run: |
+        if [ -d "docs" ]; then
+          rm -rf docs
+          echo "removed pre-existing 'docs' dir"
+        fi
+        mkdir -p docs
       shell: bash
 
     - name: Build Solidity documentation
-      run: npx hardhat docgen
+      run: |
+        if ! npx hardhat docgen; then
+          echo "Hardhat failed to generate documentation"
+          exit 1
+        fi
       shell: bash
 
     - name: Check for generateOverviewDocs script
@@ -46,13 +55,13 @@ runs:
       run: node ${{ inputs.script }}
       shell: bash
 
-    - name: Check for index.md
-      run: |
-        if [ ! -f "docs/index.md" ]; then
-          echo "Error: docs/index.md not found."
-          exit 1
-        fi
-      shell: bash
+    - name: Verify docs directory is not empty
+        run: |
+          if [ ! -d "docs" ] || [ -z "$(ls -A docs/index.md)" ]; then
+            echo "Docs directory is empty or does not exist"
+            exit 1
+          fi
+        shell: bash
 
     - name: Add YAML front matter for Jekyll
       run: |

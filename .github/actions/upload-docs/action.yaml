@@ -50,6 +50,14 @@ runs:
       run: node ${{ inputs.script }}
       shell: bash
 
+    - name: Check for index.md
+      run: |
+        if [ ! -f "docs/index.md" ]; then
+          echo "Error: docs/index.md not found."
+          exit 1
+        fi
+      shell: bash
+
     - name: Add YAML front matter for Jekyll
       run: |
         find docs -name '*.md' -exec sh -c 'sed -i "" "1s/^/---\nlayout: default\n---\n/" "$0"' {} \;

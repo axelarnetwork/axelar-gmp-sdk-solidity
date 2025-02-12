@@ -6,10 +6,10 @@ inputs:
     description: "Rust toolchain version"
     required: true
     default: "stable"
-  aderyn_version:
-    description: "Aderyn version to install"
-    required: true
-    default: "v0.3.3"
+  # aderyn_version:
+  #   description: "Aderyn version to install"
+  #   required: true
+  #   default: "v0.3.3"
 
 runs:
   using: "composite"
@@ -23,7 +23,7 @@ runs:
         toolchain: ${{ inputs.rust_toolchain }}
 
     - name: Install Aderyn
-      run: cargo install --git https://github.com/Cyfrin/aderyn.git --tag ${{ inputs.aderyn_version }}
+      run: cargo install --git https://github.com/Cyfrin/aderyn.git
       shell: bash
 
     - name: Generate Aderyn Report
@@ -41,3 +41,4 @@ runs:
       with:
         name: aderyn-report
         path: report.md
+        

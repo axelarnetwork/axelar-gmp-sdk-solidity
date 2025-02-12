@@ -65,7 +65,7 @@ runs:
 
     - name: Add YAML front matter for Jekyll
       run: |
-        find docs -name '*.md' -exec sh -c 'sed -i.bak "1s/^/---\nlayout: default\n---\n/" "$0"  && rm *.bak' {} \;
+        find docs -name '*.md' -exec sh -c 'sed -i.bak "1s/^/---\nlayout: default\n---\n/" "$0" && rm "$0.bak"' {} \;
       shell: bash
 
     - name: Setup Github Pages

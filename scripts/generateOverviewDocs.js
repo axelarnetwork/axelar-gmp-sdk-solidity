@@ -4,16 +4,16 @@ const fs = require('fs');
 const path = require('path');
 
 function generateDocsIndex(dir, outputFile, topLevelDir = 'docs') {
-    const content = ['# Docs\n\n'];
+    const content = ['# Docs\n'];
 
     // List all Markdown files in the directory under "Contracts"
     const files = fs.readdirSync(dir).filter((file) => file.endsWith('.md') && file !== 'index.md');
 
     if (files.length > 0) {
-        content.push('## Contracts\n');
+        content.push('## Contracts');
         files.forEach((file) => {
             const title = path.parse(file).name;
-            content.push(`- [${title}](${file})\n`);
+            content.push(`- [${title}](${file})`);
         });
     }
 
@@ -21,12 +21,12 @@ function generateDocsIndex(dir, outputFile, topLevelDir = 'docs') {
     const subdirs = fs.readdirSync(dir).filter((subdir) => fs.statSync(path.join(dir, subdir)).isDirectory());
 
     if (subdirs.length > 0) {
-        content.push('\n## Directories\n');
+        content.push('\n## Directories');
         subdirs.forEach((subdir) => {
             const childDir = path.join(dir, subdir);
             const childOutput = path.join(childDir, 'index.md');
             generateDocsIndex(childDir, childOutput, topLevelDir);
-            content.push(`- [${subdir}](${subdir}/index.md)\n`);
+            content.push(`- [${subdir}](${subdir}/index.md)`);
         });
     }
 
@@ -35,10 +35,10 @@ function generateDocsIndex(dir, outputFile, topLevelDir = 'docs') {
 
     if (fs.existsSync(readmePath) && dir === topLevelDir) {
         const readmeContent = fs.readFileSync(readmePath, 'utf-8');
-        content.push(`\n\n${readmeContent}`);
+        content.push(`\n${readmeContent}`);
     }
 
-    fs.writeFileSync(outputFile, content.join(''));
+    fs.writeFileSync(outputFile, content.join('\n'));
     console.log(`Generated ${outputFile}`);
 }
 

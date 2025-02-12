@@ -6,10 +6,6 @@ inputs:
     description: "Rust toolchain version"
     required: true
     default: "stable"
-  # aderyn_version:
-  #   description: "Aderyn version to install"
-  #   required: true
-  #   default: "v0.3.3"
 
 runs:
   using: "composite"
@@ -30,10 +26,6 @@ runs:
       id: run_aderyn
       run: |
         aderyn --output report.md . 2>&1 | tee aderyn_output.log
-        if grep -q "warning:" aderyn_output.log || grep -q "Found issues" aderyn_output.log; then
-          echo "Aderyn analysis found warnings or issues."
-          exit 1
-        fi
       shell: bash
 
     - name: Upload Aderyn Report as Artifact

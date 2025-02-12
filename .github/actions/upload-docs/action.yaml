@@ -45,7 +45,7 @@ runs:
       run: npm run generate-overview-docs
       shell: bash
 
-   - name: Generate Overview Documentation if exists remotely
+    - name: Generate Overview Documentation if exists remotely
       if: steps.check-generate-overview-docs.outputs.exists == 'false'
       run: node ${{ inputs.script }}
       shell: bash

@@ -28,7 +28,6 @@ jobs:
         with:
           branches: main,ci/evm-docs-to-github-pages
           environment_name: github-pages
-          script: scripts/generateOverviewDocs.js
   deploy:
     needs: upload-docs
     environment:

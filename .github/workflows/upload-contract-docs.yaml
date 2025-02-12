@@ -1,4 +1,4 @@
-name: Upload Docs
+name: Upload Contract Docs
 
 on:
   push:
@@ -29,7 +29,7 @@ jobs:
         with:
           branches: main,ci/evm-docs-to-github-pages
           environment_name: github-pages
-          
+
   deploy:
     needs: upload-docs
     environment:

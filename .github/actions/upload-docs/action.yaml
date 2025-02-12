@@ -10,6 +10,10 @@ inputs:
     description: "Name of the deployment environment"
     required: false
     default: "github-pages"
+  script:
+    description: 'The script to run for generating documentation'
+    required: false
+    default: 'scripts/generateOverviewDocs.js'
     
 runs:
   using: "composite"

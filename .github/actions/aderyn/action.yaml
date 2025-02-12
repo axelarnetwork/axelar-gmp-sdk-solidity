@@ -28,6 +28,14 @@ runs:
         aderyn --output report.md . 2>&1 | tee aderyn_output.log
       shell: bash
 
+    - name: Check Aderyn Report for Warnings
+      run: |
+        if grep -q "warning:" aderyn_output.log || grep -q "Found issues" aderyn_output.log; then
+          echo "Aderyn analysis found warnings."
+          exit 1
+        fi
+      shell: bash
+
     - name: Upload Aderyn Report as Artifact
       uses: actions/upload-artifact@v4
       with:

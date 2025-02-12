@@ -40,22 +40,10 @@ runs:
       if: steps.check-generate-overview-docs.outputs.exists == 'true'
       run: npm run generate-overview-docs
       shell: bash
-    
-    - name: Generate Overview Documentation if exists remotely
+
+   - name: Generate Overview Documentation if exists remotely
       if: steps.check-generate-overview-docs.outputs.exists == 'false'
-      env:
-        PACKAGE_REPO: "https://github.com/axelarnetwork/axelar-gmp-sdk-solidity.git"
-        PACKAGE_BRANCH: "ci/evm-docs-to-github-pages"
-        PACKAGE_PATH: "node_modules/@axelar-network/axelar-gmp-sdk-solidity"
-      run: |
-        npm ci
-        npm install git+$PACKAGE_REPO#$PACKAGE_BRANCH
-        pushd $PACKAGE_PATH && npm run build && popd
-        node -e "
-          const path = require('path');
-          const generateIndexMarkdown = require('@axelar-network/axelar-gmp-sdk-solidity').generateIndexMarkdown;
-          generateIndexMarkdown('docs', path.join('docs', 'index.md'));
-        "
+      run: node ${{ inputs.script }}
       shell: bash
 
     - name: Add YAML front matter for Jekyll

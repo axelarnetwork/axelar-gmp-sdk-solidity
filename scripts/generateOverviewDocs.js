@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 
-function generateIndexMarkdown(dir, outputFile, topLevelDir = 'docs') {
+function generateDocsIndex(dir, outputFile, topLevelDir = 'docs') {
     const content = ['# Docs\n\n'];
 
     // List all Markdown files in the directory under "Contracts"
@@ -45,9 +45,9 @@ function generateIndexMarkdown(dir, outputFile, topLevelDir = 'docs') {
 if (require.main === module) {
     const parentDir = 'docs';
     const parentOutput = path.join(parentDir, 'index.md');
-    generateIndexMarkdown(parentDir, parentOutput, parentDir);
+    generateDocsIndex(parentDir, parentOutput, parentDir);
 }
 
 module.exports = {
-    generateIndexMarkdown,
+    generateDocsIndex,
 };

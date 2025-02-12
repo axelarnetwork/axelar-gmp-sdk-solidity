@@ -28,7 +28,7 @@ const {
     upgradeUpgradable,
 } = require('./scripts/upgradable');
 const { printObj } = require('./scripts/utils');
-const { generateIndexMarkdown } = require('./scripts/generateOverviewDocs');
+const { generateDocsIndex } = require('./scripts/generateOverviewDocs');
 
 module.exports = {
     estimateGasForDeploy,
@@ -55,5 +55,5 @@ module.exports = {
     deployCreate3InitUpgradable,
     upgradeUpgradable,
     printObj,
-    generateIndexMarkdown,
+    generateDocsIndex,
 };

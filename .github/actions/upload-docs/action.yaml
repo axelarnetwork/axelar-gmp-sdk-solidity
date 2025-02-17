@@ -1,0 +1,54 @@
+name: "Upload Docs"
+
+description: "Build and upload docs to GitHub Pages"
+inputs:
+  branches:
+    description: "Branches to trigger the workflow on"
+    required: false
+    default: "main"
+  environment_name:
+    description: "Name of the deployment environment"
+    required: false
+    default: "github-pages"
+  script:
+    description: 'The script to run for generating documentation'
+    required: true
+    
+runs:
+  using: "composite"
+  steps:
+    - name: Create docs directory
+      run: mkdir -p docs
+      shell: bash
+
+    - name: Build Solidity documentation
+      run: npx hardhat docgen
+      shell: bash
+
+    - name: Generate Overview Documentation
+      run: node ${{ inputs.script }}
+      shell: bash
+
+    - name: Verify docs directory is not empty
+      run: |
+        if [ ! -d "docs" ] || [ ! -s "docs/index.md" ]; then
+          echo "Docs directory is empty or does not exist"
+          exit 1
+        fi
+      shell: bash
+
+    - name: Add YAML front matter for Jekyll
+      run: |
+        find docs -name '*.md' -exec sh -c 'sed -i.bak "1s/^/---\nlayout: default\n---\n/" "$0" && rm "$0.bak"' {} \;
+      shell: bash
+
+    - name: Setup Github Pages
+      uses: actions/configure-pages@v5
+
+    - name: Build with Jekyll
+      uses: actions/jekyll-build-pages@v1
+      with:
+        source: ./docs
+
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v3

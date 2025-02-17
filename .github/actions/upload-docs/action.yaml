@@ -12,52 +12,26 @@ inputs:
     default: "github-pages"
   script:
     description: 'The script to run for generating documentation'
-    required: false
-    default: 'scripts/generateOverviewDocs.js'
+    required: true
     
 runs:
   using: "composite"
   steps:
     - name: Create docs directory
-      run: |
-        if [ -d "docs" ]; then
-          rm -rf docs
-          echo "removed pre-existing 'docs' dir"
-        fi
-        mkdir -p docs
+      run: mkdir -p docs
       shell: bash
 
     - name: Build Solidity documentation
-      run: |
-        if ! npx hardhat docgen; then
-          echo "Hardhat failed to generate documentation"
-          exit 1
-        fi
+      run: npx hardhat docgen
       shell: bash
 
-    - name: Check for generateOverviewDocs script
-      id: check-generate-overview-docs
-      run: |
-        if [ -f "scripts/generateOverviewDocs.js" ]; then
-          echo "exists=true" >> $GITHUB_OUTPUT
-        else
-          echo "exists=false" >> $GITHUB_OUTPUT
-        fi
-      shell: bash
-
-    - name: Generate Overview Documentation if exists locally
-      if: steps.check-generate-overview-docs.outputs.exists == 'true'
-      run: npm run generate-overview-docs
-      shell: bash
-
-    - name: Generate Overview Documentation if exists remotely
-      if: steps.check-generate-overview-docs.outputs.exists == 'false'
+    - name: Generate Overview Documentation
       run: node ${{ inputs.script }}
       shell: bash
 
     - name: Verify docs directory is not empty
       run: |
-        if [ ! -d "docs" ] || [ -z "$(ls -A docs/index.md)" ]; then
+        if [ ! -d "docs" ] || [ ! -s "docs/index.md" ]; then
           echo "Docs directory is empty or does not exist"
           exit 1
         fi

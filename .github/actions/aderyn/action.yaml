@@ -36,8 +36,10 @@ runs:
         
     - name: Check Aderyn Report for Warnings
       run: |
-        if grep -q "warning:" aderyn_output.log || grep -q "Found issues" aderyn_output.log; then
+        if grep -E "warning:|Found issues" aderyn_output.log; then
           echo "Aderyn analysis found warnings."
           exit 1
+        else
+          echo "No warnings or issues found by Aderyn."
         fi
       shell: bash

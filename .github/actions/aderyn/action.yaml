@@ -28,6 +28,10 @@ runs:
         aderyn --output report.md . 2>&1 | tee aderyn_output.log
       shell: bash
 
+    - name: Print Aderyn Warnings to Console
+      run: cat aderyn_output.log
+      shell: bash
+
     - name: Upload Aderyn Report as Artifact
       uses: actions/upload-artifact@v4
       with:

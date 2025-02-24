@@ -29,7 +29,7 @@ runs:
       shell: bash
 
     - name: Print Aderyn Warnings to Console
-      run: cat aderyn_output.log
+      run: cat report.md
       shell: bash
 
     - name: Upload Aderyn Report as Artifact

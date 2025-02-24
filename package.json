@@ -16,7 +16,8 @@
     "release-snapshot": "npm run build && npm run flatten && npm run clean:artifacts && npm version 0.0.0-snapshot.$(git rev-parse --short HEAD) --git-tag-version=false && npm publish --no-git-checks --tag snapshot --access public",
     "cs": "changeset",
     "flatten": "sh scripts/flatten-contracts.sh",
-    "coverage": "cross-env COVERAGE=true hardhat coverage"
+    "coverage": "cross-env COVERAGE=true hardhat coverage",
+    "generate-overview-docs": "node scripts/generateOverviewDocs.js"
   },
   "author": "axelar-network",
   "license": "MIT",
@@ -35,7 +36,8 @@
     "mocha": "^10.2.0",
     "prettier": "^2.8.8",
     "prettier-plugin-solidity": "1.0.0-beta.19",
-    "solhint": "^4.5.2"
+    "solhint": "^4.5.2",
+    "solidity-docgen": "^0.6.0-beta.36"
   },
   "engines": {
     "node": ">=18"

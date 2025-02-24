@@ -1,0 +1,49 @@
+name: "Aderyn Static Analysis"
+description: "Run Aderyn static analysis and upload the report as an artifact"
+
+inputs:
+  rust_toolchain:
+    description: "Rust toolchain version"
+    required: true
+    default: "stable"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: ${{ inputs.rust_toolchain }}
+
+    - name: Install Aderyn
+      run: cargo install --git https://github.com/Cyfrin/aderyn.git
+      shell: bash
+
+    - name: Generate Aderyn Report
+      id: run_aderyn
+      run: |
+        aderyn --output report.md . 2>&1 | tee aderyn_output.log
+      shell: bash
+
+    - name: Print Aderyn Warnings to Console
+      run: cat report.md
+      shell: bash
+
+    - name: Upload Aderyn Report as Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: aderyn-report
+        path: report.md
+        
+    - name: Check Aderyn Report for Warnings
+      run: |
+        if grep -E "warning:|Found issues" aderyn_output.log; then
+          echo "Aderyn analysis found warnings."
+          exit 1
+        else
+          echo "No warnings or issues found by Aderyn."
+        fi
+      shell: bash

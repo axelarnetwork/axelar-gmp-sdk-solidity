@@ -3,7 +3,6 @@ name: Aderyn Static Analysis
 on:
   pull_request:
     branches:
-      - ci/aderyn-analysis
       - main
 
 concurrency:
@@ -16,4 +15,4 @@ jobs:
 
     steps:
       - name: Run Aderyn Static Analysis
-        uses: axelarnetwork/axelar-gmp-sdk-solidity/.github/actions/aderyn@ci/aderyn-analysis
+        uses: axelarnetwork/axelar-gmp-sdk-solidity/.github/actions/aderyn@main

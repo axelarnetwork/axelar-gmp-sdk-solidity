@@ -1,5 +1,11 @@
 # @axelar-network/axelar-gmp-sdk-solidity
 
+## 6.0.5
+
+### Patch Changes
+
+-   6093489: Added GitHub actions for automatic docs generation and Aderyn static analysis for contracts
+
 ## 6.0.4
 
 ### Patch Changes

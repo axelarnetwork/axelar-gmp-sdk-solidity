@@ -1,5 +1,11 @@
 # @axelar-network/axelar-gmp-sdk-solidity
 
+## 6.0.6
+
+### Patch Changes
+
+-   07330bc: fix gh release action
+
 ## 6.0.5
 
 ### Patch Changes

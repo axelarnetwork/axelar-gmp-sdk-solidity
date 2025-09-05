@@ -1,18 +1,18 @@
-name: "Aderyn Static Analysis"
-description: "Run Aderyn static analysis and upload the report as an artifact"
+name: 'Aderyn Static Analysis'
+description: 'Run Aderyn static analysis and upload the report as an artifact'
 
 inputs:
   rust_toolchain:
-    description: "Rust toolchain version"
+    description: 'Rust toolchain version'
     required: true
-    default: "stable"
+    default: 'stable'
   aderyn_ref:
-    description: "Optional git ref (tag/commit) for Cyfrin/aderyn to pin installs"
+    description: 'Optional git ref (tag/commit) for Cyfrin/aderyn to pin installs'
     required: false
-    default: ""
+    default: ''
 
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
     - name: Checkout Repository
       uses: actions/checkout@v4

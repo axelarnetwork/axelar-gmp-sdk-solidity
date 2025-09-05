@@ -18,19 +18,35 @@ runs:
       with:
         toolchain: ${{ inputs.rust_toolchain }}
 
-    - name: Install Aderyn
-      run: cargo install --git https://github.com/Cyfrin/aderyn.git aderyn
+    # Ensure cargo bin dir is on PATH for subsequent steps
+    - name: Add cargo bin to PATH
       shell: bash
+      run: echo "${HOME}/.cargo/bin" >> "$GITHUB_PATH"
+
+    - name: Install Aderyn
+      shell: bash
+      run: |
+        set -euo pipefail
+        REPO="https://github.com/Cyfrin/aderyn.git"
+        if [[ -n "${{ inputs.aderyn_ref }}" ]]; then
+          echo "Installing aderyn pinned to ref '${{ inputs.aderyn_ref }}'..."
+          cargo install --git "$REPO" --rev "${{ inputs.aderyn_ref }}" aderyn --locked --force
+        else
+          echo "Installing aderyn from main..."
+          cargo install --git "$REPO" aderyn --locked --force
+        fi
+        aderyn --version
 
     - name: Generate Aderyn Report
       id: run_aderyn
-      run: |
-        aderyn --output report.md . 2>&1 | tee aderyn_output.log
       shell: bash
+      run: |
+        set -euo pipefail
+        aderyn --output report.md . 2>&1 | tee aderyn_output.log
 
     - name: Print Aderyn Warnings to Console
-      run: cat report.md
       shell: bash
+      run: cat report.md
 
     - name: Upload Aderyn Report as Artifact
       uses: actions/upload-artifact@v4
@@ -38,12 +54,14 @@ runs:
         name: aderyn-report
         path: report.md
 
+    # Fail the job if Aderyn surfaced warnings/issues
     - name: Check Aderyn Report for Warnings
+      shell: bash
       run: |
+        set -euo pipefail
         if grep -E "warning:|Found issues" aderyn_output.log; then
           echo "Aderyn analysis found warnings."
           exit 1
         else
           echo "No warnings or issues found by Aderyn."
         fi
-      shell: bash

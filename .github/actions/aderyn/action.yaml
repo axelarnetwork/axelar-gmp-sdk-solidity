@@ -19,7 +19,7 @@ runs:
         toolchain: ${{ inputs.rust_toolchain }}
 
     - name: Install Aderyn
-      run: cargo install --git https://github.com/Cyfrin/aderyn.git -p aderyn
+      run: run: cargo install aderyn --version 0.1.9
       shell: bash
 
     - name: Generate Aderyn Report

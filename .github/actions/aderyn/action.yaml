@@ -19,7 +19,7 @@ runs:
         toolchain: ${{ inputs.rust_toolchain }}
 
     - name: Install Aderyn
-      run: cargo install --git https://github.com/Cyfrin/aderyn.git
+      run: run: cargo install aderyn --version 0.1.9
       shell: bash
 
     - name: Generate Aderyn Report
@@ -37,7 +37,7 @@ runs:
       with:
         name: aderyn-report
         path: report.md
-        
+
     - name: Check Aderyn Report for Warnings
       run: |
         if grep -E "warning:|Found issues" aderyn_output.log; then

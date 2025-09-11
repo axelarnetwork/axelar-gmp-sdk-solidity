@@ -19,13 +19,17 @@ runs:
         toolchain: ${{ inputs.rust_toolchain }}
 
     - name: Install Aderyn
-      run: cargo install aderyn --locked
+      run: |
+        set -euo pipefail
+        # Prefer latest stable from git with locked deps; fall back to crates.io if needed
+        cargo install --git https://github.com/Cyfrin/aderyn.git --tag v0.5.13 --locked aderyn \
+          || cargo install aderyn --locked
       shell: bash
 
     - name: Generate Aderyn Report
       id: run_aderyn
       run: |
-        aderyn --output report.md . 2>&1 | tee aderyn_output.log
+        RUST_BACKTRACE=1 aderyn --output report.md . 2>&1 | tee aderyn_output.log
       shell: bash
 
     - name: Print Aderyn Warnings to Console

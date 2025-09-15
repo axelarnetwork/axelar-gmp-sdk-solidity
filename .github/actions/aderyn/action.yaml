@@ -1,14 +1,14 @@
-name: "Aderyn Static Analysis"
-description: "Run Aderyn static analysis and upload the report as an artifact"
+name: 'Aderyn Static Analysis'
+description: 'Run Aderyn static analysis and upload the report as an artifact'
 
 inputs:
   rust_toolchain:
-    description: "Rust toolchain version"
+    description: 'Rust toolchain version'
     required: true
-    default: "stable"
+    default: 'stable'
 
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
@@ -19,7 +19,7 @@ runs:
         toolchain: ${{ inputs.rust_toolchain }}
 
     - name: Install Aderyn
-      run: run: cargo install aderyn --version 0.1.9
+      run: cargo install aderyn --version 0.1.9
       shell: bash
 
     - name: Generate Aderyn Report

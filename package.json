@@ -5,7 +5,7 @@
   "main": "index.js",
   "overrides": {
     "elliptic": "^6.6.1"
-  },  
+  },
   "scripts": {
     "build": "npx hardhat clean && npx hardhat compile && npm run copy:interfaces",
     "test": "npx hardhat test",

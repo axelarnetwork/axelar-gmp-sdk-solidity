@@ -3,6 +3,9 @@
   "version": "6.0.6",
   "description": "Solidity GMP SDK and utilities provided by Axelar for cross-chain development",
   "main": "index.js",
+  "overrides": {
+    "elliptic": "^6.6.1"
+  },
   "scripts": {
     "build": "npx hardhat clean && npx hardhat compile && npm run copy:interfaces",
     "test": "npx hardhat test",
@@ -25,6 +28,7 @@
     "@axelar-network/axelar-chains-config": "^1.2.0",
     "@changesets/cli": "^2.27.9",
     "@nomicfoundation/hardhat-toolbox": "^2.0.2",
+    "elliptic": "^6.6.1",
     "cross-env": "^7.0.3",
     "eslint": "^8.57.0",
     "eslint-config-richardpringle": "^2.0.0",

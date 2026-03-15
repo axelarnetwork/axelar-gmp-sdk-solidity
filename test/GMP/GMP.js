@@ -239,6 +239,9 @@ describe('GMP', () => {
                     symbolA,
                     swapAmount,
                 );
+                const returnPayload = defaultAbiCoder.encode(['string'], [userWallet.address.toString()]);
+                const returnPayloadHash = keccak256(returnPayload);
+
                 await expect(swap)
                     .to.emit(tokenA, 'Transfer')
                     .withArgs(destinationChainGateway.address, destinationChainSwapExecutable.address, swapAmount)
@@ -250,11 +253,13 @@ describe('GMP', () => {
                     )
                     .and.to.emit(tokenB, 'Transfer')
                     .withArgs(destinationChainSwapExecutable.address, destinationChainGateway.address, convertedAmount)
-                    .and.to.emit(destinationChainGateway, 'TokenSent')
+                    .and.to.emit(destinationChainGateway, 'ContractCallWithToken')
                     .withArgs(
                         destinationChainSwapExecutable.address,
                         sourceChain,
-                        userWallet.address.toString(),
+                        sourceChainSwapCaller.address.toString(),
+                        returnPayloadHash,
+                        returnPayload,
                         symbolB,
                         convertedAmount,
                     );

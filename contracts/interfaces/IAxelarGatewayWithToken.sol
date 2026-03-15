@@ -11,23 +11,6 @@ import { IAxelarGateway } from './IAxelarGateway.sol';
  */
 interface IAxelarGatewayWithToken is IAxelarGateway {
     /**
-     * @notice Emitted when a token is sent to another chain.
-     * @dev Logs the attempt to send tokens to a recipient on another chain.
-     * @param sender The address of the sender who initiated the token transfer.
-     * @param destinationChain The name of the destination chain.
-     * @param destinationAddress The address of the recipient on the destination chain.
-     * @param symbol The symbol of the token being transferred.
-     * @param amount The amount of the tokens being transferred.
-     */
-    event TokenSent(
-        address indexed sender,
-        string destinationChain,
-        string destinationAddress,
-        string symbol,
-        uint256 amount
-    );
-
-    /**
      * @notice Emitted when a contract call is made through the gateway along with a token transfer.
      * @dev Logs the attempt to call a contract on another chain with an associated token transfer.
      * @param sender The address of the sender who initiated the contract call with token.
@@ -72,21 +55,6 @@ interface IAxelarGatewayWithToken is IAxelarGateway {
         bytes32 sourceTxHash,
         uint256 sourceEventIndex
     );
-
-    /**
-     * @notice Sends tokens to another chain.
-     * @dev Initiates a cross-chain token transfer through the gateway to the specified destination chain and recipient.
-     * @param destinationChain The name of the destination chain.
-     * @param destinationAddress The address of the recipient on the destination chain.
-     * @param symbol The symbol of the token being transferred.
-     * @param amount The amount of the tokens being transferred.
-     */
-    function sendToken(
-        string calldata destinationChain,
-        string calldata destinationAddress,
-        string calldata symbol,
-        uint256 amount
-    ) external;
 
     /**
      * @notice Makes a contract call on another chain with an associated token transfer.

@@ -41,16 +41,6 @@ contract MockGateway is IAxelarGatewayWithToken {
     |* Public Methods *|
     \******************/
 
-    function sendToken(
-        string calldata destinationChain,
-        string calldata destinationAddress,
-        string calldata symbol,
-        uint256 amount
-    ) external {
-        _burnTokenFrom(msg.sender, symbol, amount);
-        emit TokenSent(msg.sender, destinationChain, destinationAddress, symbol, amount);
-    }
-
     function callContract(
         string calldata destinationChain,
         string calldata destinationContractAddress,

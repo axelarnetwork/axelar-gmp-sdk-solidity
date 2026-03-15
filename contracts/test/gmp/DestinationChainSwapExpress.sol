@@ -42,14 +42,29 @@ contract DestinationChainSwapExpress is AxelarExpressExecutableWithToken {
     ) internal override {
         (string memory tokenSymbolB, string memory recipient) = abi.decode(payload, (string, string));
 
-        address tokenA = gatewayWithToken().tokenAddresses(tokenSymbolA);
-        address tokenB = gatewayWithToken().tokenAddresses(tokenSymbolB);
+        // swap
+        uint256 convertedAmount;
+        address tokenB;
+        {
+            address tokenA = gatewayWithToken().tokenAddresses(tokenSymbolA);
+            tokenB = gatewayWithToken().tokenAddresses(tokenSymbolB);
+            IERC20(tokenA).approve(address(swapper), amount);
+            convertedAmount = swapper.swap(tokenA, tokenB, amount, address(this));
+        }
 
-        IERC20(tokenA).approve(address(swapper), amount);
-        uint256 convertedAmount = swapper.swap(tokenA, tokenB, amount, address(this));
+        // send back
+        {
+            bytes memory returnPayload = abi.encode(recipient);
+            IERC20(tokenB).approve(address(gatewayWithToken()), convertedAmount);
+            gatewayWithToken().callContractWithToken(
+                sourceChain,
+                sourceAddress,
+                returnPayload,
+                tokenSymbolB,
+                convertedAmount
+            );
+        }
 
-        IERC20(tokenB).approve(address(gatewayWithToken()), convertedAmount);
-        gatewayWithToken().sendToken(sourceChain, recipient, tokenSymbolB, convertedAmount);
         emit ExecutedWithToken(commandId, sourceChain, sourceAddress, payload, tokenSymbolA, amount);
     }
 

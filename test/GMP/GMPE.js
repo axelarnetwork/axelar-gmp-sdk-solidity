@@ -201,11 +201,13 @@ describe('GMPE', async () => {
                 .withArgs(destinationChainTokenSwapper.address, destinationChainSwapExpress.address, convertedAmount)
                 .and.to.emit(tokenB, 'Transfer')
                 .withArgs(destinationChainSwapExpress.address, destinationChainGateway.address, convertedAmount)
-                .and.to.emit(destinationChainGateway, 'TokenSent')
+                .and.to.emit(destinationChainGateway, 'ContractCallWithToken')
                 .withArgs(
                     destinationChainSwapExpress.address,
                     sourceChain,
-                    userWallet.address.toString(),
+                    sourceChainSwapCaller.address.toString(),
+                    keccak256(defaultAbiCoder.encode(['string'], [userWallet.address.toString()])),
+                    defaultAbiCoder.encode(['string'], [userWallet.address.toString()]),
                     symbolB,
                     convertedAmount,
                 );

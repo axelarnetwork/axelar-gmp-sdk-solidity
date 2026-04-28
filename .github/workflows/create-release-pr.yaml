@@ -81,3 +81,31 @@ jobs:
           commit: 'chore(release): bump version from `${{ steps.extract-package-versions.outputs.old_package_version }}` to `${{ steps.extract-package-versions.outputs.new_package_version }}`'
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+
+      # Refresh package-lock.json on the release branch so its version stays in sync.
+      - name: Checkout release branch
+        if: steps.release-pr.outputs.hasChangesets == 'true'
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: changeset-release/${{ steps.branch-check.outputs.branch_name }}
+          path: release-branch
+
+      - name: Sync package-lock.json
+        if: steps.release-pr.outputs.hasChangesets == 'true'
+        working-directory: release-branch
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+          BASE_BRANCH: ${{ steps.branch-check.outputs.branch_name }}
+        run: |
+          npm install --package-lock-only
+          if git diff --quiet -- package-lock.json; then
+            echo "package-lock.json already in sync"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          git commit -m "chore(release): sync package-lock.json"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push origin "HEAD:changeset-release/${BASE_BRANCH}"

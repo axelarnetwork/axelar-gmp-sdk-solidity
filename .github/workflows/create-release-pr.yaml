@@ -70,6 +70,13 @@ jobs:
           echo "new_package_version=${NEW_PACKAGE_VERSION}" >> "$GITHUB_OUTPUT"
           echo "old_package_version=${OLD_PACKAGE_VERSION}" >> "$GITHUB_OUTPUT"
 
+      - name: Generate GitHub token
+        uses: actions/create-github-app-token@v3
+        id: generate-token
+        with:
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+
       # Keep the version of the PRs up-to-date
       - name: Create Release Pull Request
         id: release-pr
@@ -80,7 +87,7 @@ jobs:
           title: 'chore(release): bump version from `${{ steps.extract-package-versions.outputs.old_package_version }}` to `${{ steps.extract-package-versions.outputs.new_package_version }}`'
           commit: 'chore(release): bump version from `${{ steps.extract-package-versions.outputs.old_package_version }}` to `${{ steps.extract-package-versions.outputs.new_package_version }}`'
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
 
       # Refresh package-lock.json on the release branch so its version stays in sync.
       - name: Checkout release branch
@@ -95,7 +102,7 @@ jobs:
         if: steps.release-pr.outputs.hasChangesets == 'true'
         working-directory: release-branch
         env:
-          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
           BASE_BRANCH: ${{ steps.branch-check.outputs.branch_name }}
         run: |
           npm install --package-lock-only
@@ -107,5 +114,5 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add package-lock.json
           git commit -m "chore(release): sync package-lock.json"
-          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           git push origin "HEAD:changeset-release/${BASE_BRANCH}"

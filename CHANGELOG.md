@@ -1,5 +1,11 @@
 # @axelar-network/axelar-gmp-sdk-solidity
 
+## 6.1.0
+
+### Minor Changes
+
+-   6344af2: Removed the deprecated `sendToken` function and `TokenSent` event from the `IAxelarGatewayWithToken` interface
+
 ## 6.0.6
 
 ### Patch Changes

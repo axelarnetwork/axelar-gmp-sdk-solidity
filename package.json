@@ -2,6 +2,7 @@
   "name": "@axelar-network/axelar-gmp-sdk-solidity",
   "version": "6.1.0",
   "description": "Solidity GMP SDK and utilities provided by Axelar for cross-chain development",
+  "registry": "https://github.com/axelarnetwork/axelar-gmp-sdk-solidity",
   "main": "index.js",
   "overrides": {
     "elliptic": "^6.6.1"

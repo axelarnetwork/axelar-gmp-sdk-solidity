@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import { IBaseAmplifierGateway } from './IBaseAmplifierGateway.sol';
 import { IBaseWeightedMultisig } from './IBaseWeightedMultisig.sol';
+import { IPausable } from './IPausable.sol';
 import { IUpgradable } from './IUpgradable.sol';
 
 import { WeightedSigners, Proof } from '../types/WeightedMultisigTypes.sol';
@@ -13,7 +14,7 @@ import { Message } from '../types/AmplifierGatewayTypes.sol';
  * @title IAxelarAmplifierGateway
  * @dev Interface for the Axelar Gateway that supports general message passing.
  */
-interface IAxelarAmplifierGateway is IBaseAmplifierGateway, IBaseWeightedMultisig, IUpgradable {
+interface IAxelarAmplifierGateway is IPausable, IBaseAmplifierGateway, IBaseWeightedMultisig, IUpgradable {
     error NotLatestSigners();
     error InvalidSender(address sender);
 
@@ -52,4 +53,12 @@ interface IAxelarAmplifierGateway is IBaseAmplifierGateway, IBaseWeightedMultisi
      * @param newOperator The address of the new operator.
      */
     function transferOperatorship(address newOperator) external;
+
+    /**
+     * @notice Pauses or unpauses the gateway. Callable by the operator (emergency EOA)
+     * or the owner. Owner-controlled functions remain callable while paused so governance
+     * proposals can always go through.
+     * @param paused True to pause, false to unpause.
+     */
+    function setPauseStatus(bool paused) external;
 }

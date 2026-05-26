@@ -5,12 +5,29 @@ pragma solidity ^0.8.0;
 import { IBaseAmplifierGateway } from '../interfaces/IBaseAmplifierGateway.sol';
 
 import { Message } from '../types/AmplifierGatewayTypes.sol';
+import { Pausable } from '../utils/Pausable.sol';
 
-abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
+abstract contract BaseAmplifierGateway is Pausable, IBaseAmplifierGateway {
     /// @dev This slot contains the storage for this contract in an upgrade-compatible manner
     /// keccak256('BaseAmplifierGateway.Slot') - 1;
     bytes32 internal constant BASE_AMPLIFIER_GATEWAY_SLOT =
         0x978b1ab9e384397ce0aab28eec0e3c25603b3210984045ad0e0f0a50d88cfc55;
+
+    /// @dev While paused, only the address returned by `_pauseBypassSender` may consume messages.
+    /// Default is address(0), meaning no bypass; derived contracts override to expose an owner /
+    /// governance identity.
+    modifier whenNotPausedExceptForBypass() {
+        if (paused() && msg.sender != _pauseBypassSender()) revert Pause();
+
+        _;
+    }
+
+    /// @dev Returns the address allowed to consume messages while the gateway is paused.
+    /// Returning address(0) means no caller can bypass pause. Override in derived contracts to
+    /// designate a privileged identity (e.g. the upgrade owner / governance contract).
+    function _pauseBypassSender() internal view virtual returns (address) {
+        return address(0);
+    }
 
     /// @dev Message can be in one of three states: non-existent, approved, or executed
     /// Non-existent: The message has not been seen before. Equal to 0
@@ -40,7 +57,7 @@ abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
         string calldata destinationChain,
         string calldata destinationContractAddress,
         bytes calldata payload
-    ) external {
+    ) external whenNotPaused {
         emit ContractCall(msg.sender, destinationChain, destinationContractAddress, keccak256(payload), payload);
     }
 
@@ -89,7 +106,7 @@ abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
         string calldata messageId,
         string calldata sourceAddress,
         bytes32 payloadHash
-    ) external override returns (bool valid) {
+    ) external override whenNotPausedExceptForBypass returns (bool valid) {
         bytes32 commandId = messageToCommandId(sourceChain, messageId);
         valid = _validateMessage(commandId, sourceChain, sourceAddress, payloadHash);
     }
@@ -131,7 +148,7 @@ abstract contract BaseAmplifierGateway is IBaseAmplifierGateway {
         string calldata sourceChain,
         string calldata sourceAddress,
         bytes32 payloadHash
-    ) external override returns (bool valid) {
+    ) external override whenNotPausedExceptForBypass returns (bool valid) {
         valid = _validateMessage(commandId, sourceChain, sourceAddress, payloadHash);
     }
 

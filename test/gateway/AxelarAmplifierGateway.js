@@ -8,7 +8,7 @@ const {
 const { expect } = chai;
 
 const { encodeWeightedSigners, getWeightedSignersProof, WEIGHTED_SIGNERS_TYPE } = require('../../scripts/utils');
-const { expectRevert, waitFor, getGasOptions } = require('../utils');
+const { expectRevert, waitFor, getGasOptions, getPayloadAndProposalHash, isHardhat } = require('../utils');
 
 const APPROVE_MESSAGES = 0;
 const ROTATE_SIGNERS = 1;
@@ -730,6 +730,366 @@ describe('AxelarAmplifierGateway', () => {
         await expect(gateway.rotateSigners(newSigners, proof))
             .to.emit(gateway, 'SignersRotated')
             .withArgs(epoch + 1, keccak256(encodeWeightedSigners(newSigners)), encodeWeightedSigners(newSigners));
+    });
+
+    describe('pause', () => {
+        const sourceChain = 'Source';
+        const sourceAddress = 'src';
+        const payload = defaultAbiCoder.encode(['uint256'], [42]);
+        const payloadHash = keccak256(payload);
+
+        let executable; // plain executable, never the owner
+
+        const approveMessage = async (contractAddress, messageId) => {
+            const messages = [{ sourceChain, messageId, sourceAddress, contractAddress, payloadHash }];
+            const proof = await getProof(APPROVE_MESSAGES, messages, weightedSigners, signers.slice(0, threshold));
+            await gateway.approveMessages(messages, proof).then((tx) => tx.wait());
+        };
+
+        beforeEach(async () => {
+            await deployGateway();
+            const executableFactory = await ethers.getContractFactory('AxelarExecutableTest', owner);
+            executable = await executableFactory.deploy(gateway.address);
+            await executable.deployTransaction.wait(network.config.confirmations);
+        });
+
+        it('paused() is false on a fresh deploy', async () => {
+            expect(await gateway.paused()).to.be.false;
+        });
+
+        it('operator can pause and unpause; non-privileged callers cannot', async () => {
+            await expect(gateway.connect(operator).setPauseStatus(true))
+                .to.emit(gateway, 'Paused')
+                .withArgs(operator.address);
+            expect(await gateway.paused()).to.be.true;
+
+            await expectRevert(
+                (gasOptions) => gateway.connect(user).setPauseStatus(false, gasOptions),
+                gateway,
+                'InvalidSender',
+                [user.address],
+            );
+
+            await expect(gateway.connect(operator).setPauseStatus(false))
+                .to.emit(gateway, 'Unpaused')
+                .withArgs(operator.address);
+            expect(await gateway.paused()).to.be.false;
+        });
+
+        it('the owner (EOA) can pause and unpause directly', async () => {
+            await expect(gateway.connect(owner).setPauseStatus(true))
+                .to.emit(gateway, 'Paused')
+                .withArgs(owner.address);
+            expect(await gateway.paused()).to.be.true;
+
+            await expect(gateway.connect(owner).setPauseStatus(false))
+                .to.emit(gateway, 'Unpaused')
+                .withArgs(owner.address);
+            expect(await gateway.paused()).to.be.false;
+        });
+
+        it('callContract is blocked while paused', async () => {
+            await gateway
+                .connect(operator)
+                .setPauseStatus(true)
+                .then((tx) => tx.wait());
+
+            await expectRevert(
+                (gasOptions) => gateway.connect(user).callContract('Destination', '0xabc', payload, gasOptions),
+                gateway,
+                'Pause',
+            );
+        });
+
+        it('approveMessages is never gated by pause', async () => {
+            await gateway
+                .connect(operator)
+                .setPauseStatus(true)
+                .then((tx) => tx.wait());
+
+            const messageId = 'approved-while-paused';
+            const messages = [
+                { sourceChain, messageId, sourceAddress, contractAddress: executable.address, payloadHash },
+            ];
+            const proof = await getProof(APPROVE_MESSAGES, messages, weightedSigners, signers.slice(0, threshold));
+            const commandId = await gateway.messageToCommandId(sourceChain, messageId);
+
+            await expect(gateway.approveMessages(messages, proof))
+                .to.emit(gateway, 'MessageApproved')
+                .withArgs(commandId, sourceChain, messageId, sourceAddress, executable.address, payloadHash);
+
+            expect(
+                await gateway.isMessageApproved(sourceChain, messageId, sourceAddress, executable.address, payloadHash),
+            ).to.be.true;
+        });
+
+        it('rotateSigners is never gated by pause', async () => {
+            await gateway
+                .connect(operator)
+                .setPauseStatus(true)
+                .then((tx) => tx.wait());
+
+            const newSigners = {
+                signers: signers.map((wallet) => ({ signer: wallet.address, weight: 1 })),
+                threshold,
+                nonce: id('rotation-while-paused'),
+            };
+            const newSignersData = encodeWeightedSigners(newSigners);
+            const proof = await getProof(ROTATE_SIGNERS, newSigners, weightedSigners, signers.slice(0, threshold));
+            const epoch = (await gateway.epoch()).toNumber() + 1;
+
+            await expect(gateway.rotateSigners(newSigners, proof))
+                .to.emit(gateway, 'SignersRotated')
+                .withArgs(epoch, keccak256(newSignersData), newSignersData);
+        });
+
+        it('pause survives transferOwnership; the new owner inherits the bypass identity', async () => {
+            await gateway
+                .connect(operator)
+                .setPauseStatus(true)
+                .then((tx) => tx.wait());
+
+            await expect(gateway.connect(owner).transferOwnership(user.address))
+                .to.emit(gateway, 'OwnershipTransferred')
+                .withArgs(user.address);
+
+            expect(await gateway.paused()).to.be.true;
+            expect(await gateway.owner()).to.equal(user.address);
+
+            // Previous owner can no longer drive pause state.
+            await expectRevert(
+                (gasOptions) => gateway.connect(owner).setPauseStatus(false, gasOptions),
+                gateway,
+                'InvalidSender',
+                [owner.address],
+            );
+
+            // New owner can.
+            await expect(gateway.connect(user).setPauseStatus(false))
+                .to.emit(gateway, 'Unpaused')
+                .withArgs(user.address);
+            expect(await gateway.paused()).to.be.false;
+        });
+
+        it('pause survives transferOperatorship; the new operator can release it', async () => {
+            await gateway
+                .connect(operator)
+                .setPauseStatus(true)
+                .then((tx) => tx.wait());
+
+            await expect(gateway.connect(owner).transferOperatorship(user.address))
+                .to.emit(gateway, 'OperatorshipTransferred')
+                .withArgs(user.address);
+
+            expect(await gateway.paused()).to.be.true;
+            expect(await gateway.operator()).to.equal(user.address);
+
+            // Old operator can no longer act.
+            await expectRevert(
+                (gasOptions) => gateway.connect(operator).setPauseStatus(false, gasOptions),
+                gateway,
+                'InvalidSender',
+                [operator.address],
+            );
+
+            // New operator can.
+            await expect(gateway.connect(user).setPauseStatus(false))
+                .to.emit(gateway, 'Unpaused')
+                .withArgs(user.address);
+        });
+
+        it('pause survives an implementation upgrade', async () => {
+            await gateway
+                .connect(operator)
+                .setPauseStatus(true)
+                .then((tx) => tx.wait());
+
+            const newImplementation = await gatewayFactory.deploy(
+                previousSignersRetention,
+                domainSeparator,
+                minimumRotationDelay,
+            );
+            await newImplementation.deployTransaction.wait(network.config.confirmations);
+            const newImplementationCodehash = keccak256(await ethers.provider.getCode(newImplementation.address));
+
+            await expect(gateway.connect(owner).upgrade(newImplementation.address, newImplementationCodehash, '0x'))
+                .to.emit(gateway, 'Upgraded')
+                .withArgs(newImplementation.address);
+
+            expect(await gateway.paused()).to.be.true;
+            expect(await gateway.implementation()).to.equal(newImplementation.address);
+        });
+
+        describe('with a contract owner', () => {
+            let ownerExecutable;
+
+            beforeEach(async () => {
+                const executableFactory = await ethers.getContractFactory('AxelarExecutableTest', owner);
+                ownerExecutable = await executableFactory.deploy(gateway.address);
+                await ownerExecutable.deployTransaction.wait(network.config.confirmations);
+                await gateway
+                    .connect(owner)
+                    .transferOwnership(ownerExecutable.address)
+                    .then((tx) => tx.wait());
+            });
+
+            it('a non-owner executable cannot consume an approved message while paused', async () => {
+                const messageId = 'plain-1';
+                await approveMessage(executable.address, messageId);
+                const commandId = await gateway.messageToCommandId(sourceChain, messageId);
+
+                await gateway
+                    .connect(operator)
+                    .setPauseStatus(true)
+                    .then((tx) => tx.wait());
+
+                // Approval is still on-chain — the brake sits on consumption, not approval.
+                expect(
+                    await gateway.isMessageApproved(
+                        sourceChain,
+                        messageId,
+                        sourceAddress,
+                        executable.address,
+                        payloadHash,
+                    ),
+                ).to.be.true;
+
+                // The executable's execute() calls validateContractCall internally; msg.sender at the
+                // gateway is the executable, which is not the owner, so the modifier reverts with Pause.
+                await expectRevert(
+                    (gasOptions) => executable.execute(commandId, sourceChain, sourceAddress, payload, gasOptions),
+                    gateway,
+                    'Pause',
+                );
+
+                // Once unpaused, the same call succeeds — proving the approval was untouched.
+                await gateway
+                    .connect(operator)
+                    .setPauseStatus(false)
+                    .then((tx) => tx.wait());
+
+                await expect(executable.execute(commandId, sourceChain, sourceAddress, payload))
+                    .to.emit(gateway, 'MessageExecuted')
+                    .withArgs(commandId);
+            });
+
+            it('the owner contract can still consume messages while paused', async () => {
+                const messageId = 'gov-1';
+                await approveMessage(ownerExecutable.address, messageId);
+                const commandId = await gateway.messageToCommandId(sourceChain, messageId);
+
+                await gateway
+                    .connect(operator)
+                    .setPauseStatus(true)
+                    .then((tx) => tx.wait());
+
+                // msg.sender at the gateway is ownerExecutable == owner(), so the bypass passes.
+                await expect(ownerExecutable.execute(commandId, sourceChain, sourceAddress, payload))
+                    .to.emit(gateway, 'MessageExecuted')
+                    .withArgs(commandId);
+            });
+        });
+
+        // End-to-end with the real InterchainGovernance contract. Mirrors production:
+        //   1. Cosmos x/gov proposal on Axelar -> AxelarnetGateway.callContract -> dest gateway
+        //   2. relayer calls gateway.approveMessages with a verifier proof
+        //   3. relayer calls InterchainGovernance.execute -> IG calls gateway.validateContractCall
+        //   4. IG schedules the proposal in its timelock
+        //   5. after eta, anyone calls IG.executeProposal -> the inner call (here: gateway.setPauseStatus)
+        describe('via real InterchainGovernance', () => {
+            const governanceChain = 'Axelarnet';
+            const governanceAddress = 'axelar10d07y265gmmuvt4z0w9aw880jnsr700j7v9daj';
+            const minimumTimeDelay = isHardhat ? 12 * 60 * 60 : 15;
+            const proposalTimeDelay = isHardhat ? 13 * 60 * 60 : 25;
+
+            let interchainGovernance;
+
+            beforeEach(async () => {
+                const igFactory = await ethers.getContractFactory('InterchainGovernance', owner);
+                interchainGovernance = await igFactory.deploy(
+                    gateway.address,
+                    governanceChain,
+                    governanceAddress,
+                    minimumTimeDelay,
+                );
+                await interchainGovernance.deployTransaction.wait(network.config.confirmations);
+                await gateway
+                    .connect(owner)
+                    .transferOwnership(interchainGovernance.address)
+                    .then((tx) => tx.wait());
+            });
+
+            // Helper: deliver a `ScheduleTimeLockProposal` GMP message to IG, simulating the
+            // approve + execute step of the cross-chain governance pipeline.
+            const submitProposalThroughGmp = async (target, callData, messageId, nativeValue = 0) => {
+                const [proposalPayload] = await getPayloadAndProposalHash(
+                    0, // ScheduleTimeLockProposal
+                    target,
+                    nativeValue,
+                    callData,
+                    proposalTimeDelay,
+                );
+                const messages = [
+                    {
+                        sourceChain: governanceChain,
+                        messageId,
+                        sourceAddress: governanceAddress,
+                        contractAddress: interchainGovernance.address,
+                        payloadHash: keccak256(proposalPayload),
+                    },
+                ];
+                const proof = await getProof(APPROVE_MESSAGES, messages, weightedSigners, signers.slice(0, threshold));
+
+                // (2) approve — always allowed, even while paused
+                await gateway.approveMessages(messages, proof).then((tx) => tx.wait());
+
+                // (3) execute through IG: msg.sender at the gateway is IG == owner, so the bypass on
+                // validateContractCall passes even when the gateway is paused. (4) IG schedules.
+                const commandId = await gateway.messageToCommandId(governanceChain, messageId);
+                await interchainGovernance
+                    .execute(commandId, governanceChain, governanceAddress, proposalPayload)
+                    .then((tx) => tx.wait());
+            };
+
+            it('can pause and unpause through the governance pipeline end-to-end', async () => {
+                // --- (1)-(4) schedule pause via GMP, then (5) execute after the timelock elapses ---
+                const pauseCalldata = gateway.interface.encodeFunctionData('setPauseStatus', [true]);
+                await submitProposalThroughGmp(gateway.address, pauseCalldata, 'pause-schedule');
+
+                await waitFor(proposalTimeDelay);
+                await expect(interchainGovernance.executeProposal(gateway.address, pauseCalldata, 0))
+                    .to.emit(gateway, 'Paused')
+                    .withArgs(interchainGovernance.address);
+                expect(await gateway.paused()).to.be.true;
+
+                // --- while paused, a plain executable cannot consume even a freshly-approved message ---
+                const messageId = 'probe';
+                await approveMessage(executable.address, messageId);
+                const commandId = await gateway.messageToCommandId(sourceChain, messageId);
+                await expectRevert(
+                    (gasOptions) => executable.execute(commandId, sourceChain, sourceAddress, payload, gasOptions),
+                    gateway,
+                    'Pause',
+                );
+
+                // --- schedule unpause via GMP. This is the load-bearing step: schedule requires
+                // IG to call validateContractCall on the gateway while paused, and the owner-bypass
+                // is what makes it succeed.
+                const unpauseCalldata = gateway.interface.encodeFunctionData('setPauseStatus', [false]);
+                await submitProposalThroughGmp(gateway.address, unpauseCalldata, 'unpause-schedule');
+
+                await waitFor(proposalTimeDelay);
+                await expect(interchainGovernance.executeProposal(gateway.address, unpauseCalldata, 0))
+                    .to.emit(gateway, 'Unpaused')
+                    .withArgs(interchainGovernance.address);
+                expect(await gateway.paused()).to.be.false;
+
+                // --- the previously-approved probe message becomes consumable again ---
+                await expect(executable.execute(commandId, sourceChain, sourceAddress, payload))
+                    .to.emit(gateway, 'MessageExecuted')
+                    .withArgs(commandId);
+            });
+        });
     });
 
     describe('upgradability', () => {

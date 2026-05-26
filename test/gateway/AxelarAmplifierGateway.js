@@ -847,6 +847,30 @@ describe('AxelarAmplifierGateway', () => {
                 .withArgs(epoch, keccak256(newSignersData), newSignersData);
         });
 
+        it('owner bypasses validateMessage while paused', async () => {
+            const messageId = 'owner-vm';
+            await approveMessage(owner.address, messageId);
+            const commandId = await gateway.messageToCommandId(sourceChain, messageId);
+
+            await gateway
+                .connect(operator)
+                .setPauseStatus(true)
+                .then((tx) => tx.wait());
+
+            // msg.sender == owner() — bypass passes; non-owner is blocked
+            await expectRevert(
+                (gasOptions) =>
+                    gateway
+                        .connect(user)
+                        .validateMessage(sourceChain, messageId, sourceAddress, payloadHash, gasOptions),
+                gateway,
+                'Pause',
+            );
+            await expect(gateway.connect(owner).validateMessage(sourceChain, messageId, sourceAddress, payloadHash))
+                .to.emit(gateway, 'MessageExecuted')
+                .withArgs(commandId);
+        });
+
         it('pause survives ownership and operatorship transfers; roles are revoked from old holders and granted to new ones', async () => {
             await gateway
                 .connect(operator)

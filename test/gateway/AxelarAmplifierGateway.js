@@ -1062,8 +1062,7 @@ describe('AxelarAmplifierGateway', () => {
 
                 // Attempting to execute before the timelock elapses must revert
                 await expectRevert(
-                    (gasOptions) =>
-                        interchainGovernance.executeProposal(target, callData, nativeValue, gasOptions),
+                    (gasOptions) => interchainGovernance.executeProposal(target, callData, nativeValue, gasOptions),
                     interchainGovernance,
                     'TimeLockNotReady',
                 );

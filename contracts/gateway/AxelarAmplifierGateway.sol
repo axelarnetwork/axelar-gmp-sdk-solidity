@@ -125,10 +125,10 @@ contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, U
      * @dev Pause freezes `callContract` and gates `validateMessage` / `validateContractCall`
      * to the owner only; `approveMessages` and `rotateSigners` stay open. Admin functions
      * remain callable so governance can always recover.
-     * @param paused True to pause, false to unpause.
+     * @param isPaused True to pause, false to unpause.
      */
-    function setPauseStatus(bool paused) external onlyOperatorOrOwner {
-        if (paused) {
+    function setPauseStatus(bool isPaused) external onlyOperatorOrOwner {
+        if (isPaused) {
             _pause();
         } else {
             _unpause();

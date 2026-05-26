@@ -58,7 +58,7 @@ interface IAxelarAmplifierGateway is IPausable, IBaseAmplifierGateway, IBaseWeig
      * @notice Pauses or unpauses the gateway. Callable by the operator (emergency EOA)
      * or the owner. Owner-controlled functions remain callable while paused so governance
      * proposals can always go through.
-     * @param paused True to pause, false to unpause.
+     * @param isPaused True to pause, false to unpause.
      */
-    function setPauseStatus(bool paused) external;
+    function setPauseStatus(bool isPaused) external;
 }

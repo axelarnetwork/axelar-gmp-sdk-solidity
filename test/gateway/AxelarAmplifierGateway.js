@@ -143,6 +143,22 @@ describe('AxelarAmplifierGateway', () => {
         await testAxelarGateway.deployTransaction.wait(network.config.confirmations);
     });
 
+    it('_pauseBypassSender() default returns address(0): no caller can bypass pause', async () => {
+        const testBaseGatewayFactory = await ethers.getContractFactory('TestBaseAmplifierGateway', owner);
+        const testBaseGateway = await testBaseGatewayFactory.deploy();
+        await testBaseGateway.deployTransaction.wait(network.config.confirmations);
+
+        await testBaseGateway.pause().then((tx) => tx.wait());
+
+        // With the default address(0) bypass, even the deployer is blocked
+        await expectRevert(
+            (gasOptions) =>
+                testBaseGateway.connect(owner).validateContractCall(id('x'), 'src', 'addr', id('payload'), gasOptions),
+            testBaseGateway,
+            'Pause',
+        );
+    });
+
     describe('call contract', () => {
         beforeEach(async () => {
             await deployGateway();

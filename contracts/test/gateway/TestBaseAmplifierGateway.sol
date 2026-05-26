@@ -10,4 +10,9 @@ contract TestBaseAmplifierGateway is BaseAmplifierGateway {
             revert('BaseAmplifierGateway.Slot');
         }
     }
+
+    /// @dev Exposed for testing the default _pauseBypassSender() == address(0) path.
+    function pause() external {
+        _pause();
+    }
 }

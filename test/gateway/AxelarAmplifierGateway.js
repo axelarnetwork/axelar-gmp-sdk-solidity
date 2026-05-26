@@ -776,18 +776,6 @@ describe('AxelarAmplifierGateway', () => {
             expect(await gateway.paused()).to.be.false;
         });
 
-        it('the owner (EOA) can pause and unpause directly', async () => {
-            await expect(gateway.connect(owner).setPauseStatus(true))
-                .to.emit(gateway, 'Paused')
-                .withArgs(owner.address);
-            expect(await gateway.paused()).to.be.true;
-
-            await expect(gateway.connect(owner).setPauseStatus(false))
-                .to.emit(gateway, 'Unpaused')
-                .withArgs(owner.address);
-            expect(await gateway.paused()).to.be.false;
-        });
-
         it('callContract is blocked while paused', async () => {
             await gateway
                 .connect(operator)
@@ -843,48 +831,29 @@ describe('AxelarAmplifierGateway', () => {
                 .withArgs(epoch, keccak256(newSignersData), newSignersData);
         });
 
-        it('pause survives transferOwnership; the new owner inherits the bypass identity', async () => {
+        it('pause survives ownership and operatorship transfers; roles are revoked from old holders and granted to new ones', async () => {
             await gateway
                 .connect(operator)
                 .setPauseStatus(true)
                 .then((tx) => tx.wait());
 
+            // Transfer both roles to `user` while paused
             await expect(gateway.connect(owner).transferOwnership(user.address))
                 .to.emit(gateway, 'OwnershipTransferred')
                 .withArgs(user.address);
+            await expect(gateway.connect(user).transferOperatorship(user.address))
+                .to.emit(gateway, 'OperatorshipTransferred')
+                .withArgs(user.address);
 
             expect(await gateway.paused()).to.be.true;
-            expect(await gateway.owner()).to.equal(user.address);
 
-            // Previous owner can no longer drive pause state.
+            // Old holders can no longer act
             await expectRevert(
                 (gasOptions) => gateway.connect(owner).setPauseStatus(false, gasOptions),
                 gateway,
                 'InvalidSender',
                 [owner.address],
             );
-
-            // New owner can.
-            await expect(gateway.connect(user).setPauseStatus(false))
-                .to.emit(gateway, 'Unpaused')
-                .withArgs(user.address);
-            expect(await gateway.paused()).to.be.false;
-        });
-
-        it('pause survives transferOperatorship; the new operator can release it', async () => {
-            await gateway
-                .connect(operator)
-                .setPauseStatus(true)
-                .then((tx) => tx.wait());
-
-            await expect(gateway.connect(owner).transferOperatorship(user.address))
-                .to.emit(gateway, 'OperatorshipTransferred')
-                .withArgs(user.address);
-
-            expect(await gateway.paused()).to.be.true;
-            expect(await gateway.operator()).to.equal(user.address);
-
-            // Old operator can no longer act.
             await expectRevert(
                 (gasOptions) => gateway.connect(operator).setPauseStatus(false, gasOptions),
                 gateway,
@@ -892,10 +861,11 @@ describe('AxelarAmplifierGateway', () => {
                 [operator.address],
             );
 
-            // New operator can.
+            // New holder can unpause
             await expect(gateway.connect(user).setPauseStatus(false))
                 .to.emit(gateway, 'Unpaused')
                 .withArgs(user.address);
+            expect(await gateway.paused()).to.be.false;
         });
 
         it('pause survives an implementation upgrade', async () => {

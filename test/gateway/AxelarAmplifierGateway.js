@@ -1021,8 +1021,9 @@ describe('AxelarAmplifierGateway', () => {
 
             // Helper: deliver a `ScheduleTimeLockProposal` GMP message to IG, simulating the
             // approve + execute step of the cross-chain governance pipeline.
+            // Returns { proposalHash, eta } so callers can make IG state assertions.
             const submitProposalThroughGmp = async (target, callData, messageId, nativeValue = 0) => {
-                const [proposalPayload] = await getPayloadAndProposalHash(
+                const [proposalPayload, proposalHash, eta] = await getPayloadAndProposalHash(
                     0, // ScheduleTimeLockProposal
                     target,
                     nativeValue,
@@ -1046,15 +1047,37 @@ describe('AxelarAmplifierGateway', () => {
                 // (3) execute through IG: msg.sender at the gateway is IG == owner, so the bypass on
                 // validateContractCall passes even when the gateway is paused. (4) IG schedules.
                 const commandId = await gateway.messageToCommandId(governanceChain, messageId);
-                await interchainGovernance
-                    .execute(commandId, governanceChain, governanceAddress, proposalPayload)
-                    .then((tx) => tx.wait());
+                await expect(
+                    interchainGovernance.execute(commandId, governanceChain, governanceAddress, proposalPayload),
+                )
+                    .to.emit(interchainGovernance, 'ProposalScheduled')
+                    .withArgs(proposalHash, target, callData, nativeValue, eta);
+
+                // Gateway marks the GMP message as executed (consumed by IG)
+                expect(await gateway.isMessageExecuted(governanceChain, messageId)).to.be.true;
+
+                // IG records the ETA — proposal is locked until the timelock elapses
+                const storedEta = await interchainGovernance.getProposalEta(target, callData, nativeValue);
+                expect(storedEta).to.be.gte(eta);
+
+                // Attempting to execute before the timelock elapses must revert
+                await expectRevert(
+                    (gasOptions) =>
+                        interchainGovernance.executeProposal(target, callData, nativeValue, gasOptions),
+                    interchainGovernance,
+                    'TimeLockNotReady',
+                );
+
+                return { proposalHash, eta };
             };
 
             it('can pause and unpause through the governance pipeline end-to-end', async () => {
                 // --- (1)-(4) schedule pause via GMP, then (5) execute after the timelock elapses ---
                 const pauseCalldata = gateway.interface.encodeFunctionData('setPauseStatus', [true]);
                 await submitProposalThroughGmp(gateway.address, pauseCalldata, 'pause-schedule');
+
+                // Proposal is scheduled but the timelock hasn't elapsed — gateway still live
+                expect(await gateway.paused()).to.be.false;
 
                 await waitFor(proposalTimeDelay);
                 await expect(interchainGovernance.executeProposal(gateway.address, pauseCalldata, 0))
@@ -1077,6 +1100,9 @@ describe('AxelarAmplifierGateway', () => {
                 // is what makes it succeed.
                 const unpauseCalldata = gateway.interface.encodeFunctionData('setPauseStatus', [false]);
                 await submitProposalThroughGmp(gateway.address, unpauseCalldata, 'unpause-schedule');
+
+                // Proposal scheduled but timelock not elapsed — gateway still paused
+                expect(await gateway.paused()).to.be.true;
 
                 await waitFor(proposalTimeDelay);
                 await expect(interchainGovernance.executeProposal(gateway.address, unpauseCalldata, 0))

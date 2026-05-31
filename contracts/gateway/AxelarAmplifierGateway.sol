@@ -47,6 +47,12 @@ contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, U
         _;
     }
 
+    /// @dev Owner (EOA today, governance contract once `transferOwnership` is called) bypasses
+    /// `whenNotPausedExceptForBypass` so it can keep consuming messages while the gateway is paused.
+    function _pauseBypassSender() internal view override returns (address) {
+        return owner();
+    }
+
     /*****************\
     |* Upgradability *|
     \*****************/
@@ -111,6 +117,22 @@ contract AxelarAmplifierGateway is BaseAmplifierGateway, BaseWeightedMultisig, U
 
         // If newSigners is a repeat signer set, this will revert
         _rotateSigners(newSigners, enforceRotationDelay);
+    }
+
+    /**
+     * @notice Pauses or unpauses the gateway. Callable by the operator (emergency EOA)
+     * or the owner (governance contract or EOA).
+     * @dev Pause freezes `callContract` and gates `validateMessage` / `validateContractCall`
+     * to the owner only; `approveMessages` and `rotateSigners` stay open. Admin functions
+     * remain callable so governance can always recover.
+     * @param isPaused True to pause, false to unpause.
+     */
+    function setPauseStatus(bool isPaused) external onlyOperatorOrOwner {
+        if (isPaused) {
+            _pause();
+        } else {
+            _unpause();
+        }
     }
 
     /**

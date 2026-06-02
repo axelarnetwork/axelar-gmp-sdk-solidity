@@ -1,5 +1,11 @@
 # @axelar-network/axelar-gmp-sdk-solidity
 
+## 6.2.0
+
+### Minor Changes
+
+-   ce79e3e: Add pause/unpause to `AxelarAmplifierGateway` via `setPauseStatus(bool)` (operator-or-owner gated). While paused, `callContract` reverts and `validateMessage` / `validateContractCall` are gated, with an owner bypass so the owner can still consume inbound messages.
+
 ## 6.1.0
 
 ### Minor Changes
